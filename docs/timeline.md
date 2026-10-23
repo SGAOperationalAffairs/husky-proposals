@@ -25,6 +25,8 @@ gantt
     Spring classes start          :milestone, 2027-01-13, 0d
     section Foundations
     E1 Foundations                :e1, 2026-10-26, 7d
+    E1 Playground and direction   :e1p, 2026-10-28, 5d
+    Creative direction picked     :milestone, 2026-11-01, 0d
     E2 Data and core rules        :e2, 2026-10-26, 7d
     E3 Sign-in stand-in           :e3a, 2026-10-26, 7d
     section Student side
@@ -56,7 +58,7 @@ gantt
 
 | Epic | Start | End | Notes |
 |---|---|---|---|
-| E1 Foundations | Oct 26 | Nov 1 | Scaffold, test harness, CI, port |
+| E1 Foundations | Oct 26 | Nov 1 | Scaffold, test harness, CI, port. Playground and style templates Oct 28 to Nov 1 (T0.3b) |
 | E2 Data and core rules | Oct 26 | Nov 1 | Schema, `idea_stats`, rules module |
 | E3 Sign-in and roles | Oct 26 | Nov 20 | Stand-in Oct 26 to Nov 1. Connection spike Nov 9 to 15. Switch Nov 16 to 20. Fallback to the stand-in if not working by Nov 27 |
 | E4 Posting and review | Nov 2 | Nov 8 | |
@@ -75,6 +77,7 @@ gantt
 | Date | What | If missed |
 |---|---|---|
 | Nov 1 | D9 (appeals) answered | The decline message ships without an appeal line |
+| Sun Nov 1 | Creative direction picked in the playground (T0.3b) | E5 builds on the Civic look and restyles later through the tokens |
 | Sun Nov 8 | E4 and E5 merged into `dev` | Cut list items 1 to 2 (`build-plan.md`) |
 | Nov 9 to 15 | SGAuth connection spike: one real sign-in on `proposals-dev`, and the environment checklist written | The switch starts late; watch the Nov 27 fallback |
 | Sun Nov 15 | E6 and E7 merged. D16 (who sees names) decided | Cut list items 3 to 4 |

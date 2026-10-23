@@ -1,5 +1,7 @@
 /* Husky Proposals design tokens, taken from prototype/concept-2.html.
-   Square corners, system font, flat bordered cards with a 5px accent rule across the top. */
+   Square corners, system font, flat bordered cards with a 5px accent rule across the top.
+   This is the single token source. The Tailwind theme maps to it (#20). The corner
+   radius and the overall direction are picked in the playground (T0.3b). */
 :root {
   color-scheme: light;
   --bg: #F1F2F5;

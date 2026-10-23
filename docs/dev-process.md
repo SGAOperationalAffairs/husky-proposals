@@ -265,8 +265,9 @@ No conflict: port's branch names (`<issue>-<slug>`), commit format, rebase onto 
 - **Read a failure before rerunning.** Rerunning until green hides flaky tests.
 - **Assert on state, not on timing.** Timing-based browser checks were flaky under load in Resume Studio.
 - **Guard tests for conventions,** for example:
-  - design tokens match `design/tokens.css`;
-  - no rounded corners;
+  - the Tailwind theme matches `design/tokens.css`;
+  - no arbitrary Tailwind values and no hard-coded colors in components;
+  - in a real browser (Chromium and WebKit), every visible element's corner radius, border width, and colors come from the allowed token values;
   - imports do not climb more than one folder.
 - **More unit and component tests, fewer browser tests.** A long browser suite did not get faster with more parallelism.
 

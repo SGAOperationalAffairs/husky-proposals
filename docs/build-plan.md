@@ -90,8 +90,18 @@ T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 - `npm run verify` exists, and CI runs it on every pull request.
 - Every page sends `noindex`.
 - A lint rule enforces import and layering rules from the start (core modules never import Next.js; no imports that climb more than one folder).
-- A playground page, local only, for trying UI pieces before they go into a screen.
+- Tailwind 4 with the default theme reset (`--color-*`, `--radius-*`, `--shadow-*` cleared) and `design/tokens.css` mapped through `@theme`. A test checks the two match.
+- Style guards in `verify`: a check that rejects arbitrary values and hard-coded colors, and a browser check of computed radius, border, and colors against the token values.
 - Browser tests run on Chromium and WebKit (iPhone Safari). Firefox runs only in `verify:all`.
+
+**T0.3b Playground and creative direction** (sidecar lane, Oct 28 to Nov 1). A local-only page that renders the real components (idea card, status chips, support squares, buttons, form fields, the SGA queue row) with live token controls and a "Copy settings" button. Luis tunes by eye and pastes the settings back; the agent writes them into `design/tokens.css`.
+- Whole-app style templates, as token sets on the same components, to pick a broad creative direction. Starting points, to be tuned:
+  - **Civic:** the prototype. Flat bordered cards, square corners, the 5px Husky red rule, system font.
+  - **Board:** 1.5px dark outlines, hard offset shadows, about 10px corners, one pastel per board.
+  - **Editorial:** serif headings, hairline rules, generous white space, square corners.
+  - **Soft campus:** a small radius scale (0, 2, 6, 999px), light elevation, rounded chips.
+- Each template shows light and dark mode, and a phone width.
+- Done when Luis picks a direction, by Sunday Nov 1. The pick goes into `design/tokens.css`, CLAUDE.md's allowed radii, and the decision log. If it slips, E5 builds on the Civic look and restyles later through the tokens.
 
 **T0.4 Test harness.** Test runner, a Neon test branch, factories, invented fixtures, a mailer that captures emails, and a fake clock.
 - `npm run verify` runs locally and in CI in under 5 minutes.
