@@ -142,6 +142,7 @@ Decided October 22, 2026 (PRD D20, with reasons and what was turned down in the 
 | Email | Resend, behind a provider-neutral `sendEmail()` and an outbox |
 | Hosting | Vercel at `proposals.northeasternsga.com`, with previews at `proposals-dev.northeasternsga.com`. The plan (Hobby or a team plan) is still to confirm with Eli |
 | Scheduled jobs | GitHub Actions calling secret-protected routes (no Vercel cron) |
+| Styling | Tailwind 4 with its default theme reset, so only our tokens exist (`design/tokens.css` mapped through `@theme`). Base UI for unstyled, accessible primitives. No shadcn styling. Decided October 23, 2026 (#20) |
 | Validation | zod for every input and every outside response |
 | Tests | Vitest (logic and components), Playwright (browser), k6 (load) |
 | Backlog | GitHub Issues with port |
@@ -180,6 +181,8 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **The UI must not look generated.**
   - Use the frontend-design skill for all UI work.
   - Build from `design/tokens.css` and the prototype's layouts, not component-library defaults.
+  - Never hardcode a value a token covers: no arbitrary Tailwind values (`rounded-[7px]`, `p-[13px]`), no hex colors in components. Corners come only from the radius tokens. A guard test enforces this.
+  - Try new layouts and looks on the playground page (T0.3b) before building a screen.
   - Avoid generic AI-app patterns: gradient heroes, rounded pill cards, emoji icons, filler copy.
 - **Tools and planning order:** see `docs/dev-process.md`.
   - Tickets are GitHub Issues.
@@ -232,7 +235,7 @@ Patterns are filled in as the first features land, and no later than the fifth f
   - WCAG AA contrast;
   - reduced motion is respected;
   - any visual-only display, such as the support squares, has a text alternative.
-- **Match `design/tokens.css`:** Husky red `#C8102E`, square corners, the system font, flat bordered cards with a 5px accent rule across the top, and light and dark mode.
+- **Match `design/tokens.css`:** Husky red `#C8102E`, the system font, flat bordered cards with a 5px accent rule across the top, and light and dark mode. Corner radius is being chosen in the playground (T0.3b): square today, as in the prototype. Once picked, the allowed radii are listed here.
 - **Test the review flow and the privacy rules carefully.** They are the riskiest parts.
 
 ## Current state (October 23, 2026)
