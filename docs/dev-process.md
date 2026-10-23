@@ -96,7 +96,7 @@ Agreed October 23, 2026. Port is built for hands-off work: plan, approve, wait f
 
 | | Port lane | Sidecar lane |
 |---|---|---|
-| For | Logic where a bug is costly or hard to see | Screens, layout, copy, polish, and setup work |
+| For | Logic where a bug is costly or hard to see | Screens, layout, copy, polish, setup work, and docs-only changes |
 | Epics | E2, E9, the server and rules side of E4, E6, and E8, and most of E10 | E1 (the scaffold), the UI side of E4 to E8, E5, E7, and the playground page |
 | How | Issue, plan, agent pull request, review agent, Luis merges | Luis and an interactive session on one branch, pushing often |
 | Pull requests | One per issue | One batch every day or two, listing every issue it closes |
@@ -110,6 +110,7 @@ Agreed October 23, 2026. Port is built for hands-off work: plan, approve, wait f
 - **Verify quickly:** local dev with the sign-in stand-in for signed-in screens, and the branch's Vercel preview on a phone (browse-only, since sign-in cannot work on `vercel.app`). New layouts start on the playground page.
 - **Bugs found while working:** file an issue right away, or fix it in place if it is in the UI being worked on.
 - **Commits:** `#N summary`, where `#N` is the issue the change is for. Nothing is pushed straight to `dev` or `main`.
+- **Docs:** docs-only changes use the docs sidecar, umbrella issue #22, on a branch like `22-docs-sidecar`. Batch it into `dev` every day or two, then start the next batch from fresh `dev`.
 
 ## Port
 

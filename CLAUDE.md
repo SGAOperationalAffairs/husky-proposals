@@ -191,7 +191,8 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
   - Review diagrams live in FigJam.
   - Executive summaries are local Word documents.
 - **Issues are public.** Write them at the implementation level. Internal reasoning stays in local documents.
-- **After opening a pull request or issue in an interactive session,** open it in Luis's browser right away (`gh pr view <n> --web` or `gh issue view <n> --web`). Port's background agents skip this.
+- **After opening a pull request in an interactive session,** open it in Luis's browser right away (`gh pr view <n> --web`). Do not open issues; give the link. Port's background agents skip this.
+- **Docs-only changes go through the docs sidecar** (umbrella issue #22): commit to its branch and merge in a batch pull request every day or two. No separate issue and pull request per docs change.
 
 ## Hard rules
 
