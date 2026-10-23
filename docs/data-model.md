@@ -2,6 +2,8 @@
 
 This is a starting point derived from the PRD and the prototype. It is a proposal, not a decision. Confirm it with Luis before building migrations. Types are indicative.
 
+**`prisma/schema.prisma` is now the source of truth for fields and types** (drafted October 23, 2026, #6). This file keeps the rules, states, visibility, and permissions in prose. Where the two differ on a field, the schema wins.
+
 Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positions, and the email outbox, preferences, and limits follow `scalability.md`.
 
 ## Entities
@@ -141,3 +143,31 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - Updates
 - People (the check-in cadence comes later)
 - Options
+
+## Gaps found in the schema review
+
+Found while drawing the FigJam review diagrams (October 23, 2026, #6). Each needs a decision before the epic named in brackets. The schema's provisional defaults are listed in its comments.
+
+**States and transitions:**
+1. **No way to take down an approved idea.** Approved is final today. If something slips past review (a private name, abuse), nobody can unpublish it. Proposed: a reviewer or the VP can return it to `declined` with a reason, written to the review history. [E4]
+2. **No way for a student to withdraw a post.** A pending post the author no longer wants counts toward their 3 pending until someone declines it. Proposed: the author can withdraw a pending or declined post. [E4]
+3. **In progress only moves to delivered.** Real work stalls or gets dropped. Proposed: in progress can move to waiting, with a reason, and that writes a system update. [E7]
+4. **Delivered is final.** Fine for launch. Say so in the leader guide. [E10]
+5. **Editing after approval.** Not covered. Proposed: authors cannot edit an approved idea; they post a new one or ask the board to add an update. [E4]
+
+**Who sees what:**
+
+6. **Author names on posts that are not anonymous.** The rules say the student shape never includes `author_id`, and anonymous posts show no name. They never say whether a non-anonymous author's name is public. Proposed: yes, the display name only, never the email. [E5]
+7. **A reviewer's own post.** Leaders can post ideas. Nothing stops a chair from approving their own post. Proposed: a reviewer cannot decide their own post; the VP decides it, and the board's chair or director decides the VP's. [E4]
+8. **Board members.** `member_position_key` is stored, but the permissions table gives board members nothing beyond what students get. They matter only if D16 lands on option B. [E8]
+
+**Rules the schema needs a number or a definition for:**
+
+9. **Which updates reset the 14-day clock.** The view counts every update, including system ones, so moving an idea to another board resets it. Proposed: only board updates and the start event count. [E8]
+10. **Support on delivered ideas.** Allowed or not? Rank leaves delivered ideas out, but support is still possible. Proposed: allowed, since it shows demand to administration. [E6]
+11. **Deleting an account removes that student's supports,** so public counts drop. Proposed: accept it, and say so in the privacy notice. The alternative is keeping anonymous support rows. [D14]
+12. **Who receives reviewer reminders,** the board's chair or director, the VP, or both, and when. [E9]
+13. **Does the author follow their own post?** Proposed: yes, automatically, so they get updates on their own idea. [E6]
+14. **The abuse limit needs a shared store.** About 60 changes a minute per student only works if every server instance counts together. We have no Redis. Proposed: a small Postgres table, or Upstash like SGAuth. [E6]
+15. **Graduate students (D22).** Nothing in the session or the schema tells an undergraduate from a graduate student. If only undergraduates may act, SGAuth has to say so. [E3]
+16. **Waiting reasons.** The prototype offers five set reasons. The schema stores free text. Proposed: the set reasons in the form, saved as text, with "other" allowing free text. [E7]

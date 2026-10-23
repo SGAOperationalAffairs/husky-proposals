@@ -207,16 +207,16 @@ Run it after the scaffold. On an empty repository it has nothing to sample. Re-r
 
 ### Where port and our rules conflicted
 
-Decided October 23, 2026, except item 3.
+Decided October 23, 2026.
 
 1. **The default branch.** With `main` as default, config changes reached agents only after a release, and issues stayed open after merging into `dev`, so port's file-contention check held new tickets until the next release. **Decided:** `dev` is the default branch (see "Branches").
 2. **`CLAUDE.md` is session-required.** Port will not let an agent edit `CLAUDE.md`, so updating its "Where things live" and "Patterns" sections in every feature pull request would send every feature to `/port:implement`. **Decided:** those two sections live in `docs/ENGINEERING.md`, which agents can edit and review cites. Until `/port:analyze` creates it, the first feature pull request that needs them creates it.
-3. **`verify` needs secrets that agent worktrees do not have.** Anything in `bootstrap` or `checks` that needs a database fails on every run. Two parts of our plan need one:
+3. **`verify` needs secrets that agent worktrees do not have.** Anything in `bootstrap` or `checks` that needs a database fails on every run. Two parts of our plan needed one:
    - TypedSQL generates types from a live database, so `prisma generate --sql` cannot run in a worktree;
    - our database and browser tests use the Neon test branch.
 
-   **Recommendation:** the `verify:agent` split above, plus one of these for TypedSQL: commit the generated TypedSQL types, or write the one or two raw queries (the outbox claim) as tagged `$queryRaw` in `src/db/sql/`, validated with zod. The second changes a D20 rule, so it needs Luis's decision.
-   **Open:** Luis to choose.
+   **Decided:** the `verify:agent` split above, and no TypedSQL. Raw queries are tagged `$queryRaw` in `src/db/sql/`, parsed with zod, each with a test against the Neon test branch in CI.
+
 4. **The required human approval.** GitHub does not let an author approve their own pull request, and port opens pull requests from Luis's account. **Decided:** no required approval and no second reviewer. Luis's review and merge are the gate (see "Branch protection").
 5. **Squash merge subjects.** A squash merge's subject comes from a GitHub setting, not from port's commits. **Decided:** set the default squash message to the pull request title, and title pull requests `#N summary`, so `dev` keeps our format.
 
@@ -308,4 +308,3 @@ The repository is the memory. Chat history and local assistant memory do not tra
   - add `verify` as a required check once CI exists.
 
   Until the ruleset is split, merge feature pull requests with a merge commit, not rebase.
-- **TypedSQL in agent worktrees** (item 3 under "Where port and our rules conflicted") needs a decision before the schema work.
