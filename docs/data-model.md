@@ -74,7 +74,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - `support_count` per idea (public).
 - `rank` within the board: rank among that board's ideas that are not delivered, by `support_count`. Ties share a rank.
 - `willing_count`: number of participations.
-- `stale`: an in-progress idea whose latest counting update is older than its board's update cadence (monthly by default, set per board). The "Still working, no news" update counts. The schema change for per-board cadence is #12.
+- `stale`: an in-progress idea whose latest counting update is older than its board's update cadence (monthly by default, set per board). The "Still working, no news" update counts, and so does any status change (the view uses `status_changed_at`), so an idea that resumes after waiting starts a fresh clock. Moving boards and other system updates do not count. The schema change for per-board cadence is #12.
 - `board_load`: in-progress ideas for a board, where a large idea counts as 2. Compare with the soft guideline (default 2). Starting an idea past the guideline shows a heads-up and a confirm, not a block.
 - `pending_posts` per student: the number of their posts with review status `pending`.
 
@@ -122,6 +122,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | See who posted and who supported | No | No | Yes | Yes | Open (D16) |
 | Move an idea through statuses, post updates | No | No | Own board | All boards | No |
 | Change an idea's board | No | No | No | Yes | No |
+| Change a board's update cadence (SGA Options screen) | No | No | Own board | All boards | No |
 | See the People list (volunteers) | No | No | Own board | All boards | Open |
 | Promote an idea (later) | No | No | Open | Open | Open |
 
@@ -154,8 +155,8 @@ From a review of the plan with SGA leadership. These change the schema in #12 wh
 - **Categories:** a fixed list, one per board. Campus services that fit no board go to CSC. Anything else is declined with a short note pointing to the right SGA division or office.
 - **Similar ideas:** a simple word match on the title against approved ideas in the same category. No AI. Not on the cut list.
 - **Waiting reasons:** chosen from a short list of general reasons (for example "Waiting on university partners", "Needs more information", "The board is busy with other ideas"), with optional free text. Talks with administration are often confidential, so the specific reason is never required.
-- **Updates:** each board sets its cadence, monthly by default, with a one-tap "Still working, no news" update. [#12]
-- **Who supporters are:** support shows what students want; it is not proof of who is affected. Boards run their own surveys for that. Optional basic demographics may be collected: undergraduate or graduate, and major. Not year, which would need yearly edits. [#12]
+- **Updates:** each board has a cadence, monthly by default, with a one-tap "Still working, no news" update. The board's chair or director, or the VP, changes it in the SGA Options screen. [#12]
+- **Who supporters are:** support shows what students want; it is not proof of who is affected. Boards run their own surveys for that. Optional basic demographics may be collected: undergraduate or graduate, and major. Not year, which would need yearly edits. They are self-reported, shown to leaders only as counts, and never used to decide who may act. [#12]
 - **Promotion (after the soft launch):** any SGA leader can promote an idea. SGA ideas are tagged and may sit at the top, and students can always sort by support or by what is trending. Students get help promoting their own ideas: the copy-link share now, a short outreach guide later.
 - **Tabling form (E11):** a form on the idea page that boards use while tabling. Responses stay separate from verified support. Nobody gets an account from a form email, and nobody has to sign up to answer a form; a student has an account only if they create one through SGAuth.
 
@@ -178,11 +179,11 @@ Found while drawing the FigJam review diagrams (October 23, 2026, #6). Each need
 
 **Rules the schema needs a number or a definition for:**
 
-9. **Which updates reset the 14-day clock.** The view counts every update, including system ones, so moving an idea to another board resets it. Proposed: only board updates and the start event count. [E8]
+9. **Which updates reset the update clock.** Resolved in #12: board updates, check-ins, and status changes count. Moving boards and other system updates do not.
 10. **Support on delivered ideas.** Allowed or not? Rank leaves delivered ideas out, but support is still possible. Proposed: allowed, since it shows demand to administration. [E6]
 11. **Deleting an account removes that student's supports,** so public counts drop. Proposed: accept it, and say so in the privacy notice. The alternative is keeping anonymous support rows. [D14]
 12. **Who receives reviewer reminders,** the board's chair or director, the VP, or both, and when. [E9]
 13. **Does the author follow their own post?** Proposed: yes, automatically, so they get updates on their own idea. [E6]
 14. **The abuse limit needs a shared store.** About 60 changes a minute per student only works if every server instance counts together. We have no Redis. Proposed: a small Postgres table, or Upstash like SGAuth. [E6]
-15. **Graduate students (D22).** Nothing in the session or the schema tells an undergraduate from a graduate student. If only undergraduates may act, SGAuth has to say so. [E3]
+15. **Graduate students (D22).** Nothing in the session or the schema tells an undergraduate from a graduate student. If only undergraduates may act, SGAuth has to say so. The self-reported `studentLevel` field (#12) cannot enforce this. [E3]
 16. **Waiting reasons.** The prototype offers five set reasons. The schema stores free text. Proposed: the set reasons in the form, saved as text, with "other" allowing free text. [E7]

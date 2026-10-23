@@ -85,7 +85,8 @@ T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 - See `scalability.md`.
 
 **T0.3 Scaffold.** Repository setup, formatting and lint, environment config validated at startup, a deploy skeleton, and port setup.
-- A "hello" page deploys from the main branch.
+- A "hello" page deploys: `dev` to `proposals-dev`, and `main` to production. Previews deploy from feature branches.
+- It creates `docs/ENGINEERING.md` with empty "Patterns" and "Where things live" sections, so every later pull request has a place to record them.
 - `npm run verify` exists, and CI runs it on every pull request.
 - Every page sends `noindex`.
 - A lint rule enforces import and layering rules from the start (core modules never import Next.js; no imports that climb more than one folder).
@@ -202,7 +203,8 @@ Record response times, compute hours used, and SGAuth calls.
 **T3.3 SGA soft launch** (PRD D17), November 30 to December 13, on `proposals-dev`.
 - SGA members and the five boards sign in through auth-dev, on its allowlist.
 - Chairs and directors review real test posts and post updates. Then fix problems.
-- Release `v0.9.0` to `main` before it starts.
+- Release `v0.9.0` to `main` before it starts. That release is a checkpoint: testers use `proposals-dev`, which deploys from `dev`.
+- From November 30 to December 13, `dev` takes fixes only, so testers see a stable build. Winter-break work waits on its branches until the soft launch ends.
 
 **T3.4 Train chairs and directors.** A one-page guide for reviewers and for posting updates. Include the confidentiality rules for advisory boards and for names.
 

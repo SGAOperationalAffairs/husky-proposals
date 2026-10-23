@@ -210,7 +210,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 
 Both live in `docs/ENGINEERING.md`, not here, because port's agents cannot edit this file (see `docs/dev-process.md`, "How we run port"). Update them in the same pull request as the feature.
 
-`docs/ENGINEERING.md` does not exist yet. The first feature pull request that adds a pattern or a folder creates it, and `/port:analyze` later merges into it. Until then, there is nothing to check.
+`docs/ENGINEERING.md` does not exist yet. The scaffold (T0.3) creates it with both sections empty, and `/port:analyze` later merges into it. Until it exists, check the prototype and `design/tokens.css`, and answer the new-feature checklist below yourself.
 
 Patterns are filled in as the first features land, and no later than the fifth feature. List:
 - one component per idea;
