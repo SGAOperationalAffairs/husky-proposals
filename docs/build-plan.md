@@ -20,9 +20,9 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 | 0 | Oct 23 to 25 | Planning: port runbook, this plan, the schema draft and FigJam diagrams (T0.10, steps 1 to 3) | |
 | 1 | Oct 26 to Nov 1 | E1 scaffold, test harness, CI, port (T0.3, T0.4, T0.11). E2 schema and rules module (T0.5). E3 sign-in stand-in (T0.6). Specs and `/port:scope` for E4, E5, and E9 | D9 (appeals) answered, for the decline message in E4 |
 | 2 | Nov 2 to 8 | E4 posting and review (T0.7, T0.8). E5 public browsing. E9 outbox and worker | Checkpoint, Sunday Nov 8 |
-| 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1) | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
-| 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `proposals-dev` to SGAuth (T2.5). Student test (T2.6). Accessibility pass (T2.7) | **Feature freeze, Friday Nov 20** |
-| 5 | Nov 23 to 24 | Load test (T3.2), restore test (T3.1), fixes from the student test, reviewer training (T3.4). Release `v0.9.0` to `main` | |
+| 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1). SGAuth connection spike (T2.5a) as soon as the session endpoint is on auth-dev | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
+| 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `proposals-dev` to SGAuth (T2.5) | **Feature freeze, Friday Nov 20** |
+| 5 | Nov 23 to 24 | Load test (T3.2), restore test (T3.1), reviewer training (T3.4). Release `v0.9.0` to `main` | |
 | Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | |
 | 6 to 7 | Nov 30 to Dec 13 | **SGA soft launch** (T3.3) on `proposals-dev`: SGA members and the five boards, signed in through auth-dev. Chairs try reviewing and posting updates. Fix what breaks | |
 | Finals | Dec 14 to 20 | Change freeze except production breakage | |
@@ -32,6 +32,13 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 **Why a soft launch in December and students in spring:** classes end December 13, so few students would find the site before finals, but SGA members can use it right away. A spring launch, the week after classes start, gives time for onboarding, for fixes from the soft launch, and for features raised in review, such as the tabling form.
 
 **Capacity:** about 45 pull requests in four build weeks, about 11 a week, with one developer. This fits only if port does most of the implementation and Luis's time goes to plan gates, review, and merging. The checkpoints exist to cut early instead of at the freeze.
+
+**Review is the bottleneck, not coding.** Port writes and self-reviews pull requests quickly; a person still approves plans and merges. To keep the queue moving:
+- Review and merge within a day. Block time for it daily.
+- If more than 5 pull requests are approved and waiting, start no new tickets in port until the queue clears.
+- Budget about 30% of UI time for visual review rounds, and try new layouts on the playground page (T0.3) before a real screen.
+
+**Sign-in setup is slow and fails hard.** Environment variables, secrets, product registration, the auth-dev allowlist, and test accounts all have to line up. That is why the connection spike (T2.5a) comes a week before the switch, and why the soft launch can fall back to the stand-in.
 
 ## Checkpoints and cuts
 
@@ -81,6 +88,9 @@ T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 - A "hello" page deploys from the main branch.
 - `npm run verify` exists, and CI runs it on every pull request.
 - Every page sends `noindex`.
+- A lint rule enforces import and layering rules from the start (core modules never import Next.js; no imports that climb more than one folder).
+- A playground page, local only, for trying UI pieces before they go into a screen.
+- Browser tests run on Chromium and WebKit (iPhone Safari). Firefox runs only in `verify:all`.
 
 **T0.4 Test harness.** Test runner, a Neon test branch, factories, invented fixtures, a mailer that captures emails, and a fake clock.
 - `npm run verify` runs locally and in CI in under 5 minutes.
@@ -160,13 +170,18 @@ Across T1.1 to T1.9, the student view and the SGA view match the prototype's beh
 
 Add the access log if it was decided.
 
+**T2.5a SGAuth connection spike** (week 3, as soon as SGAuth's session endpoint is on auth-dev). Prove one real sign-in end to end before the switch.
+- Write the environment checklist: every variable and secret per environment (local, preview, `proposals-dev`, production), where each comes from, and who can issue it.
+- Register the product and the `proposals` and `proposals-dev` subdomains. Get Luis's account and test accounts on the auth-dev allowlist.
+- One signed-in request on `proposals-dev` returns the session shape the stand-in fakes. Note every difference.
+
 **T2.5 Switch to SGAuth.** When SGAuth milestone 2 lands, replace the stand-in on `proposals-dev`.
-- Register the product and subdomains.
-- Get test accounts on the auth-dev allowlist.
+- Swapping in SGAuth changes one module, as planned in T0.6.
+- If it is not working by Friday Nov 27, the soft launch runs on the stand-in for SGA members, and the switch moves to winter break.
 
-**T2.6 Test with students.** Five students on their phones, thinking out loud. Fix what confuses them.
+**T2.6 Test with students.** Five students on their phones, thinking out loud. Fix what confuses them. SGA members test during the soft launch; the five-student test runs in early January (E13), when students can act on the site.
 
-**T2.7 Accessibility pass.** Keyboard, focus, contrast, reduced motion, and screen reader checks.
+**T2.7 Accessibility.** Keyboard, focus, contrast, reduced motion, and text alternatives are checked in every UI pull request, not saved for one week. A screen reader pass runs during the soft launch.
 
 ## Milestone 3: soft launch, then student launch (Nov 23 to Jan 20)
 
