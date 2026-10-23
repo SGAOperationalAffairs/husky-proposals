@@ -24,13 +24,14 @@ The repository, `SGAOperations/husky-proposals`, is owned by SGA Operations (Dig
 **In the repository:**
 1. This file. It holds the product rules, stack, and working rules.
 2. `docs/data-model.md` has the proposed entities, states, rules, viewer shapes, and permissions.
-3. `docs/build-plan.md` has milestones and tasks with acceptance criteria.
-4. `docs/dev-process.md` explains how work is planned, built, tested, and recorded.
-5. `docs/sgauth-integration.md` covers sign-in through SGAuth and what SGAuth must finish.
-6. `docs/scalability.md` covers design targets, email, database, and limits.
-7. `prototype/concept-2.html` is a clickable prototype. Open it in a browser, and use the switch at the top to flip between the student view and the SGA view. It is the reference for layout and wording.
-8. `design/wireframes/` and `design/tokens.css` are for look and feel.
-9. `reference/` has the SGA Constitution and Bylaws.
+3. `docs/timeline.md` has the dates by epic and the checkpoints. **To answer "what's due today," read it first** (its "Today, in short" section says how).
+4. `docs/feature-map.md` has the epics. `docs/build-plan.md` has the tasks with acceptance criteria.
+5. `docs/dev-process.md` explains how work is planned, built, tested, and recorded.
+6. `docs/sgauth-integration.md` covers sign-in through SGAuth and what SGAuth must finish.
+7. `docs/scalability.md` covers design targets, email, database, and limits.
+8. `prototype/concept-2.html` is a clickable prototype. Open it in a browser, and use the switch at the top to flip between the student view and the SGA view. It is the reference for layout and wording.
+9. `design/wireframes/` and `design/tokens.css` are for look and feel.
+10. `reference/` has the SGA Constitution and Bylaws.
 
 **Local only:** these are gitignored and kept by Luis, because they hold internal deliberation. Ask him when you need a decision from them.
 - `docs/PRD.md` is the source of truth for what to build and why, with the decision log.
@@ -52,7 +53,7 @@ The prototype predates several decisions. Reuse its layout, spacing, components,
   - the promoted area;
   - a reviewer badge.
 - **Behavior to change:**
-  - flag in-progress ideas after **14 days** without an update, not 30;
+  - flag in-progress ideas that miss their board's update cadence (monthly by default, set per board), not a fixed 30 days, and offer a one-tap "Still working, no news" update;
   - rank wording must not read as a promise;
   - the "ready for review" threshold is a guide, not a rule;
   - the board guideline is soft: 2 ideas, where a large idea counts as 2, with a heads-up and a confirm.
@@ -89,9 +90,11 @@ Version 1 covers the five Campus Affairs boards:
 - GIB (Green Initiatives Board)
 - SC (Sustainability Committee)
 
-Target: live by early December 2026, with the exact date still to be set.
+Targets (see `docs/timeline.md`):
+- **SGA soft launch,** November 30 to December 13, 2026, on `proposals-dev` for SGA members and the five boards.
+- **Student launch,** proposed for January 20, 2027, the week after spring classes start.
 
-**December scope:**
+**Soft launch scope:**
 - sign-in;
 - posting with the anonymous option;
 - the review queue with reasons;
@@ -101,15 +104,17 @@ Target: live by early December 2026, with the exact date still to be set.
 - status and updates;
 - the SGA queue;
 - start, hold, and deliver;
-- update reminders (flag any in-progress idea with no update in 14 days);
+- update reminders (flag an in-progress idea that misses its board's cadence);
 - email to followers;
-- the "I'll participate" tap with a simple list of names.
+- the "I'll participate" tap with a simple list of names;
+- a copy-link share.
 
-**After December:**
+**Winter break, before the student launch:** the tabling form on each idea page (estimated at the November 20 freeze), the promoted area for leader ideas, and spring launch prep.
+
+**Later:**
 - the volunteer check-in cadence (cut first if time runs short);
 - the monthly summary (in the SGA Monthly Newsletter);
 - the share image and flyer;
-- the promoted area for leader ideas;
 - export;
 - a link to Senate;
 - club endorsements.
@@ -228,12 +233,10 @@ Patterns are filled in as the first features land, and no later than the fifth f
 - **Match `design/tokens.css`:** Husky red `#C8102E`, square corners, the system font, flat bordered cards with a 5px accent rule across the top, and light and dark mode.
 - **Test the review flow and the privacy rules carefully.** They are the riskiest parts.
 
-## Current state (October 22, 2026)
+## Current state (October 23, 2026)
 
-- The planning docs are written, and the stack is decided. The repository has no code yet.
-- **Next:**
-  1. Make the first commit (the docs).
-  2. Do T0.3 (scaffold) and T0.4 (test harness).
+- The planning docs, port runbook, feature map, timeline, and draft schema are written. The repository has no code yet.
+- **Next:** T0.3 (scaffold) and T0.4 (test harness). Dates are in `docs/timeline.md`.
 - **To confirm with Eli:** the Vercel plan, the product registration, and the subdomains.
 - **Waiting on SGAuth:** see the milestones in `docs/sgauth-integration.md`.
 - **Waiting on Luis to raise with Eli:** the email limit proposal (PRD D19).

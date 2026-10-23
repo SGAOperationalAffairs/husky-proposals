@@ -7,7 +7,9 @@
 
 Updated October 22, 2026: the sign-in and email spikes are answered, and scalability, testing, and governance tasks are added.
 
-Rebaselined October 23, 2026, to launch on Thursday, December 3, 2026. The code has not started, so the old dates no longer held.
+Rebaselined October 23, 2026. The code has not started, so the old dates no longer held. Later the same day (#9): December became an SGA soft launch, and the student launch moved to spring.
+
+The dates by epic, with a chart, are in `timeline.md`. Start there to see what is due.
 
 ## Calendar
 
@@ -21,43 +23,45 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 | 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1) | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
 | 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `proposals-dev` to SGAuth (T2.5). Student test (T2.6). Accessibility pass (T2.7) | **Feature freeze, Friday Nov 20** |
 | 5 | Nov 23 to 24 | Load test (T3.2), restore test (T3.1), fixes from the student test, reviewer training (T3.4). Release `v0.9.0` to `main` | |
-| Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | SGAuth milestone 3 live by Sunday Nov 29 |
-| 6 | Nov 30 to Dec 2 | Soft launch to SGA members and the five boards (T3.3). Fix what breaks | Data policy (D14) in place before launch |
-| 6 | Thu Dec 3 | **Launch, `v1.0.0`** (T3.5, T3.6), announced to students | |
-| 7 | Dec 3 to 13 | The last class days. Small fixes and hotfixes only | |
+| Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | |
+| 6 to 7 | Nov 30 to Dec 13 | **SGA soft launch** (T3.3) on `proposals-dev`: SGA members and the five boards, signed in through auth-dev. Chairs try reviewing and posting updates. Fix what breaks | |
 | Finals | Dec 14 to 20 | Change freeze except production breakage | |
+| Winter break | Dec 21 to Jan 12 | E11 tabling form (if the estimate fits), E12 promoted area, E13 spring launch prep | |
+| Spring | Wed Jan 20, 2027 | **Student launch, `v1.0.0`** (T3.5, T3.6), proposed | SGAuth milestone 3 live in production. Data policy (D14) in place |
 
-**Why December 3:** it leaves two weeks of classes before finals for students to find and use the site. Launching during finals would get little use, and reviewers would struggle to keep the 3-day review target.
+**Why a soft launch in December and students in spring:** classes end December 13, so few students would find the site before finals, but SGA members can use it right away. A spring launch, the week after classes start, gives time for onboarding, for fixes from the soft launch, and for features raised in review, such as the tabling form.
 
 **Capacity:** about 45 pull requests in four build weeks, about 11 a week, with one developer. This fits only if port does most of the implementation and Luis's time goes to plan gates, review, and merging. The checkpoints exist to cut early instead of at the freeze.
 
 ## Checkpoints and cuts
 
-Cut December scope in this order. Each line says what is lost.
+Cut soft-launch scope in this order. Each line says what is lost. A cut item moves to winter break, not out of the product.
 
 1. **The "as it happens" email option.** Weekly digests only.
-2. **The similar-idea warning** on the post form. Reviewers catch duplicates instead.
-3. **Update templates and the preview** of what students see. Updates are plain text.
-4. **Rank within the board.** Show the support count and squares only.
-5. **Remembered signed-out taps (T1.9).** A signed-out tap goes to sign-in and returns to the idea page, and the student taps again.
-6. **Follow and follower digests.** Keep emails about a student's own post and reviewer reminders. This is the last cut before moving the date, since email to followers is a Must in the PRD.
+2. **Update templates and the preview** of what students see. Updates are plain text.
+3. **Rank within the board.** Show the support count and squares only.
+4. **Remembered signed-out taps (T1.9).** A signed-out tap goes to sign-in and returns to the idea page, and the student taps again.
+5. **Follow and follower digests.** Keep emails about a student's own post and reviewer reminders.
+
+The similar-idea check is not on the list. It is a simple word match and stays in.
 
 **When to cut:**
-- **Sunday Nov 8:** if E4 and E5 are not merged into `dev`, cut 1 to 3.
-- **Sunday Nov 15:** if E6 and E7 are not merged, also cut 4 and 5.
-- **Friday Nov 20 (freeze):** anything not merged moves after launch. If follower email does not work end to end on `proposals-dev`, cut 6.
+- **Sunday Nov 8:** if E4 and E5 are not merged into `dev`, cut 1 and 2.
+- **Sunday Nov 15:** if E6 and E7 are not merged, also cut 3 and 4.
+- **Friday Nov 20 (freeze):** anything not merged moves after the soft launch. If follower email does not work end to end on `proposals-dev`, cut 5.
 
 **Never cut:** the review step, anonymous posting and the privacy tests, `noindex`, backups with a tested restore, and the switch to turn off posting (see `feature-map.md`).
 
-**Already after December, unchanged:** the volunteer check-in cadence, the monthly summary, the share image and flyer, the promoted area, export, a link to Senate, and club endorsements.
+**After the soft launch:** the tabling form (E11), the promoted area (E12), the volunteer check-in cadence, the monthly summary, the share image and flyer, export, a link to Senate, and club endorsements. A basic copy-link share is in the soft launch (E5).
 
 ## The SGAuth gate
 
-Students cannot sign in until SGAuth milestone 3 is live in production (`sgauth-integration.md`). As of October 23, SGAuth has pull requests open for #40, #68, #32, and #115. There are none yet for #30, #31, #114, #37, or #103.
+The soft launch runs on `proposals-dev` against auth-dev, with SGA members on its sign-up allowlist, so it needs only milestone 2. Students cannot sign in until milestone 3 is live in production (`sgauth-integration.md`), which gates the student launch. As of October 23, SGAuth has pull requests open for #40, #68, #32, and #115. There are none yet for #30, #31, #114, #37, or #103.
 
 - **If milestone 2 is not done by Monday Nov 16,** `proposals-dev` stays on the stand-in, and the switch (T2.5) moves to Nov 23 and 24.
-- **If milestone 3 is not live by Sunday Nov 29,** December 3 becomes an SGA-only pilot on `proposals-dev`, with SGA members on the auth-dev allowlist. The student launch moves to the start of spring classes, the week of January 13, 2027.
-- **If SGAuth is still on 100 emails a day at launch,** announce to students in stages (D17, D19).
+- **If milestone 2 is not done by Monday Nov 30,** the soft launch runs on the stand-in for SGA members only, with invented test accounts. Real sign-in waits.
+- **If milestone 3 is not live by early January,** the student launch moves later than January 20.
+- **If SGAuth is still on 100 emails a day at the student launch,** announce to students in stages (D17, D19).
 
 ## Milestone 0: foundations (Oct 13 to Nov 8)
 
@@ -140,7 +144,7 @@ Across T1.1 to T1.9, the student view and the SGA view match the prototype's beh
 
 ## Milestone 2: keeping people informed (Nov 9 to Nov 20)
 
-**T2.1 Updates.** Post an update with templates and a preview of what students see. Flag in-progress ideas with no update in 14 days.
+**T2.1 Updates.** Post an update with templates and a preview of what students see. Flag in-progress ideas that miss the board's update cadence (monthly by default, set per board), and offer a one-tap "Still working, no news" update that counts.
 
 **T2.2 Follow and email.** Follow an idea, plus the email outbox, priorities, and the worker.
 - Decisions on a student's own post are sent right away.
@@ -164,7 +168,7 @@ Add the access log if it was decided.
 
 **T2.7 Accessibility pass.** Keyboard, focus, contrast, reduced motion, and screen reader checks.
 
-## Milestone 3: launch (Nov 23 to Dec 20)
+## Milestone 3: soft launch, then student launch (Nov 23 to Jan 20)
 
 **T3.1 Monitoring and backups.**
 - Quota alerts at 50%, 70%, and 85% for Neon, email, and Vercel.
@@ -178,7 +182,10 @@ Add the access log if it was decided.
 
 Record response times, compute hours used, and SGAuth calls.
 
-**T3.3 Soft launch** (PRD D17), staged to keep sign-ups under SGAuth's email limit unless SGAuth has moved to a paid plan. Then fix problems.
+**T3.3 SGA soft launch** (PRD D17), November 30 to December 13, on `proposals-dev`.
+- SGA members and the five boards sign in through auth-dev, on its allowlist.
+- Chairs and directors review real test posts and post updates. Then fix problems.
+- Release `v0.9.0` to `main` before it starts.
 
 **T3.4 Train chairs and directors.** A one-page guide for reviewers and for posting updates. Include the confidentiality rules for advisory boards and for names.
 
@@ -188,15 +195,14 @@ Record response times, compute hours used, and SGAuth calls.
 - There is a way to turn off posting.
 - There is a contact address on the site.
 
-**T3.6 Launch to all five boards.**
+**T3.6 Student launch,** proposed for January 20, 2027, across all five boards. Staged to keep sign-ups under SGAuth's email limit unless SGAuth has moved to a paid plan. `v1.0.0`.
 
-## After December
+## After the soft launch
+
+The tabling form (E11), the promoted area (E12), and spring launch prep (E13) are planned for winter break, and the monthly summary and export for after the student launch (`timeline.md`). The rest has no date yet:
 
 - The volunteer check-in cadence.
-- The monthly summary, as a section of the SGA Monthly Newsletter.
 - The share image and flyer.
-- The promoted area.
-- Export for administration.
 - A safe way to merge duplicate ideas (with a reason, a notice to supporters, and undo).
 - A link to Senate (Sense of the Senate or Senate Resolution).
 - Club endorsements.
