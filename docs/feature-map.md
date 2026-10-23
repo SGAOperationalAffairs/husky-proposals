@@ -35,9 +35,9 @@ E1 ──> E3 ──┘                       │
        E2 ──> E9 (outbox first; decision emails after E4, digests after E8)
 ```
 
-After week 1, three lanes can run at the same time:
+After week 1, three streams can run at the same time:
 
-| Lane | Epics | Mostly touches |
+| Stream | Epics | Mostly touches |
 |---|---|---|
 | Student side | E5, then E6 | Public pages, support and follow actions |
 | SGA side | E4, then E7, then E8 | Posting, review, the queue, updates |
@@ -45,9 +45,11 @@ After week 1, three lanes can run at the same time:
 
 E10's monitoring and backups can run in any gap after E1.
 
-**Keeping lanes from colliding.** Port holds a ticket when an in-flight plan claims 2 or more of the same files. Two files are shared by almost everything:
+**Port lane or sidecar** (`dev-process.md`, "Two lanes"): E1 is built in the sidecar, since it is setup work and port needs it first. E2 and E9 go through port. E4, E6, E7, and E8 split: rules and server actions through port, screens in the sidecar. E5 and the playground page are mostly sidecar. E10 is mostly port, plus the soft launch itself.
+
+**Keeping streams from colliding.** Port holds a ticket when an in-flight plan claims 2 or more of the same files. Two files are shared by almost everything:
 - `prisma/schema.prisma`: land every soft-launch table in E2, up front. Later epics add columns only when they must.
-- The shared rules module: E2 defines every status, transition, permission, and limit before the lanes start. Lanes import it and rarely change it.
+- The shared rules module: E2 defines every status, transition, permission, and limit before the streams start. Streams import it and rarely change it.
 
 ## Never cut
 
