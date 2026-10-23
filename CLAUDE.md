@@ -169,7 +169,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 
 ## Working rules
 
-- **GitHub Issues are the only backlog.** File agreed work as an issue. One issue is one small pull request. See `docs/dev-process.md`.
+- **GitHub Issues are the only backlog.** File agreed work as an issue. One issue is one small pull request in the port lane. UI work can go through the sidecar lane, batched into one pull request every day or two. Viewer shapes, permissions, the review state machine, migrations, and privacy tests never go through the sidecar. See `docs/dev-process.md`, "Two lanes."
 - **Before starting an issue,** read it. If it has a catch, say so in two or three lines first.
 - **Side tangents:** confirm once, then file an issue and move on. Do not fix unrelated problems inline.
 - **Test-first:** write the failing test, see it fail for the right reason, then write the code.

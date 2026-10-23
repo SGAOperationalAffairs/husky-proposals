@@ -84,11 +84,32 @@ The first commit, on `docs/initial-planning`, predates the issue tracker and doe
 
 - **GitHub Issues are the only backlog.** No task lists in chat or in docs. When work is agreed, file it as an issue.
 - **Labels:** feature, ux, ops, bug, idea, parked, refactor, epic. Port adds its own pipeline labels.
-- **One issue is one pull request.** Keep pull requests small, usually 2 to 15 files. A large mechanical change, such as a rename across the codebase, gets its own issue and pull request with nothing else in it.
+- **One issue is one pull request in the port lane.** Sidecar pull requests batch several UI issues (see "Two lanes"). Keep pull requests small, usually 2 to 15 files. A large mechanical change, such as a rename across the codebase, gets its own issue and pull request with nothing else in it.
 - **Epics** group related issues with a checklist.
 - **Before starting an issue,** read it. If the request has a catch, say so in two or three lines before building.
 - **Close every issue with a short note:** what shipped, and which tests prove it.
 - **Side tangents:** confirm once, then file an issue and move on. Do not fix unrelated problems inline.
+
+## Two lanes
+
+Agreed October 23, 2026. Port is built for hands-off work: plan, approve, wait for a reviewed pull request. That suits logic, but UI is a loop of look, nudge, look again, and a pull request per round is too slow. So there are two ways to get work into `dev`.
+
+| | Port lane | Sidecar lane |
+|---|---|---|
+| For | Logic where a bug is costly or hard to see | Screens, layout, copy, polish, and setup work |
+| Epics | E2, E9, the server and rules side of E4, E6, and E8, and most of E10 | E1 (the scaffold), the UI side of E4 to E8, E5, E7, and the playground page |
+| How | Issue, plan, agent pull request, review agent, Luis merges | Luis and an interactive session on one branch, pushing often |
+| Pull requests | One per issue | One batch every day or two, listing every issue it closes |
+| Checks | `verify:agent`, then full `verify` in CI | The fast tier while working, then full `verify` in CI on the batch pull request |
+
+**Sidecar rules:**
+- **Branch:** named after an umbrella issue, for example `31-ui-browsing`, so port can still match it to an issue. Cut from `dev`, rebase onto `dev` daily, and merge within a day or two. A long-running branch drifts and ends in a painful merge.
+- **Folders:** the sidecar owns the page and component folders. Port owns `src/core/`, `src/db/`, and the server actions. The sidecar calls port's functions but does not change them; port tickets do not restyle screens.
+- **Keep port out:** label the umbrella issue `in progress` and give it a `## Changes` file list that claims the sidecar's folders, so port's file-contention check holds tickets that touch them. Confirm this works at `/port:init` before relying on it.
+- **Never in the sidecar:** viewer shapes, permissions, the review state machine, migrations, and the privacy tests. They go through the port lane, test first, even when the sidecar would be faster.
+- **Verify quickly:** local dev with the sign-in stand-in for signed-in screens, and the branch's Vercel preview on a phone (browse-only, since sign-in cannot work on `vercel.app`). New layouts start on the playground page.
+- **Bugs found while working:** file an issue right away, or fix it in place if it is in the UI being worked on.
+- **Commits:** `#N summary`, where `#N` is the issue the change is for. Nothing is pushed straight to `dev` or `main`.
 
 ## Port
 
