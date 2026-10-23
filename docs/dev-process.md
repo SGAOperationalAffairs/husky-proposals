@@ -47,7 +47,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 ### Releases
 
 - **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
-- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`.
+- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`. The soft launch runs on `proposals-dev`, which deploys from `dev`, so `v0.9.0` on `main` is a checkpoint, not the build testers use.
 - **Cadence:** release when a milestone's work is verified on `proposals-dev`. Weekly during launch.
 
 ### Hotfixes

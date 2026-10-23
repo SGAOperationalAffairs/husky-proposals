@@ -104,7 +104,7 @@ What SGAuth guarantees (checked October 23, 2026): the session endpoint reads po
 
 | What goes stale | Effect | Plan |
 |---|---|---|
-| Positions in the SDK cache (60 seconds, up to 5 minutes stale while SGAuth is down) | A chair whose term ended keeps powers briefly | Accept 60 seconds. Leader-only actions never use a stale-on-error answer: they fail closed with "SGA tools are unavailable, try again shortly." Students may use the stale answer |
+| Positions in the SDK cache (60 seconds, up to 5 minutes stale while SGAuth is down) | A chair whose term ended keeps powers briefly | Accept 60 seconds. Leader-only actions never use a stale-on-error answer: they fail closed with "SGA tools are unavailable, try again shortly." Students may use the stale answer. With no answer at all, a student's tap shows "Couldn't save, try again" and the button returns to its previous state; nothing retries silently. This lives in our sign-in module, so it holds whether we use the SGAuth SDK or our own small client against #40, which would not serve stale answers unless we build it to |
 | Name and email copied into `users` | Emails go to an old address; a student who never returns is never refreshed | Refresh on each session check, at most once a day |
 | Deactivated or deleted accounts | They cannot act (SGAuth returns 401), but digests keep going | Ask SGAuth for a deactivation feed; until then, stop digests to users not seen in 120 days |
 | Who holds a board's chair position | We only learn positions at sign-in, so reminders can reach a former chair and miss a new one | Keep last-seen positions for routing reminders only, never for permissions; always copy the VP; ask SGAuth for a holders lookup |

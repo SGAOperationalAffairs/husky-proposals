@@ -81,7 +81,7 @@ gantt
 | Mon Nov 16 | SGAuth milestone 2 done | Stay on the stand-in; the switch moves to Nov 23 to 24 |
 | Fri Nov 20 | Feature freeze. Estimate the tabling form (E11) | Anything unmerged moves after the soft launch |
 | Fri Nov 27 | Real sign-in working on `proposals-dev` | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
-| Mon Nov 30 | Soft launch starts on `proposals-dev`, SGA members on the auth-dev allowlist | |
+| Mon Nov 30 | Soft launch starts on `proposals-dev` (deployed from `dev`), SGA members on the auth-dev allowlist. `dev` takes fixes only until Dec 13 | |
 | Dec 14 to 20 | Finals: production breakage only | |
 | Before Jan 20 | SGAuth milestone 3 live in production. D14 data policy in place | The student launch waits |
 | Wed Jan 20 | Student launch, `v1.0.0` (proposed) | |
