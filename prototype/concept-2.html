@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: Concept 2</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5; --surface: #FFFFFF; --ink: #1A1D26; --muted: #596070; --line: #DADDE4;
+  --accent: #C8102E; --accent-text: #C8102E; --on-accent: #FFFFFF;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --sky: #E3EBF7; --sky-ink: #26456F;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --green: #DCF0E5; --green-ink: #17603B;
+  --grey: #E8EAEF; --grey-ink: #424959;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --accent: #D52F47; --accent-text: #FF8696;
+    --sky: #1F2E47; --sky-ink: #A9C6F2; --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2; --grey: #2A2E38; --grey-ink: #C4C9D4; --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --accent: #D52F47; --accent-text: #FF8696;
+  --sky: #1F2E47; --sky-ink: #A9C6F2; --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --green: #153325; --green-ink: #92D7B2; --grey: #2A2E38; --grey-ink: #C4C9D4; --focus: #7AA7F0;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 1.1em; height: 1.1em; flex: none; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 56px; }
+
+/* header */
+.top { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); margin-top: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark { width: 40px; height: 40px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 800; font-size: .9rem; }
+.brand b { display: block; line-height: 1.15; font-size: 1.1rem; }
+.brand small { color: var(--muted); }
+.who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.seg button { appearance: none; border: 0; background: transparent; padding: 7px 13px; font-size: .9rem; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.sel { padding: 7px 10px; border: 1px solid var(--line); background: var(--surface); max-width: 100%; }
+.btn { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.line { border-color: var(--accent-text); color: var(--accent-text); background: transparent; }
+.btn.sm { padding: 4px 10px; font-size: .85rem; }
+.btn[aria-disabled="true"] { opacity: .55; }
+
+/* tabs */
+.tabs { position: relative; display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 14px 0 20px; overflow-x: auto; }
+.tab { appearance: none; border: 0; background: transparent; padding: 11px 16px; border-bottom: 3px solid transparent; margin-bottom: -1px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent-text); font-weight: 650; }
+.badge { background: var(--accent); color: var(--on-accent); font-size: .75rem; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; }
+.badge.zero { background: var(--grey); color: var(--grey-ink); }
+
+h2.pt { font-size: 1.6rem; line-height: 1.15; margin: 0 0 4px; letter-spacing: -0.01em; }
+.sub { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+.box { background: var(--surface); border: 1px solid var(--line); }
+.pad { padding: 16px 18px; }
+.note { font-size: .86rem; color: var(--muted); margin: 8px 0 0; }
+
+/* tags and chips */
+.tg { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; padding: 1px 8px; background: var(--accent-soft); color: var(--accent-text); }
+.mini { font-size: .78rem; color: var(--muted); border: 1px solid var(--line); padding: 0 7px; }
+.mini.warn { color: var(--amber-ink); background: var(--amber); border-color: transparent; }
+.mini.ok { color: var(--green-ink); background: var(--green); border-color: transparent; }
+.mini.hot { color: var(--accent-text); border-color: var(--accent-text); }
+.st { font-size: .78rem; font-weight: 600; padding: 2px 9px; white-space: nowrap; display: inline-block; }
+.st-collecting { background: var(--grey); color: var(--grey-ink); }
+.st-review { background: var(--sky); color: var(--sky-ink); }
+.st-active { background: var(--amber); color: var(--amber-ink); }
+.st-delivered { background: var(--green); color: var(--green-ink); }
+.st-waiting { background: transparent; color: var(--grey-ink); border: 1px solid var(--line); }
+.st-overdue { background: var(--accent-soft); color: var(--accent-text); }
+
+/* queue */
+.todo { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.todo-i { appearance: none; text-align: left; background: var(--surface); border: 1px solid var(--line); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.todo-i:hover { border-color: var(--accent-text); }
+.todo-i b { font-size: 1.8rem; line-height: 1; min-width: 34px; color: var(--accent-text); }
+.todo-i span { font-size: .88rem; color: var(--muted); }
+.bcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.bcard { appearance: none; text-align: left; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.bcard[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.bcard b { font-size: 1rem; }
+.bcard small { color: var(--muted); }
+.pips { display: flex; gap: 4px; align-items: center; }
+.pip { width: 22px; height: 10px; background: var(--line); }
+.pip.on { background: var(--accent); }
+.bact { font-size: .84rem; margin: 0; min-height: 1.3em; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--surface); padding: 5px 12px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.search { flex: 1 1 180px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); background: var(--surface); }
+.rows { background: var(--surface); border: 1px solid var(--line); }
+.row, .rowh { display: grid; grid-template-columns: 44px minmax(0, 1fr) 118px 96px 78px 152px; gap: 12px; align-items: center; padding: 11px 14px; }
+.rowh { font-size: .8rem; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--bg); padding-top: 8px; padding-bottom: 8px; }
+.row { appearance: none; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; }
+.row:last-child { border-bottom: 0; }
+.row:hover { background: var(--accent-soft); }
+.row.hl { background: var(--accent-soft); }
+.rk { font-weight: 700; color: var(--muted); }
+.ti { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ti b { font-weight: 650; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.nm b { font-size: 1.1rem; display: block; line-height: 1.2; }
+.nm small { color: var(--muted); font-size: .8rem; }
+.age { color: var(--muted); font-size: .88rem; }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(10, 12, 18, .5); z-index: 40; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--surface); border-left: 1px solid var(--line); z-index: 41; overflow: auto; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.drawer h3 { margin: 6px 0 8px; font-size: 1.35rem; line-height: 1.2; }
+.dhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.stats div { background: var(--bg); padding: 10px 8px; text-align: center; }
+.stats b { display: block; font-size: 1.4rem; line-height: 1.1; }
+.stats span { font-size: .78rem; color: var(--muted); }
+.dsec { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+.dsec h4 { margin: 0 0 8px; font-size: .95rem; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inline .sel { flex: 1 1 140px; min-width: 0; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
+.chk input { accent-color: var(--ink); width: 16px; height: 16px; margin: 0; }
+.log { list-style: none; margin: 0; padding: 0; font-size: .9rem; }
+.facts { margin: 10px 0 8px; font-size: .92rem; color: var(--muted); }
+.facts b { color: var(--ink); font-size: 1rem; }
+.dd { margin: 0 0 12px; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.linkbtn { appearance: none; border: 0; background: none; padding: 0; color: var(--accent-text); text-decoration: underline; }
+.dact { margin: 14px 0 4px; }
+.bsum { margin: 0; font-size: .92rem; }
+.log li { display: grid; grid-template-columns: 62px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.log time { color: var(--muted); }
+
+/* forms */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input, .field select, .field textarea { padding: 9px 11px; border: 1px solid var(--line); background: var(--bg); width: 100%; }
+.field textarea { min-height: 96px; resize: vertical; }
+.hint { background: var(--amber); color: var(--amber-ink); padding: 10px 12px; font-size: .9rem; }
+.pv { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.pv h4 { margin: 0; font-size: 1.1rem; line-height: 1.25; }
+.pv p { margin: 0; color: var(--muted); font-size: .92rem; }
+.pvh { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pvl { font-size: .8rem; color: var(--muted); margin: 0 0 8px; }
+.ledger { border: 1px solid var(--line); background: var(--surface); padding: 10px 12px; font-size: .92rem; }
+.ledger time { color: var(--muted); margin-right: 10px; }
+.notif { background: var(--ink); color: var(--bg); padding: 10px 12px; font-size: .88rem; }
+
+/* updates list */
+.ulist .urow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ulist .urow:last-child { border-bottom: 0; }
+.urow[aria-current="true"] { background: var(--accent-soft); }
+
+/* people */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--line); padding: 10px 14px; }
+.tile b { font-size: 1.6rem; line-height: 1.1; display: block; }
+.tile span { font-size: .84rem; color: var(--muted); }
+.prow { display: grid; grid-template-columns: 26px 36px minmax(0, 1.1fr) minmax(0, 1.4fr) 150px 112px auto; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.prow input { accent-color: var(--ink); width: 16px; height: 16px; }
+.av { width: 34px; height: 34px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.pi { display: flex; flex-direction: column; min-width: 0; }
+.pi small, .pd small { color: var(--muted); font-size: .8rem; }
+.pi small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw { font-size: .9rem; min-width: 0; }
+.pd { font-size: .88rem; }
+.pa { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.bulk { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 12px; background: var(--ink); color: var(--bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bulk .btn { color: var(--ink); }
+
+dialog { width: min(600px, 94vw); max-height: 92vh; overflow: auto; padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 12, 18, .55); }
+.dlg { padding: 20px; }
+.dlg h3 { margin: 0 0 4px; font-size: 1.3rem; }
+.dlg .sub { margin-bottom: 12px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.optrow { padding: 12px 0; border-top: 1px solid var(--line); }
+.optrow:first-of-type { border-top: 0; }
+.optrow b { display: block; }
+.optrow small { display: block; color: var(--muted); margin-bottom: 8px; }
+
+/* filters that belong to the list */
+.listbox { background: var(--surface); border: 1px solid var(--line); }
+.listbox .rows { border: 0; border-top: 1px solid var(--line); }
+.fbar { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.fbar .search { width: 100%; flex: none; }
+.fgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 12px; align-items: end; }
+.fld { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fld span { font-size: .8rem; font-weight: 600; }
+.fld select { padding: 7px 10px; border: 1px solid var(--line); background: var(--surface); width: 100%; }
+.fld select:disabled { opacity: .75; background: var(--bg); }
+.fld small { color: var(--muted); font-size: .76rem; }
+.count { margin: 0; font-size: .9rem; color: var(--muted); padding-bottom: 20px; white-space: nowrap; }
+.count b { color: var(--ink); font-size: 1.15rem; }
+.fbar.slim { flex-direction: row; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.fbar.slim .fld { flex: 1 1 150px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 860px) { .fgrid { grid-template-columns: 1fr 1fr; } .count { padding-bottom: 0; } }
+@media (max-width: 560px) { .fgrid { grid-template-columns: 1fr; } }
+/* ===== student side ===== */
+.userchip { font-size: .85rem; color: var(--muted); border: 1px solid var(--line); padding: 6px 12px; background: var(--surface); }
+.modenote { margin: 10px 0 0; font-size: .84rem; color: var(--muted); }
+.s-compose { margin-left: auto; align-self: center; appearance: none; border: 0; background: var(--accent); color: var(--on-accent); padding: 8px 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.s-filters { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; align-items: end; }
+.s-filters .search { width: 100%; flex: none; }
+.s-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; align-items: start; }
+.s-card { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); display: flex; flex-direction: column; }
+.s-chead { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 18px 18px 0; flex-wrap: wrap; }
+.s-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.s-num { font-size: .8rem; font-weight: 600; color: var(--muted); }
+.s-cbody { padding: 12px 18px 18px; display: flex; flex-direction: column; gap: 9px; }
+.s-title { margin: 0; font-size: 1.12rem; line-height: 1.25; font-weight: 650; }
+.s-meta { display: flex; flex-wrap: wrap; gap: 3px 14px; font-size: .84rem; color: var(--muted); }
+.s-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.s-desc { margin: 0; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.s-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 2px; }
+.s-lm { appearance: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; border: 1px solid var(--accent-text); background: transparent; padding: 6px 14px; color: var(--accent-text); }
+.s-lm:hover { background: var(--accent-soft); }
+.s-final { font-size: .85rem; color: var(--muted); }
+.s-vb { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 5px 12px; }
+.s-vb[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.s-pair { display: inline-flex; width: 184px; max-width: 100%; }
+.s-pair .s-vb { flex: 1 1 0; min-width: 0; }
+.s-pair .s-vb + .s-vb { margin-left: -1px; }
+.s-pair .s-vb[aria-pressed="true"] + .s-vb[aria-pressed="true"] { border-left-color: rgba(255, 255, 255, .6); }
+.s-pair.big { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+.s-pair.big .s-vb { width: 100%; padding: 10px 20px; font-size: 1.02rem; }
+.s-pair.big .s-vb + .s-vb { margin-left: 0; }
+.s-pg { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 14px; align-items: start; }
+.s-main, .s-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.s-side { position: sticky; top: 12px; }
+.s-ph { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); padding: 18px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.s-back { appearance: none; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 0; color: var(--muted); }
+.s-back:hover { color: var(--accent-text); text-decoration: underline; }
+.s-h1 { margin: 0; font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.15; letter-spacing: -0.015em; }
+.s-sec { background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+.s-sec h2 { margin: 0 0 10px; font-size: 1.05rem; }
+.s-sec p { margin: 0 0 10px; }
+.s-sec p:last-child { margin-bottom: 0; }
+.s-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 16px; margin: 0; }
+.s-dl dt { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.s-dl dd { margin: 2px 0 0; font-weight: 600; }
+.s-acts { display: flex; flex-direction: column; gap: 8px; }
+.s-dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 2px; }
+.s-dots span { aspect-ratio: 1; background: var(--accent); }
+.s-dotcap { font-size: .85rem; color: var(--muted); margin-top: 8px !important; }
+.s-dotcap b { color: var(--ink); }
+.s-rank { display: flex; align-items: center; gap: 6px; font-size: .92rem; font-weight: 600; margin-top: 10px !important; }
+.s-rank .ic { color: var(--accent-text); }
+.s-track { display: flex; align-items: center; margin: 4px 0 14px; flex-wrap: wrap; row-gap: 8px; }
+.s-step { display: flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--muted); white-space: nowrap; }
+.s-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); }
+.s-step.done { color: var(--ink); }
+.s-step.done .s-dot { background: var(--accent); border-color: var(--accent); }
+.s-tbar { flex: 1; height: 2px; min-width: 14px; margin: 0 8px; background: var(--line); }
+.s-tbar.done { background: var(--accent); }
+.s-help { font-size: .86rem; color: var(--muted); margin-top: 10px !important; }
+.sh-link { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sh-in { flex: 1 1 200px; min-width: 0; padding: 9px 12px; border: 1px solid var(--line); background: var(--bg); }
+.sh-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.sh-img { aspect-ratio: 4 / 5; max-width: 300px; margin: 0 auto 14px; background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); display: flex; flex-direction: column; justify-content: space-between; padding: 22px 20px; }
+.sh-img-title { font-size: 1.55rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.sh-img-foot { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--muted); }
+.sh-img-count b { font-size: 2.2rem; color: var(--ink); line-height: 1; margin-right: 6px; }
+.sh-flyer { aspect-ratio: 8.5 / 11; max-width: 300px; margin: 0 auto 14px; background: #fff; color: #111; border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px 18px; gap: 8px; }
+.sh-flyer .band { align-self: stretch; margin: 0 -20px; background: var(--accent); color: var(--on-accent); padding: 10px; font-weight: 700; }
+.sh-flyer h4 { margin: 8px 0 0; font-size: 1.25rem; line-height: 1.15; }
+.sh-flyer p { margin: 0; font-size: .8rem; color: #444; }
+.sh-flyer small { color: #555; }
+.qr { width: 120px; height: 120px; border: 1px solid #ddd; }
+.sh-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+@media (max-width: 860px) {
+  .s-pg { grid-template-columns: 1fr; }
+  .s-side { order: -1; position: static; }
+  .s-filters { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) { .s-filters { grid-template-columns: 1fr; } }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 80; max-width: 92vw; text-align: center; }
+.foot { margin-top: 28px; color: var(--muted); font-size: .85rem; }
+
+@media (max-width: 860px) {
+  .cols { grid-template-columns: 1fr; }
+  .rowh { display: none; }
+  .rows .row { grid-template-columns: 36px 1fr; row-gap: 6px; }
+  .row .nm, .row .age, .row .stc { grid-column: 2; }
+  .row .nm b { display: inline; margin-right: 6px; }
+  .prow { grid-template-columns: 26px 36px 1fr; row-gap: 6px; }
+  .prow .pw, .prow .pd, .prow .ps, .prow .pa { grid-column: 3; justify-content: flex-start; }
+}
+@media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">SGA</div><div><b>Husky Proposals</b><small>Concept 2</small></div></div>
+    <div class="who">
+      <div class="seg" role="group" aria-label="View as">
+        <button type="button" data-m="student" aria-pressed="true">Student view</button>
+        <button type="button" data-m="sga" aria-pressed="false">SGA view</button>
+      </div>
+      <span class="userchip" id="whoUser">Signed in with SSO</span>
+      <span class="who" id="sgaTools" hidden>
+        <div class="seg" role="group" aria-label="Role">
+          <button type="button" data-role="vp" aria-pressed="true">VP of Campus Affairs</button>
+          <button type="button" data-role="chair" aria-pressed="false">Board chair or director</button>
+        </div>
+        <select class="sel" id="boardSel" aria-label="Your board" hidden></select>
+        <button type="button" class="btn" data-act="opts">Options</button>
+      </span>
+    </div>
+  </header>
+  <p class="modenote" id="modenote"></p>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="view"></main>
+  <p class="foot">Concept mockup. Every idea, name, and number is sample content. Dates assume today is Oct 7.</p>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Idea details"></aside>
+<dialog id="msgdlg" aria-labelledby="msg-t"></dialog>
+<dialog id="optdlg" aria-labelledby="opt-t"></dialog>
+<dialog id="editdlg" aria-labelledby="edit-t"></dialog>
+<dialog id="sharedlg" aria-labelledby="share-t"></dialog>
+<dialog id="spropdlg" aria-labelledby="sp-t"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const TODAY = new Date(2026, 9, 7);
+const dstr = n => { const d = new Date(TODAY); d.setDate(d.getDate() + n); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+const NEXT_REVIEW = 'Nov 3';
+
+const PATHS = {
+  plus: '<path d="M12 5v14M5 12h14"/>', mail: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 010 7M18 14.5c1.8.7 3 2.4 3 5.5"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>', bell: '<path d="M6 16v-5a6 6 0 0112 0v5l1.5 2h-15L6 16z"/><path d="M10 21h4"/>'
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[n]}</svg>`;
+
+const BOARDS = [
+  { id: 'DAB', name: 'Dining Advisory Board', tag: 'Dining' },
+  { id: 'CPAB', name: 'Campus Planning Advisory Board', tag: 'Campus Planning' },
+  { id: 'CSC', name: 'Campus Services Committee', tag: 'Campus Services' },
+  { id: 'GIB', name: 'Green Initiatives Board', tag: 'Green Initiatives' },
+  { id: 'SC', name: 'Sustainability Committee', tag: 'Sustainability' }
+];
+const LAB = { collecting: 'Collecting support', review: 'Under review', active: 'In progress', delivered: 'Delivered', waiting: 'Waiting' };
+const REASONS = ['The board is busy with other ideas right now', 'It needs more information first', 'It needs administration approval first', 'It overlaps with another idea', 'It is outside what SGA can do'];
+
+let I = [
+  { id: 103, title: 'A student-hosted food pantry', board: 'DAB', scale: 'Large', cost: '$5k+', sup: 412, wk: 38, age: 62, status: 'active', fol: 56, flag: false, desc: 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.', upd: [{ d: 2, t: 'Began drafting legislation for the pilot program' }, { d: 9, t: 'Committee formed' }] },
+  { id: 131, title: 'A late-night dining option on weeknights', board: 'DAB', scale: 'Medium', cost: '$5k+', sup: 233, wk: 21, age: 40, status: 'collecting', fol: 18, flag: false, desc: 'Keep one dining location open later for students coming out of labs and libraries.', upd: [] },
+  { id: 132, title: 'Label halal and kosher options at every station', board: 'DAB', scale: 'Small', cost: 'Under $1k', sup: 98, wk: 9, age: 25, status: 'collecting', fol: 7, flag: false, desc: 'Clear labels at each dining station so students do not have to ask staff every time.', upd: [] },
+  { id: 133, title: 'Make Swipe2Care donations automatic', board: 'DAB', scale: 'Medium', cost: '$1k to $5k', sup: 187, wk: 15, age: 30, status: 'review', fol: 22, flag: false, desc: 'Let students opt in to donate unused swipes automatically instead of one at a time.', upd: [] },
+  { id: 112, title: 'Ease peak-hour crowding at Marino', board: 'CPAB', scale: 'Medium', cost: '$1k to $5k', sup: 287, wk: 21, age: 45, status: 'active', fol: 31, flag: false, desc: 'Show live capacity and nudge people toward quieter hours so the afternoon rush spreads out.', upd: [{ d: 34, t: 'Committee formed' }] },
+  { id: 118, title: 'Covered bike parking near Ruggles', board: 'CPAB', scale: 'Medium', cost: '$1k to $5k', sup: 176, wk: 12, age: 33, status: 'collecting', fol: 14, flag: false, desc: 'Protect bikes from snow and rain at the busiest entrance to campus.', upd: [] },
+  { id: 121, title: 'Extend study room reservations to 24 hours during finals week', board: 'CPAB', scale: 'Small', cost: 'Under $1k', sup: 41, wk: 6, age: 20, status: 'collecting', fol: 5, flag: false, desc: 'Let students book library study rooms overnight during finals.', upd: [] },
+  { id: 141, title: 'A safety resource guide for international students', board: 'CSC', scale: 'Small', cost: 'Under $1k', sup: 63, wk: 7, age: 28, status: 'collecting', fol: 12, flag: true, desc: 'One page of safety and emergency resources, shared through trusted peer channels.', upd: [] },
+  { id: 142, title: 'Shuttle schedule alerts on phones', board: 'CSC', scale: 'Medium', cost: '$1k to $5k', sup: 120, wk: 10, age: 18, status: 'collecting', fol: 9, flag: false, desc: 'Push alerts when the shuttle is delayed or the schedule changes.', upd: [] },
+  { id: 87, title: 'Compost bins in every residence hall', board: 'GIB', scale: 'Medium', cost: '$1k to $5k', sup: 365, wk: 17, age: 120, status: 'delivered', fol: 40, flag: false, desc: 'A labeled compost bin on each floor with a simple pickup schedule.', upd: [{ d: 14, t: 'Bins installed in the first three residence halls' }, { d: 30, t: 'Signage and staff guide approved' }] },
+  { id: 151, title: 'More refill stations in academic buildings', board: 'GIB', scale: 'Small', cost: 'Under $1k', sup: 142, wk: 11, age: 22, status: 'collecting', fol: 11, flag: false, desc: 'Bottle refill stations on every floor of the busiest classroom buildings.', upd: [] },
+  { id: 161, title: 'A reusable container program for dining', board: 'SC', scale: 'Large', cost: '$5k+', sup: 205, wk: 14, age: 36, status: 'collecting', fol: 16, flag: false, desc: 'Reusable takeout containers with a simple return system.', upd: [] }
+];
+let P = [
+  { id: 1, name: 'Maya T.', init: 103, ago: 2, status: 'new' }, { id: 2, name: 'Priya N.', init: 103, ago: 9, status: 'contacted', cago: 5 },
+  { id: 3, name: 'Chris L.', init: 103, ago: 9, status: 'new' }, { id: 4, name: 'Riley S.', init: 103, ago: 20, status: 'joined' },
+  { id: 5, name: 'Avery D.', init: 103, ago: 1, status: 'new' }, { id: 6, name: 'Alex R.', init: 112, ago: 3, status: 'new' },
+  { id: 7, name: 'Jordan P.', init: 112, ago: 6, status: 'contacted', cago: 1 }, { id: 8, name: 'Taylor M.', init: 112, ago: 8, status: 'new' },
+  { id: 9, name: 'Sam K.', init: 87, ago: 90, status: 'joined' }, { id: 10, name: 'Devon B.', init: 87, ago: 60, status: 'later' },
+  { id: 11, name: 'Morgan C.', init: 141, ago: 4, status: 'new' }, { id: 12, name: 'Jamie F.', init: 141, ago: 0, status: 'new' },
+  { id: 13, name: 'Casey W.', init: 118, ago: 5, status: 'new' }, { id: 14, name: 'Quinn H.', init: 151, ago: 20, status: 'contacted', cago: 12 },
+  { id: 15, name: 'Skyler J.', init: 132, ago: 6, status: 'new' }
+];
+P.forEach(p => { p.email = p.name.toLowerCase().replace(/[^a-z ]/g, '').replace(' ', '.') + '@husky.example'; });
+
+const DEF = { cap: 2, thr: 150, contact: 7, follow: 14, stale: 30, leader: 'queue' };
+const st = {
+  role: 'vp', board: 'DAB', tab: 'queue', hl: null, sel: null,
+  f: { board: 'all', status: 'all', sort: 'sup', q: '' },
+  pf: { as: 'self', board: 'DAB', title: '', scale: 'Medium', cost: 'Under $1k', time: 'This semester', desc: '', claim: false, reason: '' },
+  up: { id: null, tpl: 'formed', text: '', status: 'keep', aud: 'followers' },
+  pp: { status: 'new', init: 'all', picked: new Set() },
+  opts: { ...DEF }, nextId: 170
+};
+
+st.uf = { board: 'all', show: 'all' };
+
+/* derived data */
+const byId = id => I.find(i => i.id === id);
+const board = id => BOARDS.find(b => b.id === id);
+const inScope = i => st.role === 'vp' || i.board === st.board;
+const scoped = () => I.filter(inScope);
+const pts = i => i.scale === 'Large' ? 2 : 1;
+const used = b => I.filter(i => i.board === b && i.status === 'active').reduce((n, i) => n + pts(i), 0);
+const capLeft = b => st.opts.cap - used(b);
+const people = id => P.filter(p => p.init === id);
+const isElig = i => i.status === 'collecting' && i.sup >= st.opts.thr * (i.scale === 'Small' ? 0.5 : 1);
+const rankOf = i => 1 + I.filter(o => o.board === i.board && o.status !== 'delivered' && o.sup > i.sup).length;
+const lastUpd = i => i.upd.length ? Math.min(...i.upd.map(u => u.d)) : null;
+const staleList = () => scoped().filter(i => i.status === 'active' && (lastUpd(i) === null || lastUpd(i) > st.opts.stale));
+const dueIn = p => p.status === 'new' ? st.opts.contact - p.ago : p.status === 'contacted' ? st.opts.follow - p.cago : null;
+const dueList = () => P.filter(p => inScope(byId(p.init)) && dueIn(p) !== null && dueIn(p) < 0);
+const toContact = () => P.filter(p => inScope(byId(p.init)) && p.status === 'new');
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 3000); }
+const chipFor = i => `<span class="st st-${i.status}">${LAB[i.status]}</span>`;
+
+/* chrome */
+function renderChrome() {
+  const stu = st.mode === 'student';
+  $('#sgaTools').hidden = stu; $('#whoUser').hidden = !stu;
+  $$('[data-m]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === st.mode)));
+  $('#modenote').textContent = stu ? 'You are seeing what a student sees. Votes, offers to help, and new ideas show up in the SGA view.' : 'You are seeing what SGA leaders see. Updates you post and ideas you start show up in the student view.';
+  if (stu) {
+    $('#tabs').innerHTML = [['ideas', 'Ideas'], ['progress', 'In progress']].map(t => `<button type="button" class="tab" role="tab" data-stab="${t[0]}" aria-selected="${st.stab === t[0]}">${t[1]}</button>`).join('') + `<button type="button" class="s-compose" data-snew>${ic('plus')}Submit yours!</button>`;
+    return;
+  }
+  $$('[data-role]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.role === st.role)));
+  const sel = $('#boardSel');
+  sel.hidden = st.role === 'vp';
+  sel.innerHTML = BOARDS.map(b => `<option value="${b.id}"${b.id === st.board ? ' selected' : ''}>${b.id}: ${b.name}</option>`).join('');
+  const elig = scoped().filter(isElig).length, stale = staleList().length, due = dueList().length;
+  const pl = (n, one, many) => n === 1 ? one : many;
+  const bd = (n, label) => `<span class="badge${n ? '' : ' zero'}" title="${n} ${label}">${n}<span class="vh"> ${label}</span></span>`;
+  $('#tabs').innerHTML = [
+    ['queue', 'Queue', bd(elig, `${pl(elig, 'idea is', 'ideas are')} ready for review`)],
+    ['propose', 'Propose', ''],
+    ['updates', 'Updates', bd(stale, `in-progress ${pl(stale, 'idea is', 'ideas are')} due for an update`)],
+    ['people', 'People', bd(due, `${pl(due, 'person is', 'people are')} past their contact date`)]
+  ].map(t => `<button type="button" class="tab" role="tab" data-tab="${t[0]}" aria-selected="${st.tab === t[0]}">${t[1]}${t[2]}</button>`).join('');
+}
+
+/* QUEUE */
+function boardCard(b) {
+  const act = I.filter(i => i.board === b.id && i.status === 'active');
+  const elig = I.filter(i => i.board === b.id && isElig(i)).length;
+  const over = used(b.id) > st.opts.cap;
+  return `<button type="button" class="bcard" data-board="${b.id}" aria-pressed="${st.f.board === b.id}">
+    <b>${b.id}</b><small>${b.name}</small>
+    <p class="bsum"><b>${act.length} in progress</b>${over ? ' <span class="mini warn">More than usual</span>' : ''}</p>
+    <p class="bact">${act.length ? act.map(i => esc(i.title)).join(', ') : 'Nothing in progress'}</p>
+    <small>${elig} ready for review. Boards usually take on 1 to ${st.opts.cap}.</small></button>`;
+}
+function sortFn(a, b) {
+  const k = st.f.sort;
+  if (k === 'will') return people(b.id).length - people(a.id).length;
+  if (k === 'wk') return b.wk - a.wk;
+  if (k === 'old') return b.age - a.age;
+  if (k === 'new') return a.age - b.age;
+  return b.sup - a.sup;
+}
+function filtered() {
+  const f = st.f;
+  return scoped().filter(i =>
+    (st.role !== 'vp' || f.board === 'all' || i.board === f.board) &&
+    (f.status === 'all' || (f.status === 'elig' ? isElig(i) : i.status === f.status)) &&
+    (!f.q || (i.title + ' ' + i.desc).toLowerCase().includes(f.q.toLowerCase()))).sort(sortFn);
+}
+function viewQueue() {
+  const vp = st.role === 'vp', elig = scoped().filter(isElig).length;
+  const stat = [['all', 'All ideas'], ['elig', `Ready for review (${elig})`], ['collecting', 'Collecting support'], ['review', 'Under review'], ['active', 'In progress'], ['waiting', 'Waiting'], ['delivered', 'Delivered']];
+  const sorts = [['sup', 'Most supporters'], ['will', 'Most willing to help'], ['wk', 'Rising this week'], ['old', 'Oldest'], ['new', 'Newest']];
+  const opt = (arr, cur) => arr.map(o => `<option value="${o[0]}"${cur === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('');
+  const boardSel = vp
+    ? `<select id="boardFilter"><option value="all">All boards</option>${BOARDS.map(b => `<option value="${b.id}"${st.f.board === b.id ? ' selected' : ''}>${b.id}: ${b.name}</option>`).join('')}</select>`
+    : `<select id="boardFilter" disabled><option>${board(st.board).id}: ${board(st.board).name}</option></select>`;
+  const list = filtered();
+  const rows = list.length ? list.map(i => {
+    const w = people(i.id).length;
+    const tags = `<span class="tg">${ic('tag')}${board(i.board).tag}</span><span class="mini">${i.scale}</span>${i.by ? `<span class="mini">Proposed by ${esc(i.by)}</span>` : ''}`;
+    return `<button type="button" class="row${st.hl === i.id ? ' hl' : ''}" data-open="${i.id}">
+      <span class="rk">${i.status === 'delivered' ? '' : '#' + rankOf(i)}</span>
+      <span class="ti"><b>${esc(i.title)}</b><span class="tags">${tags}</span></span>
+      <span class="nm"><b>${i.sup}</b><small>+${i.wk} this week</small></span>
+      <span class="nm"><b>${w}</b></span>
+      <span class="age">${i.age} days</span>
+      <span class="stc">${chipFor(i)}</span></button>`;
+  }).join('') : '<div class="empty">No ideas match these filters.</div>';
+  return `<div class="listbox">
+    <div class="fbar">
+      <input class="search" type="search" id="q" placeholder="Search ideas" aria-label="Search ideas" value="${esc(st.f.q)}">
+      <div class="fgrid">
+        <label class="fld"><span>Board</span>${boardSel}<small>${vp ? 'Whose ideas to show' : 'Your board'}</small></label>
+        <label class="fld"><span>Status</span><select id="statSel">${opt(stat, st.f.status)}</select><small>Where an idea is in the process</small></label>
+        <label class="fld"><span>Sort by</span><select id="sortSel">${opt(sorts, st.f.sort)}</select><small>The order of the list</small></label>
+        <p class="count" aria-live="polite"><b>${list.length}</b> ${list.length === 1 ? 'idea' : 'ideas'}</p>
+      </div>
+    </div>
+    <div class="rows"><div class="rowh"><span>Rank</span><span>Idea</span><span>Supporters</span><span>Willing to help</span><span>Age</span><span>Status</span></div>${rows}</div>
+  </div>
+  <p class="note">Rank is within each board. Delivered ideas are kept for the record.</p>`;
+}
+
+/* DRAWER */
+function openDrawer(id) { st.sel = id; renderDrawer(); $('#drawer').hidden = false; $('#scrim').hidden = false; $('#drawer').scrollTop = 0; }
+function closeDrawer() { st.sel = null; st.confirm = null; $('#drawer').hidden = true; $('#scrim').hidden = true; }
+function renderDrawer() {
+  const i = byId(st.sel); if (!i) return closeDrawer();
+  const b = board(i.board), w = people(i.id).length, open = ['collecting', 'review', 'waiting'].includes(i.status);
+  const n = I.filter(o => o.board === i.board && o.status === 'active').length;
+  let act = '';
+  if (st.confirm === i.id) {
+    act = `<div class="hint"><b>${b.id} is already working on ${n} ${n === 1 ? 'idea' : 'ideas'}.</b> Boards usually take on 1 to ${st.opts.cap} at a time, and a large idea counts as 2. Start this one anyway?</div>
+      <div class="inline"><button type="button" class="btn primary" data-act="startanyway">Start anyway</button><button type="button" class="btn" data-act="startcancel">Not now</button></div>`;
+  } else if (open) {
+    act = `<button type="button" class="btn primary" data-act="start">Start working on this</button>
+      <div class="inline">${i.status !== 'review' ? '<button type="button" class="btn" data-act="review">Mark under review</button>' : ''}${i.status === 'waiting' ? '<button type="button" class="btn" data-act="collect">Back to collecting support</button>' : ''}</div>
+      ${i.status !== 'waiting' ? `<div class="inline"><select class="sel" id="reasonSel" aria-label="Reason students will see">${REASONS.map(r => `<option>${r}</option>`).join('')}</select><button type="button" class="btn" data-act="wait">Put on hold</button></div>` : ''}`;
+  } else if (i.status === 'active') act = '<div class="inline"><button type="button" class="btn primary" data-act="post">Post an update</button><button type="button" class="btn" data-act="deliver">Mark delivered</button></div>';
+  else act = '<p class="note" style="margin:0">Delivered. It stays on record.</p>';
+  const reason = i.status === 'waiting' && i.reason ? `<p class="hint" style="margin:0 0 12px">Students see: "${esc(i.reason)}."</p>` : '';
+  const last = i.upd.slice(0, 2);
+  return $('#drawer').innerHTML = `<div class="dhead"><span class="mini">Proposal ${i.id}</span><span class="inline"><button type="button" class="btn sm" data-act="edit">Edit</button><button type="button" class="btn sm" data-act="close" aria-label="Close">${ic('x')}Close</button></span></div>
+    <h3>${esc(i.title)}</h3>
+    <div class="tags"><span class="tg">${ic('tag')}${b.tag}</span>${chipFor(i)}</div>
+    <p class="facts"><b>${i.sup}</b> supporters, <b>${i.status === 'delivered' ? '-' : '#' + rankOf(i)}</b> in ${b.id}, <b>${i.fol}</b> followers</p>
+    <p class="dd">${esc(i.desc)}</p>${reason}
+    ${w ? `<p class="note" style="margin:0 0 4px"><b>${w}</b> offered to help. <button type="button" class="linkbtn" data-act="people">View in People</button></p>` : ''}
+    <div class="stack dact">${act}</div>
+    ${last.length ? `<div class="dsec"><h4>Last update</h4><ul class="log">${last.map(u => `<li><time>${dstr(-u.d)}</time><span>${esc(u.t)}</span></li>`).join('')}</ul></div>` : ''}`;
+}
+function startIdea(i) {
+  setStatus(i, 'active', 'The ' + board(i.board).name + ' has started working on this.');
+  toast('In progress. Followers will be told.');
+}
+function openEdit(i) {
+  $('#editdlg').innerHTML = `<div class="dlg"><h3 id="edit-t">Edit idea</h3><p class="sub">The board is the only thing SGA can change on a posted idea. Students will see the new board.</p>
+    <div class="fields"><div class="field full"><label>Title</label><input value="${esc(i.title)}" disabled></div>
+    <div class="field full"><label>Description</label><textarea disabled>${esc(i.desc)}</textarea></div>
+    <div class="field full"><label for="e-board">Board</label><select id="e-board">${BOARDS.map(b => `<option value="${b.id}"${b.id === i.board ? ' selected' : ''}>${b.name}</option>`).join('')}</select></div></div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="editcancel">Cancel</button><button type="button" class="btn primary" data-act="editsave">Save</button></div></div>`;
+  $('#editdlg').showModal();
+}
+function setStatus(i, s, note) {
+  i.status = s; st.confirm = null;
+  if (note) i.upd.unshift({ d: 0, t: note });
+  st.hl = i.id; renderChrome(); render(); renderDrawer();
+}
+
+/* PROPOSE */
+function postingAs() {
+  const o = [];
+  if (st.role === 'vp') o.push(['self', 'Vice President of Campus Affairs']);
+  BOARDS.filter(b => st.role === 'vp' || b.id === st.board).forEach(b => o.push([b.id, b.name]));
+  return o;
+}
+function pvHTML() {
+  const f = st.pf, as = postingAs().find(a => a[0] === f.as) || postingAs()[0];
+  const b = board(f.board);
+  return `<div class="pv"><div class="pvh"><span class="tg">${ic('tag')}${b.tag}</span><span class="st st-collecting">${f.claim ? 'In progress' : 'Collecting support'}</span></div>
+    <h4>${f.title ? esc(f.title) : 'Your idea title'}</h4>
+    <p>${f.desc ? esc(f.desc) : 'Your description appears here.'}</p>
+    <div class="tags"><span class="mini">${f.scale}</span><span class="mini">${f.cost}</span><span class="mini">${f.time}</span></div>
+    <span class="mini" style="align-self:flex-start">Proposed by ${esc(as[1])}</span>
+    ${f.claim && f.reason ? `<p class="hint" style="margin:0">Students see: "${esc(f.reason)}"</p>` : ''}</div>`;
+}
+function viewPropose() {
+  const f = st.pf, o = st.opts;
+  if (st.role === 'chair') f.board = st.board;
+  if (!postingAs().some(a => a[0] === f.as)) f.as = postingAs()[0][0];
+  const sel = (id, arr, cur) => `<select id="${id}">${arr.map(a => { const v = Array.isArray(a) ? a[0] : a, l = Array.isArray(a) ? a[1] : a; return `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`; }).join('')}</select>`;
+  const nAct = I.filter(x => x.board === f.board && x.status === 'active').length;
+  const claimBox = o.leader === 'claim' ? `<div class="field full"><label class="chk"><input type="checkbox" id="pf-claim" ${f.claim ? 'checked' : ''}>Start working on this right away instead of joining the queue</label>
+      ${f.claim ? `<p class="note" style="margin:4px 0 0">${board(f.board).id} is working on ${nAct} ${nAct === 1 ? 'idea' : 'ideas'}. Boards usually take on 1 to ${o.cap} at a time.</p><label for="pf-reason" style="margin-top:8px;font-size:.85rem;font-weight:600">Public reason (students will see this)</label><input id="pf-reason" value="${esc(f.reason)}" placeholder="Why does this skip the queue?">` : ''}</div>`
+    : '<div class="field full"><p class="hint" style="margin:0">Your idea joins the queue like every other idea and shows who proposed it. You can change this rule in Options.</p></div>';
+  return `<h2 class="pt">Propose an idea</h2>
+    <p class="sub">Leaders can propose too. Students will see who it came from.</p>
+    <div class="cols"><div class="box pad"><div class="fields">
+      <div class="field full"><label for="pf-as">Posting as</label>${sel('pf-as', postingAs(), f.as)}</div>
+      <div class="field full"><label for="pf-title">Title</label><input id="pf-title" value="${esc(f.title)}" placeholder="What would you call it?"></div>
+      <div class="field"><label for="pf-board">Board</label>${st.role === 'chair' ? `<select id="pf-board" disabled><option>${board(st.board).name}</option></select>` : sel('pf-board', BOARDS.map(b => [b.id, b.name]), f.board)}</div>
+      <div class="field"><label for="pf-scale">Scale</label>${sel('pf-scale', ['Small', 'Medium', 'Large'], f.scale)}</div>
+      <div class="field"><label for="pf-cost">Rough cost</label>${sel('pf-cost', ['Under $1k', '$1k to $5k', '$5k+'], f.cost)}</div>
+      <div class="field"><label for="pf-time">Time horizon</label>${sel('pf-time', ['This semester', 'Next semester', 'Within a year'], f.time)}</div>
+      <div class="field full"><label for="pf-desc">Description</label><textarea id="pf-desc" placeholder="What is the problem, and what would you change?">${esc(f.desc)}</textarea></div>
+      ${claimBox}
+    </div><div class="dlg-actions"><button type="button" class="btn primary" data-act="submitProp">Post idea</button></div></div>
+    <div><p class="pvl">How students will see it</p><div id="pvbox">${pvHTML()}</div></div></div>`;
+}
+function submitProp() {
+  const f = st.pf;
+  if (!f.title.trim() || !f.desc.trim()) return toast('Add a title and a description first.');
+  const as = postingAs().find(a => a[0] === f.as) || postingAs()[0];
+  let over = false;
+  const i = { id: st.nextId++, title: f.title.trim(), board: f.board, scale: f.scale, cost: f.cost, sup: 0, wk: 0, age: 0, status: 'collecting', fol: 0, flag: false, desc: f.desc.trim(), loc: 'Anywhere on campus', time: f.time, full: [f.desc.trim()], upd: [], by: as[1] === 'Vice President of Campus Affairs' ? 'VP of Campus Affairs' : as[0] };
+  if (st.opts.leader === 'claim' && f.claim) {
+    if (!f.reason.trim()) return toast('Add a public reason to skip the queue.');
+    over = used(f.board) + pts(i) > st.opts.cap;
+    i.status = 'active'; i.reason = f.reason; i.upd.unshift({ d: 0, t: 'Started by ' + i.by + '. ' + f.reason });
+  }
+  I.push(i); st.hl = i.id;
+  st.pf = { as: f.as, board: f.board, title: '', scale: 'Medium', cost: 'Under $1k', time: 'This semester', desc: '', claim: false, reason: '' };
+  st.f = { board: 'all', status: 'all', sort: 'new', q: '' };
+  st.tab = 'queue'; render(); window.scrollTo(0, 0);
+  toast(i.status === 'active' ? (over ? `Posted and started. ${f.board} now has more than the usual in progress.` : 'Posted and started. Students can see it.') : 'Posted. It is now in the queue.');
+}
+
+/* UPDATES */
+const TPL = {
+  formed: ['Committee formed', b => `The ${b} has formed a committee to work on this. We will share the first meeting date soon.`],
+  met: ['Meeting held', b => `The ${b} committee met this week. We reviewed the plan and agreed on next steps: [add the steps].`],
+  mile: ['Milestone reached', () => 'We reached a milestone: [describe it].'],
+  late: ['Delayed', () => 'This is taking longer than planned because [reason]. New expected timing: [date].'],
+  custom: ['Write my own', () => '']
+};
+const defTpl = i => i.upd.length ? 'custom' : 'formed';
+function setUpd(i) { st.up.id = i.id; st.up.tpl = defTpl(i); st.up.text = TPL[st.up.tpl][1](board(i.board).name); st.up.status = 'keep'; }
+function activeList() { return scoped().filter(i => i.status === 'active'); }
+const isStale = i => { const d = lastUpd(i); return d === null || d > st.opts.stale; };
+function viewUpdates() {
+  const vp = st.role === 'vp', u = st.up, uf = st.uf, all = activeList();
+  if (!all.some(a => a.id === u.id)) { if (all.length) setUpd(all[0]); else { u.id = null; u.text = ''; } }
+  const act = all.filter(i => (!vp || uf.board === 'all' || i.board === uf.board) && (uf.show === 'all' || isStale(i)));
+  const boardSel = vp
+    ? `<select id="updBoard"><option value="all">All boards</option>${BOARDS.map(b => `<option value="${b.id}"${uf.board === b.id ? ' selected' : ''}>${b.id}</option>`).join('')}</select>`
+    : `<select id="updBoard" disabled><option>${board(st.board).id}</option></select>`;
+  const filt = `<div class="fbar slim"><label class="fld"><span>Board</span>${boardSel}</label><label class="fld"><span>Show</span><select id="updShow"><option value="all"${uf.show === 'all' ? ' selected' : ''}>All in progress</option><option value="due"${uf.show === 'due' ? ' selected' : ''}>Due for an update</option></select></label></div>`;
+  const list = act.length ? act.map(i => {
+    const d = lastUpd(i), stale = isStale(i);
+    return `<div class="urow" ${u.id === i.id ? 'aria-current="true"' : ''}><div class="ti"><b>${esc(i.title)}</b><span class="tags"><span class="tg">${board(i.board).id}</span><span class="mini ${stale ? 'warn' : 'ok'}">${d === null ? 'No update yet' : d === 0 ? 'Updated today' : 'Last update ' + d + ' days ago'}</span></span></div><button type="button" class="btn ${stale ? 'primary' : ''} sm" data-pickupd="${i.id}">Post update</button></div>`;
+  }).join('') : `<div class="empty">${all.length ? 'Nothing matches. Every idea here has a recent update.' : 'Nothing is in progress. Start an idea from the Queue.'}</div>`;
+  let comp = '';
+  if (u.id) {
+    const i = byId(u.id);
+    comp = `<div class="box pad"><h3 style="margin:0 0 10px;font-size:1.1rem">New update on ${esc(i.title)}</h3><div class="fields" style="grid-template-columns:1fr">
+      <div class="field"><label for="up-tpl">Start from</label><select id="up-tpl">${Object.keys(TPL).map(k => `<option value="${k}"${u.tpl === k ? ' selected' : ''}>${TPL[k][0]}</option>`).join('')}</select></div>
+      <div class="field"><label for="up-status">Status</label><select id="up-status"><option value="keep"${u.status === 'keep' ? ' selected' : ''}>Keep as In progress</option><option value="deliver"${u.status === 'deliver' ? ' selected' : ''}>Mark as Delivered</option></select></div>
+      <div class="field full"><label for="up-text">What students will read</label><textarea id="up-text">${esc(u.text)}</textarea></div>
+      <div class="field full"><label for="up-aud">Send to</label><select id="up-aud"><option value="followers"${u.aud === 'followers' ? ' selected' : ''}>Followers (${i.fol})</option><option value="both"${u.aud === 'both' ? ' selected' : ''}>Followers and supporters (${i.sup})</option></select></div></div>
+      <p class="pvl" style="margin-top:14px">Preview</p><div class="stack" id="upprev">${updPrev()}</div>
+      <div class="dlg-actions"><button type="button" class="btn primary" data-act="sendUpd">${ic('bell')}Post update</button></div></div>`;
+  }
+  const hist = u.id ? `<div class="dsec" style="margin-top:6px"><h4>Past updates</h4>${byId(u.id).upd.length ? `<ul class="log">${byId(u.id).upd.map(x => `<li><time>${dstr(-x.d)}</time><span>${esc(x.t)}</span></li>`).join('')}</ul>` : '<p class="note" style="margin:0">None yet.</p>'}</div>` : '';
+  return `<h2 class="pt">Updates</h2>
+    <p class="sub">Keep students posted on ideas that are in progress. Ideas with no update for ${st.opts.stale} days are flagged, because silence reads as being ignored.</p>
+    <div class="cols"><div class="box ulist">${filt}${list}</div><div>${comp}${hist}</div></div>`;
+}
+function updPrev() {
+  const u = st.up, i = byId(u.id); if (!i) return '';
+  const txt = u.text || 'Your update appears here.';
+  return `<div class="ledger"><time>${dstr(0)}</time>${esc(txt)}</div><div class="notif"><b>Proposal ${i.id}: ${esc(i.title)}</b><br>${esc(txt.length > 110 ? txt.slice(0, 108) + '...' : txt)}</div>`;
+}
+function sendUpd() {
+  const u = st.up, i = byId(u.id);
+  if (!u.text.trim() || /\[.*\]/.test(u.text)) return toast('Fill in the [bracketed] parts before posting.');
+  const n = u.aud === 'both' ? i.sup : i.fol;
+  i.upd.unshift({ d: 0, t: u.text.trim() });
+  if (u.status === 'deliver') i.status = 'delivered';
+  u.tpl = 'custom'; u.text = ''; u.status = 'keep';
+  st.hl = i.id; renderChrome(); render(); toast(`Posted. Sent to ${n} ${u.aud === 'both' ? 'followers and supporters' : 'followers'}.`);
+}
+
+/* PEOPLE */
+function peopleVisible() {
+  const f = st.pp;
+  return P.filter(p => inScope(byId(p.init)) && (f.status === 'all' || p.status === f.status) && (f.init === 'all' || p.init === Number(f.init)))
+    .sort((a, b) => (dueIn(a) ?? 999) - (dueIn(b) ?? 999));
+}
+function pstat(p) {
+  const d = dueIn(p);
+  if (p.status === 'joined') return '<span class="st st-delivered">Joined</span>';
+  if (p.status === 'later') return '<span class="st st-waiting">Not now</span>';
+  if (d < 0) return `<span class="st st-overdue">${p.status === 'new' ? 'Overdue' : 'Check in'}</span>`;
+  return p.status === 'new' ? '<span class="st st-collecting">To contact</span>' : '<span class="st st-review">Contacted</span>';
+}
+function pdue(p) {
+  const d = dueIn(p);
+  if (p.status === 'joined' || p.status === 'later') return `<small>Closed out</small>`;
+  const when = d < 0 ? `${-d} day${d === -1 ? '' : 's'} overdue` : d === 0 ? 'Due today' : 'Due ' + dstr(d);
+  return p.status === 'new' ? `Signed up ${p.ago} days ago<br><small>Contact by ${dstr(d)}${d < 0 ? ' (' + when + ')' : ''}</small>` : `Contacted ${p.cago} days ago<br><small>Check in: ${when}</small>`;
+}
+function viewPeople() {
+  const mine = P.filter(p => inScope(byId(p.init))), f = st.pp, list = peopleVisible();
+  const cnt = x => mine.filter(p => p.status === x).length;
+  const stat = [['new', 'To contact'], ['contacted', 'Contacted'], ['joined', 'Joined'], ['later', 'Not now'], ['all', 'All']];
+  const inits = scoped().filter(i => people(i.id).length);
+  const rows = list.length ? list.map(p => {
+    const i = byId(p.init), done = p.status === 'joined' || p.status === 'later';
+    return `<div class="prow"><input type="checkbox" data-pick="${p.id}" aria-label="Select ${p.name}" ${f.picked.has(p.id) ? 'checked' : ''}>
+      <span class="av" aria-hidden="true">${p.name[0]}</span><span class="pi"><b>${p.name}</b><small>${p.email}</small></span>
+      <span class="pw">Offered to help with <b>${esc(i.title)}</b> <span class="tg">${i.board}</span></span>
+      <span class="pd">${pdue(p)}</span><span class="ps">${pstat(p)}</span>
+      <span class="pa">${done ? '' : `<button type="button" class="btn sm primary" data-msg="${p.id}">${ic('mail')}Message</button><button type="button" class="btn sm" data-pset="${p.id}:joined">Joined</button><button type="button" class="btn sm" data-pset="${p.id}:later">Not now</button>`}</span></div>`;
+  }).join('') : '<div class="empty">Nobody here. Nice work, or nobody has offered yet.</div>';
+  const bulk = f.picked.size ? `<div class="bulk"><span>${f.picked.size} selected</span><button type="button" class="btn" data-msg="bulk">${ic('mail')}Message selected</button></div>` : '';
+  return `<h2 class="pt">People</h2>
+    <p class="sub">Students who tapped "I'll participate" and agreed to be contacted. Each gets a contact date of ${st.opts.contact} days after signing up, then a check-in every ${st.opts.follow} days until they join or step back. Followers are not listed here. They only get updates.</p>
+    <div class="tiles"><div class="tile"><b>${cnt('new')}</b><span>to contact</span></div><div class="tile"><b>${dueList().length}</b><span>past their date</span></div><div class="tile"><b>${cnt('contacted')}</b><span>contacted</span></div><div class="tile"><b>${cnt('joined')}</b><span>joined</span></div></div>
+    <div class="tools"><div class="chips" role="group" aria-label="Filter by status">${stat.map(x => `<button type="button" class="chip" data-pstatus="${x[0]}" aria-pressed="${f.status === x[0]}">${x[1]}</button>`).join('')}</div>
+    <select class="sel" id="pinit" aria-label="Filter by idea"><option value="all">All ideas</option>${inits.map(i => `<option value="${i.id}"${String(f.init) === String(i.id) ? ' selected' : ''}>${esc(i.title.length > 44 ? i.title.slice(0, 42) + '...' : i.title)}</option>`).join('')}</select></div>
+    <div class="box">${rows}</div>${bulk}`;
+}
+const MSG = {
+  first: ['First reach-out', 'Thanks for offering to help', (n, i, b) => `Hi ${n},\n\nThanks for offering to help with "${i.title}". The ${b.name} would love to have you. We meet weekly during the semester, and you are welcome to come to a meeting this week to see how it works.\n\nWould that work for you? You can also apply to join the board here: huskyproposals.example/apply/${b.id}\n\nThanks,\nSGA Campus Affairs`],
+  check: ['Check-in', 'Still interested in helping?', (n, i, b) => `Hi ${n},\n\nChecking in about "${i.title}". We would still love your help, and there is no pressure if your schedule has changed. Is there a good time this week to chat?\n\nThanks,\nSGA Campus Affairs`],
+  apply: ['Invite to apply', 'Applications for the ' + 'board are open', (n, i, b) => `Hi ${n},\n\nApplications for the ${b.name} are open. This is how to apply: huskyproposals.example/apply/${b.id}\n\nThanks,\nSGA Campus Affairs`]
+};
+function openMsg(ids) {
+  const rec = P.filter(p => ids.includes(p.id)); if (!rec.length) return;
+  st.msg = { ids, tpl: rec.every(p => p.status === 'contacted') ? 'check' : 'first' };
+  fillMsg(); renderMsg(); $('#msgdlg').showModal();
+}
+function fillMsg() {
+  const rec = P.filter(p => st.msg.ids.includes(p.id)), p = rec[0], i = byId(p.init), t = MSG[st.msg.tpl];
+  st.msg.subject = t[1]; st.msg.body = t[2]('{first name}', i, board(i.board));
+}
+function msgPreview() {
+  const p = P.find(x => x.id === st.msg.ids[0]);
+  return st.msg.body.replace(/\{first name\}/g, p.name.split(' ')[0]);
+}
+function renderMsg() {
+  const m = st.msg, n = m.ids.length;
+  $('#msgdlg').innerHTML = `<div class="dlg"><h3 id="msg-t">Message ${n} ${n === 1 ? 'person' : 'people'}</h3><p class="sub">Each message is sent separately and uses their first name. Replies come to sgacampusaffairs@northeastern.edu.</p>
+    <div class="fields"><div class="field full"><label for="m-tpl">Template</label><select id="m-tpl">${Object.keys(MSG).map(k => `<option value="${k}"${m.tpl === k ? ' selected' : ''}>${MSG[k][0]}</option>`).join('')}</select></div>
+    <div class="field full"><label for="m-sub">Subject</label><input id="m-sub" value="${esc(m.subject)}"></div>
+    <div class="field full"><label for="m-body">Message (use {first name} for their name)</label><textarea id="m-body" style="min-height:190px">${esc(m.body)}</textarea></div></div>
+    <p class="pvl" style="margin-top:12px">Preview for ${esc(P.find(x => x.id === m.ids[0]).name)}</p><div class="ledger" id="m-prev" style="white-space:pre-wrap">${esc(msgPreview())}</div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="msgcancel">Cancel</button><button type="button" class="btn primary" data-act="msgsend">${ic('mail')}Send</button></div></div>`;
+}
+function sendMsg() {
+  if (/\[.*\]/.test(st.msg.body)) return toast('Fill in the [bracketed] parts before sending.');
+  const ids = st.msg.ids;
+  P.forEach(p => { if (ids.includes(p.id)) { p.status = 'contacted'; p.cago = 0; } });
+  st.pp.picked.clear(); $('#msgdlg').close(); renderChrome(); render();
+  toast(`Sent to ${ids.length}. Next check-in ${dstr(st.opts.follow)}.`);
+}
+
+/* OPTIONS */
+function openOpts() { renderOpts(); $('#optdlg').showModal(); }
+function renderOpts() {
+  const o = st.opts;
+  const seg = (k, vals) => `<div class="seg" role="group">${vals.map(v => `<button type="button" data-opt="${k}:${v[0]}" aria-pressed="${String(o[k]) === String(v[0])}">${v[1]}</button>`).join('')}</div>`;
+  $('#optdlg').innerHTML = `<div class="dlg"><h3 id="opt-t">Options</h3><p class="sub">Rules to try. The numbers are guesses until you see real turnout.</p>
+    <div class="optrow"><b>Ideas in progress at once</b><small>A guideline, not a lock. Boards get a heads-up before going past it. A large idea counts as 2.</small>${seg('cap', [[1, '1'], [2, '2'], [3, '3']])}</div>
+    <div class="optrow"><b>Eligible at ${o.thr} supporters</b><small>Small ideas need half. Eligible ideas get looked at in the monthly review.</small><input type="range" min="25" max="400" step="25" value="${o.thr}" id="o-thr" style="width:100%;accent-color:var(--ink)"></div>
+    <div class="optrow"><b>Contact people within</b><small>Days after someone offers to help.</small>${seg('contact', [[3, '3 days'], [7, '7 days'], [14, '14 days']])}</div>
+    <div class="optrow"><b>Check in every</b><small>Days between follow-ups until they join or step back.</small>${seg('follow', [[7, '7 days'], [14, '14 days'], [21, '21 days']])}</div>
+    <div class="optrow"><b>Flag an idea with no update after</b><small>Days of silence on an idea that is in progress.</small>${seg('stale', [[14, '14 days'], [30, '30 days'], [45, '45 days']])}</div>
+    <div class="optrow"><b>Ideas proposed by leaders</b><small>Whether a leader's own idea waits in line like everyone else's.</small>${seg('leader', [['queue', 'Join the queue'], ['claim', 'Can start right away with a public reason']])}</div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="optreset">Reset</button><button type="button" class="btn primary" data-act="optclose">Done</button></div></div>`;
+}
+
+/* routing */
+function render() {
+  renderChrome();
+  if (st.mode === 'student') { if (st.sp && !byId(st.sp)) st.sp = null; $('#view').innerHTML = studentView(); return; }
+  $('#view').innerHTML = { queue: viewQueue, propose: viewPropose, updates: viewUpdates, people: viewPeople }[st.tab]();
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-role],[data-tab],[data-board],[data-status],[data-go],[data-open],[data-act],[data-pickupd],[data-pstatus],[data-pstat],[data-msg],[data-pset],[data-opt],#scrim');
+  if (!t) return;
+  const d = t.dataset, i = st.sel ? byId(st.sel) : null;
+  if (d.role) { st.role = d.role; st.uf = { board: 'all', show: 'all' }; st.f = { board: 'all', status: 'all', sort: 'sup', q: '' }; st.pp.picked.clear(); closeDrawer(); return render(); }
+  if (d.tab) {
+    st.tab = d.tab;
+    const bd = e.target.closest('.badge');
+    if (bd && !bd.classList.contains('zero')) { if (d.tab === 'queue') st.f.status = 'elig'; if (d.tab === 'updates') st.uf.show = 'due'; if (d.tab === 'people') { st.pp.status = 'new'; st.pp.init = 'all'; } }
+    return render();
+  }
+  if (d.board) { st.f.board = d.board === 'all' || st.f.board === d.board ? 'all' : d.board; return render(); }
+  if (d.status) { st.f.status = d.status; return render(); }
+  if (d.go) { if (d.go === 'elig') { st.tab = 'queue'; st.f.status = 'elig'; } else st.tab = d.go; return render(); }
+  if (d.open) return openDrawer(Number(d.open));
+  if (t.id === 'scrim') return closeDrawer();
+  if (d.pickupd) { setUpd(byId(Number(d.pickupd))); return render(); }
+  if (d.pstatus) { st.pp.status = d.pstatus; return render(); }
+  if (d.pset) { const [id, s] = d.pset.split(':'); P.find(p => p.id === Number(id)).status = s; renderChrome(); return render(); }
+  if (d.msg) return openMsg(d.msg === 'bulk' ? [...st.pp.picked] : [Number(d.msg)]);
+  if (d.opt) { const [k, v] = d.opt.split(':'); st.opts[k] = k === 'leader' ? v : Number(v); renderOpts(); renderChrome(); return render(); }
+  const a = d.act; if (!a) return;
+  if (a === 'opts') return openOpts();
+  if (a === 'optclose') return $('#optdlg').close();
+  if (a === 'optreset') { st.opts = { ...DEF }; renderOpts(); renderChrome(); return render(); }
+  if (a === 'close') return closeDrawer();
+  if (a === 'msgcancel') return $('#msgdlg').close();
+  if (a === 'msgsend') return sendMsg();
+  if (a === 'submitProp') return submitProp();
+  if (a === 'sendUpd') return sendUpd();
+  if (a === 'people') { st.tab = 'people'; st.pp.init = String(i.id); st.pp.status = 'all'; closeDrawer(); return render(); }
+  if (!i) return;
+  if (a === 'start') {
+    if (used(i.board) + pts(i) > st.opts.cap) { st.confirm = i.id; return renderDrawer(); }
+    return startIdea(i);
+  }
+  if (a === 'startanyway') return startIdea(i);
+  if (a === 'startcancel') { st.confirm = null; return renderDrawer(); }
+  if (a === 'edit') return openEdit(i);
+  if (a === 'editcancel') return $('#editdlg').close();
+  if (a === 'editsave') {
+    const nb = $('#e-board').value;
+    if (nb !== i.board) { i.board = nb; i.upd.unshift({ d: 0, t: 'Moved to the ' + board(nb).name + '.' }); toast('Saved. Students will see the new board.'); }
+    $('#editdlg').close(); renderChrome(); render();
+    return inScope(i) ? renderDrawer() : closeDrawer();
+  }
+  if (a === 'review') return setStatus(i, 'review');
+  if (a === 'collect') { i.reason = ''; return setStatus(i, 'collecting'); }
+  if (a === 'wait') { i.reason = $('#reasonSel').value; return setStatus(i, 'waiting'); }
+  if (a === 'deliver') return setStatus(i, 'delivered', 'Delivered.');
+  if (a === 'post') { st.tab = 'updates'; setUpd(i); closeDrawer(); return render(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'boardSel') { st.board = t.value; st.uf = { board: 'all', show: 'all' }; st.f = { board: 'all', status: 'all', sort: 'sup', q: '' }; st.up.id = null; return render(); }
+  if (t.id === 'updBoard') { st.uf.board = t.value; return render(); }
+  if (t.id === 'updShow') { st.uf.show = t.value; return render(); }
+  if (t.id === 'sortSel') { st.f.sort = t.value; return render(); }
+  if (t.id === 'statSel') { st.f.status = t.value; return render(); }
+  if (t.id === 'boardFilter') { st.f.board = t.value; return render(); }
+  if (t.id === 'up-idea') { setUpd(byId(Number(t.value))); return render(); }
+  if (t.id === 'pinit') { st.pp.init = t.value; return render(); }
+  if (t.dataset.pick) { const id = Number(t.dataset.pick); if (t.checked) st.pp.picked.add(id); else st.pp.picked.delete(id); return render(); }
+  if (t.id === 'pf-claim') { st.pf.claim = t.checked; return render(); }
+  if (['pf-as', 'pf-board', 'pf-scale', 'pf-cost', 'pf-time'].includes(t.id)) { st.pf[t.id.slice(3)] = t.value; return render(); }
+  if (t.id === 'up-tpl') { const u = st.up; u.tpl = t.value; u.text = TPL[t.value][1](board(byId(u.id).board).name); return render(); }
+  if (t.id === 'up-status') { st.up.status = t.value; return; }
+  if (t.id === 'up-aud') { st.up.aud = t.value; return; }
+  if (t.id === 'm-tpl') { st.msg.tpl = t.value; fillMsg(); return renderMsg(); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q') { st.f.q = t.value; const pos = t.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); return; }
+  if (['pf-title', 'pf-desc', 'pf-reason'].includes(t.id)) { st.pf[t.id.slice(3)] = t.value; return $('#pvbox').innerHTML = pvHTML(); }
+  if (t.id === 'up-text') { st.up.text = t.value; return $('#upprev').innerHTML = updPrev(); }
+  if (t.id === 'm-sub') { st.msg.subject = t.value; return; }
+  if (t.id === 'm-body') { st.msg.body = t.value; return $('#m-prev').textContent = msgPreview(); }
+  if (t.id === 'o-thr') { st.opts.thr = Number(t.value); renderOptsKeep(); }
+});
+function renderOptsKeep() { const v = st.opts.thr; $$('#optdlg .optrow')[1].querySelector('b').textContent = `Eligible at ${v} supporters`; renderChrome(); render(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closeDrawer(); });
+
+/* ================= STUDENT SIDE ================= */
+Object.assign(PATHS, {
+  arrowUp: '<path d="M12 19V6M6 12l6-6 6 6"/>', arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>', arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  coins: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5c-.4-.9-1.3-1.3-2.5-1.3s-2.3.6-2.3 1.7c0 2.3 4.8 1.2 4.8 3.4 0 1.1-1.1 1.8-2.5 1.8s-2.2-.5-2.6-1.4"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>', user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+  flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>', share: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'
+});
+const EXTRA = {
+  103: { loc: 'Central campus', time: 'Within a year', author: 'Maya T.', full: ['Students who run short on groceries have few options on campus that feel private and easy to use. This proposal would set up a free pantry, hosted by an existing campus office, where anyone can pick up groceries and essentials without paperwork or questions.', 'It would start as a one-semester pilot with regular hours. SGA would report usage numbers at the end so the university can decide whether to make it permanent.'] },
+  131: { loc: 'Dining halls', time: 'Next semester', author: 'Chris L.', full: ['Late labs and library nights end after most dining locations close. Keeping one location open later on weeknights would give those students a real meal.', 'The proposal asks Dining Services to pilot one late location for a semester and share how many students use it.'] },
+  132: { loc: 'All dining stations', time: 'This semester', author: 'Jordan P.', full: ['Students with dietary needs often have to ask staff at every station. Clear halal and kosher labels would make that easier and faster.', 'This is a low-cost change that dining staff could roll out station by station.'] },
+  133: { loc: 'Campus dining', time: 'Next semester', author: 'Priya N.', full: ['Swipe2Care works, but donating takes extra steps, so many students never do it. Letting students opt in once and donate unused swipes automatically would raise participation without asking for more effort.', 'The proposal asks Dining Services to add an opt-in setting and report how many swipes it moves each month.'] },
+  112: { loc: 'Marino Center', time: 'Next semester', author: 'Alex R.', full: ['Marino is busiest in the same few afternoon hours every day, which leaves many students waiting for equipment or skipping workouts. A live capacity display would let people choose quieter times.', 'The proposal also asks Campus Rec to share usage data, so peak hours can be spread out with small changes like class-time reminders.'] },
+  118: { loc: 'Ruggles', time: 'Within a year', author: 'Taylor M.', full: ['Bikes left outside at the busiest entrance sit in snow and rain for months. Covered parking would protect them and encourage more students to ride.', 'The proposal asks Campus Planning to look at space near the Ruggles entrance and estimate costs.'] },
+  121: { loc: 'Snell Library', time: 'This semester', author: 'Jordan P.', full: ['Let students book library study rooms overnight during finals so groups are not competing for the same few daytime slots.', 'This would need agreement from library staff on overnight supervision and security, which the committee would look into first.'] },
+  141: { loc: 'Campus-wide', time: 'This semester', author: 'Morgan C.', full: ['International students often do not know which safety and emergency resources exist or who to call. A single page, shared through trusted student channels, would put the basics in one place.', 'It would be written with international students and would collect no personal data.'] },
+  142: { loc: 'Shuttle stops', time: 'This semester', author: 'Casey W.', full: ['Students waiting for the shuttle have no way to know when it is delayed or when the schedule changes. Phone alerts would save time, especially at night.', 'The proposal asks Campus Services to share delay information with a simple alert system.'] },
+  87: { loc: 'Residence halls', time: 'This semester', author: 'Sam K.', full: ['Put a clearly labeled compost bin on each floor with a simple pickup schedule. Start with the three largest halls, collect feedback on contamination and smell, then expand to the rest of campus housing once the routine is working well.', 'Residence hall staff would get a one-page guide, and students would get short signage explaining what goes in the bin.'] },
+  151: { loc: 'Academic buildings', time: 'This semester', author: 'Quinn H.', full: ['Many classroom buildings have no easy place to refill a water bottle. Adding stations on every floor would cut down on single-use bottles.', 'The proposal starts with the busiest buildings and tracks refill counts.'] },
+  161: { loc: 'Dining halls', time: 'Within a year', author: 'Riley S.', full: ['Takeout containers add up quickly. A reusable container program with a simple return system would reduce waste at dining locations.', 'It would be a larger project that needs agreement from Dining Services on cleaning and returns.'] }
+};
+I.forEach(i => Object.assign(i, EXTRA[i.id] || {}));
+const JOIN = {
+  'Dining Advisory Board': { desc: 'It advises campus dining and takes on food access projects.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '2 open seats', apply: 'Applications open about a month before each semester ends' },
+  'Campus Planning Advisory Board': { desc: 'It works with campus planning and facilities on how spaces are used and changed.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '1 open seat', apply: 'Applications open about a month before each semester ends' },
+  'Campus Services Committee': { desc: 'It works on campus services like recreation, transportation, and housing.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '2 open seats', apply: 'Apply through SGA. The committee chair reviews applications.' },
+  'Green Initiatives Board': { desc: 'It funds and supports student sustainability projects.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '3 open seats', apply: 'Apply through SGA. The board chair reviews applications.' },
+  'Sustainability Committee': { desc: 'It speaks up for sustainability on campus and works with campus offices.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '1 open seat', apply: 'Apply through SGA. The committee chair reviews applications.' }
+};
+const me = { voted: new Set(), part: new Map(), follow: new Set() };
+let nextPid = 100;
+Object.assign(st, { mode: 'student', stab: 'ideas', sp: null, sf: { q: '', cat: 'all', status: 'all', sort: 'sup' }, shareTab: 'link' });
+
+const sOpen = i => ['collecting', 'review', 'waiting'].includes(i.status);
+function sFiltered() {
+  const f = st.sf, ideas = st.stab === 'ideas';
+  return I.filter(i => (ideas ? sOpen(i) : !sOpen(i)) && (f.cat === 'all' || board(i.board).tag === f.cat) && (!ideas || f.status === 'all' || i.status === f.status) &&
+    (!f.q || (i.title + ' ' + i.desc).toLowerCase().includes(f.q.toLowerCase())))
+    .sort((a, b) => f.sort === 'new' ? a.age - b.age : f.sort === 'wk' ? b.wk - a.wk : b.sup - a.sup);
+}
+function sPair(i, big) {
+  if (i.status === 'delivered') return `<span class="s-final">Delivered with ${i.sup} supporters</span>`;
+  const v = me.voted.has(i.id), p = me.part.has(i.id), n = people(i.id).length;
+  return `<div class="s-pair${big ? ' big' : ''}">
+    <button type="button" class="s-vb" data-svote="${i.id}" aria-pressed="${v}" aria-label="Support proposal ${i.id}">${ic('arrowUp')}${big ? '<span>Support</span>' : ''}<span>${i.sup}</span></button>
+    <button type="button" class="s-vb" data-spart="${i.id}" aria-pressed="${p}" aria-label="I will participate in proposal ${i.id}"${big ? '' : ' title="I\'ll participate"'}>${ic('hand')}${big ? `<span>${p ? 'Participating' : "I'll participate"}</span>` : ''}<span>${n}</span></button></div>`;
+}
+function sCard(i) {
+  const b = board(i.board);
+  return `<article class="s-card">
+    <div class="s-chead"><div class="s-tags"><span class="s-num">Proposal ${i.id}</span><span class="tg">${ic('tag')}${b.tag}</span></div>${chipFor(i)}</div>
+    <div class="s-cbody"><h3 class="s-title">${esc(i.title)}</h3>
+      <div class="s-meta"><span>${ic('pin')}${esc(i.loc || 'Anywhere on campus')}</span></div>
+      <p class="s-desc">${esc(i.desc)}</p>
+      <div class="s-foot">${sPair(i)}<button type="button" class="s-lm" data-sopen="${i.id}">Learn more${ic('arrowRight')}</button></div></div></article>`;
+}
+function sFeed() {
+  const f = st.sf, ideas = st.stab === 'ideas', list = sFiltered();
+  const opt = (arr, cur) => arr.map(o => `<option value="${o[0]}"${cur === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('');
+  const filt = `<div class="s-filters">
+    <label class="fld"><span>Search</span><input class="search" type="search" id="sq" placeholder="Search ideas" value="${esc(f.q)}"></label>
+    <label class="fld"><span>Category</span><select id="sCat"><option value="all">All categories</option>${BOARDS.map(b => `<option value="${b.tag}"${f.cat === b.tag ? ' selected' : ''}>${b.tag}</option>`).join('')}</select></label>
+    ${ideas ? `<label class="fld"><span>Status</span><select id="sStatus">${opt([['all', 'All'], ['collecting', 'Collecting support'], ['review', 'Under review'], ['waiting', 'Waiting']], f.status)}</select></label>` : ''}
+    <label class="fld"><span>Sort by</span><select id="sSort">${opt([['sup', 'Most supported'], ['wk', 'Rising this week'], ['new', 'Newest']], f.sort)}</select></label></div>`;
+  const note = !ideas ? '<p class="note" style="margin:0 0 12px">Boards usually work on 1 or 2 ideas at a time. Ideas that are waiting stay on the Ideas list and keep their support.</p>' : '';
+  return `${filt}${note}${list.length ? `<div class="s-feed">${list.map(sCard).join('')}</div>` : '<div class="box empty">No ideas match. Try a different search, or submit your own.</div>'}`;
+}
+function sJoin(i) {
+  const b = board(i.board), j = JOIN[b.name];
+  const active = i.status === 'active';
+  const title = i.status === 'delivered' ? 'Join the board' : active ? 'Join the committee working on this' : 'Want to help make this happen?';
+  const lead = active ? `The ${b.name} is working on this now. ${j.desc}` : i.status === 'delivered' ? `${j.desc} New members are welcome every cycle.` : `If this idea moves forward, the ${b.name} would take it on. You can join the board whether or not this idea moves forward.`;
+  return `<section class="s-sec"><h2>${title}</h2><p>${lead}</p>
+    <dl class="s-dl" style="margin:12px 0 14px"><div><dt>${ic('calendar')}Meets</dt><dd>${j.meets}</dd></div><div><dt>${ic('clock')}Time</dt><dd>${j.time}</dd></div><div><dt>${ic('users')}Open seats</dt><dd>${j.seats}</dd></div><div><dt>${ic('flag')}How to apply</dt><dd>${j.apply}</dd></div></dl>
+    <div class="s-acts" style="align-items:flex-start"><button type="button" class="btn primary" data-sapply>Apply to join</button></div>
+    ${me.part.has(i.id) ? '<p class="s-help">You said you are willing to participate. This is how to join.</p>' : ''}</section>`;
+}
+function sProgress(i) {
+  const b = board(i.board), idx = { active: 1, delivered: 2 }[i.status];
+  let intro = '';
+  if (i.status === 'collecting') intro = `<p>This idea is collecting support. The ${b.name} looks at the list on ${NEXT_REVIEW} and usually works on 1 or 2 ideas at a time.</p>`;
+  if (i.status === 'review') intro = `<p>The ${b.name} is reviewing this idea now. You will see an update here when they decide.</p>`;
+  if (i.status === 'waiting') intro = `<p><b>On hold.</b> ${esc(i.reason || 'The board will come back to it.')}. It stays on the list and keeps its support.</p>`;
+  const track = idx === undefined ? '' : `<div class="s-track" aria-label="Progress: ${LAB[i.status]}">${['Collected support', 'In progress', 'Delivered'].map((l, k) => `<span class="s-step${k <= idx ? ' done' : ''}"><span class="s-dot"></span>${l}</span>${k < 2 ? `<span class="s-tbar${k < idx ? ' done' : ''}"></span>` : ''}`).join('')}</div>`;
+  const log = i.upd.length ? `<ul class="log">${i.upd.map(u => `<li><time>${dstr(-u.d)}</time><span>${esc(u.t)}</span></li>`).join('')}</ul>` : '';
+  return `<section class="s-sec"><h2>Progress</h2>${intro}${track}${log || (intro ? '' : '<p class="note">No updates yet.</p>')}</section>`;
+}
+function sPage(i) {
+  const b = board(i.board), n = i.sup, rankN = I.filter(o => o.board === i.board && o.status !== 'delivered').length;
+  const fol = me.follow.has(i.id);
+  const head = `<header class="s-ph"><button type="button" class="s-back" data-sback>${ic('arrowLeft')}Back to ${st.stab === 'ideas' ? 'ideas' : 'in progress'}</button>
+    <div class="s-tags"><span class="s-num">Proposal ${i.id}</span><span class="tg">${ic('tag')}${b.tag}</span>${chipFor(i)}</div>
+    <h1 class="s-h1">${esc(i.title)}</h1>
+    <div class="s-meta"><span>${ic('pin')}${esc(i.loc || 'Anywhere on campus')}</span><span>${ic('clock')}Proposed ${i.age} days ago</span><span>${ic('user')}${esc(i.by || i.author || 'A student')}</span></div></header>`;
+  const vote = `<section class="s-sec"><h2>${i.status === 'delivered' ? 'Result' : 'Your support'}</h2>${sPair(i, true)}${i.status === 'delivered' ? '' : '<p class="s-help">"I\'ll participate" tells SGA you would help work on this if it moves forward.</p>'}</section>`;
+  const support = `<section class="s-sec"><h2>Student support</h2><div class="s-dots" role="img" aria-label="${n} students support this">${Array.from({ length: n }, () => '<span></span>').join('')}</div>
+    <p class="s-dotcap"><b>${n} students</b> support this. Each square is one student.</p>${i.status === 'delivered' ? '' : `<p class="s-rank">${ic('flag')}Ranked #${rankOf(i)} of ${rankN} ideas for ${b.id}</p>`}</section>`;
+  const acts = `<section class="s-sec"><div class="s-acts"><button type="button" class="btn primary" data-sfollow="${i.id}" aria-pressed="${fol}">${ic('bell')}${fol ? 'Following' : 'Follow this initiative'}</button><button type="button" class="btn" data-scontact>${ic('mail')}Contact the committee</button><button type="button" class="btn" data-sshare>${ic('share')}Share</button></div></section>`;
+  const about = `<section class="s-sec"><h2>About this proposal</h2>${(i.full || [i.desc]).map(t => `<p>${esc(t)}</p>`).join('')}</section>`;
+  const details = `<section class="s-sec"><h2>Details</h2><dl class="s-dl"><div><dt>${ic('layers')}Scale</dt><dd>${i.scale}</dd></div><div><dt>${ic('coins')}Rough cost</dt><dd>${i.cost}</dd></div><div><dt>${ic('calendar')}Time horizon</dt><dd>${esc(i.time || 'To be decided')}</dd></div><div><dt>${ic('pin')}Location</dt><dd>${esc(i.loc || 'Anywhere on campus')}</dd></div><div><dt>${ic('flag')}Handled by</dt><dd>${b.name}</dd></div></dl></section>`;
+  return `${head}<div class="s-pg"><div class="s-main">${about}${details}${sProgress(i)}${sJoin(i)}</div><aside class="s-side" aria-label="Support and actions">${vote}${support}${acts}</aside></div>`;
+}
+function studentView() { return st.sp ? sPage(byId(st.sp)) : sFeed(); }
+
+/* share sheet */
+const SHARE_URL = i => `huskyproposals.example/p/${i.id}`;
+function qrSVG(seed) {
+  const N = 25; let r = ''; let x0 = seed * 9301 + 49297;
+  const rnd = () => (x0 = (x0 * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y) => (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8);
+  const fp = (ox, oy) => { for (let a = 0; a < 7; a++) for (let c = 0; c < 7; c++) { const edge = a === 0 || c === 0 || a === 6 || c === 6; const core = a >= 2 && a <= 4 && c >= 2 && c <= 4; if (edge || core) r += `<rect x="${ox + a + 2}" y="${oy + c + 2}" width="1" height="1"/>`; } };
+  fp(0, 0); fp(N - 7, 0); fp(0, N - 7);
+  for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) if (!finder(x, y) && rnd() > 0.52) r += `<rect x="${x + 2}" y="${y + 2}" width="1" height="1"/>`;
+  return `<svg class="qr" viewBox="0 0 ${N + 4} ${N + 4}" shape-rendering="crispEdges" role="img" aria-label="Sample QR code, not scannable"><rect width="${N + 4}" height="${N + 4}" fill="#fff"/><g fill="#111">${r}</g></svg>`;
+}
+function shareHTML(i) {
+  const tabs = [['link', 'Link'], ['image', 'Share image'], ['flyer', 'Flyer']];
+  const bar = `<div class="pseg seg" role="group" aria-label="Share format" style="margin-bottom:14px">${tabs.map(t => `<button type="button" data-ssharetab="${t[0]}" aria-pressed="${st.shareTab === t[0]}">${t[1]}</button>`).join('')}</div>`;
+  let body = '';
+  if (st.shareTab === 'link') body = `<div class="sh-link"><input class="sh-in" readonly value="${SHARE_URL(i)}" aria-label="Link to this proposal"><button type="button" class="btn primary" data-scopy>${ic('share')}Copy link</button></div>
+    <div class="sh-quick"><button type="button" class="btn" data-sshareact="Opening a text message">Text</button><button type="button" class="btn" data-sshareact="Opening an email">Email</button><button type="button" class="btn" data-sshareact="Copying a group chat message">Group chat</button></div>
+    <p class="note">Anyone with the link lands on this proposal and signs in with SSO to support it.</p>`;
+  if (st.shareTab === 'image') body = `<div class="sh-img"><div class="s-tags"><span class="s-num">Proposal ${i.id}</span><span class="tg">${board(i.board).tag}</span></div><div class="sh-img-title">${esc(i.title)}</div><div class="sh-img-foot"><div class="sh-img-count"><b>${i.sup}</b>students support this</div><span>Support it at ${SHARE_URL(i)}</span></div></div>
+    <div class="sh-actions"><button type="button" class="btn primary" data-sshareact="Downloading the image">Download image</button></div><p class="note">A picture for stories and group chats. It shows today's count, so it goes out of date as support grows.</p>`;
+  if (st.shareTab === 'flyer') body = `<div class="sh-flyer"><div class="band">Support proposal ${i.id}</div><h4>${esc(i.title)}</h4><p>${i.desc.length > 110 ? esc(i.desc.slice(0, 108).replace(/\s+\S*$/, '')) + '...' : esc(i.desc)}</p>${qrSVG(i.id)}<small>Scan to support this idea.</small></div>
+    <div class="sh-actions"><button type="button" class="btn primary" data-sshareact="Printing the flyer">Print flyer</button><button type="button" class="btn" data-sshareact="Downloading a PDF">Download PDF</button></div><p class="note">For tabling and bulletin boards. The QR code here is a sample and will not scan.</p>`;
+  return bar + body;
+}
+function renderShare() { $('#sharedlg').innerHTML = `<div class="dlg"><div class="inline" style="justify-content:space-between;margin-bottom:12px"><h3 id="share-t" style="margin:0">Share this proposal</h3><button type="button" class="btn sm" data-sclose>Close</button></div>${shareHTML(byId(st.sp))}</div>`; }
+
+/* submit an idea (student) */
+function openSNew() {
+  const sel = (id, arr, cur) => `<select id="${id}">${arr.map(v => `<option${v === cur ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
+  $('#spropdlg').innerHTML = `<div class="dlg"><h3 id="sp-t">Submit yours</h3><p class="sub">Tell SGA what you want to see change. Keep it short. People can support it as soon as it is posted.</p>
+    <div class="fields"><div class="field full"><label for="sd-title">Name</label><input id="sd-title" placeholder="What would you call it?" autocomplete="off"></div>
+    <div class="field full" id="sd-hint-wrap" hidden><p class="hint" id="sd-hint" style="margin:0"></p></div>
+    <div class="field"><label for="sd-loc">Where</label><input id="sd-loc" placeholder="Building or area"></div>
+    <div class="field"><label for="sd-cat">Category</label>${sel('sd-cat', BOARDS.map(b => b.tag), 'Dining')}</div>
+    <div class="field"><label for="sd-scale">Scale</label>${sel('sd-scale', ['Small', 'Medium', 'Large'], 'Medium')}</div>
+    <div class="field"><label for="sd-cost">Rough cost</label>${sel('sd-cost', ['Under $1k', '$1k to $5k', '$5k+'], 'Under $1k')}</div>
+    <div class="field full"><label for="sd-time">Time</label>${sel('sd-time', ['This semester', 'Next semester', 'Within a year'], 'This semester')}</div>
+    <div class="field full"><label for="sd-desc">Description</label><textarea id="sd-desc" placeholder="What is the problem, and what would you change?"></textarea></div></div>
+    <div class="dlg-actions"><button type="button" class="btn" data-scancel>Cancel</button><button type="button" class="btn primary" data-ssubmit>Post idea</button></div></div>`;
+  $('#spropdlg').showModal(); $('#sd-title').focus();
+}
+const STOPW = new Set(['the', 'and', 'for', 'more', 'with', 'that', 'every', 'near', 'campus']);
+function similarIdea(text) {
+  const w = text.toLowerCase().split(/\W+/).filter(x => x.length > 3 && !STOPW.has(x));
+  return w.length ? I.find(i => sOpen(i) && w.some(x => (i.title + ' ' + i.desc).toLowerCase().includes(x))) : null;
+}
+function submitSNew() {
+  const title = $('#sd-title').value.trim(), desc = $('#sd-desc').value.trim();
+  if (!title || !desc) return toast('Add a name and a description first.');
+  const tag = $('#sd-cat').value, b = BOARDS.find(x => x.tag === tag);
+  const i = { id: st.nextId++, title, board: b.id, scale: $('#sd-scale').value, cost: $('#sd-cost').value, sup: 1, wk: 1, age: 0, status: 'collecting', fol: 1, flag: false, desc, loc: $('#sd-loc').value.trim() || 'Anywhere on campus', time: $('#sd-time').value, full: [desc], author: 'You', upd: [] };
+  I.push(i); me.voted.add(i.id); me.follow.add(i.id); st.hl = i.id;
+  $('#spropdlg').close(); st.stab = 'ideas'; st.sp = null; st.sf = { q: '', cat: 'all', status: 'all', sort: 'new' };
+  render(); window.scrollTo(0, 0); toast('Posted. It is on the list and collecting support.');
+}
+
+/* student events */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-m],[data-stab],[data-svote],[data-spart],[data-sopen],[data-sback],[data-sfollow],[data-scontact],[data-sshare],[data-ssharetab],[data-scopy],[data-sshareact],[data-sclose],[data-snew],[data-sapply],[data-ssubmit],[data-scancel]');
+  if (!t) return;
+  const d = t.dataset, i = d.svote ? byId(Number(d.svote)) : d.spart ? byId(Number(d.spart)) : d.sfollow ? byId(Number(d.sfollow)) : null;
+  if (d.m) { st.mode = d.m; closeDrawer(); st.sp = null; render(); return window.scrollTo(0, 0); }
+  if (d.stab) { st.stab = d.stab; st.sp = null; st.sf = { q: '', cat: 'all', status: 'all', sort: 'sup' }; return render(); }
+  if (d.svote) { if (me.voted.has(i.id)) { me.voted.delete(i.id); i.sup--; i.wk = Math.max(0, i.wk - 1); } else { me.voted.add(i.id); i.sup++; i.wk++; } return render(); }
+  if (d.spart) {
+    if (me.part.has(i.id)) { const pid = me.part.get(i.id); P = P.filter(p => p.id !== pid); me.part.delete(i.id); }
+    else { const pid = nextPid++; P.push({ id: pid, name: 'You', email: 'you@husky.example', init: i.id, ago: 0, status: 'new' }); me.part.set(i.id, pid); toast('Thanks. SGA will reach out about how to help.'); }
+    return render();
+  }
+  if (d.sopen) { st.sp = Number(d.sopen); render(); return window.scrollTo(0, 0); }
+  if (t.hasAttribute('data-sback')) { st.sp = null; render(); return window.scrollTo(0, 0); }
+  if (d.sfollow) { if (me.follow.has(i.id)) { me.follow.delete(i.id); i.fol--; } else { me.follow.add(i.id); i.fol++; toast(`You will get updates on proposal ${i.id}.`); } return render(); }
+  if (t.hasAttribute('data-scontact')) return toast('Concept only: this opens a message to the committee.');
+  if (t.hasAttribute('data-sapply')) return toast('Concept only: this opens the board application.');
+  if (t.hasAttribute('data-sshare')) { renderShare(); return $('#sharedlg').showModal(); }
+  if (d.ssharetab) { st.shareTab = d.ssharetab; return renderShare(); }
+  if (t.hasAttribute('data-sclose')) return $('#sharedlg').close();
+  if (d.sshareact) return toast(`Concept only: ${d.sshareact} would happen here.`);
+  if (t.hasAttribute('data-scopy')) { const url = SHARE_URL(byId(st.sp)); return void navigator.clipboard.writeText(url).then(() => toast('Link copied.')).catch(() => toast('Copy is blocked here. Select the link instead.')); }
+  if (t.hasAttribute('data-snew')) return openSNew();
+  if (t.hasAttribute('data-scancel')) return $('#spropdlg').close();
+  if (t.hasAttribute('data-ssubmit')) return submitSNew();
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'sCat') { st.sf.cat = t.value; return render(); }
+  if (t.id === 'sStatus') { st.sf.status = t.value; return render(); }
+  if (t.id === 'sSort') { st.sf.sort = t.value; return render(); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'sq') { st.sf.q = t.value; const pos = t.selectionStart; render(); const q = $('#sq'); q.focus(); q.setSelectionRange(pos, pos); return; }
+  if (t.id === 'sd-title') { const m = similarIdea(t.value); $('#sd-hint-wrap').hidden = !m; if (m) $('#sd-hint').textContent = `A similar idea already exists: "${m.title}". You can still post yours, and SGA can see both.`; }
+});
+
+render();
+</script>
+</body>
+</html>
