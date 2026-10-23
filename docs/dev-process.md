@@ -301,5 +301,11 @@ The repository is the memory. Chat history and local assistant memory do not tra
 
 ## Open
 
-- **Repository access:** Luis has write access, which is enough for `/port:init` and labels. Ask Operations for: the merge-button settings and squash message (maintain), and the rulesets and the default branch switch to `dev` (admin). See "How we run port."
+- **Repository settings to apply.** Luis decides how the repository is run. His GitHub account has write access, which covers `/port:init`, labels, and merging. These settings need an admin account to apply, either an Operations admin or admin access granted to Luis:
+  - switch the default branch to `dev`;
+  - split the current `main/dev` ruleset: `dev` allows squash merges only, and `main` allows merge commits only (today both allow only merge and rebase, so squash is unavailable);
+  - set the default squash message to the pull request title;
+  - add `verify` as a required check once CI exists.
+
+  Until the ruleset is split, merge feature pull requests with a merge commit, not rebase.
 - **TypedSQL in agent worktrees** (item 3 under "Where port and our rules conflicted") needs a decision before the schema work.
