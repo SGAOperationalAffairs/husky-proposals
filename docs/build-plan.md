@@ -54,6 +54,26 @@ Updated October 22, 2026: the sign-in and email spikes are answered, and scalabi
 - Bring the D16 options to the Executive Board.
 - See `reference/governance-notes.md` (local only).
 
+**T0.10 Planning artifacts** (before feature tickets).
+1. A feature map: the December scope split into epics.
+2. A draft `prisma/schema.prisma`, with a generated diagram, reviewed in FigJam.
+3. FigJam diagrams of the review and idea state machines and the viewer-shape rules.
+4. A feature spec per epic in `docs/features/`, each with a local Word executive summary.
+5. Each epic broken into sub-issues with `/port:scope`, on the Projects board.
+
+Done when every December epic has a spec and sub-issues on the board.
+
+**T0.11 Port setup.**
+- Get maintain access from Operations.
+- Run `/port:init` and `/port:analyze`. Commit the config, plus `docs/ENGINEERING.md` built from `CLAUDE.md`'s rules.
+- Create the Projects board.
+
+Done when port can plan a ticket end to end.
+
+**T0.12 Move planning documents to SGA's shared Google Drive** (later, low priority).
+- Upload the PRD, the executive summaries, and the governance notes.
+- Point the local-only references in `CLAUDE.md` at the Drive folder.
+
 ## Milestone 1: the core loop (Oct 28 to Nov 10)
 
 **T1.1 Ideas list.** Search, category, status, and sort. Public and cached.

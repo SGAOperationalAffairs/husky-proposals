@@ -172,6 +172,17 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **Reuse before you build.** Check the Patterns section before adding a component, hook, or helper.
 - **Comments explain why,** and cite the issue number.
 - **Read a failure before rerunning.**
+- **The UI must not look generated.**
+  - Use the frontend-design skill for all UI work.
+  - Build from `design/tokens.css` and the prototype's layouts, not component-library defaults.
+  - Avoid generic AI-app patterns: gradient heroes, rounded pill cards, emoji icons, filler copy.
+- **Tools and planning order:** see `docs/dev-process.md`.
+  - Tickets are GitHub Issues.
+  - Feature specs go in `docs/features/`.
+  - The data model's source of truth is `prisma/schema.prisma`.
+  - Review diagrams live in FigJam.
+  - Executive summaries are local Word documents.
+- **Issues are public.** Write them at the implementation level. Internal reasoning stays in local documents.
 
 ## Hard rules
 

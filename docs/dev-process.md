@@ -81,6 +81,29 @@ Validate everything we do not control: SGAuth session responses, Resend webhooks
 - **Rules used by both the client and the server,** such as statuses, permissions, and limits, live in one shared module and are imported, never copied.
 - **Edit files with proper editing tools,** not ad hoc sed or Python scripts for multi-line changes. Use a codemod only for mechanical bulk changes.
 
+## Tools
+
+Agreed October 23, 2026.
+
+| Job | Tool | Notes |
+|---|---|---|
+| Tickets | GitHub Issues and a GitHub Projects board in this repository | Port runs on issue labels. The repository is public, so issues are public: implementation detail only, never internal deliberation. |
+| Breaking features into tickets | Port's `/port:scope` | Turns an epic into dependency-ordered sub-issues. |
+| Feature specs | `docs/features/<name>.md` in the repository, linked from the epic issue | Behavior, acceptance criteria, edge cases, and tests. Technical, for Luis, Eli, and SGA Operations. |
+| Executive summaries and internal reasoning | Local Word documents (gitignored), later moved to SGA's shared Google Drive | Each feature spec gets a short executive summary. Internal debates stay out of the repository. |
+| Data model | `prisma/schema.prisma` is the source of truth, with a generated Mermaid diagram committed next to it | The diagram renders on GitHub and updates with the schema. |
+| Diagrams for review | FigJam (Luis's Figma account) | Entity diagrams, the review and idea state machines, and viewer-shape rules. |
+| UI design | `prototype/concept-2.html` for layouts, Figma when screens need comments, and the frontend-design skill for all UI code | The app must not look generated. Follow `design/tokens.css` and the prototype, not generic component-library defaults. |
+| Workshops and feedback | Miro | As in the validation plan. |
+
+## Planning order
+
+1. **Feature map:** split the December scope into epics.
+2. **Schema:** draft `schema.prisma` from `data-model.md`, generate the diagram, and review it in FigJam.
+3. **State machines and viewer shapes:** diagram the review status, the idea status, and who sees what, in FigJam.
+4. **Feature specs:** one per epic in `docs/features/`, each with an executive summary.
+5. **Tickets:** run `/port:scope` on each epic, and put the sub-issues on the board in milestone order.
+
 ## Keeping context between sessions
 
 The repository is the memory. Chat history and local assistant memory do not travel between sessions or machines.
