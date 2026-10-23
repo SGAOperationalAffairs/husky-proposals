@@ -169,7 +169,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **Side tangents:** confirm once, then file an issue and move on. Do not fix unrelated problems inline.
 - **Test-first:** write the failing test, see it fail for the right reason, then write the code.
 - **Run `npm run verify` before opening a pull request.** CI runs the same command.
-- **Reuse before you build.** Check the Patterns section before adding a component, hook, or helper.
+- **Reuse before you build.** Check the Patterns list in `docs/ENGINEERING.md` before adding a component, hook, or helper.
 - **Comments explain why,** and cite the issue number.
 - **Read a failure before rerunning.**
 - **The UI must not look generated.**
@@ -201,18 +201,16 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **The sign-in stand-in** runs only in local and test. The app refuses to start with it enabled anywhere else.
 - This repository is public. Anything committed is public. Never commit the local-only files listed in `.gitignore`, and never quote private conversations or internal budget details in committed files.
 
-## Patterns
+## Patterns and where things live
 
-To be filled in as the first features land, and no later than the fifth feature. List:
+Both live in `docs/ENGINEERING.md`, not here, because port's agents cannot edit this file (see `docs/dev-process.md`, "How we run port"). Update them in the same pull request as the feature.
+
+Patterns are filled in as the first features land, and no later than the fifth feature. List:
 - one component per idea;
 - one hook per feature;
 - the shared rules module;
 - the validation helpers;
 - a new-feature checklist ("Which component or hook does this extend? Which test fails first?").
-
-## Where things live
-
-To be filled in once the code is scaffolded. Update this section in the same pull request as the feature.
 
 ## Conventions
 
