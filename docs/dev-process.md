@@ -18,15 +18,15 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 
 | Branch | Role | Deploys to | Database |
 |---|---|---|---|
-| `main` | Production, and the default branch | `proposals.northeasternsga.com` | Neon `main` |
-| `dev` | Integration. Every feature lands here first | `proposals-dev.northeasternsga.com`, signing in against SGAuth dev | Neon `dev` |
+| `main` | Production | `proposals.northeasternsga.com` | Neon `main` |
+| `dev` | Integration, and the default branch. Every feature lands here first | `proposals-dev.northeasternsga.com`, signing in against SGAuth dev | Neon `dev` |
 | `<issue>-<slug>`, for example `12-review-queue` | One branch per issue, cut from `dev` | A Vercel preview on `vercel.app`, behind password protection, browse-only (sign-in cannot work there) | Neon `dev` |
 | `hotfix-<issue>-<slug>` | Urgent production fixes only, cut from `main` | A Vercel preview | Neon `dev` |
 | CI | | | A Neon test branch |
 
 **Naming:**
 - Branch names start with the issue number. Port uses `^(\d+)-` to link worktrees and pull requests back to issues.
-- `main` stays the default branch, because port reads its configuration from there. Port config changes have to reach `main`, not only `dev`.
+- `dev` is the default branch (decided October 23, 2026, the same as SGAuth). Port's agents read their configuration from the default branch, and GitHub closes an issue from `Closes #N` only when the pull request merges into the default branch. Vercel's production branch is set to `main` separately. Changing the default branch needs an admin.
 
 ### Merging
 
@@ -74,7 +74,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
   - no force pushes;
   - no deletion.
 - **`main`:** accepts only release pull requests from `dev` and `hotfix-*` pull requests.
-- **`dev`:** one human approval for pull requests that touch the review flow, permissions, or viewer shapes.
+- **No required approval.** Port opens pull requests from Luis's account, and GitHub does not let an author approve their own pull request. Luis reviews every pull request and is the only one who merges, so the merge is the human gate. He reads the full diff of anything that touches the review flow, permissions, or viewer shapes.
 
 ### Bootstrap exception
 
@@ -95,7 +95,7 @@ The first commit, on `docs/initial-planning`, predates the issue tracker and doe
 Port turns GitHub issues into pull requests. A plan agent writes the plan, and an implement agent builds it. A review agent reviews, and a revise agent fixes. A person approves each plan and merges each pull request.
 
 - **Implement agent rules:** work test-first, and run `verify` before opening a pull request.
-- **Review agent rules:** check the Patterns list in `CLAUDE.md`. Most review churn in Resume Studio came from missed reuse and missing tests, not logic bugs.
+- **Review agent rules:** check the Patterns list in `docs/ENGINEERING.md`. Most review churn in Resume Studio came from missed reuse and missing tests, not logic bugs.
 - **Privacy rules and the review flow,** the riskiest parts of this product, get a human review before merge.
 - **Parallel agents** only work when their files do not overlap. Port holds a ticket back on its own when an in-flight plan claims 2 or more of the same files.
 
@@ -205,21 +205,20 @@ Run it after the scaffold. On an empty repository it has nothing to sample. Re-r
 | Changing the default branch | Admin |
 | A Projects board owned by the SGAOperations org | An org member allowed to create projects |
 
-### Where port and our rules conflict
+### Where port and our rules conflicted
 
-1. **The default branch.** Port's implement and revise agents read their config from the default branch. GitHub only closes an issue from `Closes #N` when the pull request merges into the default branch. With `main` as default:
-   - a config change reaches agents only after a release;
-   - issues stay open after their pull request merges into `dev`, so port's file-contention check keeps treating their files as in use and holds new tickets until the next release.
+Decided October 23, 2026, except item 3.
 
-   SGAuth uses `dev` as its default branch, which avoids both. **Recommendation:** make `dev` the default branch, and set Vercel's production branch to `main` separately. This reverses the "`main` stays the default branch" rule above, so it needs Luis's decision, then an admin.
-2. **`CLAUDE.md` is session-required.** Port will not let an agent edit `CLAUDE.md`, but our rule is to update its "Where things live" and "Patterns" sections in the same pull request as each feature. That would send every feature to `/port:implement`. **Recommendation:** move those two sections into `docs/ENGINEERING.md`, which agents can edit and review cites, and leave a pointer in `CLAUDE.md`.
+1. **The default branch.** With `main` as default, config changes reached agents only after a release, and issues stayed open after merging into `dev`, so port's file-contention check held new tickets until the next release. **Decided:** `dev` is the default branch (see "Branches").
+2. **`CLAUDE.md` is session-required.** Port will not let an agent edit `CLAUDE.md`, so updating its "Where things live" and "Patterns" sections in every feature pull request would send every feature to `/port:implement`. **Decided:** those two sections live in `docs/ENGINEERING.md`, which agents can edit and review cites. Until `/port:analyze` creates it, the first feature pull request that needs them creates it.
 3. **`verify` needs secrets that agent worktrees do not have.** Anything in `bootstrap` or `checks` that needs a database fails on every run. Two parts of our plan need one:
    - TypedSQL generates types from a live database, so `prisma generate --sql` cannot run in a worktree;
    - our database and browser tests use the Neon test branch.
 
    **Recommendation:** the `verify:agent` split above, plus one of these for TypedSQL: commit the generated TypedSQL types, or write the one or two raw queries (the outbox claim) as tagged `$queryRaw` in `src/db/sql/`, validated with zod. The second changes a D20 rule, so it needs Luis's decision.
-4. **The required human approval.** Port opens pull requests from the operator's own account, and GitHub does not let an author approve their own pull request. Requiring an approval on review-flow and privacy pull requests needs a second person with write access, such as Eli, named in a `CODEOWNERS` file for those paths.
-5. **Squash merge subjects.** Port writes `#N summary` commits on the branch, but a squash merge's subject comes from a GitHub setting. Set the default squash message to the pull request title, and title pull requests `#N summary`, so `dev` keeps our format. `/port:release` reads issue numbers from either form.
+   **Open:** Luis to choose.
+4. **The required human approval.** GitHub does not let an author approve their own pull request, and port opens pull requests from Luis's account. **Decided:** no required approval and no second reviewer. Luis's review and merge are the gate (see "Branch protection").
+5. **Squash merge subjects.** A squash merge's subject comes from a GitHub setting, not from port's commits. **Decided:** set the default squash message to the pull request title, and title pull requests `#N summary`, so `dev` keeps our format.
 
 No conflict: port's branch names (`<issue>-<slug>`), commit format, rebase onto `dev` before review, and release pull requests from `dev` to `main` already match our rules. The revise agent force-pushes only to feature branches, which branch protection does not cover.
 
@@ -260,7 +259,7 @@ Validate everything we do not control: SGAuth session responses, Resend webhooks
 
 ## Code conventions
 
-- **Reuse before you build.** One component per idea (dialogs, cards, chips) and one hook per feature. `CLAUDE.md` lists the patterns, and gets a new-feature checklist before the fifth feature, not after an audit: "Which component or hook does this extend? Which test fails first?"
+- **Reuse before you build.** One component per idea (dialogs, cards, chips) and one hook per feature. `docs/ENGINEERING.md` lists the patterns, and gets a new-feature checklist before the fifth feature, not after an audit: "Which component or hook does this extend? Which test fails first?"
 - **Comments explain why,** and cite the issue number. Match the comment density of the surrounding code.
 - **Commit messages:** port's format, `#12 add decline reason validation`, then a short body saying why. See "Branches and releases."
 - **Rules used by both the client and the server,** such as statuses, permissions, and limits, live in one shared module and are imported, never copied.
@@ -294,12 +293,13 @@ Agreed October 23, 2026.
 The repository is the memory. Chat history and local assistant memory do not travel between sessions or machines.
 
 - **`docs/PRD.md`:** what and why. Every decision goes in the decision log with the date and the reason, in the same pull request that acts on it. Add "Turned down" notes so the same idea is not re-proposed.
-- **`CLAUDE.md`:** working rules, how to run things, where things live (updated in the same pull request as the feature), patterns, and hard rules.
+- **`CLAUDE.md`:** working rules, how to run things, and hard rules.
+- **`docs/ENGINEERING.md`:** patterns and where things live, updated in the same pull request as the feature.
 - **Issues:** findings and decisions go in the closing comment.
 - **`docs/`:** longer topics such as `scalability.md`, `sgauth-integration.md`, and this file.
 - **UI decisions:** `prototype/concept-2.html` is where layouts are settled. New layouts are mocked there first, and the choice is cited in code. Screens made from existing pieces do not need a mock.
 
 ## Open
 
-- **Repository access:** Luis has write access, which is enough for `/port:init` and labels. Merge-button settings need maintain, and rulesets and the default branch need admin. Ask Operations. See "How we run port."
-- **Port conflicts 1 to 5** under "Where port and our rules conflict" need a decision before T0.11.
+- **Repository access:** Luis has write access, which is enough for `/port:init` and labels. Ask Operations for: the merge-button settings and squash message (maintain), and the rulesets and the default branch switch to `dev` (admin). See "How we run port."
+- **TypedSQL in agent worktrees** (item 3 under "Where port and our rules conflicted") needs a decision before the schema work.
