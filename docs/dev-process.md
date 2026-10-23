@@ -47,7 +47,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 ### Releases
 
 - **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
-- **Versions are semver tags.** `v0.x` before launch, `v1.0.0` at the December launch.
+- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`.
 - **Cadence:** release when a milestone's work is verified on `proposals-dev`. Weekly during launch.
 
 ### Hotfixes
@@ -276,7 +276,7 @@ Agreed October 23, 2026.
 | Feature specs | `docs/features/<name>.md` in the repository, linked from the epic issue | Behavior, acceptance criteria, edge cases, and tests. Technical, for Luis, Eli, and SGA Operations. |
 | Executive summaries and internal reasoning | Local Word documents (gitignored), later moved to SGA's shared Google Drive | Each feature spec gets a short executive summary. Internal debates stay out of the repository. |
 | Data model | `prisma/schema.prisma` is the source of truth, with a generated Mermaid diagram committed next to it | The diagram renders on GitHub and updates with the schema. |
-| Diagrams for review | FigJam (Luis's Figma account) | Entity diagrams, the review and idea state machines, and viewer-shape rules. |
+| Diagrams for review | FigJam (Luis's Figma account) | [Schema review board](https://www.figma.com/board/UVvKcZzZCOM5FvfwSBnNxf): entity relationships, UML classes, the review and idea state machines, and who sees what. [Timeline draft](https://www.figma.com/board/B0t1S7DA0LGUeHBMbqN0Hv) (superseded by `timeline.md`). Figma's MCP calls are limited on this plan, so diagrams that change often live in the repo as Mermaid. |
 | UI design | `prototype/concept-2.html` for layouts, Figma when screens need comments, and the frontend-design skill for all UI code | The app must not look generated. Follow `design/tokens.css` and the prototype, not generic component-library defaults. |
 | Workshops and feedback | Miro | As in the validation plan. |
 

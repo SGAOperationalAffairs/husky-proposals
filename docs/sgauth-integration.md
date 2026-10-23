@@ -4,7 +4,7 @@ How Husky Proposals signs people in through SGAuth, SGA's shared sign-in service
 
 - **SGAuth repository:** `SGAOperations/auth`. Its `docs/ENVIRONMENTS.md` and `docs/sgauth-design/` are the source of truth. This file summarizes them for us.
 - **SGAuth maintainers:** SGA Operations (Digital Innovation).
-- **Last checked:** October 15, 2026. Recheck the ticket status before relying on it.
+- **Last checked:** October 23, 2026 (staleness model and ticket status). Recheck the ticket status before relying on it.
 
 ## How it works
 
@@ -91,7 +91,26 @@ As of October 15, 2026:
 | Could products verify SGAuth's signed tokens themselves? | Would cut session calls, if SGAuth's design allows it. | To ask |
 | Register Husky Proposals in the product registry, and add the `proposals` and `proposals-dev` subdomains. | Needed for redirects, origin checks, and the cookie. | To ask |
 | Add our test accounts to the auth-dev sign-up allowlist. | Needed to test on `proposals-dev`. | To ask |
+| A deactivation feed, or a batch "are these user ids active" lookup, for registered products. | So we stop emailing deleted or deactivated accounts (see "Stale data"). | To ask (#8) |
+| A read-only "current holders of these position keys" lookup for registered products. | So reviewer reminders reach the current chair, not the last one who signed in. | To ask (#8) |
+| Can the SDK skip its cache for one call? | For leader actions, which should never run on a stale answer. | To ask (#8) |
 | Why Neon? | Every SGA project can be owned in one org. Supabase's free tier was too limited on orgs and projects. | Answered October 15 |
+
+## Stale data
+
+We copy a little of SGAuth's data and cache the rest, so some of it can go stale. Full analysis and decisions in #8.
+
+What SGAuth guarantees (checked October 23, 2026): the session endpoint reads positions and account status live, so a removed position or a deactivated account shows on the very next call (SGAuth #40, #57). Position keys never change, and deleted keys cannot be reused for 365 days (SGAuth #54). Products get no change events and no "who holds this position" lookup.
+
+| What goes stale | Effect | Plan |
+|---|---|---|
+| Positions in the SDK cache (60 seconds, up to 5 minutes stale while SGAuth is down) | A chair whose term ended keeps powers briefly | Accept 60 seconds. Leader-only actions never use a stale-on-error answer: they fail closed with "SGA tools are unavailable, try again shortly." Students may use the stale answer |
+| Name and email copied into `users` | Emails go to an old address; a student who never returns is never refreshed | Refresh on each session check, at most once a day |
+| Deactivated or deleted accounts | They cannot act (SGAuth returns 401), but digests keep going | Ask SGAuth for a deactivation feed; until then, stop digests to users not seen in 120 days |
+| Who holds a board's chair position | We only learn positions at sign-in, so reminders can reach a former chair and miss a new one | Keep last-seen positions for routing reminders only, never for permissions; always copy the VP; ask SGAuth for a holders lookup |
+| Board position keys in `boards` | A retired key leaves a board with no reviewer | Daily check: alert the VP if no chair has been seen in 30 days |
+| Open SGA tabs after a role ends | Leader data already loaded stays on screen | Every action and leader page load re-checks the session; leader pages are never cached |
+| Taps saved before sign-in, on a shared computer | They could apply to whoever signs in next | Expire after 24 hours, clear on sign-out, and ask before applying |
 
 ## How SGAuth is built (useful patterns)
 

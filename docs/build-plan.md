@@ -96,9 +96,11 @@ T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 - `npm run verify` runs locally and in CI in under 5 minutes.
 - No test touches a real external service.
 
-**T0.5 Schema.** Migrations for the entities in `data-model.md`.
+**T0.5 Schema.** Migrations from `prisma/schema.prisma`, plus the hand-written migration for the `idea_stats` view and the check constraints noted in the schema.
 - Migrations apply cleanly.
 - Seed data comes from the prototype's sample ideas.
+- `prisma.config.ts` reads the URLs from the validated environment, with a placeholder URL when one is missing for offline commands (`prisma generate`, `prisma migrate diff`). Prisma 7 refuses to run those without a datasource URL, even though they never connect.
+- `@updatedAt` columns get no database default; Prisma fills them in. Raw SQL inserts and seed scripts must set them.
 
 **T0.6 Sign-in stand-in and roles.** A development-only stand-in with the same shape as SGAuth's session response, plus the position-to-board mapping module.
 - A student, a chair, and the VP can each act as themselves locally and see the right things.
