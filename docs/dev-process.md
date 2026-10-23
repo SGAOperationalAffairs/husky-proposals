@@ -10,13 +10,75 @@ How work on Husky Proposals is planned, built, tested, and recorded. It draws on
 - **Luis Sarmiento** is the primary developer and directs the product, alongside stakeholder feedback.
 - All changes go through pull requests. Nothing is pushed straight to `dev` or `main`.
 
-## Branches
+## Branches and releases
 
-- **Feature branches** are cut from `dev`, named after their issue (for example `12-review-queue`), and merged into `dev` by pull request.
-- **`dev`** is the integration branch. It deploys to `proposals-dev.northeasternsga.com`, which signs in against SGAuth's dev environment.
-- **`main`** is production. It deploys to `proposals.northeasternsga.com`. `dev` is released into `main` by a release pull request.
-- This matches SGAuth, and port's two-branch mode: feature pull requests target `dev`, and releases go from `dev` to `main`.
-- **Port reads its configuration from the default branch (`main`),** so port config changes have to reach `main`, not only `dev`.
+Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
+
+### Branches
+
+| Branch | Role | Deploys to | Database |
+|---|---|---|---|
+| `main` | Production, and the default branch | `proposals.northeasternsga.com` | Neon `main` |
+| `dev` | Integration. Every feature lands here first | `proposals-dev.northeasternsga.com`, signing in against SGAuth dev | Neon `dev` |
+| `<issue>-<slug>`, for example `12-review-queue` | One branch per issue, cut from `dev` | A Vercel preview on `vercel.app`, behind password protection, browse-only (sign-in cannot work there) | Neon `dev` |
+| `hotfix-<issue>-<slug>` | Urgent production fixes only, cut from `main` | A Vercel preview | Neon `dev` |
+| CI | | | A Neon test branch |
+
+**Naming:**
+- Branch names start with the issue number. Port uses `^(\d+)-` to link worktrees and pull requests back to issues.
+- `main` stays the default branch, because port reads its configuration from there. Port config changes have to reach `main`, not only `dev`.
+
+### Merging
+
+- **Feature into `dev`: squash merge,** after rebasing the branch onto `dev` (port's implement agent already rebases).
+  - Result: one tested commit per issue on `dev`. A feature can be reverted in one step.
+  - Port's review-fix commits stay on the pull request page and do not reach `dev`.
+- **`dev` into `main`: merge commit, never squash or rebase.**
+  - GitHub's squash and rebase buttons rewrite commit IDs. That makes `main` and `dev` look diverged, so later releases conflict or repeat old changes.
+  - Fast-forward-only releases would also be safe, but GitHub's buttons cannot do them, so we do not use them.
+- **Turned down:** rebase-and-merge for features. It replays every commit, including review fixes that were never tested on their own, which breaks bisect and one-commit reverts.
+
+### Commit messages
+
+- Subject: `#N <imperative lowercase summary>`, for example `#12 add decline reason validation`. This is port's format.
+- Body: a short paragraph saying why.
+- Use `git commit -F <file>` for multi-line messages.
+
+### Releases
+
+- **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
+- **Versions are semver tags.** `v0.x` before launch, `v1.0.0` at the December launch.
+- **Cadence:** release when a milestone's work is verified on `proposals-dev`. Weekly during launch.
+
+### Hotfixes
+
+- Only for production breakage.
+- Branch from `main`, open a pull request into `main`, then immediately merge `main` back into `dev`.
+- Everything else goes through `dev`.
+
+### Migrations
+
+- Pull requests may only add to the schema (expand). Removals come in a later release (contract).
+- Previews share the `dev` database, so a destructive migration in an open pull request would break every preview and `proposals-dev`.
+
+### The sign-in stand-in
+
+- Local and test environments only.
+- The app refuses to start if the stand-in is enabled anywhere else. Otherwise anyone could choose "I'm the VP" on a deployed preview.
+
+### Branch protection (needs maintain or admin access)
+
+- **Both branches:**
+  - pull request required;
+  - `verify` must pass;
+  - no force pushes;
+  - no deletion.
+- **`main`:** accepts only release pull requests from `dev` and `hotfix-*` pull requests.
+- **`dev`:** one human approval for pull requests that touch the review flow, permissions, or viewer shapes.
+
+### Bootstrap exception
+
+The first commit, on `docs/initial-planning`, predates the issue tracker and does not follow the naming rule. Everything after it does.
 
 ## Planning work
 
@@ -77,7 +139,7 @@ Validate everything we do not control: SGAuth session responses, Resend webhooks
 
 - **Reuse before you build.** One component per idea (dialogs, cards, chips) and one hook per feature. `CLAUDE.md` lists the patterns, and gets a new-feature checklist before the fifth feature, not after an audit: "Which component or hook does this extend? Which test fails first?"
 - **Comments explain why,** and cite the issue number. Match the comment density of the surrounding code.
-- **Commit messages:** a subject ending in the issue number, such as "(#12)", then a short body saying why.
+- **Commit messages:** port's format, `#12 add decline reason validation`, then a short body saying why. See "Branches and releases."
 - **Rules used by both the client and the server,** such as statuses, permissions, and limits, live in one shared module and are imported, never copied.
 - **Edit files with proper editing tools,** not ad hoc sed or Python scripts for multi-line changes. Use a codemod only for mechanical bulk changes.
 

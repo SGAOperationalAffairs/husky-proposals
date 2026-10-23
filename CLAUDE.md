@@ -189,7 +189,15 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - Never commit secrets or real student data. Test data is invented.
 - No test touches a real external service. SGAuth, email, and the database have fakes or test branches.
 - Student and leader responses are different shapes. Private fields must not be reachable from the student shape. Test this.
-- **Branches:** feature branches merge into `dev` through pull requests. `dev` is released into `main`, which is production. Never push straight to `dev` or `main`.
+- **Branches:** see `docs/dev-process.md`, "Branches and releases."
+  - One branch per issue, named `<issue>-<slug>` and cut from `dev`.
+  - Features are rebased, then squash-merged into `dev`.
+  - Releases go `dev` to `main` as a merge commit, through `/port:release`, never squashed or rebased.
+  - Hotfixes branch from `main`, then `main` is merged back into `dev`.
+  - Never push straight to `dev` or `main`.
+- **Commit subjects:** `#N <imperative lowercase summary>`.
+- **Migrations only add in a pull request.** Removals come in a later release.
+- **The sign-in stand-in** runs only in local and test. The app refuses to start with it enabled anywhere else.
 - This repository is public. Anything committed is public. Never commit the local-only files listed in `.gitignore`, and never quote private conversations or internal budget details in committed files.
 
 ## Patterns
