@@ -2,6 +2,8 @@
 
 This is a starting point derived from the PRD and the prototype. It is a proposal, not a decision. Confirm it with Luis before building migrations. Types are indicative.
 
+**`prisma/schema.prisma` is now the source of truth for fields and types** (drafted October 23, 2026, #6). This file keeps the rules, states, visibility, and permissions in prose. Where the two differ on a field, the schema wins.
+
 Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positions, and the email outbox, preferences, and limits follow `scalability.md`.
 
 ## Entities

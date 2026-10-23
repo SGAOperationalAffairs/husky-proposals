@@ -155,11 +155,11 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 
 - **Reuse before you write a query.** Shared field lists per viewer (`studentIdeaSelect` and so on), shared filters (`isPublic`), and named queries as client extensions all live in `src/db/`. Check them with `satisfies Prisma.<Model>Select` or `WhereInput`.
 - **Counts and rank come from a database view** (`idea_stats`), created in a hand-written migration and mapped as a read-only Prisma model. Do not compute rank with raw SQL in app code.
-- **Raw SQL only in `src/db/sql/`, as TypedSQL files**, for example `claimOutboxBatch.sql` (`FOR UPDATE SKIP LOCKED`). Never use `$queryRawUnsafe`. No `$queryRaw` outside `src/db/`. A lint rule enforces this.
+- **Raw SQL only in `src/db/sql/`, as tagged `$queryRaw`** with results parsed by zod, for example `claimOutboxBatch.ts` (`FOR UPDATE SKIP LOCKED`). Never use `$queryRawUnsafe`. No `$queryRaw` outside `src/db/sql/`. A lint rule enforces this. Each query has a test against the Neon test branch. We do not use TypedSQL: it needs a live database to generate types, which port's agents do not have (decided October 23, 2026).
 - **Validate untyped results with zod.**
 - **Watch the SQL.** Log queries in development. A test counts queries per page, so one query per idea fails.
 - **Migrations are reviewed and committed.** Never edit a committed migration. Changes are additive first: add a column, then drop the old one in a later release.
-- **TypedSQL needs a live database to generate types,** so CI uses the Neon test branch.
+- **Prisma is pinned to 7.10.x.** npm's `latest` tag points to an 8.0 release candidate, so never install it unpinned. Prisma 7 needs Node 20.19+, 22.12+, or 24+ (not 23).
 - **If Prisma's gaps grow,** the Kysely extension for Prisma is the planned fallback. Ask before adding it.
 
 ## Working rules
