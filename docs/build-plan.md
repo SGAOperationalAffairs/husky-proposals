@@ -1,17 +1,67 @@
 # Build plan (proposed)
 
-**Dates and cuts:**
-- Dates follow the PRD timeline and assume work began on October 13, 2026. Shift them if the start moved.
-- Allow for Thanksgiving week and exam season.
-- If time runs short, cut in this order: the volunteer check-in cadence, then the monthly summary, the share image and flyer, and the promoted area.
-
 **Tracking:**
 - Each task has acceptance criteria.
-- Tasks become GitHub issues in `SGAOperations/husky-proposals` (see `dev-process.md`). This file is the plan. The issues are the live backlog.
+- Tasks are grouped into epics in `feature-map.md`, and become GitHub issues in `SGAOperations/husky-proposals` (see `dev-process.md`). This file is the plan. The issues are the live backlog.
+- Task numbers stay fixed even when a task moves to another week, so references do not break.
 
 Updated October 22, 2026: the sign-in and email spikes are answered, and scalability, testing, and governance tasks are added.
 
-## Milestone 0: foundations (Oct 13 to Oct 27)
+Rebaselined October 23, 2026, to launch on Thursday, December 3, 2026. The code has not started, so the old dates no longer held.
+
+## Calendar
+
+From the registrar's 2026-2027 academic calendar: fall break is November 25 to 29, classes resume November 30, the last day of classes is December 13, and finals run December 14 to 20. Spring classes start January 13, 2027.
+
+| Week | Dates | Build (epics from `feature-map.md`) | Gates and decisions |
+|---|---|---|---|
+| 0 | Oct 23 to 25 | Planning: port runbook, this plan, the schema draft and FigJam diagrams (T0.10, steps 1 to 3) | |
+| 1 | Oct 26 to Nov 1 | E1 scaffold, test harness, CI, port (T0.3, T0.4, T0.11). E2 schema and rules module (T0.5). E3 sign-in stand-in (T0.6). Specs and `/port:scope` for E4, E5, and E9 | D9 (appeals) answered, for the decline message in E4 |
+| 2 | Nov 2 to 8 | E4 posting and review (T0.7, T0.8). E5 public browsing. E9 outbox and worker | Checkpoint, Sunday Nov 8 |
+| 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1) | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
+| 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `proposals-dev` to SGAuth (T2.5). Student test (T2.6). Accessibility pass (T2.7) | **Feature freeze, Friday Nov 20** |
+| 5 | Nov 23 to 24 | Load test (T3.2), restore test (T3.1), fixes from the student test, reviewer training (T3.4). Release `v0.9.0` to `main` | |
+| Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | SGAuth milestone 3 live by Sunday Nov 29 |
+| 6 | Nov 30 to Dec 2 | Soft launch to SGA members and the five boards (T3.3). Fix what breaks | Data policy (D14) in place before launch |
+| 6 | Thu Dec 3 | **Launch, `v1.0.0`** (T3.5, T3.6), announced to students | |
+| 7 | Dec 3 to 13 | The last class days. Small fixes and hotfixes only | |
+| Finals | Dec 14 to 20 | Change freeze except production breakage | |
+
+**Why December 3:** it leaves two weeks of classes before finals for students to find and use the site. Launching during finals would get little use, and reviewers would struggle to keep the 3-day review target.
+
+**Capacity:** about 45 pull requests in four build weeks, about 11 a week, with one developer. This fits only if port does most of the implementation and Luis's time goes to plan gates, review, and merging. The checkpoints exist to cut early instead of at the freeze.
+
+## Checkpoints and cuts
+
+Cut December scope in this order. Each line says what is lost.
+
+1. **The "as it happens" email option.** Weekly digests only.
+2. **The similar-idea warning** on the post form. Reviewers catch duplicates instead.
+3. **Update templates and the preview** of what students see. Updates are plain text.
+4. **Rank within the board.** Show the support count and squares only.
+5. **Remembered signed-out taps (T1.9).** A signed-out tap goes to sign-in and returns to the idea page, and the student taps again.
+6. **Follow and follower digests.** Keep emails about a student's own post and reviewer reminders. This is the last cut before moving the date, since email to followers is a Must in the PRD.
+
+**When to cut:**
+- **Sunday Nov 8:** if E4 and E5 are not merged into `dev`, cut 1 to 3.
+- **Sunday Nov 15:** if E6 and E7 are not merged, also cut 4 and 5.
+- **Friday Nov 20 (freeze):** anything not merged moves after launch. If follower email does not work end to end on `proposals-dev`, cut 6.
+
+**Never cut:** the review step, anonymous posting and the privacy tests, `noindex`, backups with a tested restore, and the switch to turn off posting (see `feature-map.md`).
+
+**Already after December, unchanged:** the volunteer check-in cadence, the monthly summary, the share image and flyer, the promoted area, export, a link to Senate, and club endorsements.
+
+## The SGAuth gate
+
+Students cannot sign in until SGAuth milestone 3 is live in production (`sgauth-integration.md`). As of October 23, SGAuth has pull requests open for #40, #68, #32, and #115. There are none yet for #30, #31, #114, #37, or #103.
+
+- **If milestone 2 is not done by Monday Nov 16,** `proposals-dev` stays on the stand-in, and the switch (T2.5) moves to Nov 23 and 24.
+- **If milestone 3 is not live by Sunday Nov 29,** December 3 becomes an SGA-only pilot on `proposals-dev`, with SGA members on the auth-dev allowlist. The student launch moves to the start of spring classes, the week of January 13, 2027.
+- **If SGAuth is still on 100 emails a day at launch,** announce to students in stages (D17, D19).
+
+## Milestone 0: foundations (Oct 13 to Nov 8)
+
+T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 
 **T0.1 Spike: sign-in.** Done.
 - Sign-in uses SGAuth: email and password, northeastern.edu sign-up only.
@@ -74,7 +124,7 @@ Done when port can plan a ticket end to end.
 - Upload the PRD, the executive summaries, and the governance notes.
 - Point the local-only references in `CLAUDE.md` at the Drive folder.
 
-## Milestone 1: the core loop (Oct 28 to Nov 10)
+## Milestone 1: the core loop (Nov 2 to Nov 15)
 
 **T1.1 Ideas list.** Search, category, status, and sort. Public and cached.
 **T1.2 Support.** Writes set the state, never toggle. One per student per idea. Public counts. Instant button response, with rapid taps combined. A script-level abuse limit.
@@ -88,7 +138,7 @@ Done when port can plan a ticket end to end.
 
 Across T1.1 to T1.9, the student view and the SGA view match the prototype's behavior, except where `prototype-vs-prd-gaps.md` (local only; summarized in `CLAUDE.md`) says otherwise.
 
-## Milestone 2: keeping people informed (Nov 11 to Nov 24)
+## Milestone 2: keeping people informed (Nov 9 to Nov 20)
 
 **T2.1 Updates.** Post an update with templates and a preview of what students see. Flag in-progress ideas with no update in 14 days.
 
@@ -114,7 +164,7 @@ Add the access log if it was decided.
 
 **T2.7 Accessibility pass.** Keyboard, focus, contrast, reduced motion, and screen reader checks.
 
-## Milestone 3: launch (Nov 25 to Dec 8)
+## Milestone 3: launch (Nov 23 to Dec 20)
 
 **T3.1 Monitoring and backups.**
 - Quota alerts at 50%, 70%, and 85% for Neon, email, and Vercel.
