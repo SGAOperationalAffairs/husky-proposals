@@ -183,7 +183,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
   - Review diagrams live in FigJam.
   - Executive summaries are local Word documents.
 - **Issues are public.** Write them at the implementation level. Internal reasoning stays in local documents.
-- **After opening a pull request or issue,** give Luis a titled, clickable markdown link, for example `[PR #1: Add planning docs](https://github.com/SGAOperations/husky-proposals/pull/1)`.
+- **After opening a pull request or issue in an interactive session,** open it in Luis's browser right away (`gh pr view <n> --web` or `gh issue view <n> --web`). Port's background agents skip this.
 
 ## Hard rules
 
