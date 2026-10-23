@@ -66,7 +66,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 - Local and test environments only.
 - The app refuses to start if the stand-in is enabled anywhere else. Otherwise anyone could choose "I'm the VP" on a deployed preview.
 
-### Branch protection (needs maintain or admin access)
+### Branch protection (needs admin access)
 
 - **Both branches:**
   - pull request required;
@@ -97,8 +97,131 @@ Port turns GitHub issues into pull requests. A plan agent writes the plan, and a
 - **Implement agent rules:** work test-first, and run `verify` before opening a pull request.
 - **Review agent rules:** check the Patterns list in `CLAUDE.md`. Most review churn in Resume Studio came from missed reuse and missing tests, not logic bugs.
 - **Privacy rules and the review flow,** the riskiest parts of this product, get a human review before merge.
-- **Parallel agents** only work when their files do not overlap. Merge and verify centrally.
-- `/port:init` is run once, by whoever sets up the repository. It needs maintain or admin access to create labels.
+- **Parallel agents** only work when their files do not overlap. Port holds a ticket back on its own when an in-flight plan claims 2 or more of the same files.
+
+### How we run port
+
+Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/docs/PIPELINE.md`, and `plugins/port/docs/FORMATS.md` in `b-at-neu/port`. Port is set up in T0.11, after the scaffold (T0.3), so it has real scripts to run.
+
+**Day to day:**
+- Run `/port:pipeline` in its own session, in `default` permission mode (not auto or accept-edits). Haiku is enough for it.
+- Say `work on #N` to claim a ticket. Choose plan review for anything with a design side, or `auto plan` for small fixes.
+- Approve the plan in the terminal. Implementation, review, and revision then run on their own until the pull request is labeled `approved`.
+- Merge on GitHub yourself. Port never merges.
+- Break an epic into tickets with `/port:scope`, on a strong model. It leaves tickets unassigned and unlabeled until someone says `work on #N`.
+- Cut releases with `/port:release`.
+- A ticket that edits `CLAUDE.md` or anything under `.claude/` cannot go to an agent. Its plan is marked `SESSION REQUIRED`, and you run `/port:implement N` in a separate session.
+
+**Label lifecycle.** Labels are port's state. Changing one by hand is always a valid way to step in.
+
+| Where | Flow |
+|---|---|
+| Issue | `ready` → `planning` → `plan review` (you approve, or `plan changes requested` loops back) → `plan approved` → `in progress` → `pr opened` |
+| Issue, side exit | `blocked`: the implement agent needs a decision |
+| Pull request | `ready for review` → `reviewing` → `needs revision` → `revising` → `ready for review`, until `approved` |
+| Pull request, side exits | `needs human`: 5 review cycles, an unclear rebase conflict, or a review with nothing new to grade. Only `unblock #N` clears it. `refresh branch` → `refreshing`: rebase only |
+| Markers | `claude`: port owns this item. `auto plan`: skip the plan gate |
+
+- Each item holds at most one stage label. Port reports an item with two and leaves it alone.
+- The cockpit only acts on items assigned to you.
+- The review bar drops each cycle: cycle 1 blocks on anything, cycle 2 on Low and above, cycle 3 on Critical and Medium only. A red required check is always Critical.
+
+**Our `.claude/port.config.json`** (proposed; the npm scripts are created in T0.3):
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/b-at-neu/port/main/schema/port.config.schema.json",
+  "tracker": "github",
+  "repo": "SGAOperations/husky-proposals",
+  "branches": { "integration": "dev", "production": "main" },
+  "commands": {
+    "bootstrap": ["npm ci", "npx --no-install prisma generate"],
+    "checks": [
+      { "run": "npm run format:check", "fix": "npm run format" },
+      { "run": "npm run lint", "fix": "npm run lint:fix" },
+      { "run": "npm run typecheck", "fix": null },
+      { "run": "npm run verify:agent", "fix": null }
+    ],
+    "artifacts": "node scripts/port-artifacts.mjs",
+    "worktrees": "node scripts/port-worktrees.mjs",
+    "budget": "node scripts/port-budget.mjs",
+    "tick": null,
+    "forensics": null
+  },
+  "docs": { "engineering": null, "design": null },
+  "models": { "plan": "opus", "impl": "sonnet", "review": "sonnet", "revise": "sonnet" },
+  "labels": {},
+  "modules": { "approvalGate": false, "release": true, "scope": true },
+  "release": { "versionSource": "tags", "postPublishHook": null },
+  "reviewCycleCap": 5,
+  "budget": { "wallClockMinutes": null },
+  "concurrency": { "sharedFiles": [], "overlapThreshold": 2 },
+  "sessionRequiredPaths": ["CLAUDE.md", ".claude/**", "port.config.json"],
+  "extraAllow": [
+    "Bash(node scripts/port-artifacts.mjs *)",
+    "Bash(node scripts/port-worktrees.mjs *)",
+    "Bash(node scripts/port-budget.mjs *)",
+    "Bash(npx --no-install prisma generate *)",
+    "Bash(npx --no-install prisma migrate diff *)"
+  ]
+}
+```
+
+- **`checks`** are objects with `run` and `fix`, never bare strings. Each must be a script in `package.json`, start with its binary, and match a step CI runs.
+- **`verify:agent`** is the part of `verify` that needs no secrets: unit and component tests with fakes. Agent worktrees get no `.env`, so the build, database tests, and browser tests run only in CI, which runs the full `npm run verify`. The review agent treats a red CI check as Critical, so CI is still the gate.
+- **`release.versionSource: "tags"`:** semver tags are the only version record, so a release is one pull request.
+- **`approvalGate` stays off** until a ruleset on `dev` makes the check required. Without one it is advisory either way.
+- **`docs.engineering` and `docs.design`** stay null until `/port:analyze` writes them.
+
+**What `/port:init` will do** (once, by one person; it shows everything before writing):
+1. Install with `claude plugin marketplace add b-at-neu/port@main --scope project` and `claude plugin install port@port --scope project`, then start a new session.
+2. Detect the two-branch model (`dev` and `main`), the npm scripts, and the CI workflows. Ask which modules to turn on.
+3. Write `.claude/port.config.json`, validated against port's schema.
+4. Check `CLAUDE.md` for rules that contradict port's defaults, and offer to record each in a `port-overrides` block.
+5. Merge the allow and deny lists into `.claude/settings.json`. The deny list blocks merging, direct pushes to `dev` and `main`, and publishing packages.
+6. Create port's 18 labels.
+7. Copy `scripts/port-artifacts.mjs` (with `.github/workflows/artifacts.yml`), `scripts/port-worktrees.mjs`, and `scripts/port-budget.mjs`.
+8. Add `.agents/`, `.temp/`, and `.claude/worktrees/` to `.gitignore`.
+9. Offer `/port:analyze`, then pin the plugin to port's latest release tag.
+
+All of this lands through one pull request into `dev`, like any other change.
+
+**What `/port:analyze` will do:**
+- Sample the codebase and propose `docs/ENGINEERING.md`: conventions it found, inconsistencies for us to settle, and improvements to approve one by one. It merges an existing document instead of replacing it, so `CLAUDE.md`'s rules carry over. `CLAUDE.md` still wins where the two disagree.
+- Because we have a UI, also propose `docs/DESIGN.md`, from `design/tokens.css` and the prototype.
+- Recommend plugins for the stack, installed at project scope.
+- Propose repository-specific skills (a scaffolder and an auditor), one confirmation each.
+- File what it finds as issues. It never changes code.
+
+Run it after the scaffold. On an empty repository it has nothing to sample. Re-run it as the code grows; it diffs instead of starting over.
+
+**Access needed:**
+
+| Step | Needs |
+|---|---|
+| Install, `/port:init`, `/port:analyze`, creating labels, running the cockpit | Write (Luis has it) |
+| Merge-button settings: squash for features, merge commits for releases, no rebase merging, squash message from the pull request title | Maintain or admin |
+| Rulesets on `dev` and `main`, required checks, the approval gate | Admin |
+| Changing the default branch | Admin |
+| A Projects board owned by the SGAOperations org | An org member allowed to create projects |
+
+### Where port and our rules conflict
+
+1. **The default branch.** Port's implement and revise agents read their config from the default branch. GitHub only closes an issue from `Closes #N` when the pull request merges into the default branch. With `main` as default:
+   - a config change reaches agents only after a release;
+   - issues stay open after their pull request merges into `dev`, so port's file-contention check keeps treating their files as in use and holds new tickets until the next release.
+
+   SGAuth uses `dev` as its default branch, which avoids both. **Recommendation:** make `dev` the default branch, and set Vercel's production branch to `main` separately. This reverses the "`main` stays the default branch" rule above, so it needs Luis's decision, then an admin.
+2. **`CLAUDE.md` is session-required.** Port will not let an agent edit `CLAUDE.md`, but our rule is to update its "Where things live" and "Patterns" sections in the same pull request as each feature. That would send every feature to `/port:implement`. **Recommendation:** move those two sections into `docs/ENGINEERING.md`, which agents can edit and review cites, and leave a pointer in `CLAUDE.md`.
+3. **`verify` needs secrets that agent worktrees do not have.** Anything in `bootstrap` or `checks` that needs a database fails on every run. Two parts of our plan need one:
+   - TypedSQL generates types from a live database, so `prisma generate --sql` cannot run in a worktree;
+   - our database and browser tests use the Neon test branch.
+
+   **Recommendation:** the `verify:agent` split above, plus one of these for TypedSQL: commit the generated TypedSQL types, or write the one or two raw queries (the outbox claim) as tagged `$queryRaw` in `src/db/sql/`, validated with zod. The second changes a D20 rule, so it needs Luis's decision.
+4. **The required human approval.** Port opens pull requests from the operator's own account, and GitHub does not let an author approve their own pull request. Requiring an approval on review-flow and privacy pull requests needs a second person with write access, such as Eli, named in a `CODEOWNERS` file for those paths.
+5. **Squash merge subjects.** Port writes `#N summary` commits on the branch, but a squash merge's subject comes from a GitHub setting. Set the default squash message to the pull request title, and title pull requests `#N summary`, so `dev` keeps our format. `/port:release` reads issue numbers from either form.
+
+No conflict: port's branch names (`<issue>-<slug>`), commit format, rebase onto `dev` before review, and release pull requests from `dev` to `main` already match our rules. The revise agent force-pushes only to feature branches, which branch protection does not cover.
 
 ## Testing
 
@@ -178,4 +301,5 @@ The repository is the memory. Chat history and local assistant memory do not tra
 
 ## Open
 
-- **Maintain access:** Luis has write access to the repository. Port setup and branch protection need maintain or admin. Ask Operations.
+- **Repository access:** Luis has write access, which is enough for `/port:init` and labels. Merge-button settings need maintain, and rulesets and the default branch need admin. Ask Operations. See "How we run port."
+- **Port conflicts 1 to 5** under "Where port and our rules conflict" need a decision before T0.11.
