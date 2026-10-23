@@ -34,3 +34,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local-only files: internal, not for this public repository (local/ holds the original handoff zip and the SGAuth ticket guide)
+docs/PRD.md
+docs/*.docx
+docs/archive/
+docs/prototype-vs-prd-gaps.md
+reference/governance-notes.md
+research/nu-mutual-aid.md
+local/

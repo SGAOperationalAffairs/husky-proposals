@@ -1,0 +1,38 @@
+/* Husky Proposals design tokens, taken from prototype/concept-2.html.
+   Square corners, system font, flat bordered cards with a 5px accent rule across the top. */
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5;
+  --surface: #FFFFFF;
+  --ink: #1A1D26;
+  --muted: #596070;
+  --line: #DADDE4;
+  --accent: #C8102E;
+  --accent-text: #C8102E;
+  --on-accent: #FFFFFF;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --sky: #E3EBF7;   --sky-ink: #26456F;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --green: #DCF0E5; --green-ink: #17603B;
+  --grey: #E8EAEF;  --grey-ink: #424959;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 0;
+  --border: 1px;
+  --accent-rule: 5px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --accent: #D52F47; --accent-text: #FF8696;
+    --sky: #1F2E47;   --sky-ink: #A9C6F2;
+    --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2;
+    --grey: #2A2E38;  --grey-ink: #C4C9D4;
+    --focus: #7AA7F0;
+  }
+}
+/* Status chip colors:
+   collecting_support: grey   under_review: sky   in_progress: amber
+   delivered: green           waiting: outline on grey */
