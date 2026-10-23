@@ -69,10 +69,12 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 
 ## Derived values (compute, do not store)
 
-- `support_count` per idea (public). Computed with one grouped query per page. Keep a stored counter in reserve, in case counting gets slow.
-- `rank` within the board: rank among that board's ideas that are not delivered, by `support_count`.
+Counts, rank, and the stale flag come from the `idea_stats` database view (`prisma/views/public/idea_stats.sql`), read through the `IdeaStats` model. App code never counts or ranks by hand. The view does one grouped pass, so a page never runs one query per idea. Keep a stored counter in reserve, in case counting ever gets slow.
+
+- `support_count` per idea (public).
+- `rank` within the board: rank among that board's ideas that are not delivered, by `support_count`. Ties share a rank.
 - `willing_count`: number of participations.
-- `stale`: an in-progress idea whose latest update is more than 14 days old, or that has none.
+- `stale`: an in-progress idea whose latest counting update is older than its board's update cadence (monthly by default, set per board). The "Still working, no news" update counts. The schema change for per-board cadence is #12.
 - `board_load`: in-progress ideas for a board, where a large idea counts as 2. Compare with the soft guideline (default 2). Starting an idea past the guideline shows a heads-up and a confirm, not a block.
 - `pending_posts` per student: the number of their posts with review status `pending`.
 
@@ -99,7 +101,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 
 ## Visibility and privacy
 
-- **Public, no sign-in needed:** approved ideas, `support_count`, rank, status, updates, and board. Every page has `noindex` (PRD D18).
+- **Public, no sign-in needed:** approved ideas, `support_count`, rank, status, waiting reason, updates, and board. Every page has `noindex` (PRD D18).
 - **Signed-out visitors and students (not the author):** get the student shape.
   - They never receive `author_id` or supporter identities.
   - If `is_anonymous` is true, they never see the author's name at all.
@@ -143,6 +145,19 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - Updates
 - People (the check-in cadence comes later)
 - Options
+
+## Review decisions (October 23, 2026)
+
+From a review of the plan with SGA leadership. These change the schema in #12 where noted.
+
+- **Post form:** only title, description, and category are required. Location, scale, cost, and timing are optional, "Not sure" by default, and reviewers can fill them in. Tighten if post quality drops. [#12]
+- **Categories:** a fixed list, one per board. Campus services that fit no board go to CSC. Anything else is declined with a short note pointing to the right SGA division or office.
+- **Similar ideas:** a simple word match on the title against approved ideas in the same category. No AI. Not on the cut list.
+- **Waiting reasons:** chosen from a short list of general reasons (for example "Waiting on university partners", "Needs more information", "The board is busy with other ideas"), with optional free text. Talks with administration are often confidential, so the specific reason is never required.
+- **Updates:** each board sets its cadence, monthly by default, with a one-tap "Still working, no news" update. [#12]
+- **Who supporters are:** support shows what students want; it is not proof of who is affected. Boards run their own surveys for that. Optional basic demographics may be collected: undergraduate or graduate, and major. Not year, which would need yearly edits. [#12]
+- **Promotion (after the soft launch):** any SGA leader can promote an idea. SGA ideas are tagged and may sit at the top, and students can always sort by support or by what is trending. Students get help promoting their own ideas: the copy-link share now, a short outreach guide later.
+- **Tabling form (E11):** a form on the idea page that boards use while tabling. Responses stay separate from verified support. Nobody gets an account from a form email, and nobody has to sign up to answer a form; a student has an account only if they create one through SGAuth.
 
 ## Gaps found in the schema review
 
