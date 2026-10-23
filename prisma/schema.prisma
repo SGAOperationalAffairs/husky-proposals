@@ -53,7 +53,7 @@ enum IdeaCategory {
 enum IdeaScale {
   small
   medium
-  large // counts as 2 toward a board's in-progress guideline
+  large // counts as 2 toward a board's in-progress guideline; an unknown scale counts as 1
 }
 
 enum CostBand {
@@ -82,7 +82,14 @@ enum ContactStatus {
 
 enum UpdateKind {
   board // written by a leader
+  check_in // the one-tap "Still working, no news" update (#12)
   system // written by the app: started, delivered, moved board
+}
+
+// Optional basic demographics (#12). Year is left out: it would need yearly edits.
+enum StudentLevel {
+  undergraduate
+  graduate
 }
 
 enum DigestFrequency {
@@ -118,6 +125,18 @@ model User {
   createdAt   DateTime @default(now()) @map("created_at")
   lastSeenAt  DateTime @default(now()) @map("last_seen_at")
 
+  // Optional, asked once and editable by the student. Shown to leaders only
+  // as counts, never next to a name in an export (#12).
+  studentLevel StudentLevel? @map("student_level")
+  major        String?
+
+  // Position keys from the last session check. Used only to route reviewer
+  // reminders, never for permissions, which always come from a live session (#8).
+  positionsSeen   String[]  @default([]) @map("positions_seen")
+  positionsSeenAt DateTime? @map("positions_seen_at")
+  // Set when we stop emailing an account: deactivated, bounced, or not seen in 120 days (#8).
+  emailStoppedAt  DateTime? @map("email_stopped_at")
+
   ideas            Idea[]
   reviews          Review[]
   supports         Support[]
@@ -139,6 +158,7 @@ model Board {
   chairPositionKey    String       @map("chair_position_key") // e.g. chair-of-dining-advisory-board
   memberPositionKey   String       @map("member_position_key")
   inProgressGuideline Int          @default(2) @map("in_progress_guideline") // soft: a heads-up, never a block
+  updateCadenceDays   Int          @default(30) @map("update_cadence_days") // an in-progress idea is flagged after this many days without a counting update (#12)
 
   // "How to join this board" on the idea page (S4). Plain text, edited by leaders.
   joinMeets      String? @map("join_meets")
@@ -175,9 +195,9 @@ model Idea {
   category    IdeaCategory
   boardId     String       @map("board_id")
   location    String?
-  scale       IdeaScale
-  costBand    CostBand     @map("cost_band")
-  timeHorizon TimeHorizon  @map("time_horizon")
+  scale       IdeaScale? // optional on the form, "Not sure"; reviewers may fill it in (#12)
+  costBand    CostBand?    @map("cost_band")
+  timeHorizon TimeHorizon? @map("time_horizon")
 
   // Provisional: nullable so an account can be deleted on request while the
   // idea and its history stay (D14). Never sent in the student shape.
@@ -222,9 +242,9 @@ model IdeaRevision {
   fullText    String?      @map("full_text")
   category    IdeaCategory
   location    String?
-  scale       IdeaScale
-  costBand    CostBand     @map("cost_band")
-  timeHorizon TimeHorizon  @map("time_horizon")
+  scale       IdeaScale? // optional on the form, "Not sure"; reviewers may fill it in (#12)
+  costBand    CostBand?    @map("cost_band")
+  timeHorizon TimeHorizon? @map("time_horizon")
   isAnonymous Boolean      @map("is_anonymous")
   submittedAt DateTime     @default(now()) @map("submitted_at")
 
@@ -313,7 +333,9 @@ model Follow {
 // Updates
 // Rule: system updates are written when an idea starts, is delivered, or
 //   moves board.
-// Rule: an in-progress idea with no update in 14 days is flagged (IdeaStats).
+// Rule: an in-progress idea is flagged when it misses its board's cadence
+//   (Board.updateCadenceDays, monthly by default). Board and check-in updates
+//   count, and so does starting work; other system updates do not (IdeaStats).
 // Rule: DAB and CPAB updates must not reveal confidential administrative
 //   initiatives (Bylaws XII). Enforced by training and templates, not code.
 // ---------------------------------------------------------------------------
@@ -420,7 +442,7 @@ view IdeaStats {
   followerCount Int       @map("follower_count") // leaders only
   rankInBoard   Int?      @map("rank_in_board") // null once delivered
   lastUpdateAt  DateTime? @map("last_update_at")
-  isStale       Boolean   @map("is_stale") // in progress, no update in 14 days
+  isStale       Boolean   @map("is_stale") // in progress and past the board's update cadence
 
   idea Idea @relation(fields: [ideaId], references: [id])
 
