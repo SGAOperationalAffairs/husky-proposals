@@ -5,7 +5,7 @@ const rulesHit = (source) => findViolations(source).map((v) => `${v.rule}: ${v.t
 
 describe("style guard (#26)", () => {
   it("allows token classes", () => {
-    const source = `<div className="accent-rule rounded-card rounded-t-chip rounded-none border border-line bg-surface p-6">x</div>`;
+    const source = `<div className="accent-rule bordered heading shadow-card p-card rounded-card rounded-t-chip rounded-none border border-line bg-surface p-6">x</div>`;
     expect(rulesHit(source)).toEqual([]);
   });
 
@@ -27,7 +27,7 @@ describe("style guard (#26)", () => {
 
   it("rejects shadows and hex colors", () => {
     expect(rulesHit(`<div className="shadow-md" />\nconst c = "#C8102E";`)).toEqual([
-      "shadow class: shadow-md",
+      "shadow class that is not a token: shadow-md",
       'hex color: "#C8102E',
     ]);
   });

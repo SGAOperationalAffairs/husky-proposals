@@ -38,18 +38,47 @@
   --color-focus: var(--focus);
 
   --font-sans: var(--font);
+  --font-heading: var(--font-heading);
 
   --radius-card: var(--card-radius);
   --radius-field: var(--field-radius);
   --radius-button: var(--button-radius);
   --radius-chip: var(--chip-radius);
+
+  --shadow-card: var(--card-shadow);
+  --spacing-card: var(--card-pad);
 }
 
-/* The width of the Husky red rule across the top of a card (design/tokens.css).
-   Pair it with `border-t-accent` for the color: a border color class like
-   `border-line` would otherwise repaint the top. */
+/* A border at the token width, in the line color. Use instead of `border`,
+   which is always 1px. */
+@utility bordered {
+  border-style: solid;
+  border-width: var(--border);
+  border-color: var(--line);
+}
+
+/* The rule across the top of a card: Husky red by default (design/tokens.css).
+   Use with `bordered`, which sets the other three sides. Fewer declarations
+   than `bordered`, so Tailwind orders it after and the top wins. */
 @utility accent-rule {
   border-top-width: var(--accent-rule);
+  border-top-color: var(--rule-color);
+}
+
+/* The SGA queue's columns (prototype .row): rank, idea, supporters, willing
+   to help, age, status. Stacked on narrow screens. */
+@utility queue-cols {
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+@utility queue-cols-wide {
+  grid-template-columns: 44px minmax(0, 1fr) 110px 110px 70px 140px;
+}
+
+/* Heading type from the tokens: family, weight, and tracking. */
+@utility heading {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
 }
 
 body {

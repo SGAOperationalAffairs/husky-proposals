@@ -23,6 +23,9 @@
   --grey-ink: #424959;
   --focus: #1f5fbf;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --heading-weight: 650;
+  --heading-tracking: -0.01em;
   /* Corner radius, one token per kind of element (T0.3b picks the values).
      Set each directly; never derive one token from another, so the
      playground can tune them live. */
@@ -32,6 +35,10 @@
   --chip-radius: 0;
   --border: 1px;
   --accent-rule: 5px;
+  --rule-color: #c8102e;
+  /* Card depth and density. "none" means flat. */
+  --card-shadow: none;
+  --card-pad: 18px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -43,6 +50,7 @@
     --line: #2d313c;
     --accent: #d52f47;
     --accent-text: #ff8696;
+    --rule-color: #d52f47;
     --sky: #1f2e47;
     --sky-ink: #a9c6f2;
     --amber: #3a2d12;

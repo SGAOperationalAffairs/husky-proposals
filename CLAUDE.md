@@ -199,6 +199,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **Node 22** (`.nvmrc`). Prisma 7 does not support Node 23, and npm refuses to install on it here. If your default Node is another version: `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"`, or use nvm.
 - **First time:** `npm install` (also generates the Prisma client), then `cp .env.example .env.local`. The server refuses to start if `src/env.ts` finds a variable missing or invalid.
 - **Develop:** `npm run dev`, then open http://localhost:3000.
+- **Style playground:** with `APP_ENV=local` (the `.env.local` default), open http://localhost:3000/playground. It is compiled only for local and test, never into a production build. Templates are data in `design/playground-templates.json`.
 - **Check:** `npm run verify` (everything, as in CI), `npm run verify:agent` (no build or browser tests; what port's agents run), `npm run verify:all` (adds Firefox).
 - **Fix formatting and lint:** `npm run format` and `npm run lint:fix`.
 

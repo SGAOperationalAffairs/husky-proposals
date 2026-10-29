@@ -3,6 +3,11 @@ import { expect, test } from "@playwright/test";
 // Pages to scan. Add each new route here as it lands.
 const PAGES = ["/"];
 
+test("the style playground is not in a production build (#29)", async ({ page }) => {
+  const response = await page.goto("/playground");
+  expect(response?.status()).toBe(404);
+});
+
 test.describe("public, but not searchable (PRD D18)", () => {
   for (const path of PAGES) {
     test(`${path} sends noindex as a header and a meta tag`, async ({ page }) => {
