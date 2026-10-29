@@ -43,3 +43,9 @@ docs/prototype-vs-prd-gaps.md
 reference/governance-notes.md
 research/nu-mutual-aid.md
 local/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

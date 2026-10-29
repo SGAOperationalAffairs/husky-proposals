@@ -45,10 +45,11 @@
   --radius-chip: var(--chip-radius);
 }
 
-/* The 5px Husky red rule across the top of a card (design/tokens.css). */
+/* The width of the Husky red rule across the top of a card (design/tokens.css).
+   Pair it with `border-t-accent` for the color: a border color class like
+   `border-line` would otherwise repaint the top. */
 @utility accent-rule {
   border-top-width: var(--accent-rule);
-  border-top-color: var(--accent);
 }
 
 body {
