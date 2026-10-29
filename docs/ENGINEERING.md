@@ -8,6 +8,7 @@ Created with the scaffold (#26).
 
 ## Patterns
 
+- **Board color:** put `data-board="dining"` (or planning, services, green, sust) on an element; it and its children get `--b` and `--on-b`. `.poster` is an idea in its board's color, `.poster-btn` is the matched Support / I'll participate button, `.board-swatch` is a square of the color (`src/app/globals.css`). Board codes, names, and colors live in `src/core/boards.ts`.
 - **Responsive components use container queries** (`@container` on a parent, `@lg:` and `@2xl:` on the component), not screen breakpoints, so they fit narrow columns, drawers, and the playground's phone preview. Screen breakpoints (`md:`, `lg:`) are for page layout only (#29).
 
 None yet. Fill this in as the first features land (the rest), and no later than the fifth feature:

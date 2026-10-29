@@ -1,16 +1,16 @@
-import { MapPin } from "lucide-react";
+import { BOARDS, type BoardCode } from "@/core/boards";
+import { STATUS_LABELS, type IdeaStatus } from "./StatusLabel";
 import { SupportPair } from "./SupportPair";
-import { StatusLabel, type IdeaStatus } from "./StatusLabel";
-import { BoardTag, FromSgaTag } from "./Tag";
 
-// An idea in the list (prototype .s-card). The rule across the top is the
-// accent-rule token; everything else is tokens too, so templates restyle it.
+// An idea as a poster in its board's color (#29, the Poster direction): a big
+// condensed headline, the support count as the largest number, and the matched
+// Support / I'll participate pair.
 export type IdeaCardData = {
   number: number;
   title: string;
   description: string;
   location?: string;
-  boardTag: string;
+  board: BoardCode;
   status: IdeaStatus;
   fromSga?: boolean;
   updatedDaysAgo: number;
@@ -25,49 +25,50 @@ type Props = IdeaCardData & {
   onParticipateChange?: (participating: boolean) => void;
 };
 
-const updated = (days: number) =>
-  days === 0 ? "Updated today" : days === 1 ? "Updated yesterday" : `Updated ${days} days ago`;
+export const updatedText = (days: number) =>
+  days === 0 ? "updated today" : days === 1 ? "updated yesterday" : `updated ${days} days ago`;
 
 export function IdeaCard(props: Props) {
-  const { number, title, description, location, boardTag, status, fromSga, updatedDaysAgo } = props;
+  const board = BOARDS[props.board];
   return (
-    <article className="flex flex-col rounded-card bordered accent-rule bg-surface shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-2.5 px-card pt-card">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-muted">Proposal {number}</span>
-          <BoardTag label={boardTag} />
-          {fromSga && <FromSgaTag />}
-        </div>
-        <StatusLabel status={status} />
+    <article data-board={board.color} className="poster flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 text-xs font-bold">
+        <span>
+          {board.category}, proposal {props.number}
+        </span>
+        <span className="flex items-center gap-2">
+          {props.fromSga && <span className="border border-current px-1.5">From SGA</span>}
+          {STATUS_LABELS[props.status]}
+        </span>
       </div>
-      <div className="flex flex-col gap-2 px-card pt-3 pb-card">
-        <h3 className="heading text-lg leading-tight">{title}</h3>
-        <p className="flex flex-wrap gap-x-3.5 gap-y-1 text-sm text-muted">
-          <span className="inline-flex items-center gap-1">
-            <MapPin aria-hidden className="size-3.5" />
-            {location ?? "Anywhere on campus"}
+      <h3 className="heading text-4xl text-balance">{props.title}</h3>
+      <p className="text-sm">{props.description}</p>
+      <p className="text-xs font-semibold">
+        {props.location ?? "Anywhere on campus"}, {updatedText(props.updatedDaysAgo)}
+      </p>
+      <div className="mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <p className="flex items-end gap-2.5">
+          <span className="heading text-6xl tabular-nums">{props.supportCount}</span>
+          <span className="pb-1 text-sm leading-tight font-semibold whitespace-nowrap">
+            students want this
+            <br />
+            {props.willingCount} will help
           </span>
-          <span>{updated(updatedDaysAgo)}</span>
         </p>
-        <p className="line-clamp-2 text-muted">{description}</p>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-2.5 border-t border-line pt-2.5">
-          <SupportPair
-            ideaNumber={number}
-            supportCount={props.supportCount}
-            willingCount={props.willingCount}
-            supported={props.supported ?? false}
-            participating={props.participating ?? false}
-            onSupportChange={props.onSupportChange}
-            onParticipateChange={props.onParticipateChange}
-          />
-          <a
-            href={`#proposal-${number}`}
-            className="rounded-button bordered border-accent-text px-3.5 py-1.5 font-semibold whitespace-nowrap text-accent-text"
-          >
-            Learn more
-          </a>
-        </div>
+        <a
+          href={`#proposal-${props.number}`}
+          className="pb-1 text-sm font-bold whitespace-nowrap underline underline-offset-4"
+        >
+          Learn more
+        </a>
       </div>
+      <SupportPair
+        ideaNumber={props.number}
+        supported={props.supported ?? false}
+        participating={props.participating ?? false}
+        onSupportChange={props.onSupportChange}
+        onParticipateChange={props.onParticipateChange}
+      />
     </article>
   );
 }

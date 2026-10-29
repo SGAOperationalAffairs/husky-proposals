@@ -8,7 +8,7 @@ import {
 
 // Form fields from the prototype (.field): a visible label, an optional hint,
 // and an error that says what to fix.
-const control = "rounded-field bordered bg-bg w-full px-3 py-2";
+const control = "rounded-field bordered bg-surface w-full px-3 py-2";
 
 type Shared = { label: string; hint?: string; error?: string };
 

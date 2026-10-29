@@ -79,6 +79,76 @@
   font-family: var(--font-heading);
   font-weight: var(--heading-weight);
   letter-spacing: var(--heading-tracking);
+  text-transform: var(--heading-case);
+  line-height: 0.92;
+}
+
+/* Board color scope: `data-board="dining"` (and so on) gives an element and
+   its children --b (the board's color) and --on-b (the text color on it). */
+[data-board="dining"] {
+  --b: var(--board-dining);
+  --on-b: var(--on-board-dining);
+}
+[data-board="planning"] {
+  --b: var(--board-planning);
+  --on-b: var(--on-board-planning);
+}
+[data-board="services"] {
+  --b: var(--board-services);
+  --on-b: var(--on-board-services);
+}
+[data-board="green"] {
+  --b: var(--board-green);
+  --on-b: var(--on-board-green);
+}
+[data-board="sust"] {
+  --b: var(--board-sust);
+  --on-b: var(--on-board-sust);
+}
+
+@layer components {
+  /* An idea as a poster in its board's color (#29). The playground switches
+     the variant with `data-poster` on a parent; the default is full color. */
+  .poster {
+    background: var(--b);
+    color: var(--on-b);
+    border-radius: var(--card-radius);
+    padding: var(--card-pad);
+    --press-bg: var(--on-b);
+    --press-fg: var(--b);
+  }
+  [data-poster="band"] .poster {
+    background: var(--surface);
+    color: var(--ink);
+    border: var(--border) solid var(--line);
+    border-top: 14px solid var(--b);
+    --press-bg: var(--b);
+    --press-fg: var(--on-b);
+  }
+  [data-poster="outline"] .poster {
+    background: var(--surface);
+    color: var(--ink);
+    border: 4px solid var(--b);
+    --press-bg: var(--b);
+    --press-fg: var(--on-b);
+  }
+  /* Support and I'll participate: one button style, matched (PRD decision log). */
+  .poster-btn {
+    border: var(--border) solid currentColor;
+    border-radius: var(--button-radius);
+    background: transparent;
+    color: inherit;
+  }
+  .poster-btn[aria-pressed="true"] {
+    /* Outside a poster, a pressed button is ink on the page. */
+    background: var(--press-bg, var(--ink));
+    border-color: var(--press-bg, var(--ink));
+    color: var(--press-fg, var(--surface));
+  }
+  /* A swatch of the board's color, for lists outside a poster. */
+  .board-swatch {
+    background: var(--b);
+  }
 }
 
 body {

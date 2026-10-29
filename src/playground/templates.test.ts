@@ -29,7 +29,7 @@ describe("playground templates (#29)", () => {
     }
   });
 
-  it("Civic matches design/tokens.css, so the defaults have one source", () => {
+  it("Full color matches design/tokens.css, so the defaults have one source", () => {
     const css = tokensCss();
     for (const key of SHARED_KEYS) expect(css.light[key], key).toBe(DEFAULT_TEMPLATE.shared[key]);
     // accent-soft is derived on :root in tokens.css; templates set it directly.
@@ -41,14 +41,15 @@ describe("playground templates (#29)", () => {
 
   it("copy settings lists only what differs from the defaults", () => {
     expect(settingsBlob(DEFAULT_TEMPLATE, emptyOverrides())).toMatchObject({
-      template: "civic",
+      template: "full",
       light: {},
       dark: {},
     });
-    const bulletin = TEMPLATES.find((t) => t.id === "bulletin")!;
-    const blob = settingsBlob(bulletin, emptyOverrides());
-    expect(blob.light["--card-radius"]).toBe("10px");
+    const band = TEMPLATES.find((t) => t.id === "band")!;
+    const blob = settingsBlob(band, { ...emptyOverrides(), shared: { "card-radius": "8px" } });
+    expect(blob.poster).toBe("band");
+    expect(blob.light["--card-radius"]).toBe("8px");
     expect(blob.light["--font"]).toBeUndefined();
-    expect(blob.css).toContain("--card-radius: 10px;");
+    expect(blob.css).toContain("--card-radius: 8px;");
   });
 });

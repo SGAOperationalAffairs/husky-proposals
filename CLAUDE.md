@@ -245,7 +245,7 @@ Patterns are filled in as the first features land, and no later than the fifth f
   - WCAG AA contrast;
   - reduced motion is respected;
   - any visual-only display, such as the support squares, has a text alternative.
-- **Match `design/tokens.css`:** Husky red `#C8102E`, the system font, flat bordered cards with a 5px accent rule across the top, and light and dark mode. Corner radius is being chosen in the playground (T0.3b): square today, as in the prototype. Once picked, the allowed radii are listed here.
+- **Match `design/tokens.css`, the Poster direction (#29):** each idea reads as a poster in its board's color (Dining red, Planning blue, Services teal, Green green, Sustainability yellow), with big condensed Big Shoulders headlines and Public Sans text. Support and I'll participate are one matched button style. No tape, tilt, or tear-off tabs. Light and dark mode. The poster style (full color, color band, or outline), headline case, corners, and density are being tuned in the playground; once picked, the allowed radii are listed here.
 - **Test the review flow and the privacy rules carefully.** They are the riskiest parts.
 
 ## Current state (October 29, 2026)

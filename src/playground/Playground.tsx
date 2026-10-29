@@ -3,62 +3,43 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
-import { IdeaCard } from "@/components/IdeaCard";
+import { IdeaCard, updatedText } from "@/components/IdeaCard";
 import { QueueHeader, QueueRow } from "@/components/QueueRow";
-import { StatusLabel } from "@/components/StatusLabel";
 import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
 import { Tabs } from "@/components/Tabs";
-import { BoardTag } from "@/components/Tag";
-import { CATEGORIES, IDEAS, QUEUE } from "./sample";
+import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
+import { IDEAS, QUEUE } from "./sample";
 import { TEMPLATES, emptyOverrides, settingsBlob, tokenStyle, type Mode, type Overrides } from "./templates";
 
-// The style playground (T0.3b, #29). Local only: never compiled into a
-// production build (next.config.ts). Pick a whole-app template, check it in
-// light, dark, and phone width, nudge three things, then copy the settings.
-const CORNERS: Record<string, Partial<Overrides["shared"]> | null> = {
-  "Template default": null,
+// The style playground (T0.3b, #29), now inside the Poster direction. Local
+// only: never compiled into a production build (next.config.ts). Pick a
+// poster style, check light, dark, and phone width, nudge three things, then
+// copy the settings.
+const CASES: Record<string, string> = { "All caps": "uppercase", "Sentence case": "none" };
+const CORNERS: Record<string, Overrides["shared"]> = {
   Square: { "card-radius": "0", "field-radius": "0", "button-radius": "0", "chip-radius": "0" },
-  Small: { "card-radius": "4px", "field-radius": "2px", "button-radius": "4px", "chip-radius": "999px" },
-  Rounded: { "card-radius": "10px", "field-radius": "8px", "button-radius": "8px", "chip-radius": "999px" },
+  Small: { "card-radius": "4px", "field-radius": "3px", "button-radius": "3px", "chip-radius": "3px" },
+  Soft: { "card-radius": "12px", "field-radius": "8px", "button-radius": "999px", "chip-radius": "999px" },
 };
-const FONTS: Record<string, string | null> = {
-  "Template default": null,
-  System: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  "Bricolage Grotesque": "var(--pg-font-bricolage), system-ui, sans-serif",
-  Newsreader: "var(--pg-font-newsreader), Georgia, serif",
-  "Hanken Grotesk": "var(--pg-font-hanken), system-ui, sans-serif",
-  "Barlow Condensed": 'var(--pg-font-barlow), "Arial Narrow", sans-serif',
-};
-const RULES: Record<string, string | null> = {
-  "Template default": null,
-  None: "0",
-  Thin: "3px",
-  Standard: "5px",
-  Thick: "8px",
-};
+const DENSITY: Record<string, string> = { Compact: "16px", Standard: "20px", Roomy: "28px" };
+
+type Taps = Record<number, boolean>;
 
 export function Playground() {
   const [templateId, setTemplateId] = useState(TEMPLATES[0]!.id);
   const [mode, setMode] = useState<Mode>("light");
   const [phone, setPhone] = useState(false);
-  const [corners, setCorners] = useState("Template default");
-  const [font, setFont] = useState("Template default");
-  const [rule, setRule] = useState("Template default");
+  const [headingCase, setHeadingCase] = useState("All caps");
+  const [corners, setCorners] = useState("Square");
+  const [density, setDensity] = useState("Standard");
   const [copied, setCopied] = useState("");
 
   const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!;
   const overrides: Overrides = emptyOverrides();
   Object.assign(overrides.shared, CORNERS[corners] ?? {});
-  if (FONTS[font]) overrides.shared["font-heading"] = FONTS[font]!;
-  if (RULES[rule] !== null && RULES[rule] !== undefined) overrides.shared["accent-rule"] = RULES[rule]!;
-
-  const pick = (id: string) => {
-    setTemplateId(id);
-    setCorners("Template default");
-    setFont("Template default");
-    setRule("Template default");
-  };
+  overrides.shared["heading-case"] = CASES[headingCase] ?? "uppercase";
+  overrides.shared["card-pad"] = DENSITY[density] ?? "20px";
 
   const copy = async () => {
     const text = JSON.stringify(settingsBlob(template, overrides), null, 2);
@@ -71,29 +52,29 @@ export function Playground() {
   };
 
   return (
-    <div className="flex min-h-full flex-col bg-bg text-ink lg:flex-row">
+    <div className="flex min-h-full flex-1 flex-col bg-bg text-ink lg:flex-row">
       <aside className="flex flex-col gap-5 border-b border-line bg-surface p-5 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:overflow-y-auto lg:border-r lg:border-b-0">
         <div>
-          <h1 className="text-xl font-semibold">Style playground</h1>
+          <h1 className="heading text-4xl">Playground</h1>
           <p className="mt-1 text-sm text-muted">
-            Local only. Pick a direction for Husky Proposals, then copy the settings.
+            Local only. Tune the Poster direction, then copy the settings.
           </p>
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-semibold">Template</legend>
+          <legend className="mb-1 text-sm font-bold">Poster style</legend>
           {TEMPLATES.map((t) => (
             <label
               key={t.id}
-              className={`flex cursor-pointer flex-col gap-0.5 border border-line p-2.5 ${t.id === templateId ? "border-ink bg-bg" : ""}`}
+              className={`flex cursor-pointer flex-col gap-0.5 bordered p-2.5 ${t.id === templateId ? "bg-bg" : ""}`}
             >
-              <span className="flex items-center gap-2 font-semibold">
+              <span className="flex items-center gap-2 font-bold">
                 <input
                   type="radio"
                   name="template"
                   value={t.id}
                   checked={t.id === templateId}
-                  onChange={() => pick(t.id)}
+                  onChange={() => setTemplateId(t.id)}
                 />
                 {t.name}
               </span>
@@ -112,14 +93,14 @@ export function Playground() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <Preset label="Corners" value={corners} options={Object.keys(CORNERS)} onChange={setCorners} />
-          <Preset label="Heading font" value={font} options={Object.keys(FONTS)} onChange={setFont} />
           <Preset
-            label="Rule across the top of cards"
-            value={rule}
-            options={Object.keys(RULES)}
-            onChange={setRule}
+            label="Headlines"
+            value={headingCase}
+            options={Object.keys(CASES)}
+            onChange={setHeadingCase}
           />
+          <Preset label="Corners" value={corners} options={Object.keys(CORNERS)} onChange={setCorners} />
+          <Preset label="Density" value={density} options={Object.keys(DENSITY)} onChange={setDensity} />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -137,8 +118,9 @@ export function Playground() {
       <main className="flex-1 overflow-x-auto p-4 lg:p-8">
         <div
           data-testid="preview"
+          data-poster={template.poster}
           style={tokenStyle(template, overrides, mode)}
-          className={`@container mx-auto bg-bg font-sans text-ink ${phone ? "max-w-sm" : "max-w-5xl"}`}
+          className={`@container mx-auto bg-bg font-sans text-ink ${phone ? "max-w-sm" : "max-w-6xl"}`}
         >
           <PreviewPage />
         </div>
@@ -157,136 +139,152 @@ function Preset(props: { label: string; value: string; options: string[]; onChan
   );
 }
 
-// A whole page in miniature: the ideas list, one idea, posting, and the SGA
-// queue, all from the real components (Studio: judge a direction on a page).
+// A whole page in miniature, from the real components: the ideas list, one
+// idea, posting with a live preview, and the SGA queue.
 function PreviewPage() {
-  const [studentTab, setStudentTab] = useState("ideas");
+  const [board, setBoard] = useState<BoardCode | "all">("all");
   const [sgaTab, setSgaTab] = useState("queue");
-  const [category, setCategory] = useState("All");
-  const [supported, setSupported] = useState<Record<number, boolean>>({ 103: true });
-  const [participating, setParticipating] = useState<Record<number, boolean>>({});
+  const [supported, setSupported] = useState<Taps>({ 103: true });
+  const [participating, setParticipating] = useState<Taps>({});
+  const [draft, setDraft] = useState({ title: "A late-night dining option", board: "DAB" as BoardCode });
   const idea = IDEAS[0]!;
+  const shown = IDEAS.filter((i) => board === "all" || i.board === board);
+  const taps = (n: number) => ({
+    supported: !!supported[n],
+    participating: !!participating[n],
+    onSupportChange: (v: boolean) => setSupported({ ...supported, [n]: v }),
+    onParticipateChange: (v: boolean) => setParticipating({ ...participating, [n]: v }),
+  });
 
   return (
-    <div className="flex flex-col gap-10 p-4 @lg:p-6">
+    <div className="flex flex-col gap-14 p-4 @lg:p-8">
       <Section title="Ideas">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="heading text-3xl leading-tight">Ideas for campus</h2>
-            <p className="mt-1 max-w-prose text-muted">
-              Post an idea, support the ones you care about, and follow what happens next. Support helps SGA
-              decide; it is not a vote.
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="heading text-7xl @3xl:text-8xl">Ideas for campus</h2>
+            <p className="mt-3 max-w-prose text-muted">
+              Every poster is an idea a student posted. Support the ones you care about, or offer to help.
+              Support helps SGA decide; it is not a vote.
             </p>
           </div>
           <Button variant="primary">Post an idea</Button>
         </header>
-        <Tabs
-          label="Student pages"
-          selected={studentTab}
-          onSelect={setStudentTab}
-          tabs={[
-            { id: "ideas", label: "Ideas" },
-            { id: "progress", label: "In progress" },
-            { id: "mine", label: "My posts" },
-          ]}
-        />
-        <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-1.5">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-pressed={c === category}
-              onClick={() => setCategory(c)}
-              className="rounded-chip bordered bg-surface px-3 py-1 text-sm aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
-            >
-              {c}
-            </button>
+        <div role="group" aria-label="Board" className="flex flex-wrap gap-2">
+          <BoardFilter label="All boards" pressed={board === "all"} onClick={() => setBoard("all")} />
+          {BOARD_CODES.map((code) => (
+            <BoardFilter
+              key={code}
+              label={BOARDS[code].category}
+              color={BOARDS[code].color}
+              pressed={board === code}
+              onClick={() => setBoard(code)}
+            />
           ))}
         </div>
-        <div className="grid gap-4 @2xl:grid-cols-2">
-          {IDEAS.map((i) => (
-            <IdeaCard
-              key={i.number}
-              {...i}
-              supported={!!supported[i.number]}
-              participating={!!participating[i.number]}
-              onSupportChange={(v) => setSupported({ ...supported, [i.number]: v })}
-              onParticipateChange={(v) => setParticipating({ ...participating, [i.number]: v })}
-            />
+        <div className="grid gap-5 @2xl:grid-cols-2 @5xl:grid-cols-3">
+          {shown.map((i) => (
+            <IdeaCard key={i.number} {...i} {...taps(i.number)} />
           ))}
         </div>
       </Section>
 
       <Section title="One idea">
-        <article className="flex flex-col gap-4 rounded-card bordered accent-rule bg-surface p-card shadow-card">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-muted">Proposal {idea.number}</span>
-            <BoardTag label={idea.boardTag} />
-            <StatusLabel status={idea.status} />
-          </div>
-          <h3 className="heading text-2xl leading-tight">{idea.title}</h3>
-          <p className="max-w-prose">{idea.description}</p>
-          <div className="grid gap-6 @2xl:grid-cols-2">
-            <div>
-              <h4 className="mb-2 font-semibold">Student support</h4>
-              <SupportSquares count={idea.supportCount} rank={{ position: 1, of: 9, board: "DAB" }} />
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold">Your support</h4>
-              <SupportPair
-                size="full"
-                ideaNumber={idea.number}
-                supportCount={idea.supportCount}
-                willingCount={idea.willingCount}
-                supported={!!supported[idea.number]}
-                participating={!!participating[idea.number]}
-                onSupportChange={(v) => setSupported({ ...supported, [idea.number]: v })}
-                onParticipateChange={(v) => setParticipating({ ...participating, [idea.number]: v })}
-              />
-              <p className="mt-2.5 text-sm text-muted">
-                &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves
-                forward.
-              </p>
-            </div>
-          </div>
-        </article>
+        <div className="grid items-start gap-6 @3xl:grid-cols-5">
+          <article
+            data-board={BOARDS[idea.board].color}
+            className="poster flex flex-col gap-4 @3xl:col-span-3"
+          >
+            <p className="text-sm font-bold">
+              {BOARDS[idea.board].name}, proposal {idea.number}
+            </p>
+            <h3 className="heading text-7xl text-balance">{idea.title}</h3>
+            <p className="max-w-prose">{idea.description}</p>
+            <p className="flex items-end gap-3">
+              <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
+              <span className="pb-2 leading-tight font-semibold">
+                students want this
+                <br />
+                {idea.willingCount} will help
+              </span>
+            </p>
+            <SupportPair ideaNumber={idea.number} {...taps(idea.number)} />
+            <p className="text-sm">
+              &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves forward.
+            </p>
+          </article>
+          <aside className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-2">
+            <h4 className="heading text-3xl">Where it stands</h4>
+            <p>
+              In progress, {updatedText(idea.updatedDaysAgo)}. The board met with Student Life about space in
+              the Curry Student Center and is pricing shelving and a weekly restock.
+            </p>
+            <h4 className="heading text-3xl">{idea.supportCount} supporters</h4>
+            <SupportSquares
+              count={idea.supportCount}
+              board={idea.board}
+              rank={{ position: 1, of: 9, board: "Dining" }}
+            />
+          </aside>
+        </div>
       </Section>
 
       <Section title="Post an idea">
-        <form
-          className="grid gap-3 rounded-card bordered bg-surface p-card @lg:grid-cols-2"
-          onSubmit={(e) => e.preventDefault()}
-        >
-          <div className="@lg:col-span-2">
-            <TextField label="Title" placeholder="A late-night dining option on weeknights" />
-          </div>
-          <SelectField label="Category" defaultValue="Dining">
-            {CATEGORIES.slice(1).map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </SelectField>
-          <TextField label="Where on campus" hint="Optional" placeholder="Stetson East" />
-          <div className="@lg:col-span-2">
+        <div className="grid items-start gap-6 @3xl:grid-cols-2">
+          <form
+            className="flex flex-col gap-3 bordered bg-surface p-card"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <h3 className="heading text-4xl">Post an idea</h3>
+            <TextField
+              label="Headline"
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+            />
+            <SelectField
+              label="Board"
+              value={draft.board}
+              onChange={(e) => setDraft({ ...draft, board: e.target.value as BoardCode })}
+            >
+              {BOARD_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {BOARDS[code].category}
+                </option>
+              ))}
+            </SelectField>
+            <TextField label="Where on campus" hint="Optional" placeholder="Stetson East" />
             <TextArea
-              label="Describe the idea"
+              label="What would change"
               error="Add a sentence or two so reviewers know what you mean."
-              placeholder="What would change, and who would it help?"
+              placeholder="Who it helps, and how"
+            />
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-0.5" />
+              <span>
+                Anonymous to students. This board&rsquo;s reviewer and the VP of Campus Affairs will still see
+                your name, so they can follow up.
+              </span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" type="submit">
+                Submit for review
+              </Button>
+              <Button>Save draft</Button>
+            </div>
+          </form>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-bold text-muted">Your poster, as students will see it</p>
+            <IdeaCard
+              number={160}
+              title={draft.title || "Your headline"}
+              description="Keep one dining hall open later for students coming out of labs."
+              board={draft.board}
+              status="collecting_support"
+              updatedDaysAgo={0}
+              supportCount={0}
+              willingCount={0}
             />
           </div>
-          <label className="flex items-start gap-2 text-sm @lg:col-span-2">
-            <input type="checkbox" className="mt-0.5" />
-            <span>
-              Post anonymous to students. Other students will not see your name. The board&rsquo;s reviewer
-              and the VP of Campus Affairs can, so they can follow up if your idea moves forward.
-            </span>
-          </label>
-          <div className="flex flex-wrap gap-2 @lg:col-span-2">
-            <Button variant="primary" type="submit">
-              Submit for review
-            </Button>
-            <Button>Save draft</Button>
-          </div>
-        </form>
+        </div>
       </Section>
 
       <Section title="SGA queue">
@@ -301,7 +299,7 @@ function PreviewPage() {
             { id: "people", label: "People", count: 0 },
           ]}
         />
-        <div className="overflow-hidden rounded-card bordered bg-surface">
+        <div className="overflow-hidden bordered bg-surface">
           <QueueHeader />
           {QUEUE.map((row) => (
             <QueueRow key={row.number} {...row} />
@@ -317,9 +315,24 @@ function PreviewPage() {
   );
 }
 
+function BoardFilter(props: { label: string; color?: string; pressed: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      data-board={props.color}
+      aria-pressed={props.pressed}
+      onClick={props.onClick}
+      className="poster-btn inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold"
+    >
+      {props.color && <span aria-hidden className="board-swatch size-3" />}
+      {props.label}
+    </button>
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section aria-label={title} className="flex flex-col gap-4">
+    <section aria-label={title} className="flex flex-col gap-5">
       {children}
     </section>
   );

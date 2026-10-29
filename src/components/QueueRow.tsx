@@ -1,3 +1,4 @@
+import { BOARDS, type BoardCode } from "@/core/boards";
 import { StatusLabel, type IdeaStatus } from "./StatusLabel";
 
 // A row in the SGA queue (prototype .row): rank, idea, supporters, willing
@@ -6,7 +7,7 @@ export type QueueRowData = {
   rank: number;
   number: number;
   title: string;
-  boardTag: string;
+  board: BoardCode;
   supportCount: number;
   willingCount: number;
   ageDays: number;
@@ -30,11 +31,16 @@ export function QueueHeader() {
 export function QueueRow(row: QueueRowData) {
   return (
     <div className="grid queue-cols items-center gap-x-3 gap-y-1.5 border-b border-line px-3.5 py-3 last:border-b-0 hover:bg-accent-soft @2xl:queue-cols-wide">
-      <span className="heading text-lg">{row.rank}</span>
+      <span className="heading text-3xl tabular-nums">{row.rank}</span>
       <span className="min-w-0">
+        <span
+          data-board={BOARDS[row.board].color}
+          aria-hidden
+          className="board-swatch mr-2 inline-block size-3"
+        />
         <b className="mr-1.5">{row.title}</b>
         <span className="text-sm text-muted">
-          Proposal {row.number}, {row.boardTag}
+          Proposal {row.number}, {row.board}
         </span>
       </span>
       <span className="col-start-2 text-sm @2xl:col-start-auto">{row.supportCount} supporters</span>

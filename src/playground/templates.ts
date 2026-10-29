@@ -8,6 +8,7 @@ export const SHARED_KEYS = [
   "font-heading",
   "heading-weight",
   "heading-tracking",
+  "heading-case",
   "card-radius",
   "field-radius",
   "button-radius",
@@ -28,7 +29,6 @@ export const COLOR_KEYS = [
   "accent-text",
   "on-accent",
   "accent-soft",
-  "rule-color",
   "sky",
   "sky-ink",
   "amber",
@@ -38,16 +38,30 @@ export const COLOR_KEYS = [
   "grey",
   "grey-ink",
   "focus",
+  "board-dining",
+  "on-board-dining",
+  "board-planning",
+  "on-board-planning",
+  "board-services",
+  "on-board-services",
+  "board-green",
+  "on-board-green",
+  "board-sust",
+  "on-board-sust",
+  "rule-color",
 ] as const;
 
 export type SharedKey = (typeof SHARED_KEYS)[number];
 export type ColorKey = (typeof COLOR_KEYS)[number];
 export type Mode = "light" | "dark";
 
+export type PosterStyle = "full" | "band" | "outline";
+
 export type Template = {
   id: string;
   name: string;
   description: string;
+  poster: PosterStyle;
   shared: Record<SharedKey, string>;
   light: Record<ColorKey, string>;
   dark: Record<ColorKey, string>;
@@ -60,7 +74,7 @@ export type Overrides = {
 };
 
 export const TEMPLATES = data.templates as Template[];
-export const DEFAULT_TEMPLATE = TEMPLATES[0] as Template; // Civic mirrors design/tokens.css.
+export const DEFAULT_TEMPLATE = TEMPLATES[0] as Template; // Full color mirrors design/tokens.css.
 
 export const emptyOverrides = (): Overrides => ({ shared: {}, light: {}, dark: {} });
 
@@ -81,7 +95,7 @@ export function tokenStyle(template: Template, overrides: Overrides, mode: Mode)
 }
 
 // What "Copy settings" hands back: only values that differ from the current
-// defaults (Civic, which mirrors design/tokens.css), plus a ready CSS block.
+// defaults (Full color, which mirrors design/tokens.css), plus a ready CSS block.
 export function settingsBlob(template: Template, overrides: Overrides) {
   const diff = <K extends string>(next: Record<K, string>, base: Record<K, string>) =>
     Object.fromEntries(
@@ -96,6 +110,7 @@ export function settingsBlob(template: Template, overrides: Overrides) {
       .join("\n");
   return {
     template: template.id,
+    poster: template.poster,
     light,
     dark,
     css: `:root {\n${block(light)}\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n${block(dark)
