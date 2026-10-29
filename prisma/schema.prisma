@@ -203,6 +203,8 @@ model Idea {
   // idea and its history stay (D14). Never sent in the student shape.
   authorId    String? @map("author_id") @db.Uuid
   isAnonymous Boolean @default(false) @map("is_anonymous")
+  // "From SGA" tag, set at posting from the author's SGAuth positions. Shown publicly.
+  fromSga     Boolean @default(false) @map("from_sga")
 
   reviewStatus  ReviewStatus @default(pending) @map("review_status")
   status        IdeaStatus?
