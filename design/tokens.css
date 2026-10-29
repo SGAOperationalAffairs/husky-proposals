@@ -19,7 +19,13 @@
   --grey: #E8EAEF;  --grey-ink: #424959;
   --focus: #1F5FBF;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --radius: 0;
+  /* Corner radius, one token per kind of element (T0.3b picks the values).
+     Set each directly; never derive one token from another, so the
+     playground can tune them live. */
+  --card-radius: 0;
+  --field-radius: 0;
+  --button-radius: 0;
+  --chip-radius: 0;
   --border: 1px;
   --accent-rule: 5px;
 }

@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@import "../../design/tokens.css";
+
+/* Only our tokens exist (#20). Clear Tailwind's default colors, radii,
+   shadows, and fonts, so classes like bg-blue-500, rounded-lg, or shadow-md
+   are not available and cannot creep in. Spacing, type sizes, and
+   breakpoints keep Tailwind's defaults. */
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --font-*: initial;
+}
+
+/* Map design/tokens.css into Tailwind. `inline` keeps the var() references,
+   so dark mode switches with the tokens. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-sky: var(--sky);
+  --color-sky-ink: var(--sky-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-grey: var(--grey);
+  --color-grey-ink: var(--grey-ink);
+  --color-focus: var(--focus);
+
+  --font-sans: var(--font);
+
+  --radius-card: var(--card-radius);
+  --radius-field: var(--field-radius);
+  --radius-button: var(--button-radius);
+  --radius-chip: var(--chip-radius);
+}
+
+/* The 5px Husky red rule across the top of a card (design/tokens.css). */
+@utility accent-rule {
+  border-top-width: var(--accent-rule);
+  border-top-color: var(--accent);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
