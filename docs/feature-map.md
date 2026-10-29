@@ -12,14 +12,14 @@ Written October 23, 2026.
 | E2 | Data and core rules | The schema, the `idea_stats` view, and the plain TypeScript rules every feature imports: statuses and transitions, permissions, limits, viewer shapes | T0.5, plus the shared rules module and `src/db/` helpers | E1, the schema review (T0.10) | M |
 | E3 | Sign-in and roles | Act as a student, a chair, or the VP locally, and later through SGAuth | T0.6, T2.5 | E1. T2.5 waits on SGAuth milestone 2 | S, then S |
 | E4 | Posting and review | A student posts (anonymously if they choose), a reviewer approves or declines with a reason, and the author edits and resubmits | T0.7, T0.8 | E2, E3 | L |
-| E5 | Public browsing | Anyone with the link browses approved ideas: list, idea page, In progress tab, support display, and a copy-link share, cached and `noindex` | T1.1, T1.4, T1.5, T2.3 | E2. Seed data stands in for real posts | M |
+| E5 | Public browsing | Anyone with the link browses approved ideas: list, idea page, In progress tab, support display, "Updated N days ago", "From SGA" tags, and a copy-link share with a QR code (drawn in the browser; the first thing dropped if E5 runs late), cached and `noindex` | T1.1, T1.4, T1.5, T2.3 | E2. Seed data stands in for real posts | M |
 | E6 | Student actions | Support, "I'll participate," and follow, set-state and idempotent, with the abuse limit and remembered signed-out taps | T1.2, T1.3 (the tap), T1.9, follow from T2.2 | E3, E5 (the buttons live on its pages) | M |
 | E7 | SGA queue and decisions | Leaders open onto the queue, filter it, and start, review, hold, or deliver ideas; the VP changes boards | T1.6, T1.7, T1.8 | E3, E4 (the review tab shares the queue) | M |
 | E8 | Updates and names for leaders | Updates with a one-tap "still working, no news" option and a flag when an idea misses its board's cadence (monthly by default), the People list, and who posted and who supported, with the privacy notice for students | T2.1, T2.4, T1.3 (the list of names) | E7, the D16 decision | M |
 | E9 | Email | The outbox, the worker and its schedule, decision emails, weekly digests, preferences, and bounces | T2.2 (email), the rest of T0.2 | E2. Decision emails need E4, digests need E8 | L |
 | E10 | Launch readiness | Monitoring, backups with a tested restore, the load test, the student test, the accessibility pass, a switch to turn off posting, training, and the SGA soft launch | T2.6, T2.7, T3.1 to T3.6 | Everything; monitoring and backups can start after E1 | M |
 | E11 | Tabling form | A short form on each idea page that boards use while tabling. No sign-in; responses stay separate from verified support | New. Estimated at the Nov 20 freeze | E5, E7 | To estimate |
-| E12 | Promoted area | Leaders feature ideas at the top of the list, always labeled. SGA ideas are tagged; students can still sort by support | S13, L6 | E5, E7, the D4 details | S |
+| E12 | Promotion switch | An admin switch, off by default, that lets leaders feature ideas at the top, always labeled. Built only if feedback asks for it | S13, L6 | E5, E7 | S |
 | E13 | Spring launch prep | Onboarding for boards, comms for students, and fixes from the soft launch | T3.6 | E10 | S |
 
 Sizes are rough: S is 1 to 3 pull requests, M is 4 to 6, L is 7 or more. E1 to E10 total about 45 pull requests before the soft launch. E11 to E13 are after it.

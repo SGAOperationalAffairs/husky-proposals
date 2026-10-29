@@ -101,13 +101,15 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 
 ## Visibility and privacy
 
-- **Public, no sign-in needed:** approved ideas, `support_count`, rank, status, waiting reason, updates, and board. Every page has `noindex` (PRD D18).
+- **Public, no sign-in needed:** approved ideas, `support_count`, rank, status, waiting reason, updates, when the idea was last updated ("Updated N days ago"), board, and a "From SGA" tag on ideas posted by SGA leaders. Every page has `noindex` (PRD D18).
 - **Signed-out visitors and students (not the author):** get the student shape.
   - They never receive `author_id` or supporter identities.
-  - If `is_anonymous` is true, they never see the author's name at all.
+  - If `is_anonymous` is true, they never see the author's name at all. The form labels this "anonymous to students" and says exactly who can see the name.
   - Pending and declined posts are never shown to them.
 - **The author:** sees their own post and its review status, with the reviewer's reason if declined.
-- **SGA leaders:** see the author and supporters. How to define "leader" is open (D16). So is whether to log views.
+- **Anonymous authors:** only the reviewer for the idea's board and the VP of Campus Affairs can see who posted an anonymous idea, so someone can follow up if it moves forward. No other leader sees it.
+- **SGA leaders:** see the author of a non-anonymous post, and supporters, with names and northeastern.edu emails (names alone are often too generic to identify someone). How to define "leader" is open (D16). So is whether to log views.
+- **VPs** see the boards in their own division only, for compartmentalization. In version 1 that is the VP of Campus Affairs and the five Campus Affairs boards.
 - **Separate response shapes:** return different shapes for students and leaders, so private fields cannot leak by accident. Test this.
 - **Confidential records:** who posted and who supported must be designated confidential records in SGA's data policy (D14, Bylaws XVII).
 
@@ -120,11 +122,12 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | Support, follow, offer to help | No (the tap is remembered until they sign in) | Yes | Yes | Yes | Yes |
 | See pending posts and decide them | No | No | Own board | All boards | Open |
 | See who posted and who supported | No | No | Yes | Yes | Open (D16) |
+| See who posted an anonymous idea | No | No | Own board (as reviewer) | All boards | No |
 | Move an idea through statuses, post updates | No | No | Own board | All boards | No |
 | Change an idea's board | No | No | No | Yes | No |
 | Change a board's update cadence (SGA Options screen) | No | No | Own board | All boards | No |
 | See the People list (volunteers) | No | No | Own board | All boards | Open |
-| Promote an idea (later) | No | No | Open | Open | Open |
+| Turn promotion on (admin switch, off by default; later) | No | No | No | Yes | No |
 
 "Open" means not decided yet.
 
@@ -157,7 +160,7 @@ From a review of the plan with SGA leadership. These change the schema in #12 wh
 - **Waiting reasons:** chosen from a short list of general reasons (for example "Waiting on university partners", "Needs more information", "The board is busy with other ideas"), with optional free text. Talks with administration are often confidential, so the specific reason is never required.
 - **Updates:** each board has a cadence, monthly by default, with a one-tap "Still working, no news" update. The board's chair or director, or the VP, changes it in the SGA Options screen. [#12]
 - **Who supporters are:** support shows what students want; it is not proof of who is affected. Boards run their own surveys for that. Optional basic demographics may be collected: undergraduate or graduate, and major. Not year, which would need yearly edits. They are self-reported, shown to leaders only as counts, and never used to decide who may act. [#12]
-- **Promotion (after the soft launch):** any SGA leader can promote an idea. SGA ideas are tagged and may sit at the top, and students can always sort by support or by what is trending. Students get help promoting their own ideas: the copy-link share now, a short outreach guide later.
+- **Promotion:** off by default. Ideas posted by SGA leaders always carry a "From SGA" tag (soft launch). Promoting ideas to the top is an admin switch for later, turned on only if feedback asks for it; students can always sort by support or by what is trending. Students get help promoting their own ideas: the copy-link share now, a short outreach guide later.
 - **Tabling form (E11):** a form on the idea page that boards use while tabling. Responses stay separate from verified support. Nobody gets an account from a form email, and nobody has to sign up to answer a form; a student has an account only if they create one through SGAuth.
 
 ## Gaps found in the schema review

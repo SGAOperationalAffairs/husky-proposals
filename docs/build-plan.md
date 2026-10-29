@@ -26,7 +26,7 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 | Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | |
 | 6 to 7 | Nov 30 to Dec 13 | **SGA soft launch** (T3.3) on `proposals-dev`: SGA members and the five boards, signed in through auth-dev. Chairs try reviewing and posting updates. Fix what breaks | |
 | Finals | Dec 14 to 20 | Change freeze except production breakage | |
-| Winter break | Dec 21 to Jan 12 | E11 tabling form (if the estimate fits), E12 promoted area, E13 spring launch prep | |
+| Winter break | Dec 21 to Jan 12 | E11 tabling form (if the estimate fits), E12 promotion switch (if feedback asks), E13 spring launch prep | |
 | Spring | Wed Jan 20, 2027 | **Student launch, `v1.0.0`** (T3.5, T3.6), proposed | SGAuth milestone 3 live in production. Data policy (D14) in place |
 
 **Why a soft launch in December and students in spring:** classes end December 13, so few students would find the site before finals, but SGA members can use it right away. A spring launch, the week after classes start, gives time for onboarding, for fixes from the soft launch, and for features raised in review, such as the tabling form.
@@ -59,7 +59,7 @@ The similar-idea check is not on the list. It is a simple word match and stays i
 
 **Never cut:** the review step, anonymous posting and the privacy tests, `noindex`, backups with a tested restore, and the switch to turn off posting (see `feature-map.md`).
 
-**After the soft launch:** the tabling form (E11), the promoted area (E12), the volunteer check-in cadence, the monthly summary, the share image and flyer, export, a link to Senate, and club endorsements. A basic copy-link share is in the soft launch (E5).
+**After the soft launch:** the tabling form (E11), the promotion switch (E12), the volunteer check-in cadence, the monthly summary, the share image and flyer, export, a link to Senate, and club endorsements. A basic copy-link share is in the soft launch (E5).
 
 ## The SGAuth gate
 
@@ -228,7 +228,7 @@ Record response times, compute hours used, and SGAuth calls.
 
 ## After the soft launch
 
-The tabling form (E11), the promoted area (E12), and spring launch prep (E13) are planned for winter break, and the monthly summary and export for after the student launch (`timeline.md`). The rest has no date yet:
+The tabling form (E11), the promotion switch (E12), and spring launch prep (E13) are planned for winter break, and the monthly summary and export for after the student launch (`timeline.md`). The rest has no date yet:
 
 - The volunteer check-in cadence.
 - The share image and flyer.

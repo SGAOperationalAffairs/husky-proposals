@@ -50,7 +50,7 @@ The prototype predates several decisions. Reuse its layout, spacing, components,
   - leaders seeing names;
   - email;
   - real sign-in;
-  - the promoted area;
+  - the "From SGA" tag and "Updated N days ago";
   - a reviewer badge.
 - **Behavior to change:**
   - flag in-progress ideas that miss their board's update cadence (monthly by default, set per board), not a fixed 30 days, and offer a one-tap "Still working, no news" update;
@@ -66,7 +66,7 @@ The prototype predates several decisions. Reuse its layout, spacing, components,
 - **Privacy.**
   - Support counts are public.
   - Which students supported an idea, and who posted, is visible to SGA leaders only.
-  - A student can post anonymously: other students see no name, SGA leaders do.
+  - A student can post "anonymous to students": other students see no name. Only the board's reviewer and the VP of Campus Affairs see who posted it, and the form says so.
   - Tell students this plainly on the site.
 - **Public, but not searchable.** Anyone with the link can browse approved ideas without signing in. Every page sends `noindex`. Pending and declined posts are never public.
 - **No dashboards.** SGA leaders open straight onto the list. Small red numbers on the tabs show what needs attention.
@@ -109,7 +109,7 @@ Targets (see `docs/timeline.md`):
 - the "I'll participate" tap with a simple list of names;
 - a copy-link share.
 
-**Winter break, before the student launch:** the tabling form on each idea page (estimated at the November 20 freeze), the promoted area for leader ideas, and spring launch prep.
+**Winter break, before the student launch:** the tabling form on each idea page (estimated at the November 20 freeze), the promotion switch (off by default, only if feedback asks for it), and spring launch prep.
 
 **Later:**
 - the volunteer check-in cadence (cut first if time runs short);

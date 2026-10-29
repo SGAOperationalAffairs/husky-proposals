@@ -47,7 +47,7 @@ gantt
     SGA soft launch               :crit, soft, 2026-11-30, 14d
     section After the soft launch
     E11 Tabling form              :e11, 2026-12-21, 21d
-    E12 Promoted area             :e12, 2026-12-21, 7d
+    E12 Promotion switch          :e12, 2026-12-21, 7d
     E13 Spring launch prep        :e13, 2027-01-04, 9d
     E13 Five-student test         :e13t, 2027-01-13, 5d
     Student launch                :milestone, crit, 2027-01-20, 0d
@@ -69,7 +69,7 @@ gantt
 | E10 Launch readiness | Nov 9 | Dec 13 | Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request |
 | E8 Updates and names | Nov 16 | Nov 20 | |
 | E11 Tabling form | Dec 21 | Jan 11 | Estimated at the freeze. Built over winter break if it fits |
-| E12 Promoted area | Dec 21 | Dec 27 | |
+| E12 Promotion switch | Dec 21 | Dec 27 | Off by default; only if feedback asks for it |
 | E13 Spring launch prep | Jan 4 | Jan 17 | Onboarding, comms, fixes from the soft launch, and the five-student test Jan 13 to 17 |
 
 ## Checkpoints and gates
