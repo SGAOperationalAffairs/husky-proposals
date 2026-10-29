@@ -49,3 +49,6 @@ local/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# generated Prisma client (rebuilt by npm install via postinstall)
+/src/generated/

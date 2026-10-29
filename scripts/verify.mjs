@@ -3,7 +3,7 @@
 //   npm run verify         everything: format, lint, types, styles, unit and
 //                          component tests, build, browser tests (Chromium, WebKit)
 //   npm run verify:agent   what port's agent worktrees can run with no secrets:
-//                          format, lint, types, styles, unit and component tests
+//                          format, lint, types, styles, schema, unit and component tests
 //   npm run verify:all     verify, plus Firefox
 //
 // Prints one line per suite. Runs every suite even after a failure, then shows
@@ -17,6 +17,7 @@ const fast = [
   ["lint", "npx", ["eslint", "--max-warnings=0"]],
   ["types", "npm", ["run", "--silent", "typecheck"]],
   ["styles", "node", ["scripts/check-styles.mjs"]],
+  ["schema", "npx", ["prisma", "validate"]],
   ["unit and component tests", "npx", ["vitest", "run"]],
 ];
 const slow = [

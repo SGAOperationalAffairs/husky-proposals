@@ -21,5 +21,6 @@ export default defineConfig({
     command: `npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
+    env: { APP_ENV: "test" },
   },
 });
