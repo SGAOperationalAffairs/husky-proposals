@@ -20,5 +20,11 @@ None yet. Fill this in as the first features land, and no later than the fifth f
 | Path | What |
 |---|---|
 | `src/app/` | Next.js routes, layouts, and server actions. Thin: they receive requests and call core modules |
+| `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
+| `src/db/` | The only place that talks to Prisma: shared field lists, filters, and named queries |
+| `src/db/sql/` | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule) |
+| `src/auth/` | The sign-in module: SGAuth session, the development stand-in, and positions to boards |
+| `src/email/` | `sendEmail()`, the outbox worker, and templates |
+| `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
 | `design/tokens.css` | The single source of design tokens, mapped into Tailwind in `src/app/globals.css` |
 | `prisma/schema.prisma` | The data model's source of truth |

@@ -4,21 +4,25 @@
    radius and the overall direction are picked in the playground (T0.3b). */
 :root {
   color-scheme: light;
-  --bg: #F1F2F5;
-  --surface: #FFFFFF;
-  --ink: #1A1D26;
+  --bg: #f1f2f5;
+  --surface: #ffffff;
+  --ink: #1a1d26;
   --muted: #596070;
-  --line: #DADDE4;
-  --accent: #C8102E;
-  --accent-text: #C8102E;
-  --on-accent: #FFFFFF;
+  --line: #dadde4;
+  --accent: #c8102e;
+  --accent-text: #c8102e;
+  --on-accent: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
-  --sky: #E3EBF7;   --sky-ink: #26456F;
-  --amber: #FFF0CF; --amber-ink: #74480A;
-  --green: #DCF0E5; --green-ink: #17603B;
-  --grey: #E8EAEF;  --grey-ink: #424959;
-  --focus: #1F5FBF;
-  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sky: #e3ebf7;
+  --sky-ink: #26456f;
+  --amber: #fff0cf;
+  --amber-ink: #74480a;
+  --green: #dcf0e5;
+  --green-ink: #17603b;
+  --grey: #e8eaef;
+  --grey-ink: #424959;
+  --focus: #1f5fbf;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   /* Corner radius, one token per kind of element (T0.3b picks the values).
      Set each directly; never derive one token from another, so the
      playground can tune them live. */
@@ -32,13 +36,22 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
-    --accent: #D52F47; --accent-text: #FF8696;
-    --sky: #1F2E47;   --sky-ink: #A9C6F2;
-    --amber: #3A2D12; --amber-ink: #F0CB7D;
-    --green: #153325; --green-ink: #92D7B2;
-    --grey: #2A2E38;  --grey-ink: #C4C9D4;
-    --focus: #7AA7F0;
+    --bg: #13151a;
+    --surface: #1c1f27;
+    --ink: #eceef3;
+    --muted: #a0a7b5;
+    --line: #2d313c;
+    --accent: #d52f47;
+    --accent-text: #ff8696;
+    --sky: #1f2e47;
+    --sky-ink: #a9c6f2;
+    --amber: #3a2d12;
+    --amber-ink: #f0cb7d;
+    --green: #153325;
+    --green-ink: #92d7b2;
+    --grey: #2a2e38;
+    --grey-ink: #c4c9d4;
+    --focus: #7aa7f0;
   }
 }
 /* Status chip colors:

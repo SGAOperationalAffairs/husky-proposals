@@ -1,0 +1,10 @@
+.next
+node_modules
+package-lock.json
+src/generated
+prototype
+design/wireframes
+reference
+research
+docs
+*.md
