@@ -75,7 +75,7 @@ Applied October 30, 2026, once Luis had admin access. One ruleset per branch, wi
   - `verify` must pass;
   - no force pushes;
   - no deletion.
-- **`dev`:** squash merges only. The squash subject is the pull request title, and the body is left blank so pull request text does not land in history.
+- **`dev`:** squash merges for features. Merge commits are allowed only for merging `main` back into `dev` after a hotfix. The squash subject is the pull request title, and the body is left blank so pull request text does not land in history.
 - **`main`:** merge commits only. It accepts only release pull requests from `dev` and `hotfix-*` pull requests. Rulesets cannot limit which branch a pull request comes from, so Luis checks this when he merges.
 - **Repository:** `dev` is the default branch, and rebase merging is off.
 - **No required approval.** Port opens pull requests from Luis's account, and GitHub does not let an author approve their own pull request. Luis reviews every pull request and is the only one who merges, so the merge is the human gate. He reads the full diff of anything that touches the review flow, permissions, or viewer shapes.
