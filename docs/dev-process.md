@@ -148,7 +148,7 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
 - The cockpit only acts on items assigned to you.
 - The review bar drops each cycle: cycle 1 blocks on anything, cycle 2 on Low and above, cycle 3 on Critical and Medium only. A red required check is always Critical.
 
-**Our `.claude/port.config.json`** (proposed; the npm scripts are created in T0.3):
+**Our `.claude/port.config.json`** (written by `/port:init` on October 30, 2026, #32):
 
 ```json
 {
@@ -157,11 +157,10 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
   "repo": "SGAOperations/husky-proposals",
   "branches": { "integration": "dev", "production": "main" },
   "commands": {
-    "bootstrap": ["npm ci", "npx --no-install prisma generate"],
+    "bootstrap": ["npm ci"],
     "checks": [
       { "run": "npm run format:check", "fix": "npm run format" },
       { "run": "npm run lint", "fix": "npm run lint:fix" },
-      { "run": "npm run typecheck", "fix": null },
       { "run": "npm run verify:agent", "fix": null }
     ],
     "artifacts": "node scripts/port-artifacts.mjs",
@@ -170,7 +169,7 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
     "tick": null,
     "forensics": null
   },
-  "docs": { "engineering": null, "design": null },
+  "docs": { "engineering": "docs/ENGINEERING.md", "design": "docs/DESIGN.md" },
   "models": { "plan": "opus", "impl": "sonnet", "review": "sonnet", "revise": "sonnet" },
   "labels": {},
   "modules": { "approvalGate": false, "release": true, "scope": true },
@@ -183,30 +182,31 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
     "Bash(node scripts/port-artifacts.mjs *)",
     "Bash(node scripts/port-worktrees.mjs *)",
     "Bash(node scripts/port-budget.mjs *)",
-    "Bash(npx --no-install prisma generate *)",
     "Bash(npx --no-install prisma migrate diff *)"
   ]
 }
 ```
 
 - **`checks`** are objects with `run` and `fix`, never bare strings. Each must be a script in `package.json`, start with its binary, and match a step CI runs.
+- **Trimmed at init:** no separate `prisma generate` in `bootstrap`, because `npm ci` runs `postinstall`, which generates the client; and no separate `typecheck` check, because `verify:agent` already runs the types. Format and lint stay as their own checks because they are the only ones with a `fix`, so port can repair them before failing.
+- **Agents need Node 22.** They run `bootstrap` with the Node on the session's `PATH`, and `engine-strict=true` makes `npm ci` fail on Node 23. Make Node 22 the default before running `/port:pipeline` (see the Node note in `CLAUDE.md`).
 - **`verify:agent`** is the part of `verify` that needs no secrets: unit and component tests with fakes. Agent worktrees get no `.env`, so the build, database tests, and browser tests run only in CI, which runs the full `npm run verify`. The review agent treats a red CI check as Critical, so CI is still the gate.
 - **`release.versionSource: "tags"`:** semver tags are the only version record, so a release is one pull request.
 - **`approvalGate` stays off** until a ruleset on `dev` makes the check required. Without one it is advisory either way.
-- **`docs.engineering` and `docs.design`** stay null until `/port:analyze` writes them.
+- **`docs.engineering` and `docs.design`** point to `docs/ENGINEERING.md` and `docs/DESIGN.md`, written with `/port:analyze` (#32).
 
-**What `/port:init` will do** (once, by one person; it shows everything before writing):
-1. Install with `claude plugin marketplace add b-at-neu/port@main --scope project` and `claude plugin install port@port --scope project`, then start a new session.
-2. Detect the two-branch model (`dev` and `main`), the npm scripts, and the CI workflows. Ask which modules to turn on.
-3. Write `.claude/port.config.json`, validated against port's schema.
-4. Check `CLAUDE.md` for rules that contradict port's defaults, and offer to record each in a `port-overrides` block.
-5. Merge the allow and deny lists into `.claude/settings.json`. The deny list blocks merging, direct pushes to `dev` and `main`, and publishing packages.
-6. Create port's 18 labels.
-7. Copy `scripts/port-artifacts.mjs` (with `.github/workflows/artifacts.yml`), `scripts/port-worktrees.mjs`, and `scripts/port-budget.mjs`.
-8. Add `.agents/`, `.temp/`, and `.claude/worktrees/` to `.gitignore`.
-9. Offer `/port:analyze`, then pin the plugin to port's latest release tag.
+**What `/port:init` did** (October 30, 2026, #32; once, by one person, showing everything before writing):
+1. Installed with `claude plugin marketplace add b-at-neu/port@main --scope project` and `claude plugin install port@port --scope project`, then ran in a new session.
+2. Detected the two-branch model (`dev` and `main`), the npm scripts, and the CI workflow, and asked which modules to turn on.
+3. Wrote `.claude/port.config.json` above, validated against port's schema.
+4. Checked `CLAUDE.md` against port's defaults. Nothing new to record: the conflicts below were already settled.
+5. Merged the allow and deny lists into `.claude/settings.json`. The deny list blocks merging, deleting issues or the repository, `gh auth`, direct pushes to `dev` and `main`, publishing packages, and `find` with `-exec` or `-delete`.
+6. Created port's 18 labels.
+7. Copied `scripts/port-artifacts.mjs` (with `.github/workflows/artifacts.yml`), `scripts/port-worktrees.mjs`, and `scripts/port-budget.mjs`. They stay verbatim so a later `/port:init` can diff them, so ESLint and Prettier skip them.
+8. Added `.agents/`, `.temp/`, and `.claude/worktrees/` to `.gitignore`.
+9. Pinned the plugin to port's release `v0.4.0` in `.claude/settings.json`.
 
-All of this lands through one pull request into `dev`, like any other change.
+All of this lands through one pull request into `dev`, like any other change. `/port:analyze` comes next.
 
 **What `/port:analyze` will do:**
 - Sample the codebase and propose `docs/ENGINEERING.md`: conventions it found, inconsistencies for us to settle, and improvements to approve one by one. It merges an existing document instead of replacing it, so `CLAUDE.md`'s rules carry over. `CLAUDE.md` still wins where the two disagree.
