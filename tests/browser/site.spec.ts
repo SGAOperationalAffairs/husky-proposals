@@ -55,3 +55,22 @@ test.describe("styles come from the tokens", () => {
     });
   }
 });
+
+// Everything a student can click shows the pointer, even before it does
+// anything (E6 wires Support), so the page never feels broken.
+test.describe("clickable things show the pointer", () => {
+  for (const path of PAGES) {
+    test(`${path}: every link, button, and dropdown has cursor: pointer`, async ({ page }) => {
+      await page.goto(path);
+      const problems = await page.evaluate(() => {
+        const clickable =
+          'a[href], button, select, summary, [role="button"], [role="tab"], input[type="submit"]';
+        return Array.from(document.querySelectorAll<HTMLElement>(clickable))
+          .filter((el) => el.getBoundingClientRect().width > 0 && !el.matches(":disabled"))
+          .filter((el) => getComputedStyle(el).cursor !== "pointer")
+          .map((el) => `${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 30)}"`);
+      });
+      expect(problems).toEqual([]);
+    });
+  }
+});

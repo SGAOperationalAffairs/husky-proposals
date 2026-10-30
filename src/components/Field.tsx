@@ -36,7 +36,15 @@ function Wrap({ id, label, hint, error, children }: Shared & { id: string; child
 const describedBy = (id: string, { hint, error }: Shared) =>
   error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
-export function TextField({ label, hint, error, ...rest }: Shared & InputHTMLAttributes<HTMLInputElement>) {
+// onPage: the field takes the page background instead of a white surface, for a
+// field that sits on the page rather than in a panel (the ideas search, #61).
+export function TextField({
+  label,
+  hint,
+  error,
+  onPage = false,
+  ...rest
+}: Shared & { onPage?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <Wrap id={id} label={label} hint={hint} error={error}>
@@ -44,7 +52,7 @@ export function TextField({ label, hint, error, ...rest }: Shared & InputHTMLAtt
         id={id}
         aria-invalid={!!error}
         aria-describedby={describedBy(id, { label, hint, error })}
-        className={control}
+        className={onPage ? control.replace("bg-surface", "bg-bg") : control}
         {...rest}
       />
     </Wrap>

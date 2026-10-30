@@ -231,6 +231,23 @@ body {
   font-family: var(--font);
 }
 
+/* Everything clickable shows the pointer, even before it does anything
+   (tests/browser/site.spec.ts checks every page). Tailwind's reset gives
+   buttons the default arrow. Disabled controls say so instead. */
+a[href],
+button,
+select,
+summary,
+[role="button"],
+[role="tab"],
+input[type="submit"] {
+  cursor: pointer;
+}
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
