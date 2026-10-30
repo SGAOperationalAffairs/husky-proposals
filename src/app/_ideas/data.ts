@@ -1,67 +1,22 @@
-import { z } from "zod";
 import type { IdeaCardData } from "@/components/IdeaCard";
-import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
+import { BOARDS, type BoardCode } from "@/core/boards";
 import { IDEAS } from "@/playground/sample";
+import { filterIdeas, isOpen, type IdeaList, type IdeasQuery } from "./filter";
 
 // Stand-in for the public ideas query (#60), so the ideas list (#61) can be
 // built before the database exists. It reads the playground's invented sample
-// ideas, which hold public fields only. #60 replaces this file; the page keeps
-// calling listIdeas() and parseIdeasQuery().
+// ideas, which hold public fields only. #60 replaces this file; the pages keep
+// calling listWall() and getIdea(). Filtering lives in filter.ts.
 
-// The Ideas list shows ideas still open for support. In progress and delivered
-// ideas have their own tab (#63), as in the prototype.
-export const OPEN_STATUSES = ["collecting_support", "under_review", "waiting"] as const;
-export type OpenStatus = (typeof OPEN_STATUSES)[number];
-
-export const SORTS = { support: "Most supported", newest: "Newest", updated: "Recently updated" } as const;
-export type Sort = keyof typeof SORTS;
-
-export type IdeasQuery = { q?: string; board?: BoardCode; status?: OpenStatus; sort: Sort };
-
-// Filters come from the URL, so anything can arrive. Unknown values are dropped,
-// never an error: a stale or hand-edited link still shows the list.
-const lenient = <T extends z.ZodType>(schema: T) => schema.optional().catch(undefined);
-const querySchema = z.object({
-  q: lenient(z.string().trim().max(100)).transform((q) => q || undefined),
-  board: lenient(z.enum(BOARD_CODES as [BoardCode, ...BoardCode[]])),
-  status: lenient(z.enum(OPEN_STATUSES)),
-  sort: z.enum(Object.keys(SORTS) as [Sort, ...Sort[]]).catch("support"),
-});
-
-// The two student lists: ideas open for support, and ideas a board has taken
-// on (#63). Only the open list filters by status.
-export type IdeaList = "open" | "progress";
-
-export function parseIdeasQuery(
-  params: Record<string, string | string[] | undefined>,
-  list: IdeaList = "open",
-): IdeasQuery {
-  const parsed = querySchema.parse(params);
-  if (list === "progress") parsed.status = undefined;
-  return Object.fromEntries(Object.entries(parsed).filter(([, v]) => v !== undefined)) as IdeasQuery;
+// Every public idea on one list, for the wall to filter in the browser (#61).
+// #60's query returns the same: all of a list's public ideas, once.
+export function listWall(list: IdeaList): IdeaCardData[] {
+  return IDEAS.filter((i) => isOpen(i.status) === (list === "open"));
 }
 
-const isOpen = (status: IdeaCardData["status"]): status is OpenStatus =>
-  (OPEN_STATUSES as readonly string[]).includes(status);
-
+// The filtered list, for tests and for anything that needs it on the server.
 export function listIdeas(query: IdeasQuery, list: IdeaList = "open"): IdeaCardData[] {
-  const words = query.q?.toLowerCase().split(/\s+/) ?? [];
-  const byText = (i: IdeaCardData) => {
-    const text = `${i.title} ${i.description}`.toLowerCase();
-    return words.every((w) => text.includes(w));
-  };
-  const order: Record<Sort, (a: IdeaCardData, b: IdeaCardData) => number> = {
-    support: (a, b) => b.supportCount - a.supportCount,
-    newest: (a, b) => b.number - a.number,
-    updated: (a, b) => a.updatedDaysAgo - b.updatedDaysAgo,
-  };
-  return IDEAS.filter(
-    (i) =>
-      isOpen(i.status) === (list === "open") &&
-      (!query.board || i.board === query.board) &&
-      (!query.status || i.status === query.status) &&
-      byText(i),
-  ).sort(order[query.sort]);
+  return filterIdeas(IDEAS, query, list);
 }
 
 // The idea page (#62). The fields an idea's own page adds to its poster.

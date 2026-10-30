@@ -1,17 +1,18 @@
 "use client";
 
-import Form from "next/form";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Button } from "./Button";
 import { SelectField, TextField } from "./Field";
 
-// Search, status, and sort for the ideas list (#61). A GET form, so filters
-// live in the URL and work without JavaScript. With it, a dropdown applies as
-// soon as it changes; search applies on Enter or the Search button.
+// Search, status, and sort for the student lists (#61). A GET form, so without
+// JavaScript it still works as a plain page load. With it, changes go to
+// onChange and the wall filters in place: a dropdown applies as soon as it
+// changes, search on Enter or the Search button.
 type Option = { value: string; label: string };
+type Change = { q?: string; status?: string; sort?: string };
 
 type Props = {
-  // Where the form goes: the list it filters.
+  // Where the form goes without JavaScript: the list it filters.
   action: string;
   q?: string;
   board?: string;
@@ -20,25 +21,24 @@ type Props = {
   // No statuses means the list has no status filter (In progress, #63).
   statuses?: Option[];
   sorts: Option[];
+  onChange: (change: Change) => void;
 };
 
-// The page re-renders in place on each change (no reload), so the form stays
-// mounted to keep focus where the student left it, and the page does not jump
-// to the top. Fields hold their own values and follow the URL when it changes
-// some other way, such as Back or a board chip (#61).
-export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }: Props) {
-  const [fields, setFields] = useState({ q: q ?? "", status: status ?? "", sort });
-  const [shown, setShown] = useState({ q, status, sort });
-  if (shown.q !== q || shown.status !== status || shown.sort !== sort) {
-    setShown({ q, status, sort });
-    setFields({ q: q ?? "", status: status ?? "", sort });
+export function IdeaFilters({ action, q, board, status, sort, statuses, sorts, onChange }: Props) {
+  // The search box holds what the student is typing until they search, and
+  // follows the URL when it changes some other way, such as Back.
+  const [text, setText] = useState(q ?? "");
+  const [shownQ, setShownQ] = useState(q);
+  if (shownQ !== q) {
+    setShownQ(q);
+    setText(q ?? "");
   }
-  const pick = (name: "status" | "sort") => (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFields({ ...fields, [name]: e.target.value });
-    e.currentTarget.form?.requestSubmit();
+  const search = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onChange({ q: text });
   };
   return (
-    <Form action={action} scroll={false} className="grid grid-cols-2 items-end gap-3 @3xl:grid-cols-4">
+    <form action={action} onSubmit={search} className="grid grid-cols-2 items-end gap-3 @3xl:grid-cols-4">
       {board && <input type="hidden" name="board" value={board} />}
       {/* The Search button sits flush against the field, so they read as one bar. */}
       <div className="col-span-2 flex items-end">
@@ -49,8 +49,8 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }:
             name="q"
             onPage
             joinedEnd
-            value={fields.q}
-            onChange={(e) => setFields({ ...fields, q: e.target.value })}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             placeholder="Search ideas"
           />
         </div>
@@ -59,7 +59,12 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }:
         </Button>
       </div>
       {statuses && (
-        <SelectField label="Status" name="status" value={fields.status} onChange={pick("status")}>
+        <SelectField
+          label="Status"
+          name="status"
+          value={status ?? ""}
+          onChange={(e) => onChange({ status: e.target.value })}
+        >
           <option value="">All</option>
           {statuses.map((o) => (
             <option key={o.value} value={o.value}>
@@ -68,13 +73,18 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }:
           ))}
         </SelectField>
       )}
-      <SelectField label="Sort by" name="sort" value={fields.sort} onChange={pick("sort")}>
+      <SelectField
+        label="Sort by"
+        name="sort"
+        value={sort}
+        onChange={(e) => onChange({ sort: e.target.value })}
+      >
         {sorts.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
       </SelectField>
-    </Form>
+    </form>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getIdea, listIdeas, parseIdeasNumber, parseIdeasQuery } from "./data";
+import { getIdea, listIdeas, listWall, parseIdeasNumber } from "./data";
+import { ideasHref, parseIdeasQuery } from "./filter";
 
 describe("idea page stand-in (#62)", () => {
   it("finds an idea by its public number, and nothing for an unknown one", () => {
@@ -66,5 +67,21 @@ describe("in progress list stand-in (#63)", () => {
 
   it("has no status filter, since both kinds show together", () => {
     expect(parseIdeasQuery({ status: "waiting" }, "progress")).toEqual({ sort: "support" });
+  });
+});
+
+describe("the wall's data and links (#61)", () => {
+  it("sends each list all its public ideas once, for the browser to filter", () => {
+    expect(
+      listWall("open").every((i) => ["collecting_support", "under_review", "waiting"].includes(i.status)),
+    ).toBe(true);
+    expect(listWall("progress").every((i) => ["in_progress", "delivered"].includes(i.status))).toBe(true);
+  });
+
+  it("writes short, shareable URLs that leave defaults out", () => {
+    expect(ideasHref("/", { sort: "support" })).toBe("/");
+    expect(ideasHref("/in-progress", { board: "CSC", sort: "newest" })).toBe(
+      "/in-progress?board=CSC&sort=newest",
+    );
   });
 });

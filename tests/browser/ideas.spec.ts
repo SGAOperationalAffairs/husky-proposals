@@ -150,3 +150,21 @@ test("the search field and its button share one edge (#61)", async ({ page }) =>
   });
   expect(edges).toEqual({ fieldRight: "0px", buttonLeft: "2px", gap: 0 });
 });
+
+test("filtering redraws the cards without asking the server (#61)", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState("networkidle");
+  const requests: string[] = [];
+  page.on("request", (r) => {
+    if (r.resourceType() === "fetch" || r.resourceType() === "document") requests.push(r.url());
+  });
+  await page.getByRole("navigation", { name: "Boards" }).getByRole("link", { name: "Dining" }).click();
+  await expect(page).toHaveURL(/board=DAB/);
+  await page.getByLabel("Sort by").selectOption("newest");
+  await expect(page).toHaveURL(/sort=newest/);
+  const search = page.getByLabel("Search", { exact: true });
+  await search.fill("late");
+  await search.press("Enter");
+  await expect(page.getByRole("status")).toHaveText("1 idea");
+  expect(requests).toEqual([]);
+});

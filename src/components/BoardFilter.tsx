@@ -1,15 +1,21 @@
 import Link from "next/link";
+import type { MouseEvent } from "react";
 
 // A board filter chip (#29): the board's swatch and name, filled when chosen.
-// A link on pages, so a filtered list has its own URL (#61), that keeps the
-// page where it was; a button in the playground, which keeps the choice in state.
+// A link on pages, so a filtered list has its own URL and works without
+// JavaScript (#61). With onSelect, a plain click filters in place instead of
+// navigating; a new-tab or modified click still follows the link. A button in
+// the playground, which keeps the choice in state.
 type Props = { label: string; color?: string; selected: boolean } & (
-  { href: string; onClick?: never } | { onClick: () => void; href?: never }
+  | { href: string; onSelect?: () => void; onClick?: never }
+  | { onClick: () => void; href?: never; onSelect?: never }
 );
 
 const chip = "poster-btn inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold";
 
-export function BoardFilter({ label, color, selected, href, onClick }: Props) {
+const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+
+export function BoardFilter({ label, color, selected, href, onSelect, onClick }: Props) {
   const content = (
     <>
       {color && <span aria-hidden className="board-swatch size-3" />}
@@ -23,6 +29,12 @@ export function BoardFilter({ label, color, selected, href, onClick }: Props) {
         scroll={false}
         data-board={color}
         aria-current={selected ? "true" : undefined}
+        onClick={(e) => {
+          if (onSelect && plainClick(e)) {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
         className={chip}
       >
         {content}
