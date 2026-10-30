@@ -10,6 +10,7 @@ import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
 import { Tabs } from "@/components/Tabs";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
+import { contrast, contrastVerdict } from "./contrast";
 import { IDEAS, QUEUE } from "./sample";
 import { applyDials, DIAL_GROUPS, DIALS, INITIAL_DIALS } from "./dials";
 import {
@@ -17,6 +18,7 @@ import {
   emptyOverrides,
   settingsBlob,
   tokenStyle,
+  type ColorKey,
   type Mode,
   type Overrides,
 } from "./templates";
@@ -31,12 +33,14 @@ export function Playground() {
   const [mode, setMode] = useState<Mode>("light");
   const [phone, setPhone] = useState(false);
   const [dials, setDials] = useState<Record<string, string>>(INITIAL_DIALS);
+  // Board colors picked one by one (#61), applied over the dials in both modes.
+  const [tuned, setTuned] = useState<Tuned>({});
   const [copied, setCopied] = useState("");
   // Hide the panel to see the preview at the full window width.
   const [panelOpen, setPanelOpen] = useState(true);
 
   const template = DEFAULT_TEMPLATE;
-  const overrides: Overrides = applyDials(emptyOverrides(), dials);
+  const overrides: Overrides = applyTuned(applyDials(emptyOverrides(), dials), tuned);
 
   const copy = async () => {
     const text = JSON.stringify(settingsBlob(template, overrides), null, 2);
@@ -94,7 +98,15 @@ export function Playground() {
             ))}
           </fieldset>
         ))}
-        <Button onClick={() => setDials(INITIAL_DIALS)}>Reset dials</Button>
+        <BoardTuner template={template} overrides={overrides} mode={mode} tuned={tuned} onChange={setTuned} />
+        <Button
+          onClick={() => {
+            setDials(INITIAL_DIALS);
+            setTuned({});
+          }}
+        >
+          Reset dials
+        </Button>
 
         <div className="flex flex-col gap-2">
           <Button variant="primary" onClick={copy}>
@@ -118,6 +130,74 @@ export function Playground() {
         </div>
       </main>
     </div>
+  );
+}
+
+type BoardColor = (typeof BOARDS)[BoardCode]["color"];
+type Tuned = Partial<Record<BoardColor, { color: string; text: "#ffffff" | "#111111" }>>;
+
+function applyTuned(overrides: Overrides, tuned: Tuned): Overrides {
+  for (const [board, pick] of Object.entries(tuned)) {
+    for (const modeOverrides of [overrides.light, overrides.dark]) {
+      modeOverrides[`board-${board}` as ColorKey] = pick.color;
+      modeOverrides[`on-board-${board}` as ColorKey] = pick.text;
+    }
+  }
+  return overrides;
+}
+
+// One color picker per board, with its text color and a live contrast readout,
+// so a board color can be tuned by eye without leaving AA (#61).
+function BoardTuner(props: {
+  template: typeof DEFAULT_TEMPLATE;
+  overrides: Overrides;
+  mode: Mode;
+  tuned: Tuned;
+  onChange: (tuned: Tuned) => void;
+}) {
+  const current = (key: ColorKey) =>
+    props.overrides[props.mode][key] ?? props.template[props.mode][key] ?? props.template.light[key] ?? "";
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="mb-1 text-sm font-bold">Board colors, one by one</legend>
+      {BOARD_CODES.map((code) => {
+        const { color: name, category } = BOARDS[code];
+        const color = current(`board-${name}` as ColorKey);
+        const text = current(`on-board-${name}` as ColorKey) === "#111111" ? "#111111" : "#ffffff";
+        const ratio = contrast(text, color);
+        const set = (pick: { color?: string; text?: "#ffffff" | "#111111" }) =>
+          props.onChange({ ...props.tuned, [name]: { color, text, ...pick } });
+        return (
+          <div key={code} className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <label htmlFor={`tune-${name}`} className="flex-1 text-sm font-semibold">
+                {category}
+              </label>
+              <input
+                id={`tune-${name}`}
+                type="color"
+                value={color}
+                onChange={(e) => set({ color: e.target.value })}
+                className="h-8 w-12 rounded-field bordered bg-surface"
+              />
+              <select
+                aria-label={`${category} text color`}
+                value={text}
+                onChange={(e) => set({ text: e.target.value as "#ffffff" | "#111111" })}
+                className="rounded-field bordered bg-surface px-1.5 py-1 text-sm"
+              >
+                <option value="#ffffff">White text</option>
+                <option value="#111111">Black text</option>
+              </select>
+            </div>
+            <p className={`text-xs ${ratio >= 4.5 ? "text-muted" : "font-semibold text-accent-text"}`}>
+              {color} with {text === "#ffffff" ? "white" : "black"} text: {ratio.toFixed(2)}:1,{" "}
+              {contrastVerdict(ratio)}
+            </p>
+          </div>
+        );
+      })}
+    </fieldset>
   );
 }
 

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { contrast as ratio } from "@/playground/contrast";
 
 // Every text and background pairing in docs/DESIGN.md, "Contrast", meets WCAG AA
 // (4.5:1) in light and dark mode, computed from design/tokens.css (#37).
@@ -11,19 +12,6 @@ function tokens() {
   const light = read(css.slice(0, darkStart));
   // Dark mode overrides only some tokens; the rest carry over from :root.
   return { light, dark: { ...light, ...read(css.slice(darkStart)) } };
-}
-
-function luminance(hex: string) {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
-}
-
-function ratio(a: string, b: string) {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (hi! + 0.05) / (lo! + 0.05);
 }
 
 const BOARDS = ["dining", "planning", "services", "green", "sust"];
