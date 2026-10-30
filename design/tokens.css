@@ -77,9 +77,9 @@
     --ink: #f2f2f2;
     --muted: #b5b5b5;
     --line: #f2f2f2;
-    --accent: #e0334f;
+    --accent: #d92b48;
     --accent-text: #ff7a8e;
-    --rule-color: #e0334f;
+    --rule-color: #d92b48;
     --sky: #1c2e4d;
     --sky-ink: #b3d1ff;
     --amber: #3d2f0c;
@@ -94,4 +94,4 @@
 }
 /* Status chip colors:
    collecting_support: grey   under_review: sky   in_progress: amber
-   delivered: green           waiting: outline on grey */
+   delivered: green           waiting: outline on a transparent background */

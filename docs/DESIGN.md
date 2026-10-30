@@ -21,7 +21,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 | `--ink` | `#111111` | `#f2f2f2` | Body text |
 | `--muted` | `#4a4a4a` | `#b5b5b5` | Secondary text, hints |
 | `--line` | `#111111` | `#f2f2f2` | Borders and dividers |
-| `--accent` | `#c8102e` | `#e0334f` | Primary buttons, badges, active tab |
+| `--accent` | `#c8102e` | `#d92b48` | Primary buttons, badges, active tab |
 | `--accent-text` | `#b00d28` | `#ff7a8e` | Accent-colored text and links, errors |
 | `--on-accent` | `#ffffff` | `#ffffff` | Text on `--accent` |
 | `--accent-soft` | 14% accent on surface | same mix | Row hover |
@@ -39,21 +39,21 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 | GIB | `green` | `#2e7d32` | `#ffffff` |
 | SC | `sust` | `#f2c230` | `#111111` |
 
-**Contrast, computed from the tokens (WCAG ratio, light / dark).** AA needs 4.5 for normal text.
+**Contrast, computed from the tokens (WCAG ratio, light / dark).** AA needs 4.5 for normal text. `src/app/contrast.test.ts` checks every pairing below in both modes (#37).
 
 | Pairing | Light | Dark |
 |---|---|---|
 | ink on bg / surface | 14.11 / 18.88 | 16.16 / 14.21 |
 | muted on bg / surface | 6.62 / 8.86 | 8.83 / 7.76 |
 | accent-text on surface / bg | 7.16 / 5.35 | 6.38 / 7.26 |
-| **on-accent on accent** | 5.88 | **4.42, fails AA** (badge numbers, primary buttons; ticket filed) |
+| on-accent on accent | 5.88 | 4.78 (dark accent darkened from `#e0334f`, #37) |
 | chip inks on their chips | 8.08 to 11.43 | 8.30 to 10.29 |
 | focus on bg / surface | 4.55 / 6.09 | 7.42 / 6.53 |
 | text on board colors | 5.13 (green) to 11.27 (sust) | 5.13 to 11.27 (planning 6.49) |
 
 **Shape and depth:**
 - Corners: `--card-radius`, `--field-radius`, `--button-radius`, `--chip-radius`, all `0`. Use only `rounded-card`, `rounded-field`, `rounded-button`, `rounded-chip` (style guard and browser guard).
-- Borders: `--border: 2px` (the `bordered` utility), `--accent-rule: 5px` in `--rule-color` (`#c8102e`, dark `#e0334f`; the `accent-rule` utility), and Tailwind's 1px `border` for hairlines. Which to use is in `docs/ENGINEERING.md`, "Borders by role."
+- Borders: `--border: 2px` (the `bordered` utility), `--accent-rule: 5px` in `--rule-color` (`#c8102e`, dark `#d92b48`; the `accent-rule` utility), and Tailwind's 1px `border` for hairlines. Which to use is in `docs/ENGINEERING.md`, "Borders by role."
 - Shadow: `--card-shadow: none` (`shadow-card`). No other shadow class exists.
 - Spacing: Tailwind's default scale, plus `--card-pad: 20px` (`p-card`), `--card-pad-y: 20px`, `--card-stack: 12px` (`.card-stack`), `--card-gap: 20px`.
 
