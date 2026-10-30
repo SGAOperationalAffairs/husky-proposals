@@ -1,7 +1,7 @@
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
-import { STATUS_LABELS } from "@/components/StatusLabel";
+import { STATUS_LABELS } from "@/core/statuses";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { listIdeas, OPEN_STATUSES, parseIdeasQuery, SORTS, type IdeaList, type IdeasQuery } from "./data";
 

@@ -6,7 +6,7 @@ import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas
 import { CopyLink } from "@/components/CopyLink";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
-import { STATUS_LABELS } from "@/components/StatusLabel";
+import { STATUS_LABELS } from "@/core/statuses";
 import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS } from "@/core/boards";
