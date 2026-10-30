@@ -25,13 +25,14 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - How to handle ideas outside Campus Affairs is open (D15).
 
 **idea**
-`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting), `waiting_reason`, `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
+`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting), `waiting_reason`, `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
 
 **idea_revision** (for edit and resubmit)
 `id`, `idea_id`, `version`, the editable fields, `submitted_at`.
 
 **review**
-`id`, `idea_id`, `revision_id`, `reviewer_id`, `decision` (approved, declined), `reason` (required when declined), `decided_at`.
+`id`, `idea_id`, `revision_id`, `reviewer_id`, `kind` (review, take_down), `decision` (approved, declined), `reason` (required when declined, which covers a decline and a take-down), `decided_at`.
+- One review decision per revision, plus at most one take-down. A take-down always has `decision` declined.
 - `due_by` on the idea or review is `submitted_at + 3 days`. It drives the red number and the 90% target.
 - If declines turn out to be appealable (PRD D9), add an appeal link to the decline message. There is no appeal flow in the app.
 
@@ -83,7 +84,9 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 **Review status:**
 - `pending` moves to `approved` or `declined`.
 - A declined idea returns to `pending` when the author edits and resubmits.
-- Only reviewers can decide. A decline needs a written reason.
+- `pending` or `declined` moves to `withdrawn` when the author withdraws the post. This is final and writes no review row.
+- `approved` moves to `declined` through a take-down by a reviewer, with a written reason, recorded in the review history.
+- Only reviewers can decide or take down. A decline or a take-down needs a written reason.
 - Approved ideas become visible to everyone with the link.
 - A student can have at most 3 posts pending at once.
 
@@ -168,8 +171,8 @@ From a review of the plan with SGA leadership. These change the schema in #12 wh
 Found while drawing the FigJam review diagrams (October 23, 2026, #6). Each needs a decision before the epic named in brackets. The schema's provisional defaults are listed in its comments.
 
 **States and transitions:**
-1. **No way to take down an approved idea.** Approved is final today. If something slips past review (a private name, abuse), nobody can unpublish it. Proposed: a reviewer or the VP can return it to `declined` with a reason, written to the review history. [E4]
-2. **No way for a student to withdraw a post.** A pending post the author no longer wants counts toward their 3 pending until someone declines it. Proposed: the author can withdraw a pending or declined post. [E4]
+1. **Taking down an approved idea.** Resolved in #49: a take-down is a second `review` row on the approved revision, with `kind` take_down, `decision` declined, and a required reason. The idea returns to `declined` and the author can edit and resubmit. The app action is E4.
+2. **Withdrawing a post.** Resolved in #49: `withdrawn` is a new review status. The author can withdraw a pending or declined post, it is final, and it no longer counts toward the 3 pending. The app action is E4.
 3. **In progress only moves to delivered.** Real work stalls or gets dropped. Proposed: in progress can move to waiting, with a reason, and that writes a system update. [E7]
 4. **Delivered is final.** Fine for launch. Say so in the leader guide. [E10]
 5. **Editing after approval.** Not covered. Proposed: authors cannot edit an approved idea; they post a new one or ask the board to add an update. [E4]
