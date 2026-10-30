@@ -48,6 +48,7 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }:
             type="search"
             name="q"
             onPage
+            joinedEnd
             value={fields.q}
             onChange={(e) => setFields({ ...fields, q: e.target.value })}
             placeholder="Search ideas"

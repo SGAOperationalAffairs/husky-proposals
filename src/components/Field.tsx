@@ -38,13 +38,16 @@ const describedBy = (id: string, { hint, error }: Shared) =>
 
 // onPage: the field takes the page background instead of a white surface, for a
 // field that sits on the page rather than in a panel (the ideas search, #61).
+// joinedEnd: no right edge, because a button sits flush against it and draws
+// the shared edge, so the seam is one line, not two (#61).
 export function TextField({
   label,
   hint,
   error,
   onPage = false,
+  joinedEnd = false,
   ...rest
-}: Shared & { onPage?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
+}: Shared & { onPage?: boolean; joinedEnd?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <Wrap id={id} label={label} hint={hint} error={error}>
@@ -52,7 +55,10 @@ export function TextField({
         id={id}
         aria-invalid={!!error}
         aria-describedby={describedBy(id, { label, hint, error })}
-        className={onPage ? control.replace("bg-surface", "bg-bg") : control}
+        // Joined with a space here, not inside the strings: Prettier's class sorter trims them.
+        className={[onPage ? control.replace("bg-surface", "bg-bg") : control, joinedEnd && "joined-end"]
+          .filter(Boolean)
+          .join(" ")}
         {...rest}
       />
     </Wrap>

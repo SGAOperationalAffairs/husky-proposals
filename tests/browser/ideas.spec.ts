@@ -136,3 +136,17 @@ test.describe("filtering in place (#61)", () => {
     await expect(page.getByLabel("Status")).toHaveValue("");
   });
 });
+
+test("the search field and its button share one edge (#61)", async ({ page }) => {
+  await page.goto("/");
+  const edges = await page.evaluate(() => {
+    const field = document.querySelector<HTMLElement>('input[name="q"]')!;
+    const button = Array.from(document.querySelectorAll("button")).find((b) => b.textContent === "Search")!;
+    return {
+      fieldRight: getComputedStyle(field).borderRightWidth,
+      buttonLeft: getComputedStyle(button).borderLeftWidth,
+      gap: Math.round(button.getBoundingClientRect().left - field.getBoundingClientRect().right),
+    };
+  });
+  expect(edges).toEqual({ fieldRight: "0px", buttonLeft: "2px", gap: 0 });
+});

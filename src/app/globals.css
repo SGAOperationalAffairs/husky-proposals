@@ -65,6 +65,13 @@
   border-top-color: var(--rule-color);
 }
 
+/* No right edge on a field with a button flush against it, so the seam is one
+   line (#61). A custom utility like accent-rule, because Tailwind orders its own
+   border-r-0 before bordered, and bordered would win. */
+@utility joined-end {
+  border-right-width: 0;
+}
+
 /* The SGA queue's columns (prototype .row): rank, idea, supporters, willing
    to help, age, status. Stacked on narrow screens. */
 @utility queue-cols {
