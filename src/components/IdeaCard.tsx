@@ -47,9 +47,9 @@ export function IdeaCard(props: Props) {
         {props.location ?? "Anywhere on campus"}, {updatedText(props.updatedDaysAgo)}
       </p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
-        <p className="flex items-end gap-2.5">
+        <p className="flex flex-wrap items-end gap-x-2.5">
           <span className="poster-number heading tabular-nums">{props.supportCount}</span>
-          <span className="pb-1 text-sm leading-tight font-semibold whitespace-nowrap">
+          <span className="pb-1 text-sm leading-tight font-semibold">
             students want this
             <br />
             {props.willingCount} will help

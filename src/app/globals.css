@@ -145,12 +145,15 @@
     border-color: var(--press-bg, var(--ink));
     color: var(--press-fg, var(--surface));
   }
-  /* A poster's headline, support count, and description, sized by tokens. */
+  /* A poster's headline, support count, and description, sized by tokens.
+     On a narrow poster (cqi is the poster's width) the headline and number
+     shrink so long words like HUNTINGTON still fit. */
   .poster-title {
-    font-size: var(--poster-title);
+    font-size: min(var(--poster-title), 15cqi);
+    overflow-wrap: break-word;
   }
   .poster-number {
-    font-size: var(--poster-number);
+    font-size: min(var(--poster-number), 28cqi);
   }
   .poster-desc {
     display: -webkit-box;
@@ -159,22 +162,19 @@
     line-clamp: var(--desc-lines);
     overflow: hidden;
   }
-  /* The wall of posters: one column on a phone, two on a tablet, then
-     --cards-per-row. Needs an @container ancestor (the body or a preview). */
+  /* The wall of posters: up to --cards-per-row columns, falling back to fewer
+     whenever a card would be narrower than 12rem (so a phone shows one).
+     Measured against the grid itself, so it works at any window size. */
   .card-grid {
     display: grid;
     gap: var(--card-gap);
-    grid-template-columns: minmax(0, 1fr);
-  }
-  @container (min-width: 42rem) {
-    .card-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  @container (min-width: 64rem) {
-    .card-grid {
-      grid-template-columns: repeat(var(--cards-per-row), minmax(0, 1fr));
-    }
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(
+        max(12rem, calc((100% - (var(--cards-per-row) - 1) * var(--card-gap)) / var(--cards-per-row))),
+        1fr
+      )
+    );
   }
   /* A swatch of the board's color, for lists outside a poster. */
   .board-swatch {
