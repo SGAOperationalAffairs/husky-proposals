@@ -66,14 +66,18 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 - Local and test environments only.
 - The app refuses to start if the stand-in is enabled anywhere else. Otherwise anyone could choose "I'm the VP" on a deployed preview.
 
-### Branch protection (needs admin access)
+### Branch protection
+
+Applied October 30, 2026, once Luis had admin access. One ruleset per branch, with no bypass, admins included.
 
 - **Both branches:**
   - pull request required;
   - `verify` must pass;
   - no force pushes;
   - no deletion.
-- **`main`:** accepts only release pull requests from `dev` and `hotfix-*` pull requests.
+- **`dev`:** squash merges only. The squash subject is the pull request title, and the body is left blank so pull request text does not land in history.
+- **`main`:** merge commits only. It accepts only release pull requests from `dev` and `hotfix-*` pull requests. Rulesets cannot limit which branch a pull request comes from, so Luis checks this when he merges.
+- **Repository:** `dev` is the default branch, and rebase merging is off.
 - **No required approval.** Port opens pull requests from Luis's account, and GitHub does not let an author approve their own pull request. Luis reviews every pull request and is the only one who merges, so the merge is the human gate. He reads the full diff of anything that touches the review flow, permissions, or viewer shapes.
 
 ### Bootstrap exception
@@ -221,8 +225,8 @@ Run it after the scaffold. On an empty repository it has nothing to sample. Re-r
 
 | Step | Needs |
 |---|---|
-| Install, `/port:init`, `/port:analyze`, creating labels, running the cockpit | Write (Luis has it) |
-| Merge-button settings: squash for features, merge commits for releases, no rebase merging, squash message from the pull request title | Maintain or admin |
+| Install, `/port:init`, `/port:analyze`, creating labels, running the cockpit | Write |
+| Merge-button settings: squash for features, merge commits for releases, no rebase merging, squash message from the pull request title | Maintain or admin (Luis has admin) |
 | Rulesets on `dev` and `main`, required checks, the approval gate | Admin |
 | Changing the default branch | Admin |
 | A Projects board owned by the SGAOperationalAffairs org | An org member allowed to create projects |
@@ -324,10 +328,4 @@ The repository is the memory. Chat history and local assistant memory do not tra
 
 ## Open
 
-- **Repository settings to apply.** Luis decides how the repository is run. His GitHub account has write access, which covers `/port:init`, labels, and merging. These settings need an admin account to apply, either an Operations admin or admin access granted to Luis:
-  - switch the default branch to `dev`;
-  - split the current `main/dev` ruleset: `dev` allows squash merges only, and `main` allows merge commits only (today both allow only merge and rebase, so squash is unavailable);
-  - set the default squash message to the pull request title;
-  - add `verify` as a required check once CI exists.
-
-  Until the ruleset is split, merge feature pull requests with a merge commit, not rebase.
+Nothing open.
