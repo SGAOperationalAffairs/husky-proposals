@@ -1,5 +1,6 @@
 import { BOARDS, type BoardCode } from "@/core/boards";
-import { StatusLabel, type IdeaStatus } from "./StatusLabel";
+import type { IdeaStatus } from "@/core/statuses";
+import { StatusLabel } from "./StatusLabel";
 
 // A row in the SGA queue (prototype .row): rank, idea, supporters, willing
 // to help, age, status. On narrow screens it stacks.

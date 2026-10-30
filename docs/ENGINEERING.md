@@ -16,8 +16,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
   - Raw SQL (`$queryRaw`, `$executeRaw`) appears only in `src/db/sql/`. `$queryRawUnsafe` and `$executeRawUnsafe` are banned everywhere.
   - Imports climb at most one folder. Use the `@/` alias (or `@design/` for `design/`) beyond that.
 - **Routes are thin.** `src/app/` receives requests and calls core modules. Rules (statuses, transitions, permissions, limits, viewer shapes) are plain TypeScript in `src/core/` with plain unit tests.
-- **Domain words live in `src/core/`.** A type or the student-facing label for a domain value (a status, a board) is defined once in `src/core/` and imported. Presentation for it (chip colors, icons) stays in the component. Example: `src/core/boards.ts` holds board codes, names, and color names; `BoardTag` only renders them.
-- **A core type that mirrors a Prisma enum is pinned by a test** that reads the enum out of `prisma/schema.prisma` as text, the way `src/playground/templates.test.ts` reads `design/tokens.css`. Core cannot import Prisma, so the test is the link.
+- **Domain words live in `src/core/`.** A type or the student-facing label for a domain value (a status, a board) is defined once in `src/core/` and imported. Presentation for it (chip colors, icons) stays in the component. Examples: `src/core/boards.ts` holds board codes, names, and color names; `BoardTag` only renders them. `src/core/statuses.ts` holds the idea status type and labels; `StatusLabel` holds only the chip colors.
+- **A core type that mirrors a Prisma enum is pinned by a test** that reads the enum out of `prisma/schema.prisma` as text, the way `src/playground/templates.test.ts` reads `design/tokens.css`. Core cannot import Prisma, so the test is the link. Example: `src/core/statuses.test.ts`.
 - **Dev-only routes** use the `.dev.tsx` extension and compile only when `APP_ENV` is `local` or `test` (`next.config.ts`). A browser test checks `/playground` is a 404 in a production build.
 
 ### Where things live
@@ -46,7 +46,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 
 ## 2. Patterns
 
-- **Board color:** put `data-board="dining"` (or planning, services, green, sust) on an element; it and its children get `--b` and `--on-b`. `.poster` is an idea in its board's color, `.poster-btn` is the matched Support / I'll participate button, `.board-swatch` is a square of the color (`src/app/globals.css`). Board codes, names, and colors live in `src/core/boards.ts`.
+- **Board color:** put `data-board="dining"` (or planning, services, green, sust) on an element; it and its children get `--b` and `--on-b`. `.poster` is an idea in its board's color, `.poster-btn` is the matched Support / I'll participate button, `.board-swatch` is a square of the color (`src/app/globals.css`). Board codes, names, and colors live in `src/core/boards.ts`; idea statuses and their labels in `src/core/statuses.ts`.
 - **Responsive components use container queries** (`@container` on a parent, `@lg:` and `@2xl:` on the component), not screen breakpoints, so they fit narrow columns, drawers, and the playground's phone preview. Screen breakpoints (`md:`, `lg:`) are for page layout only (#29).
 - **Components are presentational.** State comes in as props. A toggle's handler receives the state the student wants, never "toggle": `onSupportChange(!supported)` in `SupportPair`. Add `"use client"` only to a component with event handlers (`SupportPair`, `Tabs`).
 - **One component per visual element.** An element shown in two places is one component, with a prop for a variant (for example, on a poster versus on the page). Do not inline a copy.
