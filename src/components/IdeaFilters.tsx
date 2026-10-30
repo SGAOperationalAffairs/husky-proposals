@@ -53,7 +53,7 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }:
             placeholder="Search ideas"
           />
         </div>
-        <Button type="submit" variant="primary">
+        <Button type="submit" variant="primary" outlined>
           Search
         </Button>
       </div>
