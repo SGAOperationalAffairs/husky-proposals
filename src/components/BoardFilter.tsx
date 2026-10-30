@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 // A board filter chip (#29): the board's swatch and name, filled when chosen.
-// A link on pages, so a filtered list has its own URL (#61); a button in the
-// playground, which keeps the choice in state.
+// A link on pages, so a filtered list has its own URL (#61), that keeps the
+// page where it was; a button in the playground, which keeps the choice in state.
 type Props = { label: string; color?: string; selected: boolean } & (
   { href: string; onClick?: never } | { onClick: () => void; href?: never }
 );
@@ -18,7 +18,13 @@ export function BoardFilter({ label, color, selected, href, onClick }: Props) {
   );
   if (href !== undefined) {
     return (
-      <Link href={href} data-board={color} aria-current={selected ? "true" : undefined} className={chip}>
+      <Link
+        href={href}
+        scroll={false}
+        data-board={color}
+        aria-current={selected ? "true" : undefined}
+        className={chip}
+      >
         {content}
       </Link>
     );

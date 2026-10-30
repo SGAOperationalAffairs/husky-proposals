@@ -31,9 +31,7 @@ export async function Wall({ searchParams, list, path }: Props) {
           />
         ))}
       </nav>
-      {/* Keyed by the query, so the fields reset when a chip or Back changes the URL. */}
       <IdeaFilters
-        key={JSON.stringify(query)}
         action={path}
         q={query.q}
         board={query.board}

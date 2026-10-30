@@ -97,3 +97,42 @@ test.describe("in progress list (#63)", () => {
     await expect(page.getByText("A late shuttle on Friday nights")).toBeVisible();
   });
 });
+
+test.describe("filtering in place (#61)", () => {
+  // Wait until the page is interactive. Before that, the form submits the
+  // no-JavaScript way, a full reload, which is the intended fallback.
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("a search keeps focus in the search field and the page where it was", async ({ page }) => {
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const search = page.getByLabel("Search", { exact: true });
+    await search.fill("dining");
+    await search.press("Enter");
+    await expect(page).toHaveURL(/q=dining/);
+    await expect(page.getByRole("status")).not.toHaveText("8 ideas");
+    await expect(search).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  });
+
+  test("a sort change keeps focus on the dropdown and the page where it was", async ({ page }) => {
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const sort = page.getByLabel("Sort by");
+    // selectOption does not focus the dropdown; a person's click or Tab does.
+    await sort.focus();
+    await sort.selectOption("newest");
+    await expect(page).toHaveURL(/sort=newest/);
+    await expect(sort).toBeFocused();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  });
+
+  test("Back puts the fields back in step with the list", async ({ page }) => {
+    await page.getByLabel("Status").selectOption("waiting");
+    await expect(page).toHaveURL(/status=waiting/);
+    await page.goBack();
+    await expect(page).not.toHaveURL(/status=/);
+    await expect(page.getByLabel("Status")).toHaveValue("");
+  });
+});
