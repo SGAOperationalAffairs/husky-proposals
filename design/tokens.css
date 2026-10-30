@@ -68,31 +68,6 @@
   --poster-number: 3.75rem;
   --desc-lines: 2;
   --title-lines: 3;
-  /* What each idea card shows: block to show a part, none to hide it. */
-  --card-show-board: block;
-  --card-show-number: block;
-  --card-show-status: block;
-  --card-show-sga: block;
-  --card-show-headline: block;
-  --card-show-desc: block;
-  --card-show-place: none;
-  --card-show-count: block;
-  --card-show-helpers: block;
-  --card-show-learn: none;
-  --card-show-buttons: block;
-  /* The proposal number's prefix ("Proposal " or "#", inline or none), and
-     the support buttons' look (text or icons, block or none). */
-  --card-number-word: inline;
-  --card-number-hash: none;
-  --card-btn-text: block;
-  --card-btn-icons: none;
-  /* Text buttons take the full row, so Learn more drops below them. */
-  --card-buttons-width: 100%;
-  /* Where Learn more goes: by the count (--card-show-learn), or beside the
-     support buttons as a link, a button, or an arrow button. */
-  --learn-link: block;
-  --learn-button: none;
-  --learn-arrow: none;
 }
 @media (prefers-color-scheme: dark) {
   :root {

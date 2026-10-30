@@ -11,17 +11,22 @@ import { Tabs } from "@/components/Tabs";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { IDEAS, QUEUE } from "./sample";
 import { applyDials, DIAL_GROUPS, DIALS, INITIAL_DIALS } from "./dials";
-import { TEMPLATES, emptyOverrides, settingsBlob, tokenStyle, type Mode, type Overrides } from "./templates";
+import {
+  DEFAULT_TEMPLATE,
+  emptyOverrides,
+  settingsBlob,
+  tokenStyle,
+  type Mode,
+  type Overrides,
+} from "./templates";
 
 // The style playground (T0.3b, #29), inside the Poster direction. Local only:
-// never compiled into a production build (next.config.ts). Pick a poster
-// style, turn the dials, check light, dark, and phone width, then copy the
+// never compiled into a production build (next.config.ts). Turn the dials, check light, dark, and phone width, then copy the
 // settings.
 
 type Taps = Record<number, boolean>;
 
 export function Playground() {
-  const [templateId, setTemplateId] = useState(TEMPLATES[0]!.id);
   const [mode, setMode] = useState<Mode>("light");
   const [phone, setPhone] = useState(false);
   const [dials, setDials] = useState<Record<string, string>>(INITIAL_DIALS);
@@ -29,7 +34,7 @@ export function Playground() {
   // Hide the panel to see the preview at the full window width.
   const [panelOpen, setPanelOpen] = useState(true);
 
-  const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!;
+  const template = DEFAULT_TEMPLATE;
   const overrides: Overrides = applyDials(emptyOverrides(), dials);
 
   const copy = async () => {
@@ -65,28 +70,6 @@ export function Playground() {
           </Button>
         </div>
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-bold">Poster style</legend>
-          {TEMPLATES.map((t) => (
-            <label
-              key={t.id}
-              className={`flex cursor-pointer flex-col gap-0.5 bordered p-2.5 ${t.id === templateId ? "bg-bg" : ""}`}
-            >
-              <span className="flex items-center gap-2 font-bold">
-                <input
-                  type="radio"
-                  name="template"
-                  value={t.id}
-                  checked={t.id === templateId}
-                  onChange={() => setTemplateId(t.id)}
-                />
-                {t.name}
-              </span>
-              <span className="text-sm text-muted">{t.description}</span>
-            </label>
-          ))}
-        </fieldset>
-
         <div className="grid grid-cols-2 gap-2">
           <Button aria-pressed={mode === "dark"} onClick={() => setMode(mode === "dark" ? "light" : "dark")}>
             {mode === "dark" ? "Dark" : "Light"}
@@ -99,26 +82,15 @@ export function Playground() {
         {DIAL_GROUPS.map((group) => (
           <fieldset key={group} className="flex flex-col gap-3">
             <legend className="mb-1 text-sm font-bold">{group}</legend>
-            {DIALS.filter((d) => d.group === group).map((d) =>
-              d.kind === "toggle" ? (
-                <label key={d.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={(dials[d.id] ?? d.initial) === "On"}
-                    onChange={(e) => setDials({ ...dials, [d.id]: e.target.checked ? "On" : "Off" })}
-                  />
-                  {d.label}
-                </label>
-              ) : (
-                <Preset
-                  key={d.id}
-                  label={d.label}
-                  value={dials[d.id] ?? d.initial}
-                  options={Object.keys(d.options)}
-                  onChange={(v) => setDials({ ...dials, [d.id]: v })}
-                />
-              ),
-            )}
+            {DIALS.filter((d) => d.group === group).map((d) => (
+              <Preset
+                key={d.id}
+                label={d.label}
+                value={dials[d.id] ?? d.initial}
+                options={Object.keys(d.options)}
+                onChange={(v) => setDials({ ...dials, [d.id]: v })}
+              />
+            ))}
           </fieldset>
         ))}
         <Button onClick={() => setDials(INITIAL_DIALS)}>Reset dials</Button>
@@ -138,7 +110,6 @@ export function Playground() {
       <main className="flex-1 overflow-x-auto p-4 lg:p-8">
         <div
           data-testid="preview"
-          data-poster={template.poster}
           style={tokenStyle(template, overrides, mode)}
           className={`@container mx-auto bg-bg font-sans text-ink ${phone ? "max-w-sm" : "max-w-6xl"}`}
         >
@@ -214,8 +185,9 @@ function PreviewPage() {
             data-board={BOARDS[idea.board].color}
             className="poster flex flex-col gap-4 @3xl:col-span-3"
           >
-            <p className="text-sm font-bold">
-              {BOARDS[idea.board].name}, proposal {idea.number}
+            <p className="flex gap-3 text-sm font-bold">
+              <span>{BOARDS[idea.board].name}</span>
+              <span>#{idea.number}</span>
             </p>
             <h3 className="heading text-7xl text-balance">{idea.title}</h3>
             <p className="max-w-prose">{idea.description}</p>
@@ -227,7 +199,7 @@ function PreviewPage() {
                 {idea.willingCount} will help
               </span>
             </p>
-            <SupportPair ideaNumber={idea.number} {...taps(idea.number)} />
+            <SupportPair look="buttons" ideaNumber={idea.number} {...taps(idea.number)} />
             <p className="text-sm">
               &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves forward.
             </p>

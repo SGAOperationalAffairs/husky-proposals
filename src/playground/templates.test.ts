@@ -45,9 +45,7 @@ describe("playground templates (#29)", () => {
       light: {},
       dark: {},
     });
-    const band = TEMPLATES.find((t) => t.id === "band")!;
-    const blob = settingsBlob(band, { ...emptyOverrides(), shared: { "card-radius": "8px" } });
-    expect(blob.poster).toBe("band");
+    const blob = settingsBlob(DEFAULT_TEMPLATE, { ...emptyOverrides(), shared: { "card-radius": "8px" } });
     expect(blob.light["--card-radius"]).toBe("8px");
     expect(blob.light["--font"]).toBeUndefined();
     expect(blob.css).toContain("--card-radius: 8px;");

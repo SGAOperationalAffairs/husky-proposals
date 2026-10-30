@@ -107,8 +107,7 @@
 }
 
 @layer components {
-  /* An idea as a poster in its board's color (#29). The playground switches
-     the variant with `data-poster` on a parent; the default is full color. */
+  /* An idea as a poster in its board's color (#29). */
   .poster {
     background: var(--b);
     color: var(--on-b);
@@ -116,24 +115,6 @@
     padding: var(--card-pad-y) var(--card-pad);
     --press-bg: var(--on-b);
     --press-fg: var(--b);
-    --poster-bg: var(--b);
-  }
-  [data-poster="band"] .poster {
-    background: var(--surface);
-    color: var(--ink);
-    border: var(--border) solid var(--line);
-    border-top: 14px solid var(--b);
-    --press-bg: var(--b);
-    --press-fg: var(--on-b);
-    --poster-bg: var(--surface);
-  }
-  [data-poster="outline"] .poster {
-    background: var(--surface);
-    color: var(--ink);
-    border: 4px solid var(--b);
-    --press-bg: var(--b);
-    --press-fg: var(--on-b);
-    --poster-bg: var(--surface);
   }
   /* Support and I'll participate: one button style, matched (PRD decision log). */
   .poster-btn {
@@ -189,59 +170,12 @@
     /* Every row as tall as the tallest card, so all cards match. */
     grid-auto-rows: 1fr;
   }
-  /* Card content toggles (#29): each part shows or hides by its token. */
   .card-stack {
     gap: var(--card-stack);
   }
-  .card-board {
-    display: var(--card-show-board);
-  }
-  .card-number {
-    display: var(--card-show-number);
-  }
-  .card-status {
-    display: var(--card-show-status);
-  }
-  .card-sga {
-    display: var(--card-show-sga);
-  }
-  .card-headline {
-    display: var(--card-show-headline);
-  }
-  .card-desc {
-    display: var(--card-show-desc);
-  }
-  .card-place {
-    display: var(--card-show-place);
-  }
-  .card-count {
-    display: var(--card-show-count);
-  }
-  .card-helpers {
-    display: var(--card-show-helpers);
-  }
-  .card-learn {
-    display: var(--card-show-learn);
-  }
-  .card-buttons {
-    display: var(--card-show-buttons);
-    flex: 1 1 var(--card-buttons-width);
-  }
-  /* A swatch of the board's color, for lists outside a poster. */
-  /* The proposal number as "Proposal 103", "#103", or "103". */
-  .card-number-word {
-    display: var(--card-number-word);
-  }
-  .card-number-hash {
-    display: var(--card-number-hash);
-  }
-  /* Support and participate as text buttons, or as outline icons. */
-  .card-btn-text {
-    display: var(--card-btn-text);
-  }
-  .card-btn-icons {
-    display: var(--card-btn-icons);
-  }
+  /* Support and participate icons (SupportPair). On the wall each icon has a
+     tap area bigger than itself, pulled in so the row lines up with the text
+     above and sits close to the card's edge. */
   .support-icon {
     display: inline-grid;
     place-items: center;
@@ -249,52 +183,37 @@
     height: 2.25rem;
     color: inherit;
   }
-  /* The tap area is bigger than the icon; pull it in so the icons line up
-     with the text above and sit close to the card's edge. */
   .support-icons {
     margin: calc((1.375rem - 2.25rem) / 2);
   }
-  .support-icon svg {
+  .support-glyph {
     width: 1.375rem;
     height: 1.375rem;
+    flex-shrink: 0;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  /* Tapped: the icon fills in, like a like. */
-  .support-icon[aria-pressed="true"] svg {
+  .poster-btn .support-glyph {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  /* Tapped: the icon fills in, like a like. Filled, the lines between the
+     fingers become gaps in whatever is behind the icon. */
+  [aria-pressed="true"] > .support-glyph {
     fill: currentColor;
   }
-  /* Filled, the lines between the fingers turn into gaps in the poster's own
-     background, so the hand still reads as a hand. */
-  .support-icon[aria-pressed="true"] .support-icon-gaps {
-    stroke: var(--poster-bg, var(--bg));
+  .support-icon[aria-pressed="true"] .support-glyph-gaps {
+    stroke: var(--b, var(--bg));
     stroke-width: 1.5;
   }
-  .learn-link {
-    display: var(--learn-link);
+  .poster-btn[aria-pressed="true"] .support-glyph-gaps {
+    stroke: var(--press-bg, var(--ink));
+    stroke-width: 1.5;
   }
-  .learn-button {
-    display: var(--learn-button);
-  }
-  .learn-arrow {
-    display: var(--learn-arrow);
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0.5rem;
-  }
-  .learn-arrow svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.25;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
+  /* A swatch of the board's color, for lists outside a poster. */
   .board-swatch {
     background: var(--b);
   }

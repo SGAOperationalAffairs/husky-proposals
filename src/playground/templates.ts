@@ -25,25 +25,6 @@ export const SHARED_KEYS = [
   "poster-number",
   "desc-lines",
   "title-lines",
-  "card-show-board",
-  "card-show-number",
-  "card-show-status",
-  "card-show-sga",
-  "card-show-headline",
-  "card-show-desc",
-  "card-show-place",
-  "card-show-count",
-  "card-show-helpers",
-  "card-show-learn",
-  "card-show-buttons",
-  "card-number-word",
-  "card-number-hash",
-  "card-btn-text",
-  "card-btn-icons",
-  "card-buttons-width",
-  "learn-link",
-  "learn-button",
-  "learn-arrow",
 ] as const;
 
 export const COLOR_KEYS = [
@@ -82,13 +63,10 @@ export type SharedKey = (typeof SHARED_KEYS)[number];
 export type ColorKey = (typeof COLOR_KEYS)[number];
 export type Mode = "light" | "dark";
 
-export type PosterStyle = "full" | "band" | "outline";
-
 export type Template = {
   id: string;
   name: string;
   description: string;
-  poster: PosterStyle;
   shared: Record<SharedKey, string>;
   light: Record<ColorKey, string>;
   dark: Record<ColorKey, string>;
@@ -137,7 +115,6 @@ export function settingsBlob(template: Template, overrides: Overrides) {
       .join("\n");
   return {
     template: template.id,
-    poster: template.poster,
     light,
     dark,
     css: `:root {\n${block(light)}\n}\n@media (prefers-color-scheme: dark) {\n  :root {\n${block(dark)

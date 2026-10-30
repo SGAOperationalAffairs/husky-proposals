@@ -6,13 +6,11 @@ import { DEFAULT_TEMPLATE, type Overrides } from "./templates";
 // modes; `colors` apply to light and dark alike.
 type Choice = { shared?: Overrides["shared"]; colors?: Overrides["light"]; light?: Overrides["light"] };
 
-export const DIAL_GROUPS = ["Layout", "Card contents", "Type", "Color and lines"] as const;
+export const DIAL_GROUPS = ["Layout", "Type", "Color and lines"] as const;
 
 export type Dial = {
   id: string;
   group: (typeof DIAL_GROUPS)[number];
-  /** A select by default; a toggle is a checkbox with On and Off options. */
-  kind?: "toggle";
   label: string;
   options: Record<string, Choice>;
   /** The option matching design/tokens.css, so the playground opens there. */
@@ -162,102 +160,6 @@ const SPECS: Omit<Dial, "initial">[] = [
     },
   },
 ];
-
-SPECS.push(
-  {
-    id: "numberStyle",
-    group: "Card contents",
-    label: "Number style",
-    options: {
-      "Proposal 103": { shared: { "card-number-word": "inline", "card-number-hash": "none" } },
-      "With a # sign": { shared: { "card-number-word": "none", "card-number-hash": "inline" } },
-      "Number only": { shared: { "card-number-word": "none", "card-number-hash": "none" } },
-    },
-  },
-  {
-    id: "learnMore",
-    group: "Card contents",
-    label: "Learn more",
-    options: {
-      Off: {
-        shared: {
-          "card-show-learn": "none",
-          "learn-link": "none",
-          "learn-button": "none",
-          "learn-arrow": "none",
-        },
-      },
-      "Link by the count": {
-        shared: {
-          "card-show-learn": "block",
-          "learn-link": "none",
-          "learn-button": "none",
-          "learn-arrow": "none",
-        },
-      },
-      "Link by the buttons": {
-        shared: {
-          "card-show-learn": "none",
-          "learn-link": "block",
-          "learn-button": "none",
-          "learn-arrow": "none",
-        },
-      },
-      Button: {
-        shared: {
-          "card-show-learn": "none",
-          "learn-link": "none",
-          "learn-button": "block",
-          "learn-arrow": "none",
-        },
-      },
-      "Arrow button": {
-        shared: {
-          "card-show-learn": "none",
-          "learn-link": "none",
-          "learn-button": "none",
-          "learn-arrow": "block",
-        },
-      },
-    },
-  },
-  {
-    id: "buttonStyle",
-    group: "Card contents",
-    label: "Support buttons",
-    options: {
-      "Text buttons": {
-        shared: { "card-btn-text": "block", "card-btn-icons": "none", "card-buttons-width": "100%" },
-      },
-      Icons: { shared: { "card-btn-text": "none", "card-btn-icons": "block", "card-buttons-width": "auto" } },
-    },
-  },
-);
-
-// On/off toggles for each part of an idea card, shown as checkboxes.
-const CARD_PARTS: [part: string, label: string][] = [
-  ["board", "Board"],
-  ["number", "Proposal number"],
-  ["status", "Status"],
-  ["sga", "From SGA tag"],
-  ["headline", "Headline"],
-  ["desc", "Description"],
-  ["place", "Place and last update"],
-  ["count", "Support count"],
-  ["helpers", "Will help count"],
-  ["buttons", "Support and participate buttons"],
-];
-for (const [part, label] of CARD_PARTS)
-  SPECS.push({
-    id: `show-${part}`,
-    group: "Card contents",
-    kind: "toggle",
-    label,
-    options: {
-      On: { shared: { [`card-show-${part}`]: "block" } },
-      Off: { shared: { [`card-show-${part}`]: "none" } },
-    },
-  });
 
 const isDefault = (choice: Choice) =>
   !choice.colors &&
