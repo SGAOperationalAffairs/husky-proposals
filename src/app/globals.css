@@ -116,6 +116,7 @@
     padding: var(--card-pad);
     --press-bg: var(--on-b);
     --press-fg: var(--b);
+    --poster-bg: var(--b);
   }
   [data-poster="band"] .poster {
     background: var(--surface);
@@ -124,6 +125,7 @@
     border-top: 14px solid var(--b);
     --press-bg: var(--b);
     --press-fg: var(--on-b);
+    --poster-bg: var(--surface);
   }
   [data-poster="outline"] .poster {
     background: var(--surface);
@@ -131,6 +133,7 @@
     border: 4px solid var(--b);
     --press-bg: var(--b);
     --press-fg: var(--on-b);
+    --poster-bg: var(--surface);
   }
   /* Support and I'll participate: one button style, matched (PRD decision log). */
   .poster-btn {
@@ -238,26 +241,28 @@
   .support-icon {
     display: inline-grid;
     place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--button-radius);
+    width: 2.25rem;
+    height: 2.25rem;
     color: inherit;
   }
   .support-icon svg {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.375rem;
+    height: 1.375rem;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .support-icon[aria-pressed="true"] {
-    background: var(--press-bg, var(--ink));
-    color: var(--press-fg, var(--surface));
-  }
-  .support-icon[aria-pressed="true"] .support-icon-fill {
+  /* Tapped: the icon fills in, like a like. */
+  .support-icon[aria-pressed="true"] svg {
     fill: currentColor;
+  }
+  /* Filled, the lines between the fingers turn into gaps in the poster's own
+     background, so the hand still reads as a hand. */
+  .support-icon[aria-pressed="true"] .support-icon-gaps {
+    stroke: var(--poster-bg, var(--bg));
+    stroke-width: 1.5;
   }
   .board-swatch {
     background: var(--b);

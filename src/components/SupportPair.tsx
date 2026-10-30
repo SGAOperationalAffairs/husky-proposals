@@ -40,7 +40,7 @@ export function SupportPair({
       <div className="card-btn-icons">
         <div className="flex gap-1">
           <button type="button" {...support} aria-label="Support" title="Support" className="support-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="support-icon-fill">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
             </svg>
           </button>
@@ -52,10 +52,10 @@ export function SupportPair({
             className="support-icon"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 11V6a2 2 0 0 0-4 0v5" />
-              <path d="M14 10V4a2 2 0 0 0-4 0v6" />
-              <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
-              <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+              {/* The hand's outline is one closed shape, so it can fill when tapped; the
+                three short lines mark the fingers in the outline look. */}
+              <path d="M6 14V6a2 2 0 0 1 4 0V4a2 2 0 0 1 4 0v2a2 2 0 0 1 4 0v2a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L6 14Z" />
+              <path className="support-icon-gaps" d="M10 6v4.5M14 6v4M18 8v3" />
             </svg>
           </button>
         </div>
