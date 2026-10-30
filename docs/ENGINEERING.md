@@ -54,7 +54,9 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Borders by role (a convention, not a guarded rule).** `bordered` (the 2px `--border` token) for outlines of controls, cards, and tags; `accent-rule` (5px) for the rule across the top of a card; Tailwind's 1px `border` (with `border-line`) for hairline dividers between rows and under tab lists. Pick by role, not by taste.
 - **Exported shapes:** a component's data type is exported as `<Name>Data` (`IdeaCardData`, `QueueRowData`); its props type stays local as `Props`.
 
-Still to add, no later than the fifth feature: one hook per feature, the shared rules module (E2), and the validation helpers.
+- **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
+
+Still to add, no later than the fifth feature: one hook per feature and the validation helpers.
 
 ## 3. Data and integrity
 
