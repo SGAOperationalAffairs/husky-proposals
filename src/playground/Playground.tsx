@@ -26,6 +26,8 @@ export function Playground() {
   const [phone, setPhone] = useState(false);
   const [dials, setDials] = useState<Record<string, string>>(INITIAL_DIALS);
   const [copied, setCopied] = useState("");
+  // Hide the panel to see the preview at the full window width.
+  const [panelOpen, setPanelOpen] = useState(true);
 
   const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!;
   const overrides: Overrides = applyDials(emptyOverrides(), dials);
@@ -42,12 +44,25 @@ export function Playground() {
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-bg text-ink lg:flex-row">
-      <aside className="flex flex-col gap-5 border-b border-line bg-surface p-5 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:overflow-y-auto lg:border-r lg:border-b-0">
-        <div>
-          <h1 className="heading text-4xl">Playground</h1>
-          <p className="mt-1 text-sm text-muted">
-            Local only. Tune the Poster direction, then copy the settings.
-          </p>
+      {!panelOpen && (
+        <Button variant="primary" className="fixed right-4 bottom-4 z-10" onClick={() => setPanelOpen(true)}>
+          Show settings
+        </Button>
+      )}
+      <aside
+        hidden={!panelOpen}
+        className="flex flex-col gap-5 border-b border-line bg-surface p-5 lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:overflow-y-auto lg:border-r lg:border-b-0"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="heading text-4xl">Playground</h1>
+            <p className="mt-1 text-sm text-muted">
+              Local only. Tune the Poster direction, then copy the settings.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setPanelOpen(false)}>
+            Hide
+          </Button>
         </div>
 
         <fieldset className="flex flex-col gap-2">
