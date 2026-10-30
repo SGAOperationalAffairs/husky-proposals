@@ -16,7 +16,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--bg` | `#dedfdc` | `#161616` | Page background |
+| `--bg` | `#ebebe8` | `#161616` | Page background |
 | `--surface` | `#ffffff` | `#222222` | Panels, fields, plain buttons |
 | `--ink` | `#111111` | `#f2f2f2` | Body text |
 | `--muted` | `#4a4a4a` | `#b5b5b5` | Secondary text, hints |
@@ -43,12 +43,12 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 
 | Pairing | Light | Dark |
 |---|---|---|
-| ink on bg / surface | 14.11 / 18.88 | 16.16 / 14.21 |
-| muted on bg / surface | 6.62 / 8.86 | 8.83 / 7.76 |
-| accent-text on surface / bg | 7.16 / 5.35 | 6.38 / 7.26 |
+| ink on bg / surface | 15.81 / 18.88 | 16.16 / 14.21 |
+| muted on bg / surface | 7.42 / 8.86 | 8.83 / 7.76 |
+| accent-text on surface / bg | 7.16 / 5.99 | 6.38 / 7.26 |
 | on-accent on accent | 5.88 | 4.78 (dark accent darkened from `#e0334f`, #37) |
 | chip inks on their chips | 8.08 to 11.43 | 8.30 to 10.29 |
-| focus on bg / surface | 4.55 / 6.09 | 7.42 / 6.53 |
+| focus on bg / surface | 5.10 / 6.09 | 7.42 / 6.53 |
 | text on board colors | 5.13 (green) to 11.27 (sust) | 5.13 to 11.27 (planning 6.49) |
 
 **Shape and depth:**

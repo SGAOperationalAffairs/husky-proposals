@@ -5,7 +5,7 @@
    never derive one token from another on :root, so live overrides work. */
 :root {
   color-scheme: light;
-  --bg: #dedfdc;
+  --bg: #ebebe8;
   --surface: #ffffff;
   --ink: #111111;
   --muted: #4a4a4a;
