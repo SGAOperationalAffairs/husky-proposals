@@ -113,7 +113,7 @@
     background: var(--b);
     color: var(--on-b);
     border-radius: var(--card-radius);
-    padding: var(--card-pad);
+    padding: var(--card-pad-y) var(--card-pad);
     --press-bg: var(--on-b);
     --press-fg: var(--b);
     --poster-bg: var(--b);
@@ -190,6 +190,9 @@
     grid-auto-rows: 1fr;
   }
   /* Card content toggles (#29): each part shows or hides by its token. */
+  .card-stack {
+    gap: var(--card-stack);
+  }
   .card-board {
     display: var(--card-show-board);
   }
@@ -222,6 +225,7 @@
   }
   .card-buttons {
     display: var(--card-show-buttons);
+    flex: 1 1 var(--card-buttons-width);
   }
   /* A swatch of the board's color, for lists outside a poster. */
   /* The proposal number as "Proposal 103", "#103", or "103". */
@@ -245,6 +249,11 @@
     height: 2.25rem;
     color: inherit;
   }
+  /* The tap area is bigger than the icon; pull it in so the icons line up
+     with the text above and sit close to the card's edge. */
+  .support-icons {
+    margin: calc((1.375rem - 2.25rem) / 2);
+  }
   .support-icon svg {
     width: 1.375rem;
     height: 1.375rem;
@@ -263,6 +272,28 @@
   .support-icon[aria-pressed="true"] .support-icon-gaps {
     stroke: var(--poster-bg, var(--bg));
     stroke-width: 1.5;
+  }
+  .learn-link {
+    display: var(--learn-link);
+  }
+  .learn-button {
+    display: var(--learn-button);
+  }
+  .learn-arrow {
+    display: var(--learn-arrow);
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+  }
+  .learn-arrow svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .board-swatch {
     background: var(--b);

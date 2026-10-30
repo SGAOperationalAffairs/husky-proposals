@@ -17,6 +17,8 @@ export const SHARED_KEYS = [
   "accent-rule",
   "card-shadow",
   "card-pad",
+  "card-pad-y",
+  "card-stack",
   "cards-per-row",
   "card-gap",
   "poster-title",
@@ -38,6 +40,10 @@ export const SHARED_KEYS = [
   "card-number-hash",
   "card-btn-text",
   "card-btn-icons",
+  "card-buttons-width",
+  "learn-link",
+  "learn-button",
+  "learn-arrow",
 ] as const;
 
 export const COLOR_KEYS = [

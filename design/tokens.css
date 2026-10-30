@@ -55,6 +55,9 @@
   /* Card depth and density. "none" means flat. */
   --card-shadow: none;
   --card-pad: 20px;
+  /* A poster's top and bottom padding, and the space between its parts. */
+  --card-pad-y: 20px;
+  --card-stack: 12px;
   /* The wall of posters: the most cards per row (fewer when a card would be
      narrower than 12rem, so phones show 1), the gap between them, and the
      poster's type sizes. --desc-lines and --title-lines are line caps: a
@@ -83,6 +86,13 @@
   --card-number-hash: none;
   --card-btn-text: block;
   --card-btn-icons: none;
+  /* Text buttons take the full row, so Learn more drops below them. */
+  --card-buttons-width: 100%;
+  /* Where Learn more goes: by the count (--card-show-learn), or beside the
+     support buttons as a link, a button, or an arrow button. */
+  --learn-link: block;
+  --learn-button: none;
+  --learn-arrow: none;
 }
 @media (prefers-color-scheme: dark) {
   :root {

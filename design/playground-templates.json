@@ -20,6 +20,8 @@
         "accent-rule": "5px",
         "card-shadow": "none",
         "card-pad": "20px",
+        "card-pad-y": "20px",
+        "card-stack": "12px",
         "cards-per-row": "3",
         "card-gap": "20px",
         "poster-title": "2.25rem",
@@ -40,7 +42,11 @@
         "card-number-word": "inline",
         "card-number-hash": "none",
         "card-btn-text": "block",
-        "card-btn-icons": "none"
+        "card-btn-icons": "none",
+        "learn-link": "block",
+        "learn-button": "none",
+        "learn-arrow": "none",
+        "card-buttons-width": "100%"
       },
       "light": {
         "bg": "#dedfdc",
@@ -124,6 +130,8 @@
         "accent-rule": "5px",
         "card-shadow": "none",
         "card-pad": "20px",
+        "card-pad-y": "20px",
+        "card-stack": "12px",
         "cards-per-row": "3",
         "card-gap": "20px",
         "poster-title": "2.25rem",
@@ -144,7 +152,11 @@
         "card-number-word": "inline",
         "card-number-hash": "none",
         "card-btn-text": "block",
-        "card-btn-icons": "none"
+        "card-btn-icons": "none",
+        "learn-link": "block",
+        "learn-button": "none",
+        "learn-arrow": "none",
+        "card-buttons-width": "100%"
       },
       "light": {
         "bg": "#efefec",
@@ -228,6 +240,8 @@
         "accent-rule": "5px",
         "card-shadow": "none",
         "card-pad": "20px",
+        "card-pad-y": "20px",
+        "card-stack": "12px",
         "cards-per-row": "3",
         "card-gap": "20px",
         "poster-title": "2.25rem",
@@ -248,7 +262,11 @@
         "card-number-word": "inline",
         "card-number-hash": "none",
         "card-btn-text": "block",
-        "card-btn-icons": "none"
+        "card-btn-icons": "none",
+        "learn-link": "block",
+        "learn-button": "none",
+        "learn-arrow": "none",
+        "card-buttons-width": "100%"
       },
       "light": {
         "bg": "#efefec",

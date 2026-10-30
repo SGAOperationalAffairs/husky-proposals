@@ -50,9 +50,9 @@ const SPECS: Omit<Dial, "initial">[] = [
     group: "Layout",
     label: "Padding inside cards",
     options: {
-      Compact: { shared: { "card-pad": "16px" } },
-      Standard: { shared: { "card-pad": "20px" } },
-      Roomy: { shared: { "card-pad": "28px" } },
+      Compact: { shared: { "card-pad": "16px", "card-pad-y": "16px", "card-stack": "10px" } },
+      Standard: { shared: { "card-pad": "20px", "card-pad-y": "20px", "card-stack": "12px" } },
+      Roomy: { shared: { "card-pad": "28px", "card-pad-y": "28px", "card-stack": "16px" } },
     },
   },
   {
@@ -175,12 +175,61 @@ SPECS.push(
     },
   },
   {
+    id: "learnMore",
+    group: "Card contents",
+    label: "Learn more",
+    options: {
+      Off: {
+        shared: {
+          "card-show-learn": "none",
+          "learn-link": "none",
+          "learn-button": "none",
+          "learn-arrow": "none",
+        },
+      },
+      "Link by the count": {
+        shared: {
+          "card-show-learn": "block",
+          "learn-link": "none",
+          "learn-button": "none",
+          "learn-arrow": "none",
+        },
+      },
+      "Link by the buttons": {
+        shared: {
+          "card-show-learn": "none",
+          "learn-link": "block",
+          "learn-button": "none",
+          "learn-arrow": "none",
+        },
+      },
+      Button: {
+        shared: {
+          "card-show-learn": "none",
+          "learn-link": "none",
+          "learn-button": "block",
+          "learn-arrow": "none",
+        },
+      },
+      "Arrow button": {
+        shared: {
+          "card-show-learn": "none",
+          "learn-link": "none",
+          "learn-button": "none",
+          "learn-arrow": "block",
+        },
+      },
+    },
+  },
+  {
     id: "buttonStyle",
     group: "Card contents",
     label: "Support buttons",
     options: {
-      "Text buttons": { shared: { "card-btn-text": "block", "card-btn-icons": "none" } },
-      Icons: { shared: { "card-btn-text": "none", "card-btn-icons": "block" } },
+      "Text buttons": {
+        shared: { "card-btn-text": "block", "card-btn-icons": "none", "card-buttons-width": "100%" },
+      },
+      Icons: { shared: { "card-btn-text": "none", "card-btn-icons": "block", "card-buttons-width": "auto" } },
     },
   },
 );
@@ -196,7 +245,6 @@ const CARD_PARTS: [part: string, label: string][] = [
   ["place", "Place and last update"],
   ["count", "Support count"],
   ["helpers", "Will help count"],
-  ["learn", "Learn more link"],
   ["buttons", "Support and participate buttons"],
 ];
 for (const [part, label] of CARD_PARTS)

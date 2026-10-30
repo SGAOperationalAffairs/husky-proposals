@@ -30,8 +30,9 @@ export const updatedText = (days: number) =>
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
+  const learnHref = `#proposal-${props.number}`;
   return (
-    <article data-board={board.color} className="poster @container flex flex-col gap-3">
+    <article data-board={board.color} className="poster card-stack @container flex flex-col">
       {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
       <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
         <span className="flex min-w-0 items-center gap-2">
@@ -57,7 +58,7 @@ export function IdeaCard(props: Props) {
         {props.location ?? "Anywhere on campus"}, {updatedText(props.updatedDaysAgo)}
       </p>
       {/* The count and buttons sit at the bottom, so they line up across a row. */}
-      <div className="mt-auto flex flex-col gap-3 pt-1">
+      <div className="card-stack mt-auto flex flex-col pt-1">
         <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
           <div className="card-count">
             <p className="flex flex-wrap items-end gap-x-2.5">
@@ -69,20 +70,45 @@ export function IdeaCard(props: Props) {
             </p>
           </div>
           <a
-            href={`#proposal-${props.number}`}
+            href={learnHref}
             className="card-learn pb-1 text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >
             Learn more
           </a>
         </div>
-        <div className="card-buttons">
-          <SupportPair
-            ideaNumber={props.number}
-            supported={props.supported ?? false}
-            participating={props.participating ?? false}
-            onSupportChange={props.onSupportChange}
-            onParticipateChange={props.onParticipateChange}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="card-buttons min-w-0">
+            <SupportPair
+              ideaNumber={props.number}
+              supported={props.supported ?? false}
+              participating={props.participating ?? false}
+              onSupportChange={props.onSupportChange}
+              onParticipateChange={props.onParticipateChange}
+            />
+          </div>
+          {/* Learn more beside the buttons: a link, a button, or an arrow. */}
+          <a
+            href={learnHref}
+            className="learn-link ml-auto text-sm font-bold whitespace-nowrap underline underline-offset-4"
+          >
+            Learn more
+          </a>
+          <a
+            href={learnHref}
+            className="learn-button poster-btn ml-auto px-3 py-2 font-bold whitespace-nowrap"
+          >
+            Learn more
+          </a>
+          <a
+            href={learnHref}
+            aria-label="Learn more"
+            title="Learn more"
+            className="learn-arrow poster-btn ml-auto"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
         </div>
       </div>
     </article>
