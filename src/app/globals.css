@@ -145,6 +145,37 @@
     border-color: var(--press-bg, var(--ink));
     color: var(--press-fg, var(--surface));
   }
+  /* A poster's headline, support count, and description, sized by tokens. */
+  .poster-title {
+    font-size: var(--poster-title);
+  }
+  .poster-number {
+    font-size: var(--poster-number);
+  }
+  .poster-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--desc-lines);
+    line-clamp: var(--desc-lines);
+    overflow: hidden;
+  }
+  /* The wall of posters: one column on a phone, two on a tablet, then
+     --cards-per-row. Needs an @container ancestor (the body or a preview). */
+  .card-grid {
+    display: grid;
+    gap: var(--card-gap);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @container (min-width: 42rem) {
+    .card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @container (min-width: 64rem) {
+    .card-grid {
+      grid-template-columns: repeat(var(--cards-per-row), minmax(0, 1fr));
+    }
+  }
   /* A swatch of the board's color, for lists outside a poster. */
   .board-swatch {
     background: var(--b);

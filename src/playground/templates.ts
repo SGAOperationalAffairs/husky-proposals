@@ -17,6 +17,11 @@ export const SHARED_KEYS = [
   "accent-rule",
   "card-shadow",
   "card-pad",
+  "cards-per-row",
+  "card-gap",
+  "poster-title",
+  "poster-number",
+  "desc-lines",
 ] as const;
 
 export const COLOR_KEYS = [

@@ -19,7 +19,12 @@
         "border": "2px",
         "accent-rule": "5px",
         "card-shadow": "none",
-        "card-pad": "20px"
+        "card-pad": "20px",
+        "cards-per-row": "3",
+        "card-gap": "20px",
+        "poster-title": "2.25rem",
+        "poster-number": "3.75rem",
+        "desc-lines": "none"
       },
       "light": {
         "bg": "#dedfdc",
@@ -102,7 +107,12 @@
         "border": "2px",
         "accent-rule": "5px",
         "card-shadow": "none",
-        "card-pad": "20px"
+        "card-pad": "20px",
+        "cards-per-row": "3",
+        "card-gap": "20px",
+        "poster-title": "2.25rem",
+        "poster-number": "3.75rem",
+        "desc-lines": "none"
       },
       "light": {
         "bg": "#efefec",
@@ -185,7 +195,12 @@
         "border": "2px",
         "accent-rule": "5px",
         "card-shadow": "none",
-        "card-pad": "20px"
+        "card-pad": "20px",
+        "cards-per-row": "3",
+        "card-gap": "20px",
+        "poster-title": "2.25rem",
+        "poster-number": "3.75rem",
+        "desc-lines": "none"
       },
       "light": {
         "bg": "#efefec",

@@ -31,7 +31,7 @@ export const updatedText = (days: number) =>
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   return (
-    <article data-board={board.color} className="poster flex flex-col gap-3">
+    <article data-board={board.color} className="poster @container flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 text-xs font-bold">
         <span>
           {board.category}, proposal {props.number}
@@ -41,14 +41,14 @@ export function IdeaCard(props: Props) {
           {STATUS_LABELS[props.status]}
         </span>
       </div>
-      <h3 className="heading text-4xl text-balance">{props.title}</h3>
-      <p className="text-sm">{props.description}</p>
+      <h3 className="poster-title heading text-balance">{props.title}</h3>
+      <p className="poster-desc text-sm">{props.description}</p>
       <p className="text-xs font-semibold">
         {props.location ?? "Anywhere on campus"}, {updatedText(props.updatedDaysAgo)}
       </p>
       <div className="mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
         <p className="flex items-end gap-2.5">
-          <span className="heading text-6xl tabular-nums">{props.supportCount}</span>
+          <span className="poster-number heading tabular-nums">{props.supportCount}</span>
           <span className="pb-1 text-sm leading-tight font-semibold whitespace-nowrap">
             students want this
             <br />

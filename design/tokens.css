@@ -55,6 +55,14 @@
   /* Card depth and density. "none" means flat. */
   --card-shadow: none;
   --card-pad: 20px;
+  /* The wall of posters: cards per row at full width (tablets show 2, phones
+     1), the gap between them, and the poster's type sizes. --desc-lines is a
+     line clamp: a number, or none for the full description. */
+  --cards-per-row: 3;
+  --card-gap: 20px;
+  --poster-title: 2.25rem;
+  --poster-number: 3.75rem;
+  --desc-lines: none;
 }
 @media (prefers-color-scheme: dark) {
   :root {

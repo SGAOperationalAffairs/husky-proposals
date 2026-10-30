@@ -10,19 +10,13 @@ import { SupportSquares } from "@/components/SupportSquares";
 import { Tabs } from "@/components/Tabs";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { IDEAS, QUEUE } from "./sample";
+import { applyDials, DIALS, INITIAL_DIALS } from "./dials";
 import { TEMPLATES, emptyOverrides, settingsBlob, tokenStyle, type Mode, type Overrides } from "./templates";
 
-// The style playground (T0.3b, #29), now inside the Poster direction. Local
-// only: never compiled into a production build (next.config.ts). Pick a
-// poster style, check light, dark, and phone width, nudge three things, then
-// copy the settings.
-const CASES: Record<string, string> = { "All caps": "uppercase", "Sentence case": "none" };
-const CORNERS: Record<string, Overrides["shared"]> = {
-  Square: { "card-radius": "0", "field-radius": "0", "button-radius": "0", "chip-radius": "0" },
-  Small: { "card-radius": "4px", "field-radius": "3px", "button-radius": "3px", "chip-radius": "3px" },
-  Soft: { "card-radius": "12px", "field-radius": "8px", "button-radius": "999px", "chip-radius": "999px" },
-};
-const DENSITY: Record<string, string> = { Compact: "16px", Standard: "20px", Roomy: "28px" };
+// The style playground (T0.3b, #29), inside the Poster direction. Local only:
+// never compiled into a production build (next.config.ts). Pick a poster
+// style, turn the dials, check light, dark, and phone width, then copy the
+// settings.
 
 type Taps = Record<number, boolean>;
 
@@ -30,16 +24,11 @@ export function Playground() {
   const [templateId, setTemplateId] = useState(TEMPLATES[0]!.id);
   const [mode, setMode] = useState<Mode>("light");
   const [phone, setPhone] = useState(false);
-  const [headingCase, setHeadingCase] = useState("All caps");
-  const [corners, setCorners] = useState("Square");
-  const [density, setDensity] = useState("Standard");
+  const [dials, setDials] = useState<Record<string, string>>(INITIAL_DIALS);
   const [copied, setCopied] = useState("");
 
   const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0]!;
-  const overrides: Overrides = emptyOverrides();
-  Object.assign(overrides.shared, CORNERS[corners] ?? {});
-  overrides.shared["heading-case"] = CASES[headingCase] ?? "uppercase";
-  overrides.shared["card-pad"] = DENSITY[density] ?? "20px";
+  const overrides: Overrides = applyDials(emptyOverrides(), dials);
 
   const copy = async () => {
     const text = JSON.stringify(settingsBlob(template, overrides), null, 2);
@@ -92,16 +81,21 @@ export function Playground() {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Preset
-            label="Headlines"
-            value={headingCase}
-            options={Object.keys(CASES)}
-            onChange={setHeadingCase}
-          />
-          <Preset label="Corners" value={corners} options={Object.keys(CORNERS)} onChange={setCorners} />
-          <Preset label="Density" value={density} options={Object.keys(DENSITY)} onChange={setDensity} />
-        </div>
+        {(["Layout", "Type", "Color and lines"] as const).map((group) => (
+          <fieldset key={group} className="flex flex-col gap-3">
+            <legend className="mb-1 text-sm font-bold">{group}</legend>
+            {DIALS.filter((d) => d.group === group).map((d) => (
+              <Preset
+                key={d.id}
+                label={d.label}
+                value={dials[d.id] ?? d.initial}
+                options={Object.keys(d.options)}
+                onChange={(v) => setDials({ ...dials, [d.id]: v })}
+              />
+            ))}
+          </fieldset>
+        ))}
+        <Button onClick={() => setDials(INITIAL_DIALS)}>Reset dials</Button>
 
         <div className="flex flex-col gap-2">
           <Button variant="primary" onClick={copy}>
@@ -181,7 +175,7 @@ function PreviewPage() {
             />
           ))}
         </div>
-        <div className="grid gap-5 @2xl:grid-cols-2 @5xl:grid-cols-3">
+        <div className="card-grid">
           {shown.map((i) => (
             <IdeaCard key={i.number} {...i} {...taps(i.number)} />
           ))}
