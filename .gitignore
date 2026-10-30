@@ -3,7 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.js
+.pnp.*
 
 # testing
 /coverage
@@ -24,9 +24,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env
+# local env files (an .env.example with placeholder values may be committed)
+.env*
+!.env.example
 
 # vercel
 .vercel
@@ -34,3 +34,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local-only files: internal, not for this public repository (local/ holds the original handoff zip and the SGAuth ticket guide)
+docs/PRD.md
+docs/*.docx
+docs/archive/
+docs/prototype-vs-prd-gaps.md
+reference/governance-notes.md
+research/nu-mutual-aid.md
+local/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# generated Prisma client (rebuilt by npm install via postinstall)
+/src/generated/
+
+# port pipeline (#32): agent scratch and worktrees
+.agents/
+.temp/
+.claude/worktrees/

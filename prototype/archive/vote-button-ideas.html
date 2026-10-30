@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: vote button ideas</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5; --surface: #FFFFFF; --ink: #1A1D26; --muted: #596070; --line: #DADDE4;
+  --accent: #C8102E; --accent-text: #C8102E; --on-accent: #FFFFFF; --accent-soft: #FBE8EB;
+  --t-icon-bg: #E3EBF7; --t-icon-ink: #26456F;
+  --t-met-bg: #DCF0E5; --t-met-ink: #17603B;
+  --t-word-bg: #FFF0CF; --t-word-ink: #74480A;
+  --t-hyb-bg: #EDE7FB; --t-hyb-ink: #4B2A9B;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --accent: #D52F47; --accent-text: #FF8696; --on-accent: #FFFFFF; --accent-soft: #3B1B22;
+    --t-icon-bg: #1F2E47; --t-icon-ink: #A9C6F2;
+    --t-met-bg: #153325; --t-met-ink: #92D7B2;
+    --t-word-bg: #3A2D12; --t-word-ink: #F0CB7D;
+    --t-hyb-bg: #2B2347; --t-hyb-ink: #CDBBFA;
+    --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --accent: #D52F47; --accent-text: #FF8696; --on-accent: #FFFFFF; --accent-soft: #3B1B22;
+  --t-icon-bg: #1F2E47; --t-icon-ink: #A9C6F2;
+  --t-met-bg: #153325; --t-met-ink: #92D7B2;
+  --t-word-bg: #3A2D12; --t-word-ink: #F0CB7D;
+  --t-hyb-bg: #2B2347; --t-hyb-ink: #CDBBFA;
+  --focus: #7AA7F0;
+}
+html { scroll-padding-top: calc(80px + env(safe-area-inset-top, 0px)); scroll-behavior: smooth; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
+h1 { font-size: clamp(1.8rem, 4.6vw, 2.6rem); line-height: 1.1; margin: 28px 0 8px; letter-spacing: -0.015em; }
+.intro { max-width: 70ch; margin: 0 0 16px; color: var(--muted); }
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--surface); padding: 14px 16px; max-width: 78ch; margin-bottom: 8px; }
+.callout p { margin: 0 0 8px; }
+.callout p:last-child { margin: 0; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+.bar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bar-lab { font-size: .85rem; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.seg button { appearance: none; border: 0; background: transparent; padding: 7px 13px; font-size: .88rem; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.picklink { margin-left: auto; font-size: .88rem; color: var(--accent-text); text-decoration: underline; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.spec { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.spec[hidden] { display: none; }
+.spec-h { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px 0; }
+.spec-name { font-weight: 650; }
+.tag { display: inline-block; font-size: .8rem; font-weight: 600; padding: 2px 9px; }
+.tag-icon { background: var(--t-icon-bg); color: var(--t-icon-ink); }
+.tag-metaphor { background: var(--t-met-bg); color: var(--t-met-ink); }
+.tag-wording { background: var(--t-word-bg); color: var(--t-word-ink); }
+.tag-hybrid { background: var(--t-hyb-bg); color: var(--t-hyb-ink); }
+.stage { margin: 14px 16px; background: var(--bg); padding: 18px 14px; display: flex; align-items: center; min-height: 120px; }
+.ctx { width: 100%; background: var(--surface); border: 1px solid var(--line); padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ctx-vote { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.lm { font-size: .85rem; font-weight: 600; border: 1px solid var(--accent-text); color: var(--accent-text); padding: 5px 12px; white-space: nowrap; }
+.notes { padding: 0 16px 6px; font-size: .9rem; color: var(--muted); }
+.notes p { margin: 0 0 8px; }
+.notes b { color: var(--ink); font-weight: 600; }
+.pick { margin: auto 16px 16px; align-self: flex-start; appearance: none; border: 1px solid var(--line); background: transparent; padding: 8px 16px; font-weight: 500; }
+.pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* vote buttons */
+.vbtn { --btn-bg: var(--surface); position: relative; appearance: none; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; font-weight: 600; line-height: 1.2; }
+.vbtn:hover { border-color: var(--accent-text); }
+.vbtn[aria-pressed="true"] { --btn-bg: var(--accent); background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vi-svg { width: 1.25em; height: 1.25em; flex: none; overflow: visible; }
+.vi-svg * { transform-box: fill-box; transform-origin: center; }
+.vn { font-variant-numeric: tabular-nums; }
+.vbtn[aria-pressed="true"] .f { fill: currentColor; }
+.fa { fill: currentColor; }
+.dr { stroke-dasharray: 16; stroke-dashoffset: 0; }
+.fx { position: absolute; right: 8px; top: -2px; font-size: .8rem; font-weight: 700; color: var(--accent-text); opacity: 0; pointer-events: none; }
+.vbtn.hero { flex-direction: column; align-items: flex-start; gap: 0; padding: 8px 16px; }
+.hero .hn { font-size: 1.9rem; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hero .hl { font-size: .8rem; font-weight: 500; }
+.sm-note { font-size: .78rem; color: var(--muted); width: 100%; }
+
+/* animations */
+@keyframes jump { 0% { transform: translateY(0); } 40% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+@keyframes tilt { 0% { transform: rotate(0); } 40% { transform: rotate(-18deg) scale(1.15); } 100% { transform: rotate(0); } }
+@keyframes beat { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+@keyframes spin { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(144deg) scale(1.3); } 100% { transform: rotate(288deg) scale(1); } }
+@keyframes drawk { from { stroke-dashoffset: 16; } to { stroke-dashoffset: 0; } }
+@keyframes floatup { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
+@keyframes stampk { 0% { transform: scale(1.8) rotate(-14deg); opacity: .2; } 60% { transform: scale(.9); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes lift { 0% { transform: translateY(5px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+@keyframes dropk { 0% { transform: translateY(-3px); } 100% { transform: translateY(5px); } }
+@keyframes thump { 0% { transform: translateY(-4px); } 50% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+@keyframes wavek { 0%, 100% { transform: skewY(0); } 30% { transform: skewY(-10deg); } 60% { transform: skewY(7deg); } }
+@keyframes penk { 0% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+@keyframes roll { 0% { transform: translateY(40%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes fillsweep { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.pop.a-jump .vi-svg { animation: jump .35s; }
+.pop.a-tilt .vi-svg { animation: tilt .4s; }
+.pop.a-beat .vi-svg { animation: beat .4s; }
+.pop.a-spin .vi-svg { animation: spin .5s; }
+.pop .dr { animation: drawk .4s; }
+.pop .fx { animation: floatup .7s; }
+.pop.a-stamp .vi-svg { animation: stampk .35s; }
+.pop.a-lift .vi-svg { animation: lift .4s; }
+.pop.a-drop .slip { animation: dropk .4s forwards; }
+.vbtn[aria-pressed="true"].a-drop .slip { transform: translateY(5px); }
+.pop.a-thump .hdl { animation: thump .35s; }
+.pop.a-wave .wv { animation: wavek .5s; transform-origin: left center; }
+.pop.a-write .pn { animation: penk .5s; }
+.pop .hn { animation: roll .35s; }
+.pop.a-fill::before { animation: fillsweep .3s; }
+@media (prefers-reduced-motion: reduce) { .pop *, .pop::before { animation: none !important; } }
+
+.picks { margin-top: 44px; background: var(--surface); border: 1px solid var(--line); padding: 20px; }
+.picks h2 { margin: 0 0 8px; font-size: 1.3rem; }
+.picks pre { margin: 0 0 12px; padding: 12px; background: var(--bg); font: 500 .88rem/1.6 var(--font); white-space: pre-wrap; user-select: text; }
+.picks .actions { display: flex; gap: 8px; }
+.btn { appearance: none; border: 1px solid var(--line); background: var(--surface); padding: 8px 16px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.foot { margin-top: 20px; color: var(--muted); font-size: .85rem; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 60; max-width: 92vw; text-align: center; }
+@media (max-width: 560px) { .picklink { margin-left: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vote button ideas</h1>
+  <p class="intro">Sixteen ways to show an unlimited, one-tap vote, in Husky red with square corners. Each one sits next to your outline Learn more button, the way it would on a card. Tap any of them to see the pressed state and the little animation.</p>
+  <div class="callout">
+    <p><b>What unlimited votes change.</b> The button now means "I support this", not "this is my top pick". So the icon and wording have to read as a vote and not a like, and the count carries the story.</p>
+    <p>Counts then measure breadth, not priority. If you also want to turn supporters into helpers, the "Support plus I'll participate" idea adds a second, separate tap for offering to help. It is one of the sixteen below.</p>
+    <p><b>Width matters.</b> On a card this narrow, buttons with a text label push Learn more onto a second row, while icon-only buttons stay beside it. Label length is part of the decision.</p>
+  </div>
+
+  <div class="bar">
+    <div class="bar-group">
+      <span class="bar-lab">Show</span>
+      <div class="seg" role="group" aria-label="Filter by family" id="fam">
+        <button type="button" data-fam="all" aria-pressed="true">All</button>
+        <button type="button" data-fam="icon" aria-pressed="false">Icon</button>
+        <button type="button" data-fam="metaphor" aria-pressed="false">Metaphor</button>
+        <button type="button" data-fam="wording" aria-pressed="false">Wording</button>
+        <button type="button" data-fam="hybrid" aria-pressed="false">Hybrid</button>
+      </div>
+    </div>
+    <div class="bar-group">
+      <span class="bar-lab">Count</span>
+      <div class="seg" role="group" aria-label="When to show the count" id="cnt">
+        <button type="button" data-cnt="always" aria-pressed="true">Always</button>
+        <button type="button" data-cnt="after" aria-pressed="false">After you vote</button>
+      </div>
+    </div>
+    <div class="bar-group">
+      <span class="bar-lab">Sample count</span>
+      <div class="seg" role="group" aria-label="Sample count" id="smp">
+        <button type="button" data-smp="3" aria-pressed="false">3</button>
+        <button type="button" data-smp="412" aria-pressed="true">412</button>
+        <button type="button" data-smp="1284" aria-pressed="false">1,284</button>
+      </div>
+    </div>
+    <a class="picklink" href="#picks" id="picklink">Your picks (0)</a>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <section class="picks" id="picks">
+    <h2>Your picks</h2>
+    <pre id="picktext">Nothing picked yet. Use "Pick this" under any idea.</pre>
+    <div class="actions">
+      <button type="button" class="btn primary" id="copy">Copy picks</button>
+      <button type="button" class="btn" id="clear">Clear</button>
+    </div>
+  </section>
+  <p class="foot">The count is sample content. The icons are drawn for this board, so final versions may be refined.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const svg = inner => `<svg class="vi-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+
+const ICONS = {
+  arrow: '<path d="M12 19V6M6 12l6-6 6 6"/>',
+  thumb: '<path class="f" d="M7 10v12"/><path class="f" d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
+  heart: '<path class="f" d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  star: '<path class="f" d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path class="dr" d="M8 12.5l3 3 5-6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  paw: '<ellipse class="fa" cx="6.2" cy="10" rx="1.8" ry="2.4"/><ellipse class="fa" cx="10" cy="5.8" rx="1.8" ry="2.4"/><ellipse class="fa" cx="14" cy="5.8" rx="1.8" ry="2.4"/><ellipse class="fa" cx="17.8" cy="10" rx="1.8" ry="2.4"/><path class="fa" d="M12 12c-3 0-5.5 2.7-5.5 5.2 0 1.9 1.4 2.8 3.1 2.8.9 0 1.5-.4 2.4-.4s1.5.4 2.4.4c1.7 0 3.1-.9 3.1-2.8C17.5 14.7 15 12 12 12z"/>',
+  flag: '<path d="M5 21V4"/><path class="f wv" d="M5 4h12l-3 4 3 4H5"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  ballot: '<g class="slip"><rect x="8.5" y="2.5" width="7" height="9" rx="1"/><path d="M10.5 6.2l1.2 1.2 2-2.4"/></g><rect x="4" y="11" width="16" height="9.5" rx="1" style="fill:var(--btn-bg)"/><path d="M8.5 11h7"/>',
+  pen: '<g class="pn"><path d="M4 17.5L15 6.5l3 3-11 11H4v-3z"/></g><path class="dr" d="M12 21h9"/>',
+  stamp: '<g class="hdl"><path d="M9 3h6v5.5a2.5 2.5 0 0 1-1 2V12h-4v-1.5a2.5 2.5 0 0 1-1-2V3z"/></g><path d="M4 12h16v4H4z"/><path d="M4 20h16"/>',
+  box: '<rect x="4" y="4" width="16" height="16" rx="1"/><path class="dr" d="M8 12.5l3 3 5-6"/>'
+};
+
+const C = [
+  { id: 'arrow', fam: 'icon', name: 'Up arrow', icon: 'arrow', anim: 'jump', aria: 'Vote for this proposal',
+    signal: 'Rank this higher.', watch: 'Familiar from forums and clear in a small space. It reads more like ranking than endorsement.' },
+  { id: 'thumb', fam: 'icon', name: 'Thumbs up', icon: 'thumb', anim: 'tilt', aria: 'Vote for this proposal',
+    signal: 'I like this.', watch: 'Reads as a social media like, which may feel too casual for a number you show administration.' },
+  { id: 'heart', fam: 'icon', name: 'Heart', icon: 'heart', anim: 'beat', aria: 'Vote for this proposal',
+    signal: 'I love this.', watch: 'Warm, but weak as evidence, and it never says vote.' },
+  { id: 'star', fam: 'icon', name: 'Star', icon: 'star', anim: 'spin', aria: 'Vote for this proposal',
+    signal: 'Favorite.', watch: 'Stars usually mean bookmark or rating, so students may wonder whether it counts as a vote.' },
+  { id: 'check', fam: 'icon', name: 'Check in a circle', icon: 'check', anim: 'jump', aria: 'Vote for this proposal',
+    signal: 'I agree.', watch: 'Close to ballot language, but also used for finished tasks, so the label near it matters.' },
+  { id: 'plus', fam: 'icon', name: 'Plus one', icon: 'plus', anim: 'jump', fx: true, aria: 'Add your vote',
+    signal: 'Me too.', watch: 'Friendly and low pressure. The plus is easy to miss on a phone and means little without a label.' },
+  { id: 'paw', fam: 'icon', name: 'Paw print', icon: 'paw', anim: 'stamp', aria: 'Vote for this proposal',
+    signal: 'Husky pride.', watch: 'Memorable and on brand. The meaning has to come from nearby words, and it may feel playful in a deck for administration.' },
+  { id: 'flag', fam: 'icon', name: 'Flag', icon: 'flag', anim: 'wave', aria: 'Vote for this proposal',
+    signal: 'I back this.', watch: 'On many platforms a flag means report this, so it is risky.' },
+  { id: 'hand', fam: 'metaphor', name: 'Raised hand', icon: 'hand', anim: 'lift', label: ['Count me in', 'Counted in'], aria: 'Count me in',
+    signal: 'I am here, count me.', watch: 'Fits participation and the meeting metaphor. Detailed icons get fussy at small sizes.' },
+  { id: 'ballot', fam: 'metaphor', name: 'Ballot box', icon: 'ballot', anim: 'drop', label: ['Cast vote', 'Vote cast'], aria: 'Cast your vote',
+    signal: 'Cast my vote.', watch: 'The clearest vote metaphor, but a little literal and it needs a larger icon to read.' },
+  { id: 'pen', fam: 'metaphor', name: 'Pen and signature line', icon: 'pen', anim: 'write', label: ['Sign on', 'Signed'], aria: 'Sign on',
+    signal: 'I sign this petition.', watch: 'Frames the vote as a petition, which fits building mass. It implies commitment and may slow casual taps.' },
+  { id: 'stamp', fam: 'metaphor', name: 'Stamp', icon: 'stamp', anim: 'thump', label: ['Approve', 'Approved'], aria: 'Approve',
+    signal: 'Approved.', watch: 'Official and satisfying, but approval language can sound like SGA deciding instead of students supporting.' },
+  { id: 'box', fam: 'metaphor', name: 'Ballot checkbox', icon: 'box', anim: 'jump', label: ['Support', 'Supported'], aria: 'Support this proposal',
+    signal: 'Tick the box.', watch: 'Simple and clear, but looks like a form field unless styled as a button.' },
+  { id: 'words', fam: 'wording', name: 'Words only', custom: 'words',
+    signal: 'Plain language, no icon.', watch: 'Unmistakable and accessible. Wordier on small cards, and each phrase carries a different tone: personal, active, or inclusive.' },
+  { id: 'hybrid', fam: 'hybrid', name: 'Support plus "I\'ll participate"', custom: 'hybrid',
+    signal: 'Unlimited support, plus a separate offer to help.', watch: 'Turns supporters into a volunteer list. It adds a second control, and the two taps must not be confused: one says I want this, the other says I will help.' },
+  { id: 'hero', fam: 'hybrid', name: 'The count is the button', custom: 'hero',
+    signal: 'Join the crowd.', watch: 'Makes demand visible and tappable in one place. A very large or very small number changes how it looks.' }
+];
+const FAMNAME = { icon: 'Icon', metaphor: 'Metaphor', wording: 'Wording', hybrid: 'Hybrid' };
+
+const state = { fam: 'all', cnt: 'always', smp: 412, pressed: new Set(), picks: new Set(), last: null };
+const fmt = n => n.toLocaleString('en-US');
+const cnt = id => state.smp + (state.pressed.has(id) ? 1 : 0);
+const showN = id => state.cnt === 'always' || state.pressed.has(id);
+const popCls = id => (state.last === id && state.pressed.has(id)) ? ' pop' : '';
+
+function btn(c) {
+  const on = state.pressed.has(c.id);
+  const label = c.label ? `<span class="vl">${on ? c.label[1] : c.label[0]}</span>` : '';
+  const n = showN(c.id) ? `<span class="vn">${fmt(cnt(c.id))}</span>` : '';
+  const fx = c.fx ? '<span class="fx" aria-hidden="true">+1</span>' : '';
+  return `<button type="button" class="vbtn a-${c.anim}${popCls(c.id)}" data-v="${c.id}" aria-pressed="${on}" aria-label="${c.aria}">${svg(ICONS[c.icon])}${label}${n}${fx}</button>`;
+}
+function wordsHTML() {
+  const W = [['w0', 'I want this', 'You want this'], ['w1', 'Back this', 'Backed'], ['w2', 'Count me in', 'Counted in']];
+  return W.map(w => {
+    const on = state.pressed.has(w[0]);
+    return `<button type="button" class="vbtn${popCls(w[0])}" data-v="${w[0]}" aria-pressed="${on}"><span>${on ? w[2] : w[1]}</span>${showN(w[0]) ? `<span class="vn">${fmt(cnt(w[0]))}</span>` : ''}</button>`;
+  }).join('');
+}
+function hybridHTML() {
+  const a = 'hs', b = 'ht';
+  const helpN = 14 + (state.pressed.has(b) ? 1 : 0);
+  return `<button type="button" class="vbtn a-jump${popCls(a)}" data-v="${a}" aria-pressed="${state.pressed.has(a)}" aria-label="Support this proposal">${svg(ICONS.arrow)}<span>Support</span>${showN(a) ? `<span class="vn">${fmt(cnt(a))}</span>` : ''}</button>
+    <button type="button" class="vbtn a-lift${popCls(b)}" data-v="${b}" aria-pressed="${state.pressed.has(b)}" aria-label="I will participate">${svg(ICONS.hand)}<span>${state.pressed.has(b) ? 'Participating' : "I'll participate"}</span><span class="vn">${helpN}</span></button>
+    <span class="sm-note">Support is unlimited. Participating is an offer to help.</span>`;
+}
+function heroHTML() {
+  const on = state.pressed.has('hero');
+  return `<button type="button" class="vbtn hero${popCls('hero')}" data-v="hero" aria-pressed="${on}">
+    ${showN('hero') ? `<span class="hn">${fmt(cnt('hero'))}</span>` : ''}
+    <span class="hl">${on ? 'students, including you' : (state.cnt === 'always' ? 'students voted. Add yours' : 'Add your vote')}</span></button>`;
+}
+function demo(c) {
+  if (c.custom === 'words') return wordsHTML();
+  if (c.custom === 'hybrid') return hybridHTML();
+  if (c.custom === 'hero') return heroHTML();
+  return btn(c);
+}
+
+function render() {
+  $('#grid').innerHTML = C.map(c => `
+    <article class="spec" data-id="${c.id}" data-fam="${c.fam}" ${state.fam !== 'all' && state.fam !== c.fam ? 'hidden' : ''}>
+      <header class="spec-h"><span class="tag tag-${c.fam}">${FAMNAME[c.fam]}</span><span class="spec-name">${c.name}</span></header>
+      <div class="stage"><div class="ctx"><div class="ctx-vote" data-demo="${c.id}">${demo(c)}</div><span class="lm" aria-hidden="true">Learn more</span></div></div>
+      <div class="notes"><p><b>What it says:</b> ${c.signal}</p><p><b>Watch for:</b> ${c.watch}</p></div>
+      <button type="button" class="pick" data-pick="${c.id}" aria-pressed="${state.picks.has(c.id)}">${state.picks.has(c.id) ? 'Picked' : 'Pick this'}</button>
+    </article>`).join('');
+  syncPicks();
+}
+function renderDemo(id) {
+  const c = C.find(x => x.id === id); if (!c) return;
+  $(`[data-demo="${id}"]`).innerHTML = demo(c);
+}
+function syncPicks() {
+  const lines = C.filter(c => state.picks.has(c.id)).map(c => `${c.name} (${FAMNAME[c.fam].toLowerCase()})`);
+  $('#picktext').textContent = lines.length ? lines.join('\n') : 'Nothing picked yet. Use "Pick this" under any idea.';
+  $('#picklink').textContent = `Your picks (${lines.length})`;
+}
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 2400); }
+const owner = vid => { const m = { w0: 'words', w1: 'words', w2: 'words', hs: 'hybrid', ht: 'hybrid' }; return m[vid] || vid; };
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-v],[data-pick],[data-fam],[data-cnt],[data-smp],#copy,#clear');
+  if (!t) return;
+  if (t.dataset.v) {
+    const id = t.dataset.v;
+    if (state.pressed.has(id)) { state.pressed.delete(id); state.last = null; } else { state.pressed.add(id); state.last = id; }
+    return renderDemo(owner(id));
+  }
+  if (t.dataset.pick) {
+    const id = t.dataset.pick;
+    if (state.picks.has(id)) state.picks.delete(id); else state.picks.add(id);
+    t.setAttribute('aria-pressed', String(state.picks.has(id))); t.textContent = state.picks.has(id) ? 'Picked' : 'Pick this';
+    return syncPicks();
+  }
+  if (t.dataset.fam) {
+    state.fam = t.dataset.fam;
+    $$('[data-fam]', $('#fam')).forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+    return $$('.spec').forEach(s => { s.hidden = state.fam !== 'all' && s.dataset.fam !== state.fam; });
+  }
+  if (t.dataset.cnt) { state.cnt = t.dataset.cnt; $$('[data-cnt]').forEach(b => b.setAttribute('aria-pressed', String(b === t))); state.last = null; return render(); }
+  if (t.dataset.smp) { state.smp = Number(t.dataset.smp); $$('[data-smp]').forEach(b => b.setAttribute('aria-pressed', String(b === t))); state.last = null; return render(); }
+  if (t.id === 'copy') {
+    const txt = $('#picktext').textContent;
+    if (!state.picks.size) return toast('Pick something first.');
+    try { await navigator.clipboard.writeText(txt); toast('Picks copied.'); } catch (err) { toast('Copy is blocked here. Select the text above instead.'); }
+    return;
+  }
+  if (t.id === 'clear') { state.picks.clear(); render(); }
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+@import "tailwindcss";
+@import "../../design/tokens.css";
+
+/* Only our tokens exist (#20). Clear Tailwind's default colors, radii,
+   shadows, and fonts, so classes like bg-blue-500, rounded-lg, or shadow-md
+   are not available and cannot creep in. Spacing, type sizes, and
+   breakpoints keep Tailwind's defaults. */
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --font-*: initial;
+}
+
+/* Map design/tokens.css into Tailwind. `inline` keeps the var() references,
+   so dark mode switches with the tokens. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-sky: var(--sky);
+  --color-sky-ink: var(--sky-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-grey: var(--grey);
+  --color-grey-ink: var(--grey-ink);
+  --color-focus: var(--focus);
+
+  --font-sans: var(--font);
+  --font-heading: var(--font-heading);
+
+  --radius-card: var(--card-radius);
+  --radius-field: var(--field-radius);
+  --radius-button: var(--button-radius);
+  --radius-chip: var(--chip-radius);
+
+  --shadow-card: var(--card-shadow);
+  --spacing-card: var(--card-pad);
+}
+
+/* A border at the token width, in the line color. Use instead of `border`,
+   which is always 1px. */
+@utility bordered {
+  border-style: solid;
+  border-width: var(--border);
+  border-color: var(--line);
+}
+
+/* The rule across the top of a card: Husky red by default (design/tokens.css).
+   Use with `bordered`, which sets the other three sides. Fewer declarations
+   than `bordered`, so Tailwind orders it after and the top wins. */
+@utility accent-rule {
+  border-top-width: var(--accent-rule);
+  border-top-color: var(--rule-color);
+}
+
+/* The SGA queue's columns (prototype .row): rank, idea, supporters, willing
+   to help, age, status. Stacked on narrow screens. */
+@utility queue-cols {
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+@utility queue-cols-wide {
+  grid-template-columns: 44px minmax(0, 1fr) 110px 110px 70px 140px;
+}
+
+/* Heading type from the tokens: family, weight, and tracking. */
+@utility heading {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-tracking);
+  text-transform: var(--heading-case);
+  line-height: 0.92;
+}
+
+/* Board color scope: `data-board="dining"` (and so on) gives an element and
+   its children --b (the board's color) and --on-b (the text color on it). */
+[data-board="dining"] {
+  --b: var(--board-dining);
+  --on-b: var(--on-board-dining);
+}
+[data-board="planning"] {
+  --b: var(--board-planning);
+  --on-b: var(--on-board-planning);
+}
+[data-board="services"] {
+  --b: var(--board-services);
+  --on-b: var(--on-board-services);
+}
+[data-board="green"] {
+  --b: var(--board-green);
+  --on-b: var(--on-board-green);
+}
+[data-board="sust"] {
+  --b: var(--board-sust);
+  --on-b: var(--on-board-sust);
+}
+
+@layer components {
+  /* An idea as a poster in its board's color (#29). */
+  .poster {
+    background: var(--b);
+    color: var(--on-b);
+    border-radius: var(--card-radius);
+    padding: var(--card-pad-y) var(--card-pad);
+    --press-bg: var(--on-b);
+    --press-fg: var(--b);
+  }
+  /* Support and I'll participate: one button style, matched (PRD decision log). */
+  .poster-btn {
+    border: var(--border) solid currentColor;
+    border-radius: var(--button-radius);
+    background: transparent;
+    color: inherit;
+  }
+  .poster-btn[aria-pressed="true"] {
+    /* Outside a poster, a pressed button is ink on the page. */
+    background: var(--press-bg, var(--ink));
+    border-color: var(--press-bg, var(--ink));
+    color: var(--press-fg, var(--surface));
+  }
+  /* A poster's headline, support count, and description, sized by tokens.
+     On a narrow poster (cqi is the poster's width) the headline and number
+     shrink so long words like HUNTINGTON still fit. */
+  .poster-title {
+    font-size: min(var(--poster-title), 15cqi);
+    overflow-wrap: break-word;
+  }
+  /* --title-lines caps the headline, like --desc-lines for the description. */
+  .poster-title-lines {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--title-lines);
+    line-clamp: var(--title-lines);
+    overflow: hidden;
+  }
+  .poster-number {
+    font-size: min(var(--poster-number), 28cqi);
+  }
+  .poster-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--desc-lines);
+    line-clamp: var(--desc-lines);
+    overflow: hidden;
+  }
+  /* The wall of posters: up to --cards-per-row columns, falling back to fewer
+     whenever a card would be narrower than 12rem (so a phone shows one).
+     Measured against the grid itself, so it works at any window size. */
+  .card-grid {
+    display: grid;
+    gap: var(--card-gap);
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(
+        max(12rem, calc((100% - (var(--cards-per-row) - 1) * var(--card-gap)) / var(--cards-per-row))),
+        1fr
+      )
+    );
+    /* Every row as tall as the tallest card, so all cards match. */
+    grid-auto-rows: 1fr;
+  }
+  .card-stack {
+    gap: var(--card-stack);
+  }
+  /* Support and participate icons (SupportPair). On the wall each icon has a
+     tap area bigger than itself, pulled in so the row lines up with the text
+     above and sits close to the card's edge. */
+  .support-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: inherit;
+  }
+  .support-icons {
+    margin: calc((1.375rem - 2.25rem) / 2);
+  }
+  .support-glyph {
+    width: 1.375rem;
+    height: 1.375rem;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .poster-btn .support-glyph {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  /* Tapped: the icon fills in, like a like. Filled, the lines between the
+     fingers become gaps in whatever is behind the icon. */
+  [aria-pressed="true"] > .support-glyph {
+    fill: currentColor;
+  }
+  .support-icon[aria-pressed="true"] .support-glyph-gaps {
+    stroke: var(--b, var(--bg));
+    stroke-width: 1.5;
+  }
+  .poster-btn[aria-pressed="true"] .support-glyph-gaps {
+    stroke: var(--press-bg, var(--ink));
+    stroke-width: 1.5;
+  }
+  /* A swatch of the board's color, for lists outside a poster. */
+  .board-swatch {
+    background: var(--b);
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

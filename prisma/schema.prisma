@@ -1,0 +1,452 @@
+// Husky Proposals data model. Draft for review (#6), from docs/data-model.md.
+//
+// This file is the source of truth for the data model. Migrations come with
+// the scaffold (T0.5). Rules the schema cannot express live in the shared
+// rules module and are noted here as "Rule:" comments so they are not lost.
+//
+// "Provisional" marks a choice the plan has not settled. Each can change
+// freely until the November 20 feature freeze, since there is no real data
+// before launch.
+//
+// Prisma 7, pinned to 7.10.x. The connection URLs live in prisma.config.ts
+// (pooled at runtime, direct for migrations), not here.
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum ReviewStatus {
+  pending
+  approved
+  declined
+}
+
+// Only set once an idea is approved.
+enum IdeaStatus {
+  collecting_support
+  under_review
+  in_progress
+  delivered
+  waiting
+}
+
+// What the student picks on the form. Each category maps to one board
+// (Board.category). Provisional: no "other" category for launch (D15).
+enum IdeaCategory {
+  dining
+  campus_planning
+  campus_services
+  green_initiatives
+  sustainability
+}
+
+enum IdeaScale {
+  small
+  medium
+  large // counts as 2 toward a board's in-progress guideline; an unknown scale counts as 1
+}
+
+enum CostBand {
+  under_1k
+  from_1k_to_5k
+  over_5k
+}
+
+enum TimeHorizon {
+  this_semester
+  next_semester
+  within_a_year
+}
+
+enum ReviewDecision {
+  approved
+  declined
+}
+
+enum ContactStatus {
+  new
+  contacted
+  joined
+  later
+}
+
+enum UpdateKind {
+  board // written by a leader
+  check_in // the one-tap "Still working, no news" update (#12)
+  system // written by the app: started, delivered, moved board
+}
+
+// Optional basic demographics (#12). Year is left out: it would need yearly edits.
+enum StudentLevel {
+  undergraduate
+  graduate
+}
+
+enum DigestFrequency {
+  weekly
+  as_it_happens // at most one email a day
+  off
+}
+
+enum EmailType {
+  post_decided
+  reviewer_reminder
+  digest
+}
+
+// Provisional: whether to log at all is open (D16).
+enum AccessKind {
+  author
+  supporters
+  participants
+}
+
+// ---------------------------------------------------------------------------
+// People and boards
+// ---------------------------------------------------------------------------
+
+// SGAuth is the source of truth for identity. Name and email are copied from
+// the session on sign-in so the queue and emails work. Roles are not stored:
+// they come from SGAuth positions on each request.
+model User {
+  id          String   @id @db.Uuid // the SGAuth user id
+  email       String   @unique
+  displayName String   @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+
+  // Optional, asked once and editable by the student. Shown to leaders only
+  // as counts, never next to a name in an export (#12).
+  studentLevel StudentLevel? @map("student_level")
+  major        String?
+
+  // Position keys from the last session check. Used only to route reviewer
+  // reminders, never for permissions, which always come from a live session (#8).
+  positionsSeen   String[]  @default([]) @map("positions_seen")
+  positionsSeenAt DateTime? @map("positions_seen_at")
+  // Set when we stop emailing an account: deactivated, bounced, or not seen in 120 days (#8).
+  emailStoppedAt  DateTime? @map("email_stopped_at")
+
+  ideas            Idea[]
+  reviews          Review[]
+  supports         Support[]
+  participations   Participation[]
+  follows          Follow[]
+  updates          Update[]
+  emailPreference  EmailPreference?
+  outbox           EmailOutbox[]
+  accessLogEntries AccessLog[]
+
+  @@map("users")
+}
+
+// Seeded, one row per Campus Affairs body. The id is the public code.
+model Board {
+  id                  String       @id // DAB, CPAB, CSC, GIB, SC
+  name                String
+  category            IdeaCategory @unique
+  chairPositionKey    String       @map("chair_position_key") // e.g. chair-of-dining-advisory-board
+  memberPositionKey   String       @map("member_position_key")
+  inProgressGuideline Int          @default(2) @map("in_progress_guideline") // soft: a heads-up, never a block
+  updateCadenceDays   Int          @default(30) @map("update_cadence_days") // an in-progress idea is flagged after this many days without a counting update (#12)
+
+  // "How to join this board" on the idea page (S4). Plain text, edited by leaders.
+  joinMeets      String? @map("join_meets")
+  joinCommitment String? @map("join_commitment")
+  joinHowToApply String? @map("join_how_to_apply")
+
+  ideas Idea[]
+
+  @@map("boards")
+}
+
+// ---------------------------------------------------------------------------
+// Ideas, revisions, and reviews
+// ---------------------------------------------------------------------------
+
+// The current version of a post. Each submission is also snapshotted in
+// IdeaRevision, so a review points at exactly what the reviewer saw.
+//
+// Rule: at most 3 pending posts per author.
+// Rule: status is null unless reviewStatus is approved (check constraint in
+//   the migration). New approvals start at collecting_support.
+// Rule: waitingReason is required when status is waiting (check constraint).
+// Rule: the board is the only field SGA can change on a posted idea.
+model Idea {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  // Public number ("Proposal 103"). Provisional: assigned at approval from a
+  // Postgres sequence, so pending and declined posts leave no gaps.
+  number Int? @unique
+
+  title       String
+  description String // the short summary on cards
+  fullText    String?      @map("full_text")
+  category    IdeaCategory
+  boardId     String       @map("board_id")
+  location    String?
+  scale       IdeaScale? // optional on the form, "Not sure"; reviewers may fill it in (#12)
+  costBand    CostBand?    @map("cost_band")
+  timeHorizon TimeHorizon? @map("time_horizon")
+
+  // Provisional: nullable so an account can be deleted on request while the
+  // idea and its history stay (D14). Never sent in the student shape.
+  authorId    String? @map("author_id") @db.Uuid
+  isAnonymous Boolean @default(false) @map("is_anonymous")
+  // "From SGA" tag, set at posting from the author's SGAuth positions. Shown publicly.
+  fromSga     Boolean @default(false) @map("from_sga")
+
+  reviewStatus  ReviewStatus @default(pending) @map("review_status")
+  status        IdeaStatus?
+  waitingReason String?      @map("waiting_reason") // students see this
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  submittedAt     DateTime  @default(now()) @map("submitted_at") // latest submission; review is due 3 days after
+  approvedAt      DateTime? @map("approved_at")
+  statusChangedAt DateTime? @map("status_changed_at")
+  deliveredAt     DateTime? @map("delivered_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  board          Board           @relation(fields: [boardId], references: [id])
+  author         User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  revisions      IdeaRevision[]
+  reviews        Review[]
+  supports       Support[]
+  participations Participation[]
+  follows        Follow[]
+  updates        Update[]
+  accessLog      AccessLog[]
+  stats          IdeaStats?
+
+  @@index([reviewStatus, boardId, submittedAt]) // the review queue
+  @@index([status, boardId]) // the ideas list and the SGA queue
+  @@index([authorId, reviewStatus]) // "my posts" and the pending limit
+  @@map("ideas")
+}
+
+// One row per submission: the first post and each resubmit after a decline.
+model IdeaRevision {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  ideaId      String       @map("idea_id") @db.Uuid
+  version     Int // 1, 2, 3...
+  title       String
+  description String
+  fullText    String?      @map("full_text")
+  category    IdeaCategory
+  location    String?
+  scale       IdeaScale? // optional on the form, "Not sure"; reviewers may fill it in (#12)
+  costBand    CostBand?    @map("cost_band")
+  timeHorizon TimeHorizon? @map("time_horizon")
+  isAnonymous Boolean      @map("is_anonymous")
+  submittedAt DateTime     @default(now()) @map("submitted_at")
+
+  idea   Idea    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  review Review?
+
+  @@unique([ideaId, version])
+  @@map("idea_revisions")
+}
+
+// One decision per revision.
+// Rule: only a reviewer for the idea's board (its chair or director) or the
+//   VP of Campus Affairs can decide.
+// Rule: reason is required when declined (check constraint). Only the author
+//   and leaders ever see it.
+model Review {
+  id         String         @id @default(uuid(7)) @db.Uuid
+  ideaId     String         @map("idea_id") @db.Uuid
+  revisionId String         @unique @map("revision_id") @db.Uuid
+  reviewerId String?        @map("reviewer_id") @db.Uuid // nullable for account deletion (D14)
+  decision   ReviewDecision
+  reason     String?
+  decidedAt  DateTime       @default(now()) @map("decided_at")
+
+  idea     Idea         @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  revision IdeaRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  reviewer User?        @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([ideaId, decidedAt])
+  @@map("reviews")
+}
+
+// ---------------------------------------------------------------------------
+// Student actions: support, participate, follow
+//
+// Writes set the state ("supported: yes or no") and never toggle, so retries
+// and double taps do no harm. The composite primary key is the one-per-student
+// rule. Changing any of these never creates an email.
+// Rule: an abuse limit of about 60 changes a minute per student.
+// ---------------------------------------------------------------------------
+
+model Support {
+  userId    String   @map("user_id") @db.Uuid
+  ideaId    String   @map("idea_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ideaId])
+  @@index([ideaId])
+  @@map("supports")
+}
+
+// "I'll participate." The list of names is for leaders only.
+model Participation {
+  userId        String        @map("user_id") @db.Uuid
+  ideaId        String        @map("idea_id") @db.Uuid
+  contactStatus ContactStatus @default(new) @map("contact_status")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ideaId])
+  @@index([ideaId])
+  @@map("participations")
+}
+
+// Provisional: supporting does not also follow (D21).
+model Follow {
+  userId    String   @map("user_id") @db.Uuid
+  ideaId    String   @map("idea_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ideaId])
+  @@index([ideaId])
+  @@map("follows")
+}
+
+// ---------------------------------------------------------------------------
+// Updates
+// Rule: system updates are written when an idea starts, is delivered, or
+//   moves board.
+// Rule: an in-progress idea is flagged when it misses its board's cadence
+//   (Board.updateCadenceDays, monthly by default). Board and check-in updates
+//   count, and so does starting work; other system updates do not (IdeaStats).
+// Rule: DAB and CPAB updates must not reveal confidential administrative
+//   initiatives (Bylaws XII). Enforced by training and templates, not code.
+// ---------------------------------------------------------------------------
+
+model Update {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  ideaId    String     @map("idea_id") @db.Uuid
+  authorId  String?    @map("author_id") @db.Uuid // null for system updates
+  kind      UpdateKind
+  body      String
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  idea   Idea  @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([ideaId, createdAt(sort: Desc)])
+  @@map("updates")
+}
+
+// ---------------------------------------------------------------------------
+// Email (see docs/scalability.md)
+// ---------------------------------------------------------------------------
+
+model EmailPreference {
+  userId          String          @id @map("user_id") @db.Uuid
+  digestFrequency DigestFrequency @default(weekly) @map("digest_frequency")
+  digestWeekday   Int             @map("digest_weekday") // 0 to 6, assigned on creation to spread weekly sends
+  lastDigestAt    DateTime?       @map("last_digest_at") // what counts as "new" in the next digest
+  unsubscribedAt  DateTime?       @map("unsubscribed_at")
+  bouncedAt       DateTime?       @map("bounced_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_preferences")
+}
+
+// Every email is a row. Sent first in, first out within each priority, under
+// the daily budget. When a limit is hit, rows wait for the next run; none are
+// dropped. The worker claims a batch with FOR UPDATE SKIP LOCKED in
+// src/db/sql/claimOutboxBatch.ts, sets lockedUntil, and commits before
+// calling the provider, so no lock is held during the send.
+model EmailOutbox {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  type              EmailType
+  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3
+  dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<revisionId>
+  payload           Json
+  createdAt         DateTime  @default(now()) @map("created_at")
+  sendAfter         DateTime  @default(now()) @map("send_after")
+  lockedUntil       DateTime? @map("locked_until") // a crashed worker's claim expires
+  attempts          Int       @default(0)
+  sentAt            DateTime? @map("sent_at")
+  providerMessageId String?   @map("provider_message_id") // matches bounce webhooks to rows
+  lastError         String?   @map("last_error")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sentAt, priority, createdAt]) // a partial index on unsent rows replaces this in the migration
+  @@map("email_outbox")
+}
+
+// One shared daily count, so every server instance respects one budget.
+model SendBudget {
+  day       DateTime @id @db.Date
+  sentCount Int      @default(0) @map("sent_count")
+
+  @@map("send_budget")
+}
+
+// ---------------------------------------------------------------------------
+// Privacy
+// ---------------------------------------------------------------------------
+
+// Provisional: written whenever a leader views who posted, supported, or
+// offered to help. Whether to log is open (D16); if the answer is no, stop
+// writing and drop the table in a later release.
+model AccessLog {
+  id       String     @id @default(uuid(7)) @db.Uuid
+  viewerId String?    @map("viewer_id") @db.Uuid
+  ideaId   String     @map("idea_id") @db.Uuid
+  what     AccessKind
+  viewedAt DateTime   @default(now()) @map("viewed_at")
+
+  viewer User? @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+  idea   Idea  @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId, viewedAt])
+  @@map("access_log")
+}
+
+// ---------------------------------------------------------------------------
+// Derived values (read-only view)
+// ---------------------------------------------------------------------------
+
+// Counts and rank come from this view, never from app code. Draft SQL in
+// prisma/views/public/idea_stats.sql; created in a hand-written migration.
+// One row per approved idea.
+view IdeaStats {
+  ideaId        String    @unique @map("idea_id") @db.Uuid
+  boardId       String    @map("board_id")
+  supportCount  Int       @map("support_count") // public
+  willingCount  Int       @map("willing_count") // leaders only
+  followerCount Int       @map("follower_count") // leaders only
+  rankInBoard   Int?      @map("rank_in_board") // null once delivered
+  lastUpdateAt  DateTime? @map("last_update_at")
+  isStale       Boolean   @map("is_stale") // in progress and past the board's update cadence
+
+  idea Idea @relation(fields: [ideaId], references: [id])
+
+  @@map("idea_stats")
+}

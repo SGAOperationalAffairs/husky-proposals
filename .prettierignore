@@ -1,0 +1,14 @@
+.next
+node_modules
+package-lock.json
+src/generated
+prototype
+design/wireframes
+reference
+research
+docs
+*.md
+
+# port: copied verbatim from the plugin (#32), so /port:init can diff them on reconcile
+scripts/port-*.mjs
+.github/workflows/artifacts.yml

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: concept mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5;
+  --surface: #FFFFFF;
+  --ink: #1A1D26;
+  --muted: #596070;
+  --line: #DADDE4;
+  --red: #C8102E;
+  --red-text: #C8102E;
+  --on-red: #FFFFFF;
+  --red-soft: #FBE8EB;
+  --sky: #E3EBF7;
+  --sky-ink: #26456F;
+  --amber: #FFF0CF;
+  --amber-ink: #74480A;
+  --green: #DCF0E5;
+  --green-ink: #17603B;
+  --focus: #1F5FBF;
+  --display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Instrument Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --red: #D52F47; --red-text: #FF8696; --on-red: #FFFFFF; --red-soft: #3B1B22;
+    --sky: #1F2E47; --sky-ink: #A9C6F2;
+    --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2;
+    --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --red: #D52F47; --red-text: #FF8696; --on-red: #FFFFFF; --red-soft: #3B1B22;
+  --sky: #1F2E47; --sky-ink: #A9C6F2;
+  --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --green: #153325; --green-ink: #92D7B2;
+  --focus: #7AA7F0;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px 48px; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0 0; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark {
+  width: 42px; height: 42px; border-radius: 10px; background: var(--red); color: var(--on-red);
+  display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: .95rem;
+}
+.brand-name { font-family: var(--display); font-weight: 700; font-size: 1.25rem; line-height: 1.1; }
+.brand-sub { font-size: .8rem; color: var(--muted); }
+.who { font-size: .85rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; background: var(--surface); }
+
+/* period rail */
+.rail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0 28px; }
+.tab {
+  appearance: none; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px;
+}
+.tab strong { display: block; font-family: var(--display); font-size: 1.05rem; line-height: 1.2; }
+.tab span { font-size: .82rem; color: var(--muted); }
+.tab[aria-selected="true"] { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+.tab[aria-selected="true"] strong { color: var(--red-text); }
+
+h2.title { font-family: var(--display); font-weight: 800; font-size: clamp(1.7rem, 4.6vw, 2.5rem); line-height: 1.08; margin: 0 0 6px; letter-spacing: -0.01em; }
+.lede { margin: 0 0 20px; color: var(--muted); max-width: 62ch; }
+
+/* composer */
+.composer {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%;
+  background: var(--red); color: var(--on-red); border: 0; border-radius: 18px;
+  padding: 22px 24px; margin-bottom: 20px; text-align: left; cursor: pointer;
+}
+.composer h3 { font-family: var(--display); font-weight: 800; font-size: clamp(1.4rem, 3.6vw, 2rem); margin: 0; line-height: 1.1; }
+.composer p { margin: 6px 0 0; opacity: .94; }
+.composer .plus { flex: none; width: 48px; height: 48px; border-radius: 50%; background: #fff; color: var(--red); display: grid; place-items: center; font-size: 1.7rem; font-weight: 600; line-height: 1; }
+
+/* toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+.search { flex: 1 1 220px; min-width: 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { appearance: none; cursor: pointer; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; font-size: .9rem; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+/* cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.card h3 { font-family: var(--display); font-weight: 700; font-size: 1.18rem; line-height: 1.2; margin: 0; }
+.card p { margin: 0; color: var(--muted); font-size: .95rem; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font-size: .8rem; padding: 3px 10px; border-radius: 999px; background: var(--sky); color: var(--sky-ink); }
+.pill.plain { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.by { font-size: .85rem; color: var(--muted); }
+.empty { padding: 28px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
+
+/* buttons */
+.btn { appearance: none; cursor: pointer; border-radius: 999px; padding: 9px 18px; border: 1px solid var(--line); background: var(--surface); font-weight: 500; }
+.btn.primary { background: var(--red); border-color: var(--red); color: var(--on-red); }
+.btn.primary[aria-pressed="true"] { background: var(--surface); color: var(--red-text); border-color: var(--red); }
+
+/* ballot tokens */
+.token { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 2px dashed var(--line); display: grid; place-items: center; color: transparent; transition: background .15s, border-color .15s; }
+.token svg { width: 16px; height: 16px; }
+.token.on { background: var(--red); border: 2px solid var(--red); color: var(--on-red); }
+.vote { appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 16px 5px 6px; font-weight: 600; }
+.vote[aria-pressed="true"] { border-color: var(--red); color: var(--red-text); }
+
+.tray {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--bg); padding: 10px 0 14px; margin-bottom: 4px;
+}
+.tray-votes { display: flex; align-items: center; gap: 10px; }
+.tray-votes strong { font-family: var(--display); font-size: 1.05rem; }
+.tray-left { color: var(--muted); font-size: .9rem; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { appearance: none; border: 0; background: transparent; padding: 7px 16px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* map */
+.mapbox { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--sky); }
+.mapbox svg { display: block; width: 100%; height: auto; }
+.mapnote { font-size: .8rem; color: var(--muted); margin: 8px 2px 14px; }
+.m-block { fill: var(--surface); opacity: .85; }
+.m-park { fill: var(--green); }
+.pin { cursor: pointer; }
+.pin circle { fill: var(--red); stroke: var(--surface); stroke-width: 3; transition: r .12s; }
+.pin text { fill: var(--on-red); font: 700 11px var(--body); text-anchor: middle; pointer-events: none; }
+.pin[aria-pressed="true"] circle { r: 20; }
+.mapsel { max-width: 420px; }
+
+/* newsfeed */
+.feed { display: grid; gap: 14px; }
+.post { display: grid; grid-template-columns: 84px 1fr; gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.num { font-family: var(--display); font-weight: 800; font-size: clamp(2.2rem, 6vw, 3.2rem); line-height: 1; color: var(--red-text); }
+.num small { display: block; font-family: var(--body); font-weight: 500; font-size: .8rem; color: var(--muted); margin-bottom: 4px; }
+.post-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.post-head h3 { font-family: var(--display); font-weight: 700; font-size: 1.3rem; line-height: 1.2; margin: 0; }
+.status { font-size: .8rem; font-weight: 600; padding: 3px 11px; border-radius: 999px; }
+.s0 { background: var(--sky); color: var(--sky-ink); }
+.s1 { background: var(--amber); color: var(--amber-ink); }
+.s2 { background: var(--green); color: var(--green-ink); }
+.update { margin: 8px 0 0; font-size: 1.02rem; }
+.when { margin: 10px 0 0; font-size: .82rem; color: var(--muted); }
+.track { display: flex; align-items: center; margin: 14px 0 16px; }
+.step { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); white-space: nowrap; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); }
+.step.done { color: var(--ink); }
+.step.done .dot { background: var(--red); border-color: var(--red); }
+.bar { flex: 1; height: 2px; min-width: 14px; margin: 0 8px; background: var(--line); }
+.bar.done { background: var(--red); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* modal */
+dialog { width: min(580px, 92vw); max-height: 92vh; overflow: auto; padding: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 12, 18, .55); }
+.dlg-in { padding: 24px; }
+.dlg-in h3 { font-family: var(--display); font-weight: 800; font-size: 1.6rem; margin: 0 0 4px; }
+.dlg-in > p { margin: 0 0 16px; color: var(--muted); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input, .field select, .field textarea { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.field textarea { min-height: 88px; resize: vertical; }
+.hint { grid-column: 1 / -1; font-size: .88rem; padding: 10px 12px; border-radius: 10px; background: var(--amber); color: var(--amber-ink); }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-size: .92rem; z-index: 20;
+  max-width: 92vw; text-align: center;
+}
+.foot { margin-top: 36px; font-size: .85rem; color: var(--muted); }
+
+@media (max-width: 560px) {
+  .post { grid-template-columns: 1fr; gap: 8px; }
+  .num small { display: inline; margin: 0 8px 0 0; }
+  .fields { grid-template-columns: 1fr; }
+  .track { flex-wrap: wrap; row-gap: 8px; }
+  .composer { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">SGA</div>
+      <div>
+        <div class="brand-name">Husky Proposals</div>
+        <div class="brand-sub">Working title</div>
+      </div>
+    </div>
+    <div class="who">Signed in with SSO</div>
+  </header>
+
+  <nav class="rail" role="tablist" aria-label="Periods">
+    <button class="tab" role="tab" id="tab-propose" aria-selected="true" data-view="propose"><strong>Propose</strong><span>Open until Oct 12</span></button>
+    <button class="tab" role="tab" id="tab-vote" aria-selected="false" data-view="vote"><strong>Vote</strong><span>Oct 13 to Oct 24</span></button>
+    <button class="tab" role="tab" id="tab-follow" aria-selected="false" data-view="follow"><strong>Follow</strong><span>Updates all year</span></button>
+  </nav>
+
+  <main>
+    <section class="view" id="view-propose" role="tabpanel" aria-labelledby="tab-propose">
+      <h2 class="title">Ideas for campus</h2>
+      <p class="lede">Tell SGA what you want to see change. Proposals stay open until Oct 12, then students vote on their favorites.</p>
+      <button type="button" class="composer" data-open-modal>
+        <div>
+          <h3>Submit yours!</h3>
+          <p>What should be different on campus?</p>
+        </div>
+        <span class="plus" aria-hidden="true">+</span>
+      </button>
+      <div class="toolbar">
+        <input class="search" type="search" id="q" placeholder="Search proposals" aria-label="Search proposals">
+        <div class="chips" id="chips" role="group" aria-label="Filter by division"></div>
+      </div>
+      <div class="grid" id="grid-propose"></div>
+    </section>
+
+    <section class="view" id="view-vote" role="tabpanel" aria-labelledby="tab-vote" hidden>
+      <h2 class="title">Vote for what matters</h2>
+      <p class="lede">Spend your three votes on the ideas you want SGA to push for. Vote counts stay hidden until voting closes, so everyone chooses for themselves.</p>
+      <div class="tray">
+        <div class="tray-votes">
+          <strong>Your votes</strong>
+          <span id="tokens" style="display:flex;gap:8px" aria-hidden="true"></span>
+          <span class="tray-left" id="left" aria-live="polite"></span>
+        </div>
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" id="seg-list" aria-pressed="true">List</button>
+          <button type="button" id="seg-map" aria-pressed="false">Map</button>
+        </div>
+      </div>
+      <div id="vote-list"><div class="grid" id="grid-vote"></div></div>
+      <div id="vote-map" hidden>
+        <div class="mapbox"><svg id="map" viewBox="0 0 640 360" role="group" aria-label="Schematic campus map with proposal pins"></svg></div>
+        <p class="mapnote">Schematic map, not to scale. Pins mark where each proposal would happen.</p>
+        <div class="mapsel" id="mapsel"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-follow" role="tabpanel" aria-labelledby="tab-follow" hidden>
+      <h2 class="title">What happened to the ideas you voted on</h2>
+      <p class="lede">Only initiatives students voted on show up here. Follow one to get a note when SGA posts an update.</p>
+      <div class="feed" id="feed"></div>
+    </section>
+  </main>
+
+  <p class="foot">Concept mockup. Proposals, dates, and progress updates are sample content.</p>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg-in">
+    <h3 id="dlg-title">Propose an initiative</h3>
+    <p>Keep it short. SGA will follow up with you if it moves forward.</p>
+    <div class="fields">
+      <div class="field full"><label for="f-name">Name</label><input id="f-name" type="text" placeholder="What would you call it?" autocomplete="off"></div>
+      <div class="hint" id="hint" hidden></div>
+      <div class="field"><label for="f-loc">Where</label><input id="f-loc" type="text" placeholder="Building or area"></div>
+      <div class="field"><label for="f-div">Division</label>
+        <select id="f-div"><option>Dining</option><option>Campus Planning</option><option>Green Initiatives</option></select>
+      </div>
+      <div class="field"><label for="f-sub">Subdivision</label><input id="f-sub" type="text" placeholder="For example, residence halls"></div>
+      <div class="field"><label for="f-scale">Scale</label>
+        <select id="f-scale"><option>Small</option><option selected>Medium</option><option>Large</option></select>
+      </div>
+      <div class="field"><label for="f-cost">Rough cost</label>
+        <select id="f-cost"><option>Under $1k</option><option>$1k to $5k</option><option>$5k+</option></select>
+      </div>
+      <div class="field"><label for="f-time">Time</label>
+        <select id="f-time"><option>This semester</option><option>Next semester</option><option>Within a year</option></select>
+      </div>
+      <div class="field full"><label for="f-desc">Description</label><textarea id="f-desc" placeholder="What is the problem, and what would you change?"></textarea></div>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn" id="cancel">Cancel</button>
+      <button type="button" class="btn primary" id="submit">Submit proposal</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const CHECK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const DIVS = ['All', 'Dining', 'Campus Planning', 'Green Initiatives'];
+
+const P = [
+  { id: 103, title: 'A student-hosted food pantry', desc: 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.', div: 'Dining', loc: 'Central campus', scale: 'Large', cost: '$5k+', time: 'Within a year', ago: '5 days ago', pin: [250, 150] },
+  { id: 112, title: 'Ease peak-hour crowding at Marino', desc: 'Show live capacity and nudge people toward quieter hours so the afternoon rush spreads out.', div: 'Campus Planning', loc: 'Marino Center', scale: 'Medium', cost: '$1k to $5k', time: 'Next semester', ago: '4 days ago', pin: [430, 110] },
+  { id: 87, title: 'Compost bins in every residence hall', desc: 'Put a clearly labeled compost bin on each floor, with a simple pickup schedule.', div: 'Green Initiatives', loc: 'Residence halls', scale: 'Medium', cost: '$1k to $5k', time: 'This semester', ago: '1 week ago', pin: [140, 250] },
+  { id: 95, title: 'More refill stations in academic buildings', desc: 'Add bottle refill stations on every floor of the busiest classroom buildings.', div: 'Green Initiatives', loc: 'Academic buildings', scale: 'Small', cost: 'Under $1k', time: 'This semester', ago: '1 week ago', pin: [350, 245] },
+  { id: 101, title: 'A late-night dining option on weeknights', desc: 'Keep one dining location open later for students coming out of labs and libraries.', div: 'Dining', loc: 'Dining halls', scale: 'Medium', cost: '$5k+', time: 'Next semester', ago: '3 days ago', pin: [520, 230] },
+  { id: 118, title: 'Covered bike parking near Ruggles', desc: 'Protect bikes from snow and rain at the busiest entrance to campus.', div: 'Campus Planning', loc: 'Ruggles', scale: 'Medium', cost: '$1k to $5k', time: 'Within a year', ago: '2 days ago', pin: [560, 90] }
+];
+const F = [
+  { id: 103, status: 1, update: 'Began drafting legislation for the pilot program.', when: 'Updated 2 days ago' },
+  { id: 87, status: 2, update: 'Bins installed in the first three residence halls.', when: 'Updated last week' },
+  { id: 112, status: 0, update: 'Committee formed. The first meeting is being scheduled.', when: 'Updated 3 days ago' }
+];
+const STEPS = ['Voted', 'In development', 'Delivered'];
+const TAGS = ['Voted', 'Development', 'Delivered'];
+
+const state = { view: 'propose', q: '', div: 'All', voted: new Set([103]), max: 3, map: false, sel: 103, following: new Set(), nextId: 130 };
+const byId = id => P.find(p => p.id === id);
+const matches = p => (state.div === 'All' || p.div === state.div) &&
+  (!state.q || (p.title + ' ' + p.desc + ' ' + p.loc).toLowerCase().includes(state.q.toLowerCase()));
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+function cardHTML(p, mode) {
+  const voted = state.voted.has(p.id);
+  const foot = mode === 'vote'
+    ? `<button type="button" class="vote" data-vote="${p.id}" aria-pressed="${voted}"><span class="token${voted ? ' on' : ''}" aria-hidden="true">${CHECK}</span><span>${voted ? 'Voted' : 'Vote'}</span></button>`
+    : `<span class="by">Proposed ${p.ago}</span>`;
+  return `<article class="card">
+    <div class="meta"><span class="pill">${p.div}</span><span class="pill plain">${p.loc}</span></div>
+    <h3>${p.title}</h3>
+    <p>${p.desc}</p>
+    <div class="meta"><span class="pill plain">${p.scale} scale</span><span class="pill plain">${p.cost}</span><span class="pill plain">${p.time}</span></div>
+    <div class="card-foot">${foot}</div>
+  </article>`;
+}
+
+function renderChips() {
+  $('#chips').innerHTML = DIVS.map(d => `<button type="button" class="chip" data-div="${d}" aria-pressed="${state.div === d}">${d}</button>`).join('');
+}
+
+function gridHTML(mode) {
+  const list = P.filter(matches);
+  if (!list.length) return '<div class="empty">No proposals match yet. Try a different search, or submit your own.</div>';
+  return list.map(p => cardHTML(p, mode)).join('');
+}
+
+function renderTray() {
+  const n = state.voted.size;
+  $('#tokens').innerHTML = Array.from({ length: state.max }, (_, i) => `<span class="token${i < n ? ' on' : ''}">${CHECK}</span>`).join('');
+  const left = state.max - n;
+  $('#left').textContent = left === 0 ? 'All votes used' : `${left} left`;
+}
+
+function renderMap() {
+  const blocks = [[20,20,110,70],[150,20,70,70],[240,20,120,50],[380,20,110,70],[510,20,110,40],
+    [20,110,90,80],[130,110,90,60],[320,100,80,60],[420,150,90,60],[530,110,90,70],
+    [20,210,100,60],[140,190,100,70],[260,190,70,50],[350,260,100,80],[470,250,60,80],[550,230,70,100],[20,290,110,50],[150,280,110,60]];
+  let s = blocks.map(b => `<rect class="m-block" x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="6"/>`).join('');
+  s += '<rect class="m-park" x="260" y="260" width="70" height="70" rx="10"/>';
+  s += P.map(p => `<g class="pin" tabindex="0" role="button" aria-label="${p.title}" aria-pressed="${state.sel === p.id}" data-pin="${p.id}"><circle cx="${p.pin[0]}" cy="${p.pin[1]}" r="16"/><text x="${p.pin[0]}" y="${p.pin[1] + 4}">${p.id}</text></g>`).join('');
+  $('#map').innerHTML = s;
+  const p = byId(state.sel) || P[0];
+  $('#mapsel').innerHTML = cardHTML(p, 'vote');
+}
+
+function renderVote() {
+  renderTray();
+  $('#grid-vote').innerHTML = gridHTML('vote');
+  $('#vote-list').hidden = state.map;
+  $('#vote-map').hidden = !state.map;
+  $('#seg-list').setAttribute('aria-pressed', String(!state.map));
+  $('#seg-map').setAttribute('aria-pressed', String(state.map));
+  if (state.map) renderMap();
+}
+
+function renderPropose() {
+  renderChips();
+  $('#grid-propose').innerHTML = gridHTML('propose');
+}
+
+function trackHTML(status) {
+  return STEPS.map((label, i) => {
+    const done = i <= status;
+    const bar = i < STEPS.length - 1 ? `<span class="bar${i < status ? ' done' : ''}"></span>` : '';
+    return `<span class="step${done ? ' done' : ''}"><span class="dot"></span>${label}</span>${bar}`;
+  }).join('');
+}
+
+function renderFollow() {
+  $('#feed').innerHTML = F.map(f => {
+    const p = byId(f.id);
+    const on = state.following.has(f.id);
+    return `<article class="post">
+      <div class="num"><small>Proposal</small>${p.id}</div>
+      <div>
+        <div class="post-head"><h3>${p.title}</h3><span class="status s${f.status}">${TAGS[f.status]}</span></div>
+        <p class="update">${f.update}</p>
+        <div class="track" aria-label="Progress: ${STEPS[f.status]}">${trackHTML(f.status)}</div>
+        <div class="actions">
+          <button type="button" class="btn primary" data-follow="${p.id}" aria-pressed="${on}">${on ? 'Following' : 'Follow this initiative'}</button>
+          <button type="button" class="btn" data-contact="${p.id}">Contact the committee</button>
+        </div>
+        <p class="when">${f.when}</p>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+function setView(v) {
+  state.view = v;
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === v)));
+  $$('.view').forEach(s => { s.hidden = s.id !== 'view-' + v; });
+  if (v === 'propose') renderPropose();
+  if (v === 'vote') renderVote();
+  if (v === 'follow') renderFollow();
+}
+
+/* events */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-view],[data-div],[data-vote],[data-follow],[data-contact],[data-pin],[data-open-modal],#seg-list,#seg-map,#cancel,#submit');
+  if (!t) return;
+  if (t.dataset.view) return setView(t.dataset.view);
+  if (t.dataset.div) { state.div = t.dataset.div; return state.view === 'vote' ? renderVote() : renderPropose(); }
+  if (t.dataset.vote) {
+    const id = Number(t.dataset.vote);
+    if (state.voted.has(id)) state.voted.delete(id);
+    else if (state.voted.size >= state.max) return toast('You have used all 3 votes. Remove one to vote here.');
+    else state.voted.add(id);
+    return renderVote();
+  }
+  if (t.dataset.follow) {
+    const id = Number(t.dataset.follow);
+    if (state.following.has(id)) state.following.delete(id); else { state.following.add(id); toast(`You will get updates on proposal ${id}.`); }
+    return renderFollow();
+  }
+  if (t.dataset.contact) return toast('Concept only: this would open a message to the committee.');
+  if (t.dataset.pin) { state.sel = Number(t.dataset.pin); return renderMap(); }
+  if (t.hasAttribute('data-open-modal')) return openModal();
+  if (t.id === 'seg-list') { state.map = false; return renderVote(); }
+  if (t.id === 'seg-map') { state.map = true; return renderVote(); }
+  if (t.id === 'cancel') return $('#dlg').close();
+  if (t.id === 'submit') return submitProposal();
+});
+document.addEventListener('keydown', e => {
+  const pin = e.target.closest && e.target.closest('[data-pin]');
+  if (pin && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); state.sel = Number(pin.dataset.pin); renderMap(); }
+});
+$('#q').addEventListener('input', e => { state.q = e.target.value.trim(); renderPropose(); });
+
+/* modal */
+const STOP = new Set(['the', 'and', 'for', 'more', 'with', 'that', 'every', 'near', 'campus']);
+function similar(text) {
+  const words = text.toLowerCase().split(/\W+/).filter(w => w.length > 3 && !STOP.has(w));
+  if (!words.length) return null;
+  return P.find(p => words.some(w => (p.title + ' ' + p.desc).toLowerCase().includes(w)));
+}
+function openModal() {
+  ['f-name', 'f-loc', 'f-sub', 'f-desc'].forEach(id => { $('#' + id).value = ''; });
+  $('#hint').hidden = true;
+  $('#dlg').showModal();
+  $('#f-name').focus();
+}
+$('#f-name').addEventListener('input', e => {
+  const m = similar(e.target.value);
+  const h = $('#hint');
+  if (m) { h.hidden = false; h.textContent = `A similar proposal already exists: "${m.title}". You can still submit yours, and SGA can group the two.`; }
+  else h.hidden = true;
+});
+function submitProposal() {
+  const name = $('#f-name').value.trim();
+  if (!name) { toast('Add a name for your proposal.'); return $('#f-name').focus(); }
+  P.unshift({
+    id: state.nextId++, title: name,
+    desc: $('#f-desc').value.trim() || 'No description yet.',
+    div: $('#f-div').value, loc: $('#f-loc').value.trim() || 'Anywhere on campus',
+    scale: $('#f-scale').value, cost: $('#f-cost').value, time: $('#f-time').value,
+    ago: 'just now', pin: [320 + Math.round(Math.random() * 120 - 60), 170]
+  });
+  $('#dlg').close();
+  state.div = 'All'; state.q = ''; $('#q').value = '';
+  setView('propose');
+  toast('Proposal submitted. Thanks for sharing it.');
+}
+
+setView('propose');
+</script>
+</body>
+</html>

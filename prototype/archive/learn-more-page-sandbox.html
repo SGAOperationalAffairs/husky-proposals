@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: Learn more page sandbox</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5;
+  --surface: #FFFFFF;
+  --ink: #1A1D26;
+  --muted: #596070;
+  --line: #DADDE4;
+  --sky: #E3EBF7; --sky-ink: #26456F;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --green: #DCF0E5; --green-ink: #17603B;
+  --grey: #E8EAEF; --grey-ink: #424959;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --accent: #C8102E;
+  --accent-text: #C8102E;
+  --on-accent: #FFFFFF;
+  --r: 0px;
+  --pad: 18px;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --grad: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #F0A03A));
+  --r-sm: calc(var(--r) * 0.6);
+  --bw: 1px;
+  --rule: 4px;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --sky: #1F2E47; --sky-ink: #A9C6F2;
+    --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2;
+    --grey: #2A2E38; --grey-ink: #C4C9D4;
+    --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --sky: #1F2E47; --sky-ink: #A9C6F2;
+  --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --green: #153325; --green-ink: #92D7B2;
+  --grey: #2A2E38; --grey-ink: #C4C9D4;
+  --focus: #7AA7F0;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+.ic { width: 1.1em; height: 1.1em; flex: none; }
+
+.page { max-width: 1320px; margin: 0 auto; padding: 20px 20px 48px; }
+.layout { display: grid; grid-template-columns: 330px 1fr; gap: 28px; align-items: start; }
+
+/* control panel */
+.panel { position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 24px); overflow: auto; background: var(--surface); border: 1px solid var(--line); z-index: 30; font-size: 15px; }
+.handle { display: none; }
+.pbody { padding: 18px; }
+.panel h1 { font-size: 1.15rem; margin: 0 0 2px; font-weight: 650; }
+.panel .sub { margin: 0 0 12px; color: var(--muted); font-size: .88rem; }
+.ctl { padding: 14px 0; border-top: 1px solid var(--line); }
+.ctl h2 { font-size: .95rem; font-weight: 650; margin: 0 0 10px; }
+.lab { display: flex; justify-content: space-between; align-items: center; font-size: .86rem; color: var(--muted); margin: 10px 0 6px; }
+.lab:first-of-type { margin-top: 0; }
+.lab output { color: var(--ink); font-weight: 600; }
+.ctl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0 0 6px; }
+.pseg { display: flex; border: 1px solid var(--line); margin-bottom: 4px; }
+.pseg button { flex: 1; appearance: none; border: 0; background: transparent; padding: 8px 6px; font-size: .86rem; }
+.pseg button + button { border-left: 1px solid var(--line); }
+.pseg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.opts { display: flex; flex-direction: column; border: 1px solid var(--line); margin-bottom: 4px; }
+.opts button { appearance: none; text-align: left; border: 0; background: transparent; padding: 8px 10px; font-size: .88rem; }
+.opts button + button { border-top: 1px solid var(--line); }
+.opts button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: .88rem; }
+.chk input { accent-color: var(--ink); width: 16px; height: 16px; margin: 0; }
+.psel { width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); margin-bottom: 4px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sw { appearance: none; width: 100%; aspect-ratio: 1; border: 3px solid var(--surface); background: var(--c); box-shadow: 0 0 0 1px var(--line); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: .86rem; color: var(--muted); }
+.custom input { width: 44px; height: 30px; padding: 0; border: 1px solid var(--line); background: transparent; cursor: pointer; }
+.readout { margin: 0 0 10px; padding: 10px 12px; background: var(--bg); font: 500 .8rem/1.55 var(--font); white-space: pre-wrap; user-select: text; }
+.prow { display: flex; gap: 8px; }
+.pbtn { flex: 1; appearance: none; border: 1px solid var(--line); background: transparent; padding: 8px 10px; font-size: .88rem; }
+
+/* board */
+.board { min-width: 0; }
+.stage { container-type: inline-size; }
+.stage.phone { max-width: 392px; margin: 0 auto; padding: 14px; border: 1px solid var(--line); background: var(--bg); outline: 6px solid var(--surface); }
+.stage-head { margin-bottom: 14px; }
+.stage-head h2 { margin: 0 0 4px; font-size: clamp(1.4rem, 3.4vw, 1.9rem); letter-spacing: -0.01em; line-height: 1.15; }
+.stage-head p { margin: 0; color: var(--muted); max-width: 64ch; }
+
+.feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; align-items: start; }
+.tray { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: .9rem; color: var(--muted); }
+.tray strong { color: var(--ink); }
+
+/* tags, chips */
+.num { font-size: .8rem; font-weight: 600; color: var(--muted); }
+.tg { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 600; padding: 2px 9px; border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent-text); }
+[data-tag="outline"] .tg { background: transparent; border: 1px solid var(--accent-text); }
+[data-tag="plain"] .tg { background: transparent; padding-left: 0; padding-right: 0; color: var(--muted); }
+.st { font-size: .78rem; font-weight: 600; padding: 2px 9px; border-radius: var(--r-sm); white-space: nowrap; }
+.st-proposed, .st-closed { background: var(--grey); color: var(--grey-ink); }
+.st-ballot, .st-voted { background: var(--sky); color: var(--sky-ink); }
+.st-development { background: var(--amber); color: var(--amber-ink); }
+.st-delivered { background: var(--green); color: var(--green-ink); }
+[data-stat="accent"] .st { background: var(--accent); color: var(--on-accent); }
+.c-meta { display: flex; flex-wrap: wrap; gap: 3px 14px; font-size: .84rem; color: var(--muted); }
+.c-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* accent usage, shared by card and page header */
+.am-edge { border-left: var(--rule) solid var(--accent) !important; }
+.am-top { border-top: var(--rule) solid var(--accent) !important; }
+.am-tint.card .c-head, .am-tint.ph { background: var(--accent-soft); }
+.am-tint .tg { background: var(--surface); }
+.am-title .c-title, .am-title .ph-title { color: var(--accent-text); }
+
+/* feed card */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; font-size: .95rem; }
+.c-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: var(--pad) var(--pad) 0; flex-wrap: wrap; }
+.am-tint.card .c-head { padding: calc(var(--pad) * 0.6) var(--pad); }
+.c-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.c-body { padding: var(--pad); display: flex; flex-direction: column; gap: 9px; }
+.c-head + .c-body { padding-top: calc(var(--pad) * 0.7); }
+.am-tint.card .c-head + .c-body { padding-top: var(--pad); }
+.c-title { margin: 0; font-size: 1.12rem; line-height: 1.25; font-weight: 650; }
+.c-desc { margin: 0; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.c-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 2px; }
+.c-vote { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+[data-density="compact"] { --pad: 12px; }
+[data-density="compact"] .c-title { font-size: 1rem; }
+[data-density="compact"] .c-body { gap: 6px; }
+.lm-outline { appearance: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; border: 1px solid var(--accent-text); background: transparent; padding: 6px 14px; color: var(--accent-text); border-radius: var(--r-sm); }
+.lm-outline:hover { background: var(--accent-soft); }
+
+/* vote buttons */
+.vb { appearance: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; border-radius: var(--r-sm); }
+.vb.big { padding: 10px 20px !important; font-size: 1.02rem; }
+.vb-plain { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); padding: 6px 16px; }
+.vb-plain[aria-pressed="true"] { background: var(--surface); color: var(--accent-text); }
+.vb-arrow { border: 1px solid var(--line); background: var(--surface); padding: 5px 12px; }
+.vb-arrow[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vb-heart { border: 0; background: var(--grad); color: var(--on-accent); padding: 7px 16px; border-radius: calc(var(--r) * 1.6); }
+.vb-heart[aria-pressed="true"] svg path { fill: currentColor; }
+.vb-token { border: 1px solid var(--line); background: var(--surface); padding: 4px 14px 4px 5px; }
+.vb-token[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-text); }
+.tk { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px dashed var(--line); display: grid; place-items: center; color: transparent; }
+.tk.on, .vb-token[aria-pressed="true"] .tk { background: var(--accent); border: 2px solid var(--accent); color: var(--on-accent); }
+.tk .ic { width: 13px; height: 13px; }
+.vcount { font-size: .85rem; color: var(--muted); }
+.vnote { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); }
+
+/* detail page */
+.pg { display: flex; flex-direction: column; gap: 14px; }
+.pg.two { display: grid; grid-template-columns: minmax(0, 1fr) 310px; align-items: start; }
+.pg-main, .pg-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.pg-side { position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
+@container (max-width: 780px) {
+  .pg.two { grid-template-columns: 1fr; }
+  .pg-side { order: -1; position: static; }
+}
+.ph { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: var(--pad); margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; }
+.back { appearance: none; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; padding: 0; color: var(--muted); font-size: .9rem; }
+.back:hover { color: var(--accent-text); text-decoration: underline; }
+.ph-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ph-title { margin: 0; font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.15; letter-spacing: -0.015em; }
+.sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: var(--pad); }
+.sec h2 { margin: 0 0 10px; font-size: 1.05rem; }
+.sec p { margin: 0 0 10px; }
+.sec p:last-child { margin-bottom: 0; }
+.sec .note { font-size: .86rem; color: var(--muted); margin-top: 10px; }
+.vote-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 16px; margin: 0; }
+.dl dt { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.dl dd { margin: 2px 0 0; font-weight: 600; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
+.btn { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); padding: 9px 16px; font-weight: 500; border-radius: var(--r-sm); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary[aria-pressed="true"], .btn.done { background: var(--surface); color: var(--accent-text); border-color: var(--accent); }
+.btn.line { border-color: var(--accent-text); color: var(--accent-text); background: transparent; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { border: 1px solid var(--line); padding: 2px 10px; font-size: .86rem; border-radius: var(--r-sm); background: var(--bg); }
+.track { display: flex; align-items: center; margin: 4px 0 16px; flex-wrap: wrap; row-gap: 8px; }
+.step { display: flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--muted); white-space: nowrap; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); }
+.step.done { color: var(--ink); }
+.step.done .dot { background: var(--accent); border-color: var(--accent); }
+.tbar { flex: 1; height: 2px; min-width: 14px; margin: 0 8px; background: var(--line); }
+.tbar.done { background: var(--accent); }
+.ledger { list-style: none; margin: 0; padding: 0; }
+.ledger li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: .92rem; }
+.ledger time { color: var(--muted); }
+.empty { color: var(--muted); font-size: .92rem; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tiles div { background: var(--bg); border-radius: var(--r); padding: 12px 6px; text-align: center; }
+.tiles b { display: block; font-size: 1.6rem; line-height: 1.1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tiles span { font-size: .78rem; color: var(--muted); }
+.goal-top { display: flex; justify-content: space-between; align-items: baseline; font-size: .9rem; margin-bottom: 6px; }
+.goal-top b { font-size: 1.2rem; }
+.goal-bar { height: 10px; background: var(--line); }
+.goal-bar i { display: block; height: 100%; background: var(--accent); }
+.dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 2px; }
+.dots span { aspect-ratio: 1; background: var(--line); }
+.dots span.on { background: var(--accent); }
+.dots-cap { font-size: .85rem; color: var(--muted); margin-top: 8px; }
+.dots-cap b { color: var(--ink); }
+.cm { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.av { width: 34px; height: 34px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font-weight: 700; font-size: .85rem; border-radius: var(--r-sm); }
+.cm b { font-size: .9rem; }
+.cm p { margin: 0 !important; font-size: .93rem; }
+.cm-box { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 10px; }
+.cm-box textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); border-radius: var(--r-sm); resize: vertical; }
+
+/* border thickness */
+.card, .sec, .ph, .vb-plain, .vb-arrow, .vb-token, .btn, .chip, .lm-outline, .c-foot, .ledger li, .cm, .cm-box textarea, .goal-bar { border-width: var(--bw); }
+[data-tag="outline"] .tg { border-width: var(--bw); }
+.dots span { background: var(--accent); }
+
+/* support displays */
+.bigcount { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bigcount b { font-size: 2.4rem; line-height: 1; letter-spacing: -0.02em; }
+.bigcount span { color: var(--muted); }
+.rankline { display: flex; align-items: center; gap: 6px; margin: 10px 0 0 !important; font-size: .92rem; font-weight: 600; }
+.rankline .ic { color: var(--accent-text); }
+.spark { display: block; width: 100%; height: 56px; margin-top: 10px; background: var(--bg); }
+.spark-cap { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: 4px; }
+
+/* share dialog */
+dialog { width: min(560px, 92vw); max-height: 92vh; overflow: auto; padding: 0; border: var(--bw) solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 12, 18, .55); }
+.dlg-in { padding: 20px; }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.dlg-head h3 { margin: 0; font-size: 1.25rem; }
+.sh-link { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.sh-in { flex: 1 1 200px; min-width: 0; padding: 9px 12px; border: var(--bw) solid var(--line); background: var(--bg); border-radius: var(--r-sm); }
+.sh-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.sh-img { aspect-ratio: 4 / 5; max-width: 300px; margin: 0 auto 14px; background: var(--surface); border: var(--bw) solid var(--line); display: flex; flex-direction: column; justify-content: space-between; padding: 22px 20px; }
+.sh-img-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sh-img-title { font-size: 1.55rem; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.sh-img-foot { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--muted); }
+.sh-img-count b { font-size: 2.2rem; color: var(--ink); line-height: 1; margin-right: 6px; }
+.sh-flyer { aspect-ratio: 8.5 / 11; max-width: 300px; margin: 0 auto 14px; background: #fff; color: #111; border: var(--bw) solid var(--line); display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 20px 18px; gap: 8px; }
+.sh-flyer .band { align-self: stretch; margin: 0 -20px; background: var(--accent); color: var(--on-accent); padding: 10px; font-weight: 700; }
+.sh-flyer h4 { margin: 8px 0 0; font-size: 1.25rem; line-height: 1.15; }
+.sh-flyer p { margin: 0; font-size: .8rem; color: #444; }
+.qr { width: 120px; height: 120px; border: 1px solid #ddd; }
+.sh-flyer small { color: #555; }
+.sh-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* card edges and dividers */
+[data-edge="none"] .card, [data-edge="none"] .sec, [data-edge="none"] .ph, [data-edge="none"] .sh-img { border-color: transparent; }
+[data-edge="shadow"] .card, [data-edge="shadow"] .sec, [data-edge="shadow"] .ph { border-color: transparent; box-shadow: 0 1px 2px rgba(20, 24, 40, .08), 0 6px 18px rgba(20, 24, 40, .08); }
+[data-dividers="off"] .c-foot, [data-dividers="off"] .ledger li, [data-dividers="off"] .cm { border-color: transparent; }
+.vpair { display: inline-flex; width: 184px; max-width: 100%; }
+.vpair.single { width: auto; min-width: 92px; }
+.vpair .vb { flex: 1 1 0; justify-content: center; min-width: 0; }
+.vpair .vb + .vb { margin-left: calc(var(--bw) * -1); }
+.vpair.big { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+.vpair.big .vb { width: 100%; }
+.vpair.big .vb + .vb { margin-left: 0; }
+.vb:disabled { opacity: .5; cursor: not-allowed; }
+.vpair .vb[aria-pressed="true"] + .vb[aria-pressed="true"] { border-left-color: rgba(255, 255, 255, .6); }
+.vb-part { border: var(--bw) solid var(--line); background: var(--surface); color: var(--ink); padding: 5px 12px; }
+.vb-part[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 60; max-width: 92vw; text-align: center; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .board { padding-bottom: 96px; }
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; top: auto; border-bottom: 0; max-height: 66dvh; transform: translateY(calc(100% - 56px - env(safe-area-inset-bottom, 0px))); transition: transform .2s; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .panel.open { transform: none; }
+  .handle { display: flex; width: 100%; align-items: center; justify-content: space-between; height: 56px; padding: 0 18px; border: 0; background: transparent; font-weight: 650; font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="layout">
+    <aside class="panel" id="panel" aria-label="Page controls">
+      <button type="button" class="handle" id="handle" aria-expanded="false" aria-controls="pbody">
+        <span>Page controls</span>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+      <div class="pbody" id="pbody">
+        <h1>Learn more page sandbox</h1>
+        <p class="sub">The card uses your settings. Click Learn more on a card to open its page.</p>
+
+        <section class="ctl">
+          <h2>Preview</h2>
+          <div class="lab"><span>Screen</span></div>
+          <div class="pseg" role="group" aria-label="Screen">
+            <button type="button" data-set="screen" data-val="feed">Feed</button>
+            <button type="button" data-set="screen" data-val="detail">Learn more page</button>
+          </div>
+          <div class="lab"><span>Period</span></div>
+          <div class="pseg" role="group" aria-label="Period">
+            <button type="button" data-set="period" data-val="propose">Propose</button>
+            <button type="button" data-set="period" data-val="vote">Vote</button>
+            <button type="button" data-set="period" data-val="follow">Follow</button>
+          </div>
+          <div class="lab"><span>Proposal on the page</span></div>
+          <select class="psel" id="sel" aria-label="Proposal on the page"></select>
+          <div class="lab"><span>Width</span></div>
+          <div class="pseg" role="group" aria-label="Preview width">
+            <button type="button" data-set="width" data-val="desktop">Desktop</button>
+            <button type="button" data-set="width" data-val="phone">Phone</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Vote button</h2>
+          <div class="opts" id="votes"></div>
+          <div class="lab"><span>Participate button on the card</span></div>
+          <div class="pseg" role="group" aria-label="Participate button on the card">
+            <button type="button" data-set="cardPart" data-val="on">On</button>
+            <button type="button" data-set="cardPart" data-val="off">Off</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Page layout</h2>
+          <div class="pseg" role="group" aria-label="Layout">
+            <button type="button" data-set="layout" data-val="sidebar">Sidebar</button>
+            <button type="button" data-set="layout" data-val="single">Single column</button>
+          </div>
+          <div class="lab"><span>Sections</span></div>
+          <div class="checks" id="checks"></div>
+          <div class="lab"><span>Student support display</span></div>
+          <select class="psel" id="demand" aria-label="Student support display">
+            <option value="count">Count and rank</option>
+            <option value="tiles">Stat tiles</option>
+            <option value="trend">Votes over time</option>
+            <option value="squares">One square per student</option>
+            <option value="none">None</option>
+          </select>
+        </section>
+
+        <section class="ctl">
+          <h2>Accent</h2>
+          <div class="swatches" id="swatches"></div>
+          <div class="custom"><span>Custom color</span><input type="color" id="custom" value="#C8102E" aria-label="Custom accent color"></div>
+          <div class="lab"><span>Where the accent shows</span></div>
+          <div class="opts" id="usage"></div>
+          <div class="lab"><span>Division tag</span></div>
+          <div class="pseg" role="group" aria-label="Tag style">
+            <button type="button" data-set="tagStyle" data-val="tint">Tint</button>
+            <button type="button" data-set="tagStyle" data-val="outline">Outline</button>
+            <button type="button" data-set="tagStyle" data-val="plain">Plain</button>
+          </div>
+          <div class="lab"><span>Status chip color</span></div>
+          <div class="pseg" role="group" aria-label="Status chip color">
+            <button type="button" data-set="statColor" data-val="semantic">By status</button>
+            <button type="button" data-set="statColor" data-val="accent">Accent</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Shape</h2>
+          <div class="lab"><span>Corner roundness</span><output id="rout">0px</output></div>
+          <input type="range" id="r" min="0" max="16" step="2" value="0">
+          <div class="lab"><span>Border thickness</span><output id="bwout">1px</output></div>
+          <input type="range" id="bw" min="1" max="4" step="1" value="1">
+          <div class="lab"><span>Accent rule thickness</span><output id="ruleout">5px</output></div>
+          <input type="range" id="rule" min="2" max="10" step="1" value="5">
+          <div class="lab"><span>Card edges</span></div>
+          <div class="pseg" role="group" aria-label="Card edges">
+            <button type="button" data-set="edge" data-val="border">Border</button>
+            <button type="button" data-set="edge" data-val="none">None</button>
+            <button type="button" data-set="edge" data-val="shadow">Shadow</button>
+          </div>
+          <div class="lab"><span>Inner dividers</span></div>
+          <div class="pseg" role="group" aria-label="Inner dividers">
+            <button type="button" data-set="dividers" data-val="on">On</button>
+            <button type="button" data-set="dividers" data-val="off">Off</button>
+          </div>
+          <div class="lab"><span>Density</span></div>
+          <div class="pseg" role="group" aria-label="Density">
+            <button type="button" data-set="density" data-val="comfortable">Comfortable</button>
+            <button type="button" data-set="density" data-val="compact">Compact</button>
+          </div>
+          <div class="lab"><span>Icons</span></div>
+          <div class="pseg" role="group" aria-label="Icons">
+            <button type="button" data-set="icons" data-val="on">On</button>
+            <button type="button" data-set="icons" data-val="off">Off</button>
+          </div>
+          <div class="lab"><span>Mode</span></div>
+          <div class="pseg" role="group" aria-label="Mode">
+            <button type="button" data-set="mode" data-val="system">System</button>
+            <button type="button" data-set="mode" data-val="light">Light</button>
+            <button type="button" data-set="mode" data-val="dark">Dark</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Your settings</h2>
+          <pre class="readout" id="readout"></pre>
+          <div class="prow">
+            <button type="button" class="pbtn" id="copy">Copy settings</button>
+            <button type="button" class="pbtn" id="reset">Reset</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="board">
+      <div class="stage" id="stage"></div>
+    </main>
+  </div>
+</div>
+<dialog id="share" aria-labelledby="share-title">
+  <div class="dlg-in">
+    <div class="dlg-head"><h3 id="share-title">Share this proposal</h3><button type="button" class="btn" data-closeshare>Close</button></div>
+    <div id="share-body"></div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root = document.documentElement;
+
+const COLORS = [
+  { name: 'Husky red', hex: '#C8102E' }, { name: 'Harbor blue', hex: '#1F5FBF' }, { name: 'Pine green', hex: '#1E6B52' },
+  { name: 'Teal', hex: '#0E7C86' }, { name: 'Plum', hex: '#6B2D8C' }, { name: 'Tangerine', hex: '#D9480F' }, { name: 'Graphite', hex: '#2B2F3A' }
+];
+const USAGE = [['title', 'Title in the accent color'], ['edge', 'Accent bar on the left edge'], ['top', 'Accent rule across the top'], ['tint', 'Tinted header strip'], ['quiet', 'Quiet, accent on actions only']];
+const VOTES = [['plain', 'Plain "Vote" button'], ['arrow', 'Upvote arrow with count'], ['heart', 'Gradient heart button with count'], ['token', 'Limited ballot tokens'], ['hybrid', 'Support plus "I\'ll participate"']];
+const SECTIONS = [['details', 'Details'], ['progress', 'Progress'], ['clubs', 'Club backing (later)'], ['help', 'Get involved'], ['actions', 'Follow and contact'], ['comments', 'Discussion']];
+const LABEL = { proposed: 'Proposed', ballot: 'On the ballot', voted: 'Voted', development: 'In development', delivered: 'Delivered', closed: 'Not selected' };
+const GOAL = 500;
+
+const DEFAULTS = {
+  accent: '#C8102E', accentName: 'Husky red', usage: 'top', tagStyle: 'tint', statColor: 'semantic',
+  vote: 'hybrid', cardPart: 'on', edge: 'border', dividers: 'on', demand: 'squares', layout: 'sidebar', sections: ['details', 'progress', 'help', 'actions'],
+  density: 'comfortable', r: 0, bw: 1, rule: 5, icons: true, width: 'desktop', mode: 'system', screen: 'feed', period: 'vote', sel: 103, shareTab: 'link'
+};
+const DEMAND_NAMES = { count: 'count and rank', tiles: 'stat tiles', trend: 'votes over time', squares: 'one square per student', none: 'none' };
+const TOTAL = 14;
+const WILLING = { 103: 14, 112: 9, 87: 11, 121: 3 };
+const JOIN = {
+  'Dining Advisory Board': { desc: 'It advises campus dining and takes on food access projects.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '2 open seats', apply: 'Applications open about a month before each semester ends' },
+  'Campus Planning Advisory Board': { desc: 'It works with campus planning and facilities on how spaces are used and changed.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '1 open seat', apply: 'Applications open about a month before each semester ends' },
+  'Green Initiatives Board': { desc: 'It funds and supports student sustainability projects.', meets: 'Weekly during the semester', time: 'About 2 hours a week', seats: '3 open seats', apply: 'Apply through SGA. The board chair reviews applications.' }
+};
+const state = JSON.parse(JSON.stringify(DEFAULTS));
+const live = { voted: new Set(), follow: new Set(), help: new Set(), club: new Set(), part: new Set() };
+
+const S = [
+  { id: 103, title: 'A student-hosted food pantry', desc: 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.',
+    full: ['Students who run short on groceries have few options on campus that feel private and easy to use. This proposal would set up a free pantry, hosted by an existing campus office, where anyone can pick up groceries and essentials without paperwork or questions.', 'It would start as a one-semester pilot with regular hours. SGA would report usage numbers at the end so the university can decide whether to make it permanent.'],
+    div: 'Dining', board: 'Dining Advisory Board', loc: 'Central campus', ago: '5 days ago', by: 'Maya T.', scale: 'Large', cost: '$5k+', time: 'Within a year', status: 'development', votes: 412, rank: 1, week: 38, series: [20, 45, 80, 120, 170, 230, 290, 340, 385, 412],
+    clubs: ['Food Justice Collective', 'Public Health Society', 'Residential Council', 'Culinary Club', 'Co-op Society', 'Community Service Network'],
+    updates: [['Apr 9', 'Began drafting legislation for the pilot program'], ['Apr 4', 'Committee formed'], ['Mar 28', 'Voted in by students']] },
+  { id: 112, title: 'Ease peak-hour crowding at Marino', desc: 'Show live capacity and nudge people toward quieter hours so the afternoon rush spreads out.',
+    full: ['Marino is busiest in the same few afternoon hours every day, which leaves many students waiting for equipment or skipping workouts. A live capacity display would let people choose quieter times.', 'The proposal also asks Campus Rec to share usage data, so peak hours can be spread out with small changes like class-time reminders.'],
+    div: 'Campus Planning', board: 'Campus Planning Advisory Board', loc: 'Marino Center', ago: '4 days ago', by: 'Alex R.', scale: 'Medium', cost: '$1k to $5k', time: 'Next semester', status: 'voted', votes: 287, rank: 4, week: 21, series: [10, 25, 48, 80, 120, 160, 210, 250, 275, 287],
+    clubs: ['Rec Sports Alliance', 'Wellness Collective'],
+    updates: [['Apr 2', 'Committee formed. The first meeting is being scheduled.'], ['Mar 28', 'Voted in by students']] },
+  { id: 87, title: 'Compost bins in every residence hall', desc: 'Put a clearly labeled compost bin on each floor with a simple pickup schedule. Start with the three largest halls, collect feedback, then expand to the rest of campus housing.',
+    full: ['Put a clearly labeled compost bin on each floor with a simple pickup schedule. Start with the three largest halls, collect feedback on contamination and smell, then expand to the rest of campus housing once the routine is working well.', 'Residence hall staff would get a one-page guide, and students would get short signage explaining what goes in the bin.'],
+    div: 'Green Initiatives', board: 'Green Initiatives Board', loc: 'Residence halls', ago: '1 week ago', by: 'Sam K.', scale: 'Medium', cost: '$1k to $5k', time: 'This semester', status: 'delivered', votes: 365, rank: 2, week: 17, series: [15, 40, 85, 140, 200, 255, 300, 335, 355, 365],
+    clubs: ['Green Team', 'Sustainability Club', 'Residential Council', 'Gardening Club'],
+    updates: [['Apr 20', 'Bins installed in the first three residence halls'], ['Apr 8', 'Signage and staff guide approved'], ['Apr 1', 'Committee formed'], ['Mar 28', 'Voted in by students']] },
+  { id: 121, title: 'Extend study room reservations to 24 hours during finals week for all undergraduate and graduate students', desc: 'Let students book library study rooms overnight during finals so groups are not competing for the same few daytime slots.',
+    full: ['Let students book library study rooms overnight during finals so groups are not competing for the same few daytime slots.', 'This would need agreement from library staff on overnight supervision and security, which the committee would look into first.'],
+    div: 'Campus Planning', board: 'Campus Planning Advisory Board', loc: 'Snell Library', ago: '2 days ago', by: 'Jordan P.', scale: 'Small', cost: 'Under $1k', time: 'This semester', status: 'closed', votes: 41, rank: 11, week: 6, series: [2, 5, 9, 14, 20, 26, 32, 36, 39, 41],
+    clubs: [], updates: [['Mar 28', 'Did not reach the voting threshold. SGA kept the idea on file.']] }
+];
+const byId = id => S.find(p => p.id === id);
+const COMMENTS = [['Priya N.', 'This would make a real difference for people in my hall. Happy to help however I can.'], ['Chris L.', 'Would this be open on weekends too?']];
+
+/* icons */
+const PATHS = {
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  coins: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5c-.4-.9-1.3-1.3-2.5-1.3s-2.3.6-2.3 1.7c0 2.3 4.8 1.2 4.8 3.4 0 1.1-1.1 1.8-2.5 1.8s-2.2-.5-2.6-1.4"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 010 7M18 14.5c1.8.7 3 2.4 3 5.5"/>',
+  arrowUp: '<path d="M12 19V6M6 12l6-6 6 6"/>',
+  arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowLeft: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0112 0v5l1.5 2h-15L6 16z"/><path d="M10 21h4"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/>',
+  share: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+  flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  hand: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'
+};
+const ic = n => state.icons ? `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[n]}</svg>` : '';
+
+/* color helpers */
+const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const rgb2hex = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const lum = h => { const [a, b, c] = hex2rgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a + 0.7152 * b + 0.0722 * c; };
+const mix = (h, o, t) => { const a = hex2rgb(h), b = hex2rgb(o); return rgb2hex(a.map((v, i) => v + (b[i] - v) * t)); };
+function lighten(h, target) { let t = 0, c = h; while (lum(c) < target && t < 1) { t += 0.04; c = mix(h, '#ffffff', t); } return c; }
+function darken(h, target) { let t = 0, c = h; while (lum(c) > target && t < 1) { t += 0.04; c = mix(h, '#000000', t); } return c; }
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const isDark = () => state.mode === 'dark' || (state.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+function applyTheme() {
+  const dark = isDark();
+  const fill = dark ? lighten(state.accent, 0.18) : state.accent;
+  const text = dark ? lighten(state.accent, 0.32) : darken(state.accent, 0.18);
+  const on = contrast(fill, '#FFFFFF') >= contrast(fill, '#14161B') ? '#FFFFFF' : '#14161B';
+  const s = root.style;
+  s.setProperty('--accent', fill); s.setProperty('--accent-text', text); s.setProperty('--on-accent', on);
+  s.setProperty('--r', state.r + 'px'); s.setProperty('--bw', state.bw + 'px'); s.setProperty('--rule', state.rule + 'px');
+  root.dataset.density = state.density; root.dataset.tag = state.tagStyle; root.dataset.stat = state.statColor; root.dataset.edge = state.edge; root.dataset.dividers = state.dividers;
+  if (state.mode === 'system') root.removeAttribute('data-theme'); else root.dataset.theme = state.mode;
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.mode === 'system') applyTheme(); });
+
+/* period-aware helpers */
+const statusOf = p => state.period === 'propose' ? 'proposed' : state.period === 'vote' ? 'ballot' : p.status;
+const tally = p => p.votes + (live.voted.has(p.id) ? 1 : 0);
+const stChip = p => { const s = statusOf(p); return `<span class="st st-${s}">${LABEL[s]}</span>`; };
+
+function voteCore(p, big) {
+  const cls = big ? ' big' : '';
+  if (state.period === 'propose') return `<span class="vnote">${ic('clock')}Voting opens Oct 13</span>`;
+  const v = live.voted.has(p.id), n = tally(p);
+  if (state.period === 'follow') return `<span class="vnote">${v ? ic('check') + 'You voted. ' : ''}Final tally: ${n} votes</span>`;
+  const a = `data-vote="${p.id}" aria-pressed="${v}"`;
+  if (state.vote === 'arrow' || state.vote === 'hybrid') return `<button type="button" class="vb vb-arrow${cls}" ${a} aria-label="Vote for proposal ${p.id}">${ic('arrowUp') || '&#9650;'}${state.vote === 'hybrid' && big ? '<span>Support</span>' : ''}<span>${n}</span></button>`;
+  if (state.vote === 'heart') return `<button type="button" class="vb vb-heart${cls}" ${a} aria-label="Support proposal ${p.id}">${ic('heart')}<span>${v ? 'Supported' : 'Support'}</span><span>${n}</span></button>`;
+  if (state.vote === 'token') return `<button type="button" class="vb vb-token${cls}" ${a}><span class="tk">${ic('check')}</span><span>${v ? 'Voted' : 'Vote'}</span></button><span class="vcount">${n} votes</span>`;
+  return `<button type="button" class="vb vb-plain${cls}" ${a}>${v ? ic('check') : ''}<span>${v ? 'Voted' : 'Vote'}</span></button><span class="vcount">${n} votes</span>`;
+}
+const partCount = p => (WILLING[p.id] || 0) + (live.part.has(p.id) ? 1 : 0);
+function partHTML(p, big) {
+  if (state.vote !== 'hybrid' || state.period === 'follow') return '';
+  if (!big && state.cardPart !== 'on') return '';
+  const on = live.part.has(p.id);
+  if (!big) return `<button type="button" class="vb vb-part" data-part="${p.id}" aria-pressed="${on}" aria-label="I'll participate in proposal ${p.id}" title="I'll participate">${ic('hand') || 'Help'}<span>${partCount(p)}</span></button>`;
+  return `<button type="button" class="vb vb-part big" data-part="${p.id}" aria-pressed="${on}">${ic('hand')}<span>${on ? 'Participating' : "I'll participate"}</span><span>${partCount(p)}</span></button>`;
+}
+function voteHTML(p, big) {
+  if (state.vote !== 'hybrid') return voteCore(p, big) + partHTML(p, big);
+  if (state.period === 'follow') return voteCore(p, big);
+  const part = partHTML(p, big);
+  const first = state.period === 'propose'
+    ? `<button type="button" class="vb vb-arrow${big ? ' big' : ''}" disabled aria-label="Voting opens Oct 13">${ic('arrowUp') || '&#9650;'}${big ? '<span>Support</span>' : ''}</button>`
+    : voteCore(p, big);
+  const note = state.period === 'propose' && !big ? '<span class="vnote">Voting opens Oct 13</span>' : '';
+  return `<div class="vpair${big ? ' big' : ''}${part ? '' : ' single'}">${first}${part}</div>${note}`;
+}
+function trayHTML() {
+  if (state.vote !== 'token' || state.period !== 'vote') return '';
+  const n = live.voted.size;
+  return `<div class="tray"><strong>Your votes</strong>${[0, 1, 2].map(i => `<span class="tk${i < n ? ' on' : ''}">${ic('check')}</span>`).join('')}<span>${3 - n} left</span></div>`;
+}
+
+/* feed card (uses the chosen card settings) */
+function cardHTML(p) {
+  return `<article class="card am-${state.usage}">
+    <div class="c-head"><div class="c-tags"><span class="num">Proposal ${p.id}</span><span class="tg">${ic('tag')}${p.div}</span></div>${stChip(p)}</div>
+    <div class="c-body">
+      <h3 class="c-title">${p.title}</h3>
+      <div class="c-meta"><span>${ic('pin')}${p.loc}</span></div>
+      <p class="c-desc">${p.desc}</p>
+      <div class="c-foot"><div class="c-vote">${voteHTML(p)}</div><button type="button" class="lm-outline" data-open="${p.id}">Learn more${ic('arrowRight')}</button></div>
+    </div>
+  </article>`;
+}
+
+/* detail page */
+const sec = (title, body) => `<section class="sec"><h2>${title}</h2>${body}</section>`;
+function sparkSVG(series) {
+  const w = 240, h = 56, max = Math.max(...series);
+  const pts = series.map((v, i) => `${(i / (series.length - 1) * w).toFixed(1)},${(h - 4 - v / max * (h - 8)).toFixed(1)}`);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Votes over the last 10 days"><polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function demandHTML(p) {
+  if (state.demand === 'none' || state.period === 'propose') return '';
+  const n = tally(p);
+  let body = '';
+  if (state.demand === 'count') body = `<div class="bigcount"><b>${n}</b><span>students voted for this</span></div><p class="rankline">${ic('flag')}Ranked #${p.rank} of ${TOTAL} proposals this cycle</p>`;
+  if (state.demand === 'tiles') body = `<div class="tiles"><div><b>${n}</b><span>votes</span></div><div><b>#${p.rank}</b><span>of ${TOTAL}</span></div><div><b>+${p.week}</b><span>this week</span></div></div>`;
+  if (state.demand === 'trend') body = `<div class="bigcount"><b>${n}</b><span>votes, +${p.week} this week</span></div>${sparkSVG(p.series)}<div class="spark-cap"><span>10 days ago</span><span>Today</span></div>`;
+  if (state.demand === 'squares') body = `<div class="dots" role="img" aria-label="${n} students voted">${Array.from({ length: n }, () => '<span></span>').join('')}</div><p class="dots-cap"><b>${n} students</b> voted for this. Each square is one student.</p><p class="rankline">${ic('flag')}Ranked #${p.rank} of ${TOTAL} proposals this cycle</p>`;
+  return sec('Student support', body);
+}
+function joinSec(p) {
+  const j = JOIN[p.board], follow = state.period === 'follow';
+  const active = follow && (p.status === 'development' || p.status === 'voted');
+  const title = !follow ? 'Want to help make this happen?' : active ? 'Join the committee working on this' : 'Join the board';
+  const lead = !follow ? `<p>If this idea moves forward, the ${p.board} would take it on. You can join the board whether or not this idea wins.</p>`
+    : active ? `<p>The ${p.board} is working on this now. ${j.desc}</p>`
+    : `<p>${j.desc} New members are welcome every cycle.</p>`;
+  const willing = live.part.has(p.id) ? '<p class="note">You said you are willing to participate. This is how to join.</p>' : '';
+  return sec(title, `${lead}<dl class="dl" style="margin:12px 0 14px">
+      <div><dt>${ic('calendar')}Meets</dt><dd>${j.meets}</dd></div>
+      <div><dt>${ic('clock')}Time</dt><dd>${j.time}</dd></div>
+      <div><dt>${ic('users')}Open seats</dt><dd>${j.seats}</dd></div>
+      <div><dt>${ic('flag')}How to apply</dt><dd>${j.apply}</dd></div></dl>
+    <div class="actions"><button type="button" class="btn primary" data-apply>Apply to join</button><button type="button" class="btn" data-contact>${ic('mail')}Contact the committee</button></div>${willing}`);
+}
+function pageHTML(p) {
+  const on = k => state.sections.includes(k);
+  const st = statusOf(p);
+  const header = `<header class="ph am-${state.usage}">
+    <button type="button" class="back" data-back>${ic('arrowLeft')}Back to proposals</button>
+    <div class="ph-tags"><span class="num">Proposal ${p.id}</span><span class="tg">${ic('tag')}${p.div}</span>${stChip(p)}</div>
+    <h1 class="ph-title">${p.title}</h1>
+    <div class="c-meta"><span>${ic('pin')}${p.loc}</span><span>${ic('clock')}Proposed ${p.ago}</span><span>${ic('user')}${p.by}</span></div>
+  </header>`;
+
+  const notes = { propose: 'Voting opens Oct 13 and closes Oct 24. Follow this idea to get a reminder.', vote: 'Voting closes Oct 24. You can change your vote until then.', follow: 'Voting closed Oct 24.' };
+  const voteSec = sec('Your vote', `${trayHTML()}<div class="vote-row">${voteHTML(p, true)}</div><p class="note">${notes[state.period]}</p>${state.vote === 'hybrid' && state.period !== 'follow' ? '<p class="note">"I\'ll participate" tells SGA you would help work on this if it moves forward.</p>' : ''}`);
+  const actions = on('actions') ? `<section class="sec"><div class="actions">
+      <button type="button" class="btn primary" data-follow="${p.id}" aria-pressed="${live.follow.has(p.id)}">${ic('bell')}${live.follow.has(p.id) ? 'Following' : 'Follow this initiative'}</button>
+      <button type="button" class="btn" data-contact>${ic('mail')}Contact the committee</button>
+      <button type="button" class="btn" data-share>${ic('share')}Share</button></div></section>` : '';
+
+  const about = sec('About this proposal', p.full.map(t => `<p>${t}</p>`).join(''));
+  const details = on('details') ? sec('Details', `<dl class="dl">
+      <div><dt>${ic('layers')}Scale</dt><dd>${p.scale}</dd></div>
+      <div><dt>${ic('coins')}Rough cost</dt><dd>${p.cost}</dd></div>
+      <div><dt>${ic('calendar')}Time horizon</dt><dd>${p.time}</dd></div>
+      <div><dt>${ic('pin')}Location</dt><dd>${p.loc}</dd></div>
+      <div><dt>${ic('flag')}Handled by</dt><dd>${p.board}</dd></div></dl>`) : '';
+
+  let progress = '';
+  if (on('progress')) {
+    if (state.period !== 'follow') progress = sec('Progress', '<p class="empty">Progress updates appear here after voting closes.</p>');
+    else {
+      const idx = { voted: 0, development: 1, delivered: 2 }[p.status];
+      const track = idx === undefined ? '' : `<div class="track" aria-label="Progress: ${LABEL[p.status]}">${['Voted', 'In development', 'Delivered'].map((l, i) => `<span class="step${i <= idx ? ' done' : ''}"><span class="dot"></span>${l}</span>${i < 2 ? `<span class="tbar${i < idx ? ' done' : ''}"></span>` : ''}`).join('')}</div>`;
+      progress = sec('Progress', `${track}<ul class="ledger">${p.updates.map(u => `<li><time>${u[0]}</time><span>${u[1]}</span></li>`).join('')}</ul>`);
+    }
+  }
+  const clubs = on('clubs') ? sec('Backed by clubs', `${p.clubs.length ? `<div class="chips">${p.clubs.map(c => `<span class="chip">${c}</span>`).join('')}</div>` : '<p class="empty">No clubs have backed this yet.</p>'}
+      <button type="button" class="btn ${live.club.has(p.id) ? 'done' : 'line'}" data-club="${p.id}">${ic('users')}${live.club.has(p.id) ? 'Thanks. SGA will email you to confirm.' : 'My club wants to back this'}</button>`) : '';
+  const help = on('help') ? joinSec(p) : '';
+  const comments = on('comments') ? sec('Discussion', `${COMMENTS.map(c => `<div class="cm"><span class="av">${c[0][0]}</span><div><b>${c[0]}</b><p>${c[1]}</p></div></div>`).join('')}
+      <div class="cm-box"><textarea placeholder="Add a comment" aria-label="Add a comment"></textarea><button type="button" class="btn" data-post>Post comment</button></div>`) : '';
+
+  const side = [voteSec, demandHTML(p), actions].join('');
+  const main = [about, details, progress, clubs, help, comments].join('');
+  const body = state.layout === 'sidebar'
+    ? `<div class="pg two"><div class="pg-main">${main}</div><aside class="pg-side" aria-label="Voting and actions">${side}</aside></div>`
+    : `<div class="pg">${side}${main}</div>`;
+  return header + body;
+}
+
+/* panel */
+function readout() {
+  const usage = USAGE.find(u => u[0] === state.usage)[1].toLowerCase();
+  const vote = VOTES.find(v => v[0] === state.vote)[1];
+  const secs = SECTIONS.filter(s => state.sections.includes(s[0])).map(s => s[1].toLowerCase());
+  return `Accent: ${state.accentName} ${state.accent}, used as: ${usage}
+Division tag: ${state.tagStyle}, status chip: ${state.statColor === 'accent' ? 'accent color' : 'color by status'}
+Vote button: ${vote}${state.vote === 'hybrid' ? ', participate button on card: ' + state.cardPart : ''}
+Page layout: ${state.layout === 'sidebar' ? 'sidebar' : 'single column'}
+Page sections: about, ${secs.join(', ') || 'none else'}
+Student support display: ${DEMAND_NAMES[state.demand]}
+Density: ${state.density}, corners: ${state.r}px, borders: ${state.bw}px, accent rule: ${state.rule}px, icons: ${state.icons ? 'on' : 'off'}, card edges: ${state.edge}, inner dividers: ${state.dividers}`;
+}
+function syncPanel() {
+  $('#r').value = state.r; $('#rout').textContent = state.r + 'px';
+  $('#bw').value = state.bw; $('#bwout').textContent = state.bw + 'px';
+  $('#rule').value = state.rule; $('#ruleout').textContent = state.rule + 'px';
+  $('#demand').value = state.demand; $('#sel').value = String(state.sel);
+  $$('[data-set]').forEach(b => { const k = b.dataset.set, v = b.dataset.val; const cur = k === 'icons' ? (state.icons ? 'on' : 'off') : state[k]; b.setAttribute('aria-pressed', String(cur === v)); });
+  $$('[data-usage]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.usage === state.usage)));
+  $$('[data-votestyle]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.votestyle === state.vote)));
+  $$('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hex.toLowerCase() === state.accent.toLowerCase() && state.accentName !== 'Custom')));
+  $$('[data-section]').forEach(c => { c.checked = state.sections.includes(c.dataset.section); });
+  $('#custom').value = state.accent;
+  $('#readout').textContent = readout();
+}
+function render() {
+  applyTheme(); syncPanel();
+  const stage = $('#stage');
+  stage.className = 'stage' + (state.width === 'phone' ? ' phone' : '');
+  if (state.screen === 'feed') {
+    stage.innerHTML = `<div class="stage-head"><h2>Proposals</h2><p>${state.period === 'propose' ? 'Browse ideas students have proposed. Voting opens Oct 13.' : state.period === 'vote' ? 'Vote for the ideas you want SGA to push for.' : 'See how voted ideas are moving along.'}</p></div>${trayHTML()}<div class="feed">${S.map(cardHTML).join('')}</div>`;
+  } else {
+    stage.innerHTML = pageHTML(byId(state.sel));
+  }
+}
+
+$('#sel').innerHTML = S.map(p => `<option value="${p.id}">Proposal ${p.id}: ${p.title.length > 36 ? p.title.slice(0, 34) + '...' : p.title}</option>`).join('');
+$('#checks').innerHTML = SECTIONS.map(s => `<label class="chk"><input type="checkbox" data-section="${s[0]}">${s[1]}</label>`).join('');
+$('#swatches').innerHTML = COLORS.map(c => `<button type="button" class="sw" style="--c:${c.hex}" data-hex="${c.hex}" data-name="${c.name}" aria-label="${c.name}" title="${c.name}" aria-pressed="false"></button>`).join('');
+$('#usage').innerHTML = USAGE.map(u => `<button type="button" data-usage="${u[0]}" aria-pressed="false">${u[1]}</button>`).join('');
+$('#votes').innerHTML = VOTES.map(v => `<button type="button" data-votestyle="${v[0]}" aria-pressed="false">${v[1]}</button>`).join('');
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 2400); }
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-set],[data-usage],[data-votestyle],.sw,[data-open],[data-back],[data-vote],[data-follow],[data-contact],[data-share],[data-sharetab],[data-copylink],[data-shareact],[data-closeshare],[data-club],[data-help],[data-part],[data-apply],[data-post],#copy,#reset,#handle');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.set) { const k = d.set, v = d.val; if (k === 'icons') state.icons = v === 'on'; else state[k] = v; return render(); }
+  if (d.usage) { state.usage = d.usage; return render(); }
+  if (d.votestyle) { state.vote = d.votestyle; return render(); }
+  if (t.classList.contains('sw')) { state.accent = d.hex; state.accentName = d.name; return render(); }
+  if (d.open) { state.sel = Number(d.open); state.screen = 'detail'; render(); return window.scrollTo(0, 0); }
+  if (t.hasAttribute('data-back')) { state.screen = 'feed'; render(); return window.scrollTo(0, 0); }
+  if (d.vote) {
+    const id = Number(d.vote);
+    if (live.voted.has(id)) live.voted.delete(id);
+    else if (state.vote === 'token' && live.voted.size >= 3) return toast('You have used all 3 votes. Remove one to vote here.');
+    else live.voted.add(id);
+    return render();
+  }
+  if (d.follow) { const id = Number(d.follow); if (live.follow.has(id)) live.follow.delete(id); else { live.follow.add(id); toast(`You will get updates on proposal ${id}.`); } return render(); }
+  if (d.club) { live.club.add(Number(d.club)); return render(); }
+  if (d.help) { live.help.add(Number(d.help)); return render(); }
+  if (d.part) { const id = Number(d.part); if (live.part.has(id)) live.part.delete(id); else { live.part.add(id); toast('Thanks. SGA will reach out if this moves forward.'); } return render(); }
+  if (t.hasAttribute('data-apply')) return toast('Concept only: this opens the board application.');
+  if (t.hasAttribute('data-contact')) return toast('Concept only: this opens a message to the committee.');
+  if (t.hasAttribute('data-share')) return openShare();
+  if (d.sharetab) { state.shareTab = d.sharetab; return renderShare(); }
+  if (t.hasAttribute('data-closeshare')) return $('#share').close();
+  if (d.shareact) return toast(`Concept only: ${d.shareact} would happen here.`);
+  if (t.hasAttribute('data-copylink')) { try { await navigator.clipboard.writeText(SHARE_URL(byId(state.sel))); toast('Link copied.'); } catch (err) { toast('Copy is blocked here. Select the link instead.'); } return; }
+  if (t.hasAttribute('data-post')) return toast('Concept only: this posts your comment.');
+  if (t.id === 'handle') { const open = $('#panel').classList.toggle('open'); return t.setAttribute('aria-expanded', String(open)); }
+  if (t.id === 'copy') { try { await navigator.clipboard.writeText(readout()); toast('Settings copied.'); } catch (err) { toast('Copy is blocked here. Select the text above instead.'); } return; }
+  if (t.id === 'reset') { Object.assign(state, JSON.parse(JSON.stringify(DEFAULTS))); live.voted.clear(); live.follow.clear(); live.help.clear(); live.club.clear(); live.part.clear(); return render(); }
+});
+document.addEventListener('change', e => {
+  const c = e.target.closest('[data-section]');
+  if (c) { const k = c.dataset.section; state.sections = SECTIONS.map(s => s[0]).filter(x => (x === k ? c.checked : state.sections.includes(x))); return render(); }
+  if (e.target.id === 'demand') { state.demand = e.target.value; return render(); }
+  if (e.target.id === 'sel') { state.sel = Number(e.target.value); return render(); }
+});
+$('#r').addEventListener('input', e => { state.r = Number(e.target.value); render(); });
+$('#bw').addEventListener('input', e => { state.bw = Number(e.target.value); render(); });
+$('#rule').addEventListener('input', e => { state.rule = Number(e.target.value); render(); });
+$('#custom').addEventListener('input', e => { state.accent = e.target.value; state.accentName = 'Custom'; render(); });
+
+/* share sheet */
+const SHARE_URL = p => `huskyproposals.example/p/${p.id}`;
+function qrSVG(seed) {
+  const N = 25; let r = ''; let x0 = seed * 9301 + 49297;
+  const rnd = () => (x0 = (x0 * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y) => (x < 8 && y < 8) || (x >= N - 8 && y < 8) || (x < 8 && y >= N - 8);
+  const fp = (ox, oy) => { for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) { const edge = i === 0 || j === 0 || i === 6 || j === 6; const core = i >= 2 && i <= 4 && j >= 2 && j <= 4; if (edge || core) r += `<rect x="${ox + i + 2}" y="${oy + j + 2}" width="1" height="1"/>`; } };
+  fp(0, 0); fp(N - 7, 0); fp(0, N - 7);
+  for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) if (!finder(x, y) && rnd() > 0.52) r += `<rect x="${x + 2}" y="${y + 2}" width="1" height="1"/>`;
+  return `<svg class="qr" viewBox="0 0 ${N + 4} ${N + 4}" shape-rendering="crispEdges" role="img" aria-label="Sample QR code, not scannable"><rect width="${N + 4}" height="${N + 4}" fill="#fff"/><g fill="#111">${r}</g></svg>`;
+}
+function shareHTML(p) {
+  const tabs = [['link', 'Link'], ['image', 'Share image'], ['flyer', 'Flyer']];
+  const bar = `<div class="pseg" role="group" aria-label="Share format" style="margin-bottom:14px">${tabs.map(t => `<button type="button" data-sharetab="${t[0]}" aria-pressed="${state.shareTab === t[0]}">${t[1]}</button>`).join('')}</div>`;
+  let body = '';
+  if (state.shareTab === 'link') body = `<div class="sh-link"><input class="sh-in" readonly value="${SHARE_URL(p)}" aria-label="Link to this proposal"><button type="button" class="btn primary" data-copylink>${ic('share')}Copy link</button></div>
+    <div class="sh-quick"><button type="button" class="btn" data-shareact="Opening a text message">Text</button><button type="button" class="btn" data-shareact="Opening an email">Email</button><button type="button" class="btn" data-shareact="Copying a group chat message">Group chat</button></div>
+    <p class="note">Anyone with the link lands on this proposal and signs in with SSO to vote.</p>`;
+  if (state.shareTab === 'image') body = `<div class="sh-img am-${state.usage}"><div class="sh-img-top"><span class="num">Proposal ${p.id}</span><span class="tg">${p.div}</span></div><div class="sh-img-title">${p.title}</div><div class="sh-img-foot"><div class="sh-img-count"><b>${tally(p)}</b>students voted</div><span>Vote at ${SHARE_URL(p)}</span></div></div>
+    <div class="sh-actions"><button type="button" class="btn primary" data-shareact="Downloading the image">Download image</button></div>
+    <p class="note">A picture for stories and group chats. It shows today's count, so it goes out of date as votes come in.</p>`;
+  if (state.shareTab === 'flyer') body = `<div class="sh-flyer"><div class="band">Vote on proposal ${p.id}</div><h4>${p.title}</h4><p>${p.desc.length > 110 ? p.desc.slice(0, 108).replace(/\s+\S*$/, '') + '...' : p.desc}</p>${qrSVG(p.id)}<small>Scan to vote. Voting closes Oct 24.</small></div>
+    <div class="sh-actions"><button type="button" class="btn primary" data-shareact="Printing the flyer">Print flyer</button><button type="button" class="btn" data-shareact="Downloading a PDF">Download PDF</button></div>
+    <p class="note">For tabling and bulletin boards. The QR code here is a sample and will not scan.</p>`;
+  return bar + body;
+}
+function renderShare() { $('#share-body').innerHTML = shareHTML(byId(state.sel)); }
+function openShare() { renderShare(); $('#share').showModal(); }
+
+render();
+</script>
+</body>
+</html>

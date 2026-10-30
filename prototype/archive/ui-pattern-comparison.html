@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: UI pattern comparison</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5;
+  --surface: #FFFFFF;
+  --ink: #1A1D26;
+  --muted: #596070;
+  --line: #DADDE4;
+  --accent: #C8102E;
+  --accent-text: #C8102E;
+  --on-accent: #FFFFFF;
+  --accent-soft: #FBE8EB;
+  --grad: linear-gradient(135deg, #C8102E, #F0603A);
+  --ai-bg: #EDE7FB; --ai-ink: #4B2A9B;
+  --std-bg: #E3EBF7; --std-ink: #26456F;
+  --less-bg: #DCF0E5; --less-ink: #17603B;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --accent: #D52F47; --accent-text: #FF8696; --on-accent: #FFFFFF; --accent-soft: #3B1B22;
+    --grad: linear-gradient(135deg, #D52F47, #E9703F);
+    --ai-bg: #2B2347; --ai-ink: #CDBBFA;
+    --std-bg: #1F2E47; --std-ink: #A9C6F2;
+    --less-bg: #153325; --less-ink: #92D7B2;
+    --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --accent: #D52F47; --accent-text: #FF8696; --on-accent: #FFFFFF; --accent-soft: #3B1B22;
+  --grad: linear-gradient(135deg, #D52F47, #E9703F);
+  --ai-bg: #2B2347; --ai-ink: #CDBBFA;
+  --std-bg: #1F2E47; --std-ink: #A9C6F2;
+  --less-bg: #153325; --less-ink: #92D7B2;
+  --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --focus: #7AA7F0;
+}
+html { scroll-padding-top: calc(80px + env(safe-area-inset-top, 0px)); scroll-behavior: smooth; }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 1.1em; height: 1.1em; flex: none; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 64px; }
+
+/* chrome: square, matching the chosen style */
+h1 { font-size: clamp(1.8rem, 4.6vw, 2.6rem); line-height: 1.1; margin: 28px 0 8px; letter-spacing: -0.015em; }
+.intro { max-width: 70ch; margin: 0 0 18px; color: var(--muted); }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.legend div { border: 1px solid var(--line); background: var(--surface); padding: 12px 14px; font-size: .92rem; color: var(--muted); }
+.legend .tag { margin-bottom: 6px; }
+.tag { display: inline-block; font-size: .8rem; font-weight: 600; padding: 2px 9px; }
+.tag-ai { background: var(--ai-bg); color: var(--ai-ink); }
+.tag-std { background: var(--std-bg); color: var(--std-ink); }
+.tag-less { background: var(--less-bg); color: var(--less-ink); }
+
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 8px;
+}
+.bar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bar-lab { font-size: .85rem; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.seg button { appearance: none; border: 0; background: transparent; padding: 7px 13px; font-size: .88rem; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.picklink { margin-left: auto; font-size: .88rem; color: var(--accent-text); text-decoration: underline; }
+
+section.cat { padding-top: 34px; }
+.cat h2 { font-size: 1.5rem; margin: 0 0 2px; letter-spacing: -0.01em; }
+.cat .q { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+.row { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; align-items: stretch; }
+:root[data-filter="ai"] .spec:not([data-tag="ai"]),
+:root[data-filter="std"] .spec:not([data-tag="std"]),
+:root[data-filter="less"] .spec:not([data-tag="less"]) { display: none; }
+
+.spec { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.spec-h { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px 0; }
+.spec-name { font-weight: 600; }
+.stage { margin: 14px 16px; padding: 22px 18px; background: var(--bg); flex: none; display: flex; align-items: center; justify-content: center; min-height: 190px; }
+.demo { width: 100%; max-width: 340px; }
+.notes { padding: 0 16px 6px; font-size: .9rem; color: var(--muted); }
+.notes p { margin: 0 0 8px; }
+.notes b { color: var(--ink); font-weight: 600; }
+.pick { margin: auto 16px 16px; align-self: flex-start; appearance: none; border: 1px solid var(--line); background: transparent; padding: 8px 16px; font-weight: 500; }
+.pick[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* ---------- A. proposal cards ---------- */
+.demo h4 { margin: 0; font-size: 1.05rem; line-height: 1.25; }
+.demo p { margin: 0; font-size: .92rem; color: var(--muted); }
+.a1 { position: relative; background: var(--surface); border-radius: 20px; box-shadow: 0 12px 32px rgba(20, 24, 40, .12); padding: 22px 20px 18px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.a1::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--grad); }
+.a1-top { display: flex; align-items: center; gap: 10px; }
+.a1-ico { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font-size: 1.2rem; }
+.a1-cat { font-size: .82rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); }
+.a1-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.avs { display: flex; }
+.avs i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); margin-left: -8px; background: linear-gradient(135deg, #7C5CFA, #F0603A); }
+.avs i:first-child { margin-left: 0; }
+.avs i:nth-child(2) { background: linear-gradient(135deg, #1F9BD6, #4BD3A0); }
+.avs i:nth-child(3) { background: linear-gradient(135deg, #F0A93C, #E9546B); }
+.a1-more { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--accent-text); font-size: .9rem; }
+.a2 { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.a2 h4 { color: var(--accent-text); }
+.a2-meta, .a2-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: .82rem; color: var(--muted); }
+.a2-meta span, .a2-foot span { display: inline-flex; align-items: center; gap: 5px; }
+.a2-foot { padding-top: 8px; border-top: 1px solid var(--line); }
+.chip-s { background: var(--amber); color: var(--amber-ink); padding: 1px 8px; border-radius: 4px; font-weight: 600; }
+.a3 { position: relative; display: grid; grid-template-columns: 84px 1fr; background: var(--surface); border: 1px solid var(--line); }
+.a3::before, .a3::after { content: ""; position: absolute; left: 75px; width: 18px; height: 18px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
+.a3::before { top: -10px; clip-path: inset(50% 0 0 0); }
+.a3::after { bottom: -10px; clip-path: inset(0 0 50% 0); }
+.a3-stub { border-right: 2px dashed var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 6px; text-align: center; }
+.a3-stub small { font-size: .75rem; color: var(--muted); }
+.a3-stub b { font-size: 2rem; line-height: 1; color: var(--accent-text); letter-spacing: -0.02em; }
+.a3-main { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.a3-meta { font-size: .82rem; color: var(--muted); }
+
+/* ---------- B. vote controls ---------- */
+.b1 { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.b1-btn { appearance: none; border: 0; border-radius: 999px; background: var(--grad); color: var(--on-accent); padding: 12px 14px 12px 20px; display: inline-flex; align-items: center; gap: 10px; font-weight: 700; box-shadow: 0 8px 20px rgba(200, 16, 46, .3); transition: transform .12s; }
+.b1-btn:hover { transform: translateY(-1px) scale(1.02); }
+.b1-btn .ic { width: 1.25em; height: 1.25em; }
+.b1-btn[aria-pressed="true"] .ic path { fill: currentColor; }
+.b1-count { background: rgba(255, 255, 255, .22); border-radius: 999px; padding: 2px 11px; font-variant-numeric: tabular-nums; }
+.b1-share { appearance: none; border: 0; background: transparent; color: var(--muted); padding: 0; text-decoration: underline; font-size: .88rem; }
+.b2 { display: flex; align-items: center; gap: 14px; }
+.b2-col { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 52px; }
+.b2-up { appearance: none; width: 40px; height: 36px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; border-radius: 6px; }
+.b2-up[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.b2-n { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.b2-col small { color: var(--muted); font-size: .75rem; }
+.b3 { display: flex; flex-direction: column; gap: 12px; }
+.b3-tray { display: flex; align-items: center; gap: 8px; font-size: .88rem; color: var(--muted); }
+.tk { width: 24px; height: 24px; border-radius: 50%; border: 2px dashed var(--line); display: grid; place-items: center; color: transparent; }
+.tk.on { background: var(--accent); border: 2px solid var(--accent); color: var(--on-accent); }
+.tk .ic { width: 13px; height: 13px; }
+.b3-slot { appearance: none; display: flex; align-items: center; gap: 12px; text-align: left; border: 2px dashed var(--line); background: var(--surface); padding: 12px 14px; }
+.b3-slot[aria-pressed="true"] { border-style: solid; border-color: var(--accent); }
+.slot { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px dashed var(--line); display: grid; place-items: center; color: transparent; }
+.b3-slot[aria-pressed="true"] .slot { background: var(--accent); border: 2px solid var(--accent); color: var(--on-accent); }
+.slot .ic { width: 18px; height: 18px; }
+
+/* ---------- C. progress ---------- */
+.c1 { background: var(--surface); border-radius: 18px; padding: 18px; box-shadow: 0 10px 28px rgba(20, 24, 40, .1); display: flex; flex-direction: column; gap: 12px; }
+.c1-head { display: flex; justify-content: space-between; align-items: center; }
+.c1-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .85rem; padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); }
+.c1-head b { font-size: 1.4rem; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.c1-bar { height: 12px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.c1-bar i { display: block; height: 100%; width: 65%; border-radius: 999px; background: var(--grad); box-shadow: 0 0 12px rgba(240, 96, 58, .6); }
+.c2 { display: flex; flex-direction: column; gap: 14px; }
+.c2-head { display: flex; align-items: center; gap: 10px; }
+.c2-head .chip-s { font-size: .82rem; }
+.track { display: flex; align-items: center; }
+.step { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--muted); white-space: nowrap; }
+.dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); }
+.step.done { color: var(--ink); }
+.step.done .dot { background: var(--accent); border-color: var(--accent); }
+.tbar { flex: 1; height: 2px; min-width: 10px; margin: 0 6px; background: var(--line); }
+.tbar.done { background: var(--accent); }
+.c3 { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.c3-stamp { font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-size: .95rem; color: var(--accent-text); border: 3px solid var(--accent-text); padding: 5px 14px; transform: rotate(-4deg); opacity: .92; }
+.c3-log { list-style: none; margin: 0; padding: 0; width: 100%; font-size: .88rem; }
+.c3-log li { display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.c3-log time { color: var(--muted); }
+
+/* ---------- D. period navigation ---------- */
+.d1 { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border-radius: 999px; padding: 4px; box-shadow: 0 6px 18px rgba(20, 24, 40, .1); }
+.d1-hl { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 3); border-radius: 999px; background: var(--accent); transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .2s; }
+.d1 button { position: relative; z-index: 1; appearance: none; border: 0; background: transparent; padding: 9px 4px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: .9rem; transition: color .2s; }
+.d1 button[aria-selected="true"] { color: var(--on-accent); }
+.d2 { display: flex; border-bottom: 1px solid var(--line); }
+.d2 button { appearance: none; border: 0; background: transparent; padding: 10px 16px; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.d2 button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.d3 { position: relative; padding-top: 22px; }
+.d3-bands { display: flex; gap: 2px; }
+.d3-bands button { appearance: none; border: 0; padding: 10px 6px; background: var(--line); color: var(--ink); font-size: .85rem; font-weight: 600; min-width: 0; }
+.d3-bands button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.d3-today { position: absolute; top: 0; bottom: 18px; width: 2px; background: var(--ink); left: 14.7%; pointer-events: none; }
+.d3-today span { position: absolute; top: -2px; left: 6px; font-size: .75rem; font-weight: 600; background: var(--ink); color: var(--bg); padding: 0 6px; white-space: nowrap; }
+.d3-scale { display: flex; font-size: .75rem; color: var(--muted); margin-top: 4px; }
+.d3-scale span:nth-child(1) { flex: 12; }
+.d3-scale span:nth-child(2) { flex: 12; }
+.d3-scale span:nth-child(3) { flex: 10; }
+.d3-read { margin-top: 10px !important; color: var(--ink) !important; }
+
+/* ---------- E. filters ---------- */
+.e1 { display: flex; flex-wrap: wrap; gap: 8px; }
+.e1 button { appearance: none; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: var(--surface); padding: 8px 14px; font-weight: 500; box-shadow: 0 2px 8px rgba(20, 24, 40, .08); }
+.e1 button[aria-pressed="true"] { background: var(--grad); color: var(--on-accent); }
+.e2 { display: flex; flex-direction: column; gap: 8px; }
+.e2-in, .e2 select { width: 100%; padding: 9px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; }
+.e2-sel { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.e3 { font-size: 1.15rem; line-height: 2.2; }
+.e3 select { appearance: none; border: 0; border-bottom: 2px solid var(--accent); background: transparent; font-weight: 700; color: var(--accent-text); padding: 0 4px; border-radius: 0; }
+.e3-count { display: block; margin-top: 4px; font-size: .85rem; color: var(--muted); line-height: 1.4; }
+
+/* ---------- F. forms ---------- */
+.f1 { background: var(--surface); border-radius: 20px; box-shadow: 0 12px 32px rgba(20, 24, 40, .12); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.f1-prog { display: flex; flex-direction: column; gap: 8px; font-size: .82rem; color: var(--muted); }
+.f1-bar { height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.f1-bar i { display: block; height: 100%; width: 33%; background: var(--grad); border-radius: 999px; transition: width .2s; }
+.f1 h4 { font-size: 1.25rem; }
+.f1-in { width: 100%; padding: 14px 16px; font-size: 1rem; border: 2px solid var(--line); border-radius: 14px; background: var(--bg); }
+textarea.f1-in { min-height: 84px; resize: vertical; }
+.f1-actions { display: flex; justify-content: space-between; align-items: center; }
+.f1-back { appearance: none; border: 0; background: transparent; color: var(--muted); padding: 8px 4px; }
+.f1-next { appearance: none; border: 0; border-radius: 999px; background: var(--grad); color: var(--on-accent); padding: 11px 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.f2 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
+.f2 .full { grid-column: 1 / -1; }
+.f2 label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: 3px; }
+.f2 input, .f2 select, .f2 textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+.f2 textarea { min-height: 64px; resize: vertical; }
+.f2-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.btn { appearance: none; border: 1px solid var(--line); background: var(--surface); padding: 8px 16px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.f3 { background: var(--surface); border: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.f3-s { font-size: 1.2rem !important; line-height: 2.1; color: var(--ink) !important; }
+.f3 input { border: 0; border-bottom: 2px solid var(--accent); background: transparent; padding: 0 4px; font-size: 1.1rem; font-weight: 600; width: 9.5em; border-radius: 0; color: var(--accent-text); }
+.f3 input::placeholder { color: var(--muted); font-weight: 400; }
+.f3-link { appearance: none; border: 0; background: transparent; padding: 0; color: var(--muted); text-decoration: underline; font-size: .88rem; }
+
+/* ---------- G. showing demand ---------- */
+.g1 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g1 div { background: var(--surface); border-radius: 16px; padding: 14px 8px; text-align: center; box-shadow: 0 8px 22px rgba(20, 24, 40, .1); }
+.g1 b { display: block; font-size: 1.7rem; line-height: 1.1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.g1 span { font-size: .78rem; color: var(--muted); }
+.g1 em { font-style: normal; display: inline-flex; align-items: center; gap: 2px; font-size: .72rem; color: var(--less-ink); background: var(--less-bg); border-radius: 999px; padding: 0 7px; margin-top: 4px; }
+.g2 { display: flex; flex-direction: column; gap: 10px; }
+.g2-top { display: flex; justify-content: space-between; align-items: baseline; font-size: .9rem; }
+.g2-top b { font-size: 1.2rem; }
+.g2-bar { height: 10px; background: var(--line); }
+.g2-bar i { display: block; height: 100%; width: 82.4%; background: var(--accent); }
+.g2-clubs { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; align-items: center; }
+.g2-clubs .pill { border: 1px solid var(--line); padding: 1px 8px; background: var(--surface); }
+.g3 { display: flex; flex-direction: column; gap: 10px; }
+.g3-dots { display: grid; grid-template-columns: repeat(25, 1fr); gap: 2px; }
+.g3-dots span { aspect-ratio: 1; background: var(--line); border-radius: 0; }
+.g3-dots span.on { background: var(--accent); }
+.g3-cap { font-size: .85rem; color: var(--muted); }
+.g3-cap b { color: var(--ink); }
+.g3-clubs { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+.g3-clubs i { width: 14px; height: 14px; border: 2px solid var(--accent); }
+
+/* picks */
+.picks { margin-top: 48px; background: var(--surface); border: 1px solid var(--line); padding: 20px; }
+.picks h2 { margin: 0 0 8px; font-size: 1.3rem; }
+.picks pre { margin: 0 0 12px; padding: 12px; background: var(--bg); font: 500 .88rem/1.6 var(--font); white-space: pre-wrap; user-select: text; }
+.picks .actions { display: flex; gap: 8px; }
+.foot { margin-top: 20px; color: var(--muted); font-size: .85rem; }
+
+/* corners toggle: square everything inside demos except items that must stay round */
+:root[data-square="on"] .demo *:not(.keep-round) { border-radius: 0 !important; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 60; max-width: 92vw; text-align: center; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 560px) { .picklink { margin-left: 0; } .e2-sel { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UI pattern comparison</h1>
+  <p class="intro">Seven parts of the proposal platform, each shown three ways in Husky red with the system font and icons on. Compare them side by side, then pick the ones you want in the full mockup. The tags are my judgment calls, not measured data.</p>
+  <div class="legend">
+    <div><span class="tag tag-ai">AI-preferred</span><br>What generated interfaces tend to default to: soft shadows, gradients, pill shapes, and friendly copy.</div>
+    <div><span class="tag tag-std">Industry standard</span><br>Patterns most people already know from forums, issue trackers, and petition sites.</div>
+    <div><span class="tag tag-less">Less standard</span><br>Unusual in campus and civic tools. More memorable, with more risk.</div>
+  </div>
+
+  <div class="bar">
+    <div class="bar-group">
+      <span class="bar-lab">Show</span>
+      <div class="seg" role="group" aria-label="Filter by tag">
+        <button type="button" data-act="filter" data-val="all" aria-pressed="true">All</button>
+        <button type="button" data-act="filter" data-val="ai" aria-pressed="false">AI-preferred</button>
+        <button type="button" data-act="filter" data-val="std" aria-pressed="false">Industry standard</button>
+        <button type="button" data-act="filter" data-val="less" aria-pressed="false">Less standard</button>
+      </div>
+    </div>
+    <div class="bar-group">
+      <span class="bar-lab">Corners</span>
+      <div class="seg" role="group" aria-label="Corners">
+        <button type="button" data-act="corners" data-val="off" aria-pressed="true">As designed</button>
+        <button type="button" data-act="corners" data-val="on" aria-pressed="false">Square (your pick)</button>
+      </div>
+    </div>
+    <a class="picklink" href="#picks" id="picklink">Your picks (0)</a>
+  </div>
+
+  <div id="cats"></div>
+
+  <section class="picks" id="picks">
+    <h2>Your picks</h2>
+    <pre id="picktext">Nothing picked yet. Use "Pick this" under any option.</pre>
+    <div class="actions">
+      <button type="button" class="btn primary" data-act="copy">Copy picks</button>
+      <button type="button" class="btn" data-act="clear">Clear</button>
+    </div>
+  </section>
+  <p class="foot">All content is sample content. Numbers and dates are made up.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root = document.documentElement;
+
+const PATHS = {
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  coins: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5c-.4-.9-1.3-1.3-2.5-1.3s-2.3.6-2.3 1.7c0 2.3 4.8 1.2 4.8 3.4 0 1.1-1.1 1.8-2.5 1.8s-2.2-.5-2.6-1.4"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/>',
+  arrowUp: '<path d="M12 19V6M6 12l6-6 6 6"/>',
+  arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  message: '<path d="M4 5h16v11H9l-5 4V5z"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 010 7M18 14.5c1.8.7 3 2.4 3 5.5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 8-11h-6l1-7z"/>',
+  pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  vote: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l3 3 5-6"/>',
+  feed: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  share: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+  trend: '<path d="M4 16l6-6 4 4 6-7M15 7h5v5"/>'
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[n]}</svg>`;
+
+const T = 'A student-hosted food pantry';
+const D = 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.';
+const TAGNAME = { ai: 'AI-preferred', std: 'Industry standard', less: 'Less standard' };
+
+const CATS = [
+  { id: 'card', title: 'Proposal card', q: 'How should a single idea look in the feed?', v: [
+    { id: 'a1', tag: 'ai', name: 'Soft card with gradient accent',
+      why: 'Looks friendly and polished at a glance.',
+      watch: 'The shadow and gradient add polish but no information, and it is hard to scan once the feed holds dozens of proposals.',
+      html: `<div class="a1"><div class="a1-top"><span class="a1-ico">${ic('layers')}</span><span class="a1-cat">Dining</span></div><h4>${T}</h4><p>${D}</p><div class="a1-foot"><span class="avs keep-round" aria-hidden="true"><i class="keep-round"></i><i class="keep-round"></i><i class="keep-round"></i></span><span class="a1-more">Learn more ${ic('arrowRight')}</span></div></div>` },
+    { id: 'a2', tag: 'std', name: 'Flat bordered card with metadata',
+      why: 'Everyone already knows how to read it. Votes, comments, and status sit in predictable places.',
+      watch: 'Safe but forgettable. Nothing about it says this belongs to SGA.',
+      html: `<div class="a2"><h4>${T}</h4><div class="a2-meta"><span>${ic('tag')}Dining</span><span>${ic('pin')}Central campus</span><span>${ic('clock')}5 days ago</span></div><p>${D}</p><div class="a2-foot"><span>${ic('arrowUp')}412 votes</span><span>${ic('message')}18 comments</span><span class="chip-s">In development</span></div></div>` },
+    { id: 'a3', tag: 'less', name: 'Ballot stub with proposal number',
+      why: 'The stub says ballot at a glance, and the number gives students something to quote ("vote for 103").',
+      watch: 'Takes more width than a plain card, and needs a stacked version for narrow phones.',
+      html: `<div class="a3"><div class="a3-stub"><small>Proposal</small><b>103</b></div><div class="a3-main"><h4>${T}</h4><p>${D}</p><div class="a3-meta">Dining, Central campus</div></div></div>` }
+  ] },
+  { id: 'vote', title: 'Vote control', q: 'What does a student tap to back an idea?', v: [
+    { id: 'b1', tag: 'ai', name: 'Gradient heart button with count',
+      why: 'Warm and clear call to action.',
+      watch: 'A heart reads as a like, not a vote, which makes it weak evidence when you present to administration.',
+      html: `<div class="b1"><button type="button" class="b1-btn" data-act="support" aria-pressed="false">${ic('heart')}<span class="b1-lab">Support this idea</span><span class="b1-count" data-n="412">412</span></button><button type="button" class="b1-share">Share</button></div>` },
+    { id: 'b2', tag: 'std', name: 'Upvote arrow with count',
+      why: 'Instantly understood, and the count is always visible.',
+      watch: 'Unlimited upvotes favor early proposals and invite one-tap support that feels cheap.',
+      html: `<div class="b2"><div class="b2-col"><button type="button" class="b2-up" data-act="upvote" aria-pressed="false" aria-label="Upvote">${ic('arrowUp')}</button><b class="b2-n" data-n="412">412</b><small>votes</small></div><h4>${T}</h4></div>` },
+    { id: 'b3', tag: 'less', name: 'Limited ballot tokens',
+      why: 'Three tokens force trade-offs, so each vote means more. It fits a defined voting period.',
+      watch: 'Needs a short explanation the first time, and a token tray that carries across the whole page.',
+      html: `<div class="b3"><div class="b3-tray"><span>Your votes</span><span class="tk keep-round" data-tk>${ic('check')}</span><span class="tk keep-round" data-tk>${ic('check')}</span><span class="tk keep-round" data-tk>${ic('check')}</span><span data-left>3 left</span></div><button type="button" class="b3-slot" data-act="token" aria-pressed="false"><span class="slot keep-round">${ic('check')}</span><span data-slot-lab>Place a vote on this idea</span></button></div>` }
+  ] },
+  { id: 'progress', title: 'Progress and status', q: 'How do students see where an initiative stands?', v: [
+    { id: 'c1', tag: 'ai', name: 'Gradient bar with percent complete',
+      why: 'Reads as progress immediately.',
+      watch: 'The percentage is invented. Initiatives do not advance on a smooth scale, and a stalled 65% invites hard questions.',
+      html: `<div class="c1"><div class="c1-head"><span class="c1-badge">${ic('bolt')}In development</span><b>65%</b></div><div class="c1-bar"><i></i></div><p>Almost there! Your idea is on its way.</p></div>` },
+    { id: 'c2', tag: 'std', name: 'Labeled stepper with status chip',
+      why: 'Named stages are honest and easy to compare across cards.',
+      watch: 'Generic, and SGA has to define the stages consistently.',
+      html: `<div class="c2"><div class="c2-head"><h4>${T}</h4></div><div><span class="chip-s">In development</span></div><div class="track"><span class="step done"><span class="dot"></span>Voted</span><span class="tbar done"></span><span class="step done"><span class="dot"></span>In development</span><span class="tbar"></span><span class="step"><span class="dot"></span>Delivered</span></div></div>` },
+    { id: 'c3', tag: 'less', name: 'Rubber stamp with dated ledger',
+      why: 'Feels official, and the dated ledger shows real activity instead of an invented percentage.',
+      watch: 'Less scannable across many cards. Best on the proposal page, not in the feed.',
+      html: `<div class="c3"><div class="c3-stamp keep-round">In development</div><ul class="c3-log"><li><time>Oct 9</time><span>Began drafting legislation for the pilot program</span></li><li><time>Oct 4</time><span>Committee formed</span></li><li><time>Sep 28</time><span>Voted in by students</span></li></ul></div>` }
+  ] },
+  { id: 'nav', title: 'Period navigation', q: 'How do students move between Propose, Vote, and Follow?', v: [
+    { id: 'd1', tag: 'ai', name: 'Sliding pill switch with icons',
+      why: 'Polished and touch-friendly.',
+      watch: 'Looks like a view switch, not stages of a process, and it hides the dates.',
+      html: `<div class="d1" role="tablist" style="--i:0"><span class="d1-hl"></span><button type="button" role="tab" data-act="tab" data-i="0" aria-selected="true">${ic('pencil')}Propose</button><button type="button" role="tab" data-act="tab" data-i="1" aria-selected="false">${ic('vote')}Vote</button><button type="button" role="tab" data-act="tab" data-i="2" aria-selected="false">${ic('feed')}Follow</button></div>` },
+    { id: 'd2', tag: 'std', name: 'Underlined tabs',
+      why: 'Familiar and accessible.',
+      watch: 'Treats the periods as interchangeable views and says nothing about timing.',
+      html: `<div class="d2" role="tablist"><button type="button" role="tab" data-act="tab" aria-selected="true">Propose</button><button type="button" role="tab" data-act="tab" aria-selected="false">Vote</button><button type="button" role="tab" data-act="tab" aria-selected="false">Follow</button></div>` },
+    { id: 'd3', tag: 'less', name: 'Season timeline with a today marker',
+      why: 'Shows what is open now and how long is left, which nudges people to participate before it closes.',
+      watch: 'Needs real dates maintained by SGA, and takes more room than tabs.',
+      html: `<div class="d3"><div class="d3-today"><span>Today</span></div><div class="d3-bands"><button type="button" data-act="band" data-t="Propose is open until Oct 12. 6 days left." style="flex:12" aria-pressed="true">Propose</button><button type="button" data-act="band" data-t="Voting opens Oct 13 and closes Oct 24." style="flex:12" aria-pressed="false">Vote</button><button type="button" data-act="band" data-t="Progress updates are posted all year." style="flex:10" aria-pressed="false">Follow</button></div><div class="d3-scale"><span>Oct 1</span><span>Oct 13</span><span>Oct 25</span></div><p class="d3-read" data-read>Propose is open until Oct 12. 6 days left.</p></div>` }
+  ] },
+  { id: 'filter', title: 'Filters', q: 'How do students narrow a long list of ideas?', v: [
+    { id: 'e1', tag: 'ai', name: 'Icon chips with gradient highlight',
+      why: 'Quick to tap on a phone.',
+      watch: 'Only handles one facet, and the chips multiply as the filters grow.',
+      html: `<div class="e1" role="group" aria-label="Division"><button type="button" data-act="chip" aria-pressed="true">All</button><button type="button" data-act="chip" aria-pressed="false">${ic('tag')}Dining</button><button type="button" data-act="chip" aria-pressed="false">${ic('layers')}Campus Planning</button><button type="button" data-act="chip" aria-pressed="false">${ic('pin')}Green</button></div>` },
+    { id: 'e2', tag: 'std', name: 'Search with dropdown filters',
+      why: 'Scales to many filters, and people know how to use it.',
+      watch: 'Hides the options inside dropdowns, and is slower on a phone.',
+      html: `<div class="e2"><input class="e2-in" type="search" placeholder="Search proposals" aria-label="Search proposals"><div class="e2-sel"><select aria-label="Division"><option>Division</option><option>Dining</option><option>Campus Planning</option><option>Green Initiatives</option></select><select aria-label="Scale"><option>Scale</option><option>Small</option><option>Medium</option><option>Large</option></select><select aria-label="Sort"><option>Newest</option><option>Most votes</option></select></div></div>` },
+    { id: 'e3', tag: 'less', name: 'Filter as a sentence',
+      why: 'Reads like a sentence, so it explains itself.',
+      watch: 'Unusual. It needs careful accessibility work and is harder for frequent users to scan.',
+      html: `<div class="e3">Show <select aria-label="Status"><option>all</option><option>new</option><option>funded</option></select> ideas about <select aria-label="Topic"><option>any topic</option><option>dining</option><option>campus planning</option><option>green</option></select> that cost <select aria-label="Cost"><option>any amount</option><option>under $1k</option><option>$1k to $5k</option><option>$5k+</option></select>.<span class="e3-count">Showing 6 ideas</span></div>` }
+  ] },
+  { id: 'form', title: 'Proposal form', q: 'How does a student submit an idea?', v: [
+    { id: 'f1', tag: 'ai', name: 'Step-by-step wizard',
+      why: 'One question at a time feels light.',
+      watch: 'Three steps for a simple idea adds friction, and the progress bar promises more than the form needs.',
+      html: `<div class="f1" data-step="1"><div class="f1-prog"><span>Step <b data-n>1</b> of 3</span><div class="f1-bar"><i data-bar></i></div></div><div data-s="1"><h4>What is your big idea?</h4><input class="f1-in" placeholder="Give it a catchy name" aria-label="Idea name"></div><div data-s="2" hidden><h4>Where would it happen?</h4><input class="f1-in" placeholder="A building or area" aria-label="Location"></div><div data-s="3" hidden><h4>Tell us more</h4><textarea class="f1-in" placeholder="What would you change?" aria-label="Description"></textarea></div><div class="f1-actions"><button type="button" class="f1-back" data-act="wiz-back">Back</button><button type="button" class="f1-next" data-act="wiz-next"><span data-nl>Continue</span>${ic('arrowRight')}</button></div></div>` },
+    { id: 'f2', tag: 'std', name: 'Single labeled form',
+      why: 'Fast, predictable, and easy to validate.',
+      watch: 'Looks like paperwork, which might discourage casual ideas.',
+      html: `<div class="f2"><div class="full"><label for="x-n">Name</label><input id="x-n" placeholder="What would you call it?"></div><div><label for="x-w">Where</label><input id="x-w" placeholder="Building or area"></div><div><label for="x-d">Division</label><select id="x-d"><option>Dining</option><option>Campus Planning</option><option>Green Initiatives</option></select></div><div class="full"><label for="x-x">Description</label><textarea id="x-x" placeholder="What would you change?"></textarea></div><div class="full f2-actions"><button type="button" class="btn">Cancel</button><button type="button" class="btn primary">Submit proposal</button></div></div>` },
+    { id: 'f3', tag: 'less', name: 'Fill-in-the-blank sentence',
+      why: 'Feels like talking, and nudges people toward a short, clear ask.',
+      watch: 'Free text inside a sentence is harder to turn into structured fields and to validate.',
+      html: `<div class="f3"><p class="f3-s">I want <input placeholder="a change" aria-label="What"> at <input placeholder="a place" aria-label="Where">. It would help because <input placeholder="a reason" aria-label="Why">.</p><button type="button" class="f3-link">Add details (optional)</button><button type="button" class="btn primary">Submit</button></div>` }
+  ] },
+  { id: 'demand', title: 'Showing demand', q: 'How do we show administration that students want this?', v: [
+    { id: 'g1', tag: 'ai', name: 'Gradient stat tiles',
+      why: 'Big numbers are easy to quote.',
+      watch: 'The numbers come without context (412 out of how many?), and it looks like marketing.',
+      html: `<div class="g1"><div><b>412</b><span>votes</span><em>${ic('trend')}+38</em></div><div><b>6</b><span>clubs</span><em>${ic('trend')}+2</em></div><div><b>18</b><span>comments</span></div></div>` },
+    { id: 'g2', tag: 'std', name: 'Progress toward a signature goal',
+      why: 'Petition sites use it because it shows the target and how close you are.',
+      watch: 'Common and persuasive, but it shows only a number.',
+      html: `<div class="g2"><div class="g2-top"><span><b>412</b> of 500 signatures</span><span>82%</span></div><div class="g2-bar" role="img" aria-label="412 of 500 signatures"><i></i></div><div class="g2-clubs">${ic('users')}Backed by 6 clubs<span class="pill">Club A</span><span class="pill">Club B</span><span class="pill">+4</span></div></div>` },
+    { id: 'g3', tag: 'less', name: 'One square per student',
+      why: 'Every square is a student, so the crowd is visible. It is strong on a slide for administration.',
+      watch: 'Memorable but unconventional. It needs a clear caption and a plain number for screen readers.',
+      html: `<div class="g3"><div class="g3-dots" role="img" aria-label="412 of 500 students backed this idea"></div><div class="g3-cap"><b>412 students</b> backed this idea. Each square is one student. Goal: 500.</div><div class="g3-clubs"><i></i><i></i><i></i><i></i><i></i><i></i><span>6 clubs</span></div></div>` }
+  ] }
+];
+
+/* render */
+$('#cats').innerHTML = CATS.map(c => `
+  <section class="cat" id="cat-${c.id}">
+    <h2>${c.title}</h2>
+    <p class="q">${c.q}</p>
+    <div class="row">${c.v.map(v => `
+      <article class="spec" data-tag="${v.tag}" data-id="${v.id}" data-cat="${c.title}" data-name="${v.name}">
+        <header class="spec-h"><span class="tag tag-${v.tag}">${TAGNAME[v.tag]}</span><span class="spec-name">${v.name}</span></header>
+        <div class="stage"><div class="demo">${v.html}</div></div>
+        <div class="notes"><p><b>Why it works:</b> ${v.why}</p><p><b>Watch for:</b> ${v.watch}</p></div>
+        <button type="button" class="pick" data-act="pick" aria-pressed="false">Pick this</button>
+      </article>`).join('')}
+    </div>
+  </section>`).join('');
+
+$$('.g3-dots').forEach(el => { el.innerHTML = Array.from({ length: 500 }, (_, i) => `<span class="${i < 412 ? 'on' : ''}"></span>`).join(''); });
+
+/* picks */
+const picks = new Set();
+function pickText() {
+  const lines = [];
+  CATS.forEach(c => c.v.forEach(v => { if (picks.has(v.id)) lines.push(`${c.title}: ${v.name} (${TAGNAME[v.tag].toLowerCase()})`); }));
+  return lines;
+}
+function syncPicks() {
+  const lines = pickText();
+  $('#picktext').textContent = lines.length ? lines.join('\n') : 'Nothing picked yet. Use "Pick this" under any option.';
+  $('#picklink').textContent = `Your picks (${lines.length})`;
+  $$('.spec').forEach(s => s.querySelector('.pick').setAttribute('aria-pressed', String(picks.has(s.dataset.id))));
+  $$('.spec .pick').forEach(b => { b.textContent = b.getAttribute('aria-pressed') === 'true' ? 'Picked' : 'Pick this'; });
+}
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 2400); }
+
+/* interactions */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act;
+
+  if (act === 'filter') {
+    $$('[data-act="filter"]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+    if (t.dataset.val === 'all') root.removeAttribute('data-filter'); else root.dataset.filter = t.dataset.val;
+  }
+  if (act === 'corners') {
+    $$('[data-act="corners"]').forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+    if (t.dataset.val === 'on') root.dataset.square = 'on'; else root.removeAttribute('data-square');
+  }
+  if (act === 'pick') {
+    const id = t.closest('.spec').dataset.id;
+    if (picks.has(id)) picks.delete(id); else picks.add(id);
+    syncPicks();
+  }
+  if (act === 'copy') {
+    const txt = pickText().join('\n');
+    if (!txt) return toast('Pick something first.');
+    try { await navigator.clipboard.writeText(txt); toast('Picks copied.'); }
+    catch (err) { toast('Copy is blocked here. Select the text above instead.'); }
+  }
+  if (act === 'clear') { picks.clear(); syncPicks(); }
+
+  if (act === 'support') {
+    const on = t.getAttribute('aria-pressed') !== 'true';
+    t.setAttribute('aria-pressed', String(on));
+    const c = t.querySelector('.b1-count');
+    c.textContent = Number(c.dataset.n) + (on ? 1 : 0);
+    t.querySelector('.b1-lab').textContent = on ? 'Supported' : 'Support this idea';
+  }
+  if (act === 'upvote') {
+    const on = t.getAttribute('aria-pressed') !== 'true';
+    t.setAttribute('aria-pressed', String(on));
+    const n = t.parentElement.querySelector('.b2-n');
+    n.textContent = Number(n.dataset.n) + (on ? 1 : 0);
+  }
+  if (act === 'token') {
+    const on = t.getAttribute('aria-pressed') !== 'true';
+    t.setAttribute('aria-pressed', String(on));
+    const box = t.closest('.b3');
+    $$('[data-tk]', box).forEach((k, i) => k.classList.toggle('on', on && i === 0));
+    $('[data-left]', box).textContent = on ? '2 left' : '3 left';
+    $('[data-slot-lab]', box).textContent = on ? 'Vote placed. Tap to take it back.' : 'Place a vote on this idea';
+  }
+  if (act === 'tab') {
+    const group = t.parentElement;
+    $$('[role="tab"]', group).forEach(b => b.setAttribute('aria-selected', String(b === t)));
+    if (t.dataset.i !== undefined) group.style.setProperty('--i', t.dataset.i);
+  }
+  if (act === 'band') {
+    const wrap = t.closest('.d3');
+    $$('[data-act="band"]', wrap).forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+    $('[data-read]', wrap).textContent = t.dataset.t;
+  }
+  if (act === 'chip') {
+    $$('[data-act="chip"]', t.parentElement).forEach(b => b.setAttribute('aria-pressed', String(b === t)));
+  }
+  if (act === 'wiz-next' || act === 'wiz-back') {
+    const w = t.closest('.f1');
+    let s = Number(w.dataset.step);
+    if (act === 'wiz-next') { if (s === 3) { toast('Concept only: this would submit the idea.'); return; } s += 1; } else s = Math.max(1, s - 1);
+    w.dataset.step = s;
+    $$('[data-s]', w).forEach(p => { p.hidden = Number(p.dataset.s) !== s; });
+    $('[data-n]', w).textContent = s;
+    $('[data-bar]', w).style.width = (s / 3 * 100) + '%';
+    $('[data-nl]', w).textContent = s === 3 ? 'Submit idea' : 'Continue';
+  }
+});
+
+syncPicks();
+</script>
+</body>
+</html>

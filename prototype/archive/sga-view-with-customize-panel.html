@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: SGA view</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5; --surface: #FFFFFF; --ink: #1A1D26; --muted: #596070; --line: #DADDE4;
+  --accent: #C8102E; --accent-text: #C8102E; --on-accent: #FFFFFF;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --sky: #E3EBF7; --sky-ink: #26456F;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --green: #DCF0E5; --green-ink: #17603B;
+  --grey: #E8EAEF; --grey-ink: #424959;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --accent: #D52F47; --accent-text: #FF8696;
+    --sky: #1F2E47; --sky-ink: #A9C6F2; --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2; --grey: #2A2E38; --grey-ink: #C4C9D4; --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --accent: #D52F47; --accent-text: #FF8696;
+  --sky: #1F2E47; --sky-ink: #A9C6F2; --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --green: #153325; --green-ink: #92D7B2; --grey: #2A2E38; --grey-ink: #C4C9D4; --focus: #7AA7F0;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15.5px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 1.1em; height: 1.1em; flex: none; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 56px; }
+
+/* header */
+.top { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); margin-top: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark { width: 40px; height: 40px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 800; font-size: .9rem; }
+.brand b { display: block; line-height: 1.15; font-size: 1.1rem; }
+.brand small { color: var(--muted); }
+.who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.seg button { appearance: none; border: 0; background: transparent; padding: 7px 13px; font-size: .9rem; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.sel { padding: 7px 10px; border: 1px solid var(--line); background: var(--surface); max-width: 100%; }
+.btn { appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.line { border-color: var(--accent-text); color: var(--accent-text); background: transparent; }
+.btn.sm { padding: 4px 10px; font-size: .85rem; }
+.btn[aria-disabled="true"] { opacity: .55; }
+
+/* tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 14px 0 20px; overflow-x: auto; }
+.tab { appearance: none; border: 0; background: transparent; padding: 11px 16px; border-bottom: 3px solid transparent; margin-bottom: -1px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent-text); font-weight: 650; }
+.badge { background: var(--accent); color: var(--on-accent); font-size: .75rem; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; display: inline-grid; place-items: center; }
+.badge.zero { background: var(--grey); color: var(--grey-ink); }
+
+h2.pt { font-size: 1.6rem; line-height: 1.15; margin: 0 0 4px; letter-spacing: -0.01em; }
+.sub { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+.box { background: var(--surface); border: 1px solid var(--line); }
+.pad { padding: 16px 18px; }
+.note { font-size: .86rem; color: var(--muted); margin: 8px 0 0; }
+
+/* tags and chips */
+.tg { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; padding: 1px 8px; background: var(--accent-soft); color: var(--accent-text); }
+.mini { font-size: .78rem; color: var(--muted); border: 1px solid var(--line); padding: 0 7px; }
+.mini.warn { color: var(--amber-ink); background: var(--amber); border-color: transparent; }
+.mini.ok { color: var(--green-ink); background: var(--green); border-color: transparent; }
+.mini.hot { color: var(--accent-text); border-color: var(--accent-text); }
+.st { font-size: .78rem; font-weight: 600; padding: 2px 9px; white-space: nowrap; display: inline-block; }
+.st-collecting { background: var(--grey); color: var(--grey-ink); }
+.st-review { background: var(--sky); color: var(--sky-ink); }
+.st-active { background: var(--amber); color: var(--amber-ink); }
+.st-delivered { background: var(--green); color: var(--green-ink); }
+.st-waiting { background: transparent; color: var(--grey-ink); border: 1px solid var(--line); }
+.st-overdue { background: var(--accent-soft); color: var(--accent-text); }
+
+/* queue */
+.todo { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.todo-i { appearance: none; text-align: left; background: var(--surface); border: 1px solid var(--line); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.todo-i:hover { border-color: var(--accent-text); }
+.todo-i b { font-size: 1.8rem; line-height: 1; min-width: 34px; color: var(--accent-text); }
+.todo-i span { font-size: .88rem; color: var(--muted); }
+.bcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.bcard { appearance: none; text-align: left; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.bcard[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.bcard b { font-size: 1rem; }
+.bcard small { color: var(--muted); }
+.pips { display: flex; gap: 4px; align-items: center; }
+.pip { width: 22px; height: 10px; background: var(--line); }
+.pip.on { background: var(--accent); }
+.bact { font-size: .84rem; margin: 0; min-height: 1.3em; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--surface); padding: 5px 12px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.search { flex: 1 1 180px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); background: var(--surface); }
+.rows { background: var(--surface); border: 1px solid var(--line); }
+.row, .rowh { display: grid; grid-template-columns: 44px minmax(0, 1fr) 118px 96px 78px 152px; gap: 12px; align-items: center; padding: 11px 14px; }
+.rowh { font-size: .8rem; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--bg); padding-top: 8px; padding-bottom: 8px; }
+.row { appearance: none; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: transparent; }
+.row:last-child { border-bottom: 0; }
+.row:hover { background: var(--accent-soft); }
+.row.hl { background: var(--accent-soft); }
+.rk { font-weight: 700; color: var(--muted); }
+.ti { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ti b { font-weight: 650; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.nm b { font-size: 1.1rem; display: block; line-height: 1.2; }
+.nm small { color: var(--muted); font-size: .8rem; }
+.age { color: var(--muted); font-size: .88rem; }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(10, 12, 18, .5); z-index: 40; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--surface); border-left: 1px solid var(--line); z-index: 41; overflow: auto; padding: calc(18px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.drawer h3 { margin: 6px 0 8px; font-size: 1.35rem; line-height: 1.2; }
+.dhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.stats div { background: var(--bg); padding: 10px 8px; text-align: center; }
+.stats b { display: block; font-size: 1.4rem; line-height: 1.1; }
+.stats span { font-size: .78rem; color: var(--muted); }
+.dsec { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+.dsec h4 { margin: 0 0 8px; font-size: .95rem; }
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inline .sel { flex: 1 1 140px; min-width: 0; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
+.chk input { accent-color: var(--ink); width: 16px; height: 16px; margin: 0; }
+.log { list-style: none; margin: 0; padding: 0; font-size: .9rem; }
+.facts { margin: 10px 0 8px; font-size: .92rem; color: var(--muted); }
+.facts b { color: var(--ink); font-size: 1rem; }
+.dd { margin: 0 0 12px; color: var(--muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.linkbtn { appearance: none; border: 0; background: none; padding: 0; color: var(--accent-text); text-decoration: underline; }
+.dact { margin: 14px 0 4px; }
+.bsum { margin: 0; font-size: .92rem; }
+.log li { display: grid; grid-template-columns: 62px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.log time { color: var(--muted); }
+
+/* forms */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: .85rem; font-weight: 600; }
+.field input, .field select, .field textarea { padding: 9px 11px; border: 1px solid var(--line); background: var(--bg); width: 100%; }
+.field textarea { min-height: 96px; resize: vertical; }
+.hint { background: var(--amber); color: var(--amber-ink); padding: 10px 12px; font-size: .9rem; }
+.pv { background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--accent); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.pv h4 { margin: 0; font-size: 1.1rem; line-height: 1.25; }
+.pv p { margin: 0; color: var(--muted); font-size: .92rem; }
+.pvh { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pvl { font-size: .8rem; color: var(--muted); margin: 0 0 8px; }
+.ledger { border: 1px solid var(--line); background: var(--surface); padding: 10px 12px; font-size: .92rem; }
+.ledger time { color: var(--muted); margin-right: 10px; }
+.notif { background: var(--ink); color: var(--bg); padding: 10px 12px; font-size: .88rem; }
+
+/* updates list */
+.ulist .urow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ulist .urow:last-child { border-bottom: 0; }
+.urow[aria-current="true"] { background: var(--accent-soft); }
+
+/* people */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--line); padding: 10px 14px; }
+.tile b { font-size: 1.6rem; line-height: 1.1; display: block; }
+.tile span { font-size: .84rem; color: var(--muted); }
+.prow { display: grid; grid-template-columns: 26px 36px minmax(0, 1.1fr) minmax(0, 1.4fr) 150px 112px auto; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.prow input { accent-color: var(--ink); width: 16px; height: 16px; }
+.av { width: 34px; height: 34px; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.pi { display: flex; flex-direction: column; min-width: 0; }
+.pi small, .pd small { color: var(--muted); font-size: .8rem; }
+.pi small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw { font-size: .9rem; min-width: 0; }
+.pd { font-size: .88rem; }
+.pa { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.bulk { position: sticky; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 12px; background: var(--ink); color: var(--bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bulk .btn { color: var(--ink); }
+
+dialog { width: min(600px, 94vw); max-height: 92vh; overflow: auto; padding: 0; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+dialog::backdrop { background: rgba(10, 12, 18, .55); }
+.dlg { padding: 20px; }
+.dlg h3 { margin: 0 0 4px; font-size: 1.3rem; }
+.dlg .sub { margin-bottom: 12px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.optrow { padding: 12px 0; border-top: 1px solid var(--line); }
+.optrow:first-of-type { border-top: 0; }
+.optrow b { display: block; }
+.optrow small { display: block; color: var(--muted); margin-bottom: 8px; }
+
+/* customize panel */
+.cpanel { position: fixed; top: 0; right: 0; bottom: 0; width: 330px; background: var(--surface); border-left: 1px solid var(--line); z-index: 30; overflow: auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 18px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.cp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.cp-head b { font-size: 1.05rem; }
+.ctl { padding: 12px 0; border-top: 1px solid var(--line); }
+.ctl h2 { font-size: .92rem; margin: 0 0 8px; }
+.lab { font-size: .84rem; color: var(--muted); margin: 8px 0 5px; }
+.pseg { display: flex; border: 1px solid var(--line); margin-bottom: 4px; flex-wrap: wrap; }
+.pseg button { flex: 1; appearance: none; border: 0; background: transparent; padding: 7px 6px; font-size: .84rem; }
+.pseg button + button { border-left: 1px solid var(--line); }
+.pseg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.checks { display: flex; flex-direction: column; gap: 7px; }
+.readout { margin: 0 0 10px; padding: 10px 12px; background: var(--bg); font: 500 .8rem/1.55 var(--font); white-space: pre-wrap; user-select: text; }
+.sumline { margin: 0 0 14px; color: var(--muted); }
+.linkbtn b { font-size: 1rem; }
+.bseg small { color: inherit; opacity: .75; }
+.rows .row, .rows .rowh { grid-template-columns: var(--cols); }
+@media (min-width: 1100px) { body.panel-open { padding-right: 330px; } }
+@media (max-width: 1099px) { .cpanel { top: auto; left: 0; width: auto; max-height: 58dvh; border-left: 0; border-top: 1px solid var(--line); } body.panel-open .wrap { padding-bottom: 60dvh; } }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 80; max-width: 92vw; text-align: center; }
+.foot { margin-top: 28px; color: var(--muted); font-size: .85rem; }
+
+@media (max-width: 860px) {
+  .cols { grid-template-columns: 1fr; }
+  .rowh { display: none; }
+  .rows .row { grid-template-columns: 36px 1fr; row-gap: 6px; }
+  .rows.norank .row { grid-template-columns: 1fr; }
+  .rows.norank .row .nm, .rows.norank .row .age, .rows.norank .row .stc { grid-column: 1; }
+  .row .nm, .row .age, .row .stc { grid-column: 2; }
+  .row .nm b { display: inline; margin-right: 6px; }
+  .prow { grid-template-columns: 26px 36px 1fr; row-gap: 6px; }
+  .prow .pw, .prow .pd, .prow .ps, .prow .pa { grid-column: 3; justify-content: flex-start; }
+}
+@media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">SGA</div><div><b>Husky Proposals</b><small>SGA view</small></div></div>
+    <div class="who">
+      <div class="seg" role="group" aria-label="Role">
+        <button type="button" data-role="vp" aria-pressed="true">VP of Campus Affairs</button>
+        <button type="button" data-role="chair" aria-pressed="false">Board chair or director</button>
+      </div>
+      <select class="sel" id="boardSel" aria-label="Your board" hidden></select>
+      <button type="button" class="btn" data-act="cust">Customize</button>
+      <button type="button" class="btn" data-act="opts">Options</button>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="view"></main>
+  <p class="foot">Concept mockup. Every idea, name, and number is sample content. Dates assume today is Oct 7.</p>
+</div>
+
+<aside class="cpanel" id="cpanel" hidden aria-label="Customize layout"></aside>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="Idea details"></aside>
+<dialog id="msgdlg" aria-labelledby="msg-t"></dialog>
+<dialog id="optdlg" aria-labelledby="opt-t"></dialog>
+<dialog id="editdlg" aria-labelledby="edit-t"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const TODAY = new Date(2026, 9, 7);
+const dstr = n => { const d = new Date(TODAY); d.setDate(d.getDate() + n); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+const NEXT_REVIEW = 'Nov 3';
+
+const PATHS = {
+  plus: '<path d="M12 5v14M5 12h14"/>', mail: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 010 7M18 14.5c1.8.7 3 2.4 3 5.5"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>', bell: '<path d="M6 16v-5a6 6 0 0112 0v5l1.5 2h-15L6 16z"/><path d="M10 21h4"/>'
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[n]}</svg>`;
+
+const BOARDS = [
+  { id: 'DAB', name: 'Dining Advisory Board', tag: 'Dining' },
+  { id: 'CPAB', name: 'Campus Planning Advisory Board', tag: 'Campus Planning' },
+  { id: 'CSC', name: 'Campus Services Committee', tag: 'Campus Services' },
+  { id: 'GIB', name: 'Green Initiatives Board', tag: 'Green Initiatives' },
+  { id: 'SC', name: 'Sustainability Committee', tag: 'Sustainability' }
+];
+const LAB = { collecting: 'Collecting support', review: 'Under review', active: 'In progress', delivered: 'Delivered', waiting: 'Waiting' };
+const REASONS = ['The board is busy with other ideas right now', 'It needs more information first', 'It needs administration approval first', 'It overlaps with another idea', 'It is outside what SGA can do'];
+
+let I = [
+  { id: 103, title: 'A student-hosted food pantry', board: 'DAB', scale: 'Large', cost: '$5k+', sup: 412, wk: 38, age: 62, status: 'active', fol: 56, flag: false, desc: 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.', upd: [{ d: 2, t: 'Began drafting legislation for the pilot program' }, { d: 9, t: 'Committee formed' }] },
+  { id: 131, title: 'A late-night dining option on weeknights', board: 'DAB', scale: 'Medium', cost: '$5k+', sup: 233, wk: 21, age: 40, status: 'collecting', fol: 18, flag: false, desc: 'Keep one dining location open later for students coming out of labs and libraries.', upd: [] },
+  { id: 132, title: 'Label halal and kosher options at every station', board: 'DAB', scale: 'Small', cost: 'Under $1k', sup: 98, wk: 9, age: 25, status: 'collecting', fol: 7, flag: false, desc: 'Clear labels at each dining station so students do not have to ask staff every time.', upd: [] },
+  { id: 133, title: 'Make Swipe2Care donations automatic', board: 'DAB', scale: 'Medium', cost: '$1k to $5k', sup: 187, wk: 15, age: 30, status: 'review', fol: 22, flag: false, desc: 'Let students opt in to donate unused swipes automatically instead of one at a time.', upd: [] },
+  { id: 112, title: 'Ease peak-hour crowding at Marino', board: 'CPAB', scale: 'Medium', cost: '$1k to $5k', sup: 287, wk: 21, age: 45, status: 'active', fol: 31, flag: false, desc: 'Show live capacity and nudge people toward quieter hours so the afternoon rush spreads out.', upd: [{ d: 34, t: 'Committee formed' }] },
+  { id: 118, title: 'Covered bike parking near Ruggles', board: 'CPAB', scale: 'Medium', cost: '$1k to $5k', sup: 176, wk: 12, age: 33, status: 'collecting', fol: 14, flag: false, desc: 'Protect bikes from snow and rain at the busiest entrance to campus.', upd: [] },
+  { id: 121, title: 'Extend study room reservations to 24 hours during finals week', board: 'CPAB', scale: 'Small', cost: 'Under $1k', sup: 41, wk: 6, age: 20, status: 'collecting', fol: 5, flag: false, desc: 'Let students book library study rooms overnight during finals.', upd: [] },
+  { id: 141, title: 'A safety resource guide for international students', board: 'CSC', scale: 'Small', cost: 'Under $1k', sup: 63, wk: 7, age: 28, status: 'collecting', fol: 12, flag: true, desc: 'One page of safety and emergency resources, shared through trusted peer channels.', upd: [] },
+  { id: 142, title: 'Shuttle schedule alerts on phones', board: 'CSC', scale: 'Medium', cost: '$1k to $5k', sup: 120, wk: 10, age: 18, status: 'collecting', fol: 9, flag: false, desc: 'Push alerts when the shuttle is delayed or the schedule changes.', upd: [] },
+  { id: 87, title: 'Compost bins in every residence hall', board: 'GIB', scale: 'Medium', cost: '$1k to $5k', sup: 365, wk: 17, age: 120, status: 'delivered', fol: 40, flag: false, desc: 'A labeled compost bin on each floor with a simple pickup schedule.', upd: [{ d: 14, t: 'Bins installed in the first three residence halls' }, { d: 30, t: 'Signage and staff guide approved' }] },
+  { id: 151, title: 'More refill stations in academic buildings', board: 'GIB', scale: 'Small', cost: 'Under $1k', sup: 142, wk: 11, age: 22, status: 'collecting', fol: 11, flag: false, desc: 'Bottle refill stations on every floor of the busiest classroom buildings.', upd: [] },
+  { id: 161, title: 'A reusable container program for dining', board: 'SC', scale: 'Large', cost: '$5k+', sup: 205, wk: 14, age: 36, status: 'collecting', fol: 16, flag: false, desc: 'Reusable takeout containers with a simple return system.', upd: [] }
+];
+let P = [
+  { id: 1, name: 'Maya T.', init: 103, ago: 2, status: 'new' }, { id: 2, name: 'Priya N.', init: 103, ago: 9, status: 'contacted', cago: 5 },
+  { id: 3, name: 'Chris L.', init: 103, ago: 9, status: 'new' }, { id: 4, name: 'Riley S.', init: 103, ago: 20, status: 'joined' },
+  { id: 5, name: 'Avery D.', init: 103, ago: 1, status: 'new' }, { id: 6, name: 'Alex R.', init: 112, ago: 3, status: 'new' },
+  { id: 7, name: 'Jordan P.', init: 112, ago: 6, status: 'contacted', cago: 1 }, { id: 8, name: 'Taylor M.', init: 112, ago: 8, status: 'new' },
+  { id: 9, name: 'Sam K.', init: 87, ago: 90, status: 'joined' }, { id: 10, name: 'Devon B.', init: 87, ago: 60, status: 'later' },
+  { id: 11, name: 'Morgan C.', init: 141, ago: 4, status: 'new' }, { id: 12, name: 'Jamie F.', init: 141, ago: 0, status: 'new' },
+  { id: 13, name: 'Casey W.', init: 118, ago: 5, status: 'new' }, { id: 14, name: 'Quinn H.', init: 151, ago: 20, status: 'contacted', cago: 12 },
+  { id: 15, name: 'Skyler J.', init: 132, ago: 6, status: 'new' }
+];
+P.forEach(p => { p.email = p.name.toLowerCase().replace(/[^a-z ]/g, '').replace(' ', '.') + '@husky.example'; });
+
+const DEF = { cap: 2, thr: 150, contact: 7, follow: 14, stale: 30, leader: 'queue' };
+const st = {
+  role: 'vp', board: 'DAB', tab: 'queue', hl: null, sel: null,
+  f: { board: 'all', status: 'all', sort: 'sup', q: '' },
+  pf: { as: 'self', board: 'DAB', title: '', scale: 'Medium', cost: 'Under $1k', time: 'This semester', desc: '', claim: false, reason: '' },
+  up: { id: null, tpl: 'formed', text: '', status: 'keep', aud: 'followers' },
+  pp: { status: 'new', init: 'all', picked: new Set() },
+  opts: { ...DEF }, nextId: 170
+};
+
+const clone = o => JSON.parse(JSON.stringify(o));
+const UI_FULL = {
+  badges: true,
+  q: { heading: true, sub: true, todo: true, summary: false, boards: 'cards', search: true, sort: true, status: 'chips', head: true, cRank: true, cSup: true, cWill: true, cAge: true, cStatus: true, tBoard: true, tScale: true, tElig: true, note: true },
+  u: { heading: true, sub: true, list: true, history: true, template: true, status: true, audience: true, preview: true },
+  p: { heading: true, sub: true, tiles: true, chips: true, init: true }
+};
+const PRESETS = {
+  q: {
+    full: { ...UI_FULL.q },
+    simplified: { ...UI_FULL.q, heading: false, sub: false, todo: false, summary: true, sort: false, status: 'dropdown', cAge: false, tScale: false, note: false },
+    list: { ...UI_FULL.q, heading: false, sub: false, todo: false, summary: true, boards: 'dropdown', sort: false, status: 'off', head: false, cRank: false, cAge: false, tScale: false, note: false },
+    minimal: { ...UI_FULL.q, heading: false, sub: false, todo: false, summary: false, boards: 'hidden', sort: false, status: 'off', head: false, cRank: false, cWill: false, cAge: false, tScale: false, tElig: false, note: false }
+  },
+  u: {
+    full: { ...UI_FULL.u },
+    simpler: { ...UI_FULL.u, sub: false, list: false, history: false, status: false, audience: false, preview: false }
+  }
+};
+const CTL = {
+  queue: { key: 'q', title: 'Queue', presets: [['full', 'Full'], ['simplified', 'Simplified'], ['list', 'List only'], ['minimal', 'Minimal']],
+    segs: [['boards', 'Boards', [['cards', 'Cards'], ['row', 'Row'], ['dropdown', 'Dropdown'], ['hidden', 'Hidden']]], ['status', 'Status filter', [['chips', 'Chips'], ['dropdown', 'Dropdown'], ['off', 'Off']]]],
+    groups: [['Top of the page', [['heading', 'Page title'], ['sub', 'Description'], ['todo', 'To-do boxes'], ['summary', 'One-line summary']]], ['Find and filter', [['search', 'Search'], ['sort', 'Sort']]],
+      ['The list', [['head', 'Column headings'], ['cRank', 'Rank'], ['cSup', 'Supporters'], ['cWill', 'Willing to help'], ['cAge', 'Age'], ['cStatus', 'Status'], ['tBoard', 'Board tag'], ['tScale', 'Size tag'], ['tElig', 'Eligible tag'], ['note', 'Footnote']]]] },
+  updates: { key: 'u', title: 'Updates', presets: [['full', 'Full'], ['simpler', 'Simpler']], segs: [],
+    groups: [['Top of the page', [['heading', 'Page title'], ['sub', 'Description']]], ['Layout', [['list', 'List of in-progress ideas'], ['history', 'Past updates']]], ['Composer', [['template', 'Start-from template'], ['status', 'Status choice'], ['audience', 'Audience choice'], ['preview', 'Preview']]]] },
+  people: { key: 'p', title: 'People', presets: [], segs: [], groups: [['On the page', [['heading', 'Page title'], ['sub', 'Description'], ['tiles', 'Summary boxes'], ['chips', 'Status filter'], ['init', 'Idea filter']]]] }
+};
+const getp = path => path.split('.').reduce((o, k) => o[k], st.ui);
+const setp = (path, v) => { const ks = path.split('.'), last = ks.pop(); ks.reduce((o, k) => o[k], st.ui)[last] = v; };
+st.ui = clone(UI_FULL); st.panel = false;
+
+/* derived data */
+const byId = id => I.find(i => i.id === id);
+const board = id => BOARDS.find(b => b.id === id);
+const inScope = i => st.role === 'vp' || i.board === st.board;
+const scoped = () => I.filter(inScope);
+const pts = i => i.scale === 'Large' ? 2 : 1;
+const used = b => I.filter(i => i.board === b && i.status === 'active').reduce((n, i) => n + pts(i), 0);
+const capLeft = b => st.opts.cap - used(b);
+const people = id => P.filter(p => p.init === id);
+const isElig = i => i.status === 'collecting' && i.sup >= st.opts.thr * (i.scale === 'Small' ? 0.5 : 1);
+const rankOf = i => 1 + I.filter(o => o.board === i.board && o.status !== 'delivered' && o.sup > i.sup).length;
+const lastUpd = i => i.upd.length ? Math.min(...i.upd.map(u => u.d)) : null;
+const staleList = () => scoped().filter(i => i.status === 'active' && (lastUpd(i) === null || lastUpd(i) > st.opts.stale));
+const dueIn = p => p.status === 'new' ? st.opts.contact - p.ago : p.status === 'contacted' ? st.opts.follow - p.cago : null;
+const dueList = () => P.filter(p => inScope(byId(p.init)) && dueIn(p) !== null && dueIn(p) < 0);
+const toContact = () => P.filter(p => inScope(byId(p.init)) && p.status === 'new');
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 3000); }
+const chipFor = i => `<span class="st st-${i.status}">${LAB[i.status]}</span>`;
+
+/* chrome */
+function renderChrome() {
+  $$('[data-role]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.role === st.role)));
+  const sel = $('#boardSel');
+  sel.hidden = st.role === 'vp';
+  sel.innerHTML = BOARDS.map(b => `<option value="${b.id}"${b.id === st.board ? ' selected' : ''}>${b.id}: ${b.name}</option>`).join('');
+  const elig = scoped().filter(isElig).length, stale = staleList().length, due = dueList().length;
+  const bd = n => `<span class="badge${n ? '' : ' zero'}">${n}</span>`;
+  $('#tabs').innerHTML = [['queue', 'Queue', elig], ['propose', 'Propose', null], ['updates', 'Updates', stale], ['people', 'People', due]]
+    .map(t => `<button type="button" class="tab" role="tab" data-tab="${t[0]}" aria-selected="${st.tab === t[0]}">${t[1]}${t[2] === null || !st.ui.badges ? '' : bd(t[2])}</button>`).join('');
+}
+
+/* QUEUE */
+function boardCard(b) {
+  const act = I.filter(i => i.board === b.id && i.status === 'active');
+  const elig = I.filter(i => i.board === b.id && isElig(i)).length;
+  const over = used(b.id) > st.opts.cap;
+  return `<button type="button" class="bcard" data-board="${b.id}" aria-pressed="${st.f.board === b.id}">
+    <b>${b.id}</b><small>${b.name}</small>
+    <p class="bsum"><b>${act.length} in progress</b>${over ? ' <span class="mini warn">More than usual</span>' : ''}</p>
+    <p class="bact">${act.length ? act.map(i => esc(i.title)).join(', ') : 'Nothing in progress'}</p>
+    <small>${elig} ready for review. Boards usually take on 1 to ${st.opts.cap}.</small></button>`;
+}
+function sortFn(a, b) {
+  const k = st.ui.q.sort ? st.f.sort : 'sup';
+  if (k === 'will') return people(b.id).length - people(a.id).length;
+  if (k === 'wk') return b.wk - a.wk;
+  if (k === 'old') return b.age - a.age;
+  if (k === 'new') return a.age - b.age;
+  return b.sup - a.sup;
+}
+function filtered() {
+  const f = st.f;
+  return scoped().filter(i =>
+    (st.role !== 'vp' || f.board === 'all' || st.ui.q.boards === 'hidden' || i.board === f.board) &&
+    (f.status === 'all' || (f.status === 'elig' ? isElig(i) : i.status === f.status)) &&
+    (!f.q || !st.ui.q.search || (i.title + ' ' + i.desc).toLowerCase().includes(f.q.toLowerCase()))).sort(sortFn);
+}
+function viewQueue() {
+  const q = st.ui.q, vp = st.role === 'vp', mine = scoped();
+  const elig = mine.filter(isElig).length, stale = staleList().length, due = dueList().length;
+  const head = (q.heading ? '<h2 class="pt">Queue</h2>' : '') + (q.sub ? `<p class="sub">Every idea students have backed, ranked inside each board. Boards usually work on 1 or 2 ideas at a time and pick the next one when they have room. Next review: ${NEXT_REVIEW}.</p>` : '');
+  const todo = q.todo ? `<div class="todo">
+    <button type="button" class="todo-i" data-go="elig"><b>${elig}</b><span>ideas eligible for the ${NEXT_REVIEW} review</span></button>
+    <button type="button" class="todo-i" data-go="updates"><b>${stale}</b><span>in-progress ideas due for an update</span></button>
+    <button type="button" class="todo-i" data-go="people"><b>${due}</b><span>people past their contact date</span></button></div>` : '';
+  const summary = q.summary ? `<p class="sumline"><button type="button" class="linkbtn" data-go="elig"><b>${elig}</b> ready for review</button>, <button type="button" class="linkbtn" data-go="updates"><b>${stale}</b> due for an update</button>, <button type="button" class="linkbtn" data-go="people"><b>${due}</b> people to contact</button>. Next review ${NEXT_REVIEW}.</p>` : '';
+  let boards = '';
+  if (q.boards === 'cards') boards = `<div class="bcards">${(vp ? BOARDS : [board(st.board)]).map(boardCard).join('')}</div>`;
+  if (q.boards === 'row' && vp) boards = `<div class="seg bseg" role="group" aria-label="Board" style="margin-bottom:12px"><button type="button" data-board="all" aria-pressed="${st.f.board === 'all'}">All boards</button>${BOARDS.map(b => `<button type="button" data-board="${b.id}" aria-pressed="${st.f.board === b.id}">${b.id}<small> ${I.filter(i => i.board === b.id && i.status === 'active').length} in progress</small></button>`).join('')}</div>`;
+  const stat = [['all', 'All'], ['elig', 'Eligible'], ['collecting', 'Collecting support'], ['review', 'Under review'], ['active', 'In progress'], ['waiting', 'Waiting'], ['delivered', 'Delivered']];
+  const parts = [];
+  if (q.search) parts.push(`<input class="search" type="search" id="q" placeholder="Search ideas" aria-label="Search ideas" value="${esc(st.f.q)}">`);
+  if (q.boards === 'dropdown' && vp) parts.push(`<select class="sel" id="boardFilter" aria-label="Board"><option value="all">All boards</option>${BOARDS.map(b => `<option value="${b.id}"${st.f.board === b.id ? ' selected' : ''}>${b.id}: ${b.name}</option>`).join('')}</select>`);
+  if (q.status === 'dropdown') parts.push(`<select class="sel" id="statSel" aria-label="Status">${stat.map(x => `<option value="${x[0]}"${st.f.status === x[0] ? ' selected' : ''}>${x[1]}</option>`).join('')}</select>`);
+  if (q.sort) parts.push(`<select class="sel" id="sortSel" aria-label="Sort">${[['sup', 'Most supporters'], ['will', 'Most willing to help'], ['wk', 'Rising this week'], ['old', 'Oldest'], ['new', 'Newest']].map(o => `<option value="${o[0]}"${st.f.sort === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('')}</select>`);
+  const tools = parts.length ? `<div class="tools">${parts.join('')}</div>` : '';
+  let chips = '';
+  if (q.status === 'chips') chips = `<div class="chips" role="group" aria-label="Filter by status" style="margin-bottom:12px">${stat.map(x => `<button type="button" class="chip" data-status="${x[0]}" aria-pressed="${st.f.status === x[0]}">${x[1]}</button>`).join('')}</div>`;
+  else if (q.status === 'off' && st.f.status !== 'all') chips = `<div class="chips" style="margin-bottom:12px"><button type="button" class="chip" data-status="all" aria-pressed="true">Showing: ${stat.find(x => x[0] === st.f.status)[1]}. Clear</button></div>`;
+  const cols = [q.cRank && '44px', 'minmax(0, 1fr)', q.cSup && '118px', q.cWill && '96px', q.cAge && '78px', q.cStatus && '152px'].filter(Boolean).join(' ');
+  const header = q.head ? `<div class="rowh">${q.cRank ? '<span>Rank</span>' : ''}<span>Idea</span>${q.cSup ? '<span>Supporters</span>' : ''}${q.cWill ? '<span>Willing to help</span>' : ''}${q.cAge ? '<span>Age</span>' : ''}${q.cStatus ? '<span>Status</span>' : ''}</div>` : '';
+  const list = filtered();
+  const rows = list.length ? list.map(i => {
+    const w = people(i.id).length;
+    const tags = [q.tBoard ? `<span class="tg">${ic('tag')}${board(i.board).tag}</span>` : '', q.tScale ? `<span class="mini">${i.scale}</span>` : '', q.tElig && isElig(i) ? '<span class="mini ok">Eligible</span>' : '', i.by ? `<span class="mini">Proposed by ${esc(i.by)}</span>` : ''].join('');
+    return `<button type="button" class="row${st.hl === i.id ? ' hl' : ''}" data-open="${i.id}">
+      ${q.cRank ? `<span class="rk">${i.status === 'delivered' ? '' : '#' + rankOf(i)}</span>` : ''}
+      <span class="ti"><b>${esc(i.title)}</b>${tags ? `<span class="tags">${tags}</span>` : ''}</span>
+      ${q.cSup ? `<span class="nm"><b>${i.sup}</b><small>+${i.wk} this week</small></span>` : ''}
+      ${q.cWill ? `<span class="nm"><b>${w}</b></span>` : ''}
+      ${q.cAge ? `<span class="age">${i.age} days</span>` : ''}
+      ${q.cStatus ? `<span class="stc">${chipFor(i)}</span>` : ''}</button>`;
+  }).join('') : '<div class="empty">No ideas match these filters.</div>';
+  const note = q.note ? '<p class="note">Rank is within each board. Delivered ideas are kept for the record.</p>' : '';
+  return `${head}${todo}${summary}${boards}${tools}${chips}<div class="rows${q.cRank ? '' : ' norank'}" style="--cols:${cols}">${header}${rows}</div>${note}`;
+}
+
+/* DRAWER */
+function openDrawer(id) { st.sel = id; renderDrawer(); $('#drawer').hidden = false; $('#scrim').hidden = false; $('#drawer').scrollTop = 0; }
+function closeDrawer() { st.sel = null; st.confirm = null; $('#drawer').hidden = true; $('#scrim').hidden = true; }
+function renderDrawer() {
+  const i = byId(st.sel); if (!i) return closeDrawer();
+  const b = board(i.board), w = people(i.id).length, open = ['collecting', 'review', 'waiting'].includes(i.status);
+  const n = I.filter(o => o.board === i.board && o.status === 'active').length;
+  let act = '';
+  if (st.confirm === i.id) {
+    act = `<div class="hint"><b>${b.id} is already working on ${n} ${n === 1 ? 'idea' : 'ideas'}.</b> Boards usually take on 1 to ${st.opts.cap} at a time, and a large idea counts as 2. Start this one anyway?</div>
+      <div class="inline"><button type="button" class="btn primary" data-act="startanyway">Start anyway</button><button type="button" class="btn" data-act="startcancel">Not now</button></div>`;
+  } else if (open) {
+    act = `<button type="button" class="btn primary" data-act="start">Start working on this</button>
+      <div class="inline">${i.status !== 'review' ? '<button type="button" class="btn" data-act="review">Mark under review</button>' : ''}${i.status === 'waiting' ? '<button type="button" class="btn" data-act="collect">Back to collecting support</button>' : ''}</div>
+      ${i.status !== 'waiting' ? `<div class="inline"><select class="sel" id="reasonSel" aria-label="Reason students will see">${REASONS.map(r => `<option>${r}</option>`).join('')}</select><button type="button" class="btn" data-act="wait">Put on hold</button></div>` : ''}`;
+  } else if (i.status === 'active') act = '<div class="inline"><button type="button" class="btn primary" data-act="post">Post an update</button><button type="button" class="btn" data-act="deliver">Mark delivered</button></div>';
+  else act = '<p class="note" style="margin:0">Delivered. It stays on record.</p>';
+  const reason = i.status === 'waiting' && i.reason ? `<p class="hint" style="margin:0 0 12px">Students see: "${esc(i.reason)}."</p>` : '';
+  const last = i.upd.slice(0, 2);
+  return $('#drawer').innerHTML = `<div class="dhead"><span class="mini">Proposal ${i.id}</span><span class="inline"><button type="button" class="btn sm" data-act="edit">Edit</button><button type="button" class="btn sm" data-act="close" aria-label="Close">${ic('x')}Close</button></span></div>
+    <h3>${esc(i.title)}</h3>
+    <div class="tags"><span class="tg">${ic('tag')}${b.tag}</span>${chipFor(i)}</div>
+    <p class="facts"><b>${i.sup}</b> supporters, <b>${i.status === 'delivered' ? '-' : '#' + rankOf(i)}</b> in ${b.id}, <b>${i.fol}</b> followers</p>
+    <p class="dd">${esc(i.desc)}</p>${reason}
+    ${w ? `<p class="note" style="margin:0 0 4px"><b>${w}</b> offered to help. <button type="button" class="linkbtn" data-act="people">View in People</button></p>` : ''}
+    <div class="stack dact">${act}</div>
+    ${last.length ? `<div class="dsec"><h4>Last update</h4><ul class="log">${last.map(u => `<li><time>${dstr(-u.d)}</time><span>${esc(u.t)}</span></li>`).join('')}</ul></div>` : ''}`;
+}
+function startIdea(i) {
+  setStatus(i, 'active', 'The ' + board(i.board).name + ' has started working on this.');
+  toast('In progress. Followers will be told.');
+}
+function openEdit(i) {
+  $('#editdlg').innerHTML = `<div class="dlg"><h3 id="edit-t">Edit idea</h3><p class="sub">The board is the only thing SGA can change on a posted idea. Students will see the new board.</p>
+    <div class="fields"><div class="field full"><label>Title</label><input value="${esc(i.title)}" disabled></div>
+    <div class="field full"><label>Description</label><textarea disabled>${esc(i.desc)}</textarea></div>
+    <div class="field full"><label for="e-board">Board</label><select id="e-board">${BOARDS.map(b => `<option value="${b.id}"${b.id === i.board ? ' selected' : ''}>${b.name}</option>`).join('')}</select></div></div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="editcancel">Cancel</button><button type="button" class="btn primary" data-act="editsave">Save</button></div></div>`;
+  $('#editdlg').showModal();
+}
+function setStatus(i, s, note) {
+  i.status = s; st.confirm = null;
+  if (note) i.upd.unshift({ d: 0, t: note });
+  st.hl = i.id; renderChrome(); render(); renderDrawer();
+}
+
+/* PROPOSE */
+function postingAs() {
+  const o = [];
+  if (st.role === 'vp') o.push(['self', 'Vice President of Campus Affairs']);
+  BOARDS.filter(b => st.role === 'vp' || b.id === st.board).forEach(b => o.push([b.id, b.name]));
+  return o;
+}
+function pvHTML() {
+  const f = st.pf, as = postingAs().find(a => a[0] === f.as) || postingAs()[0];
+  const b = board(f.board);
+  return `<div class="pv"><div class="pvh"><span class="tg">${ic('tag')}${b.tag}</span><span class="st st-collecting">${f.claim ? 'In progress' : 'Collecting support'}</span></div>
+    <h4>${f.title ? esc(f.title) : 'Your idea title'}</h4>
+    <p>${f.desc ? esc(f.desc) : 'Your description appears here.'}</p>
+    <div class="tags"><span class="mini">${f.scale}</span><span class="mini">${f.cost}</span><span class="mini">${f.time}</span></div>
+    <span class="mini" style="align-self:flex-start">Proposed by ${esc(as[1])}</span>
+    ${f.claim && f.reason ? `<p class="hint" style="margin:0">Students see: "${esc(f.reason)}"</p>` : ''}</div>`;
+}
+function viewPropose() {
+  const f = st.pf, o = st.opts;
+  if (st.role === 'chair') f.board = st.board;
+  if (!postingAs().some(a => a[0] === f.as)) f.as = postingAs()[0][0];
+  const sel = (id, arr, cur) => `<select id="${id}">${arr.map(a => { const v = Array.isArray(a) ? a[0] : a, l = Array.isArray(a) ? a[1] : a; return `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`; }).join('')}</select>`;
+  const nAct = I.filter(x => x.board === f.board && x.status === 'active').length;
+  const claimBox = o.leader === 'claim' ? `<div class="field full"><label class="chk"><input type="checkbox" id="pf-claim" ${f.claim ? 'checked' : ''}>Start working on this right away instead of joining the queue</label>
+      ${f.claim ? `<p class="note" style="margin:4px 0 0">${board(f.board).id} is working on ${nAct} ${nAct === 1 ? 'idea' : 'ideas'}. Boards usually take on 1 to ${o.cap} at a time.</p><label for="pf-reason" style="margin-top:8px;font-size:.85rem;font-weight:600">Public reason (students will see this)</label><input id="pf-reason" value="${esc(f.reason)}" placeholder="Why does this skip the queue?">` : ''}</div>`
+    : '<div class="field full"><p class="hint" style="margin:0">Your idea joins the queue like every other idea and shows who proposed it. You can change this rule in Options.</p></div>';
+  return `<h2 class="pt">Propose an idea</h2>
+    <p class="sub">Leaders can propose too. Students will see who it came from.</p>
+    <div class="cols"><div class="box pad"><div class="fields">
+      <div class="field full"><label for="pf-as">Posting as</label>${sel('pf-as', postingAs(), f.as)}</div>
+      <div class="field full"><label for="pf-title">Title</label><input id="pf-title" value="${esc(f.title)}" placeholder="What would you call it?"></div>
+      <div class="field"><label for="pf-board">Board</label>${st.role === 'chair' ? `<select id="pf-board" disabled><option>${board(st.board).name}</option></select>` : sel('pf-board', BOARDS.map(b => [b.id, b.name]), f.board)}</div>
+      <div class="field"><label for="pf-scale">Scale</label>${sel('pf-scale', ['Small', 'Medium', 'Large'], f.scale)}</div>
+      <div class="field"><label for="pf-cost">Rough cost</label>${sel('pf-cost', ['Under $1k', '$1k to $5k', '$5k+'], f.cost)}</div>
+      <div class="field"><label for="pf-time">Time horizon</label>${sel('pf-time', ['This semester', 'Next semester', 'Within a year'], f.time)}</div>
+      <div class="field full"><label for="pf-desc">Description</label><textarea id="pf-desc" placeholder="What is the problem, and what would you change?">${esc(f.desc)}</textarea></div>
+      ${claimBox}
+    </div><div class="dlg-actions"><button type="button" class="btn primary" data-act="submitProp">Post idea</button></div></div>
+    <div><p class="pvl">How students will see it</p><div id="pvbox">${pvHTML()}</div></div></div>`;
+}
+function submitProp() {
+  const f = st.pf;
+  if (!f.title.trim() || !f.desc.trim()) return toast('Add a title and a description first.');
+  const as = postingAs().find(a => a[0] === f.as) || postingAs()[0];
+  let over = false;
+  const i = { id: st.nextId++, title: f.title.trim(), board: f.board, scale: f.scale, cost: f.cost, sup: 0, wk: 0, age: 0, status: 'collecting', fol: 0, flag: false, desc: f.desc.trim(), upd: [], by: as[1] === 'Vice President of Campus Affairs' ? 'VP of Campus Affairs' : as[0] };
+  if (st.opts.leader === 'claim' && f.claim) {
+    if (!f.reason.trim()) return toast('Add a public reason to skip the queue.');
+    over = used(f.board) + pts(i) > st.opts.cap;
+    i.status = 'active'; i.reason = f.reason; i.upd.unshift({ d: 0, t: 'Started by ' + i.by + '. ' + f.reason });
+  }
+  I.push(i); st.hl = i.id;
+  st.pf = { as: f.as, board: f.board, title: '', scale: 'Medium', cost: 'Under $1k', time: 'This semester', desc: '', claim: false, reason: '' };
+  st.f = { board: 'all', status: 'all', sort: 'new', q: '' };
+  st.tab = 'queue'; render(); window.scrollTo(0, 0);
+  toast(i.status === 'active' ? (over ? `Posted and started. ${f.board} now has more than the usual in progress.` : 'Posted and started. Students can see it.') : 'Posted. It is now in the queue.');
+}
+
+/* UPDATES */
+const TPL = {
+  formed: ['Committee formed', b => `The ${b} has formed a committee to work on this. We will share the first meeting date soon.`],
+  met: ['Meeting held', b => `The ${b} committee met this week. We reviewed the plan and agreed on next steps: [add the steps].`],
+  mile: ['Milestone reached', () => 'We reached a milestone: [describe it].'],
+  late: ['Delayed', () => 'This is taking longer than planned because [reason]. New expected timing: [date].'],
+  custom: ['Write my own', () => '']
+};
+const defTpl = i => i.upd.length ? 'custom' : 'formed';
+function setUpd(i) { st.up.id = i.id; st.up.tpl = defTpl(i); st.up.text = TPL[st.up.tpl][1](board(i.board).name); st.up.status = 'keep'; }
+function activeList() { return scoped().filter(i => i.status === 'active'); }
+function viewUpdates() {
+  const U = st.ui.u, act = activeList(), u = st.up;
+  if (!act.some(a => a.id === u.id)) { if (act.length) setUpd(act[0]); else { u.id = null; u.text = ''; } }
+  const head = (U.heading ? '<h2 class="pt">Updates</h2>' : '') + (U.sub ? `<p class="sub">Keep students posted on ideas that are in progress. Ideas with no update for ${st.opts.stale} days are flagged, because silence reads as being ignored.</p>` : '');
+  const list = act.length ? act.map(i => {
+    const d = lastUpd(i), stale = d === null || d > st.opts.stale;
+    return `<div class="urow" ${u.id === i.id ? 'aria-current="true"' : ''}><div class="ti"><b>${esc(i.title)}</b><span class="tags"><span class="tg">${board(i.board).id}</span><span class="mini ${stale ? 'warn' : 'ok'}">${d === null ? 'No update yet' : d === 0 ? 'Updated today' : 'Last update ' + d + ' days ago'}</span></span></div><button type="button" class="btn ${stale ? 'primary' : ''} sm" data-pickupd="${i.id}">Post update</button></div>`;
+  }).join('') : '<div class="empty">Nothing is in progress. Start an idea from the Queue.</div>';
+  let comp = '';
+  if (u.id) {
+    const i = byId(u.id), fld = [];
+    if (!U.list) fld.push(`<div class="field full"><label for="up-idea">Idea</label><select id="up-idea">${act.map(a => `<option value="${a.id}"${a.id === u.id ? ' selected' : ''}>${esc(a.title)}</option>`).join('')}</select></div>`);
+    if (U.template) fld.push(`<div class="field"><label for="up-tpl">Start from</label><select id="up-tpl">${Object.keys(TPL).map(k => `<option value="${k}"${u.tpl === k ? ' selected' : ''}>${TPL[k][0]}</option>`).join('')}</select></div>`);
+    if (U.status) fld.push(`<div class="field"><label for="up-status">Status</label><select id="up-status"><option value="keep"${u.status === 'keep' ? ' selected' : ''}>Keep as In progress</option><option value="deliver"${u.status === 'deliver' ? ' selected' : ''}>Mark as Delivered</option></select></div>`);
+    fld.push(`<div class="field full"><label for="up-text">What students will read</label><textarea id="up-text">${esc(u.text)}</textarea></div>`);
+    if (U.audience) fld.push(`<div class="field full"><label for="up-aud">Send to</label><select id="up-aud"><option value="followers"${u.aud === 'followers' ? ' selected' : ''}>Followers (${i.fol})</option><option value="both"${u.aud === 'both' ? ' selected' : ''}>Followers and supporters (${i.sup})</option></select></div>`);
+    comp = `<div class="box pad"><h3 style="margin:0 0 10px;font-size:1.1rem">New update on ${esc(i.title)}</h3><div class="fields" style="grid-template-columns:1fr">${fld.join('')}</div>
+      ${U.preview ? `<p class="pvl" style="margin-top:14px">Preview</p><div class="stack" id="upprev">${updPrev()}</div>` : ''}
+      <div class="dlg-actions"><button type="button" class="btn primary" data-act="sendUpd">${ic('bell')}Post update</button></div></div>`;
+  } else if (!U.list) comp = '<div class="box"><div class="empty">Nothing is in progress. Start an idea from the Queue.</div></div>';
+  const hist = (U.history && u.id) ? `<div class="dsec" style="margin-top:6px"><h4>Past updates</h4>${byId(u.id).upd.length ? `<ul class="log">${byId(u.id).upd.map(x => `<li><time>${dstr(-x.d)}</time><span>${esc(x.t)}</span></li>`).join('')}</ul>` : '<p class="note" style="margin:0">None yet.</p>'}</div>` : '';
+  const body = U.list ? `<div class="cols"><div class="box ulist">${list}</div><div>${comp}${hist}</div></div>` : `<div style="max-width:640px">${comp}${hist}</div>`;
+  return head + body;
+}
+function updPrev() {
+  const u = st.up, i = byId(u.id); if (!i) return '';
+  const txt = u.text || 'Your update appears here.';
+  return `<div class="ledger"><time>${dstr(0)}</time>${esc(txt)}</div><div class="notif"><b>Proposal ${i.id}: ${esc(i.title)}</b><br>${esc(txt.length > 110 ? txt.slice(0, 108) + '...' : txt)}</div>`;
+}
+function sendUpd() {
+  const u = st.up, i = byId(u.id);
+  if (!u.text.trim() || /\[.*\]/.test(u.text)) return toast('Fill in the [bracketed] parts before posting.');
+  const n = u.aud === 'both' ? i.sup : i.fol;
+  i.upd.unshift({ d: 0, t: u.text.trim() });
+  if (u.status === 'deliver') i.status = 'delivered';
+  u.tpl = 'custom'; u.text = ''; u.status = 'keep';
+  st.hl = i.id; renderChrome(); render(); toast(`Posted. Sent to ${n} ${u.aud === 'both' ? 'followers and supporters' : 'followers'}.`);
+}
+
+/* PEOPLE */
+function peopleVisible() {
+  const f = st.pp;
+  return P.filter(p => inScope(byId(p.init)) && (f.status === 'all' || p.status === f.status) && (f.init === 'all' || p.init === Number(f.init)))
+    .sort((a, b) => (dueIn(a) ?? 999) - (dueIn(b) ?? 999));
+}
+function pstat(p) {
+  const d = dueIn(p);
+  if (p.status === 'joined') return '<span class="st st-delivered">Joined</span>';
+  if (p.status === 'later') return '<span class="st st-waiting">Not now</span>';
+  if (d < 0) return `<span class="st st-overdue">${p.status === 'new' ? 'Overdue' : 'Check in'}</span>`;
+  return p.status === 'new' ? '<span class="st st-collecting">To contact</span>' : '<span class="st st-review">Contacted</span>';
+}
+function pdue(p) {
+  const d = dueIn(p);
+  if (p.status === 'joined' || p.status === 'later') return `<small>Closed out</small>`;
+  const when = d < 0 ? `${-d} day${d === -1 ? '' : 's'} overdue` : d === 0 ? 'Due today' : 'Due ' + dstr(d);
+  return p.status === 'new' ? `Signed up ${p.ago} days ago<br><small>Contact by ${dstr(d)}${d < 0 ? ' (' + when + ')' : ''}</small>` : `Contacted ${p.cago} days ago<br><small>Check in: ${when}</small>`;
+}
+function viewPeople() {
+  const Pp = st.ui.p, mine = P.filter(p => inScope(byId(p.init)));
+  const f = st.pp, list = peopleVisible();
+  const cnt = x => mine.filter(p => p.status === x).length;
+  const head = (Pp.heading ? '<h2 class="pt">People</h2>' : '') + (Pp.sub ? `<p class="sub">Students who tapped "I'll participate" and agreed to be contacted. Each gets a contact date of ${st.opts.contact} days after signing up, then a check-in every ${st.opts.follow} days until they join or step back. Followers are not listed here. They only get updates.</p>` : '');
+  const tiles = Pp.tiles ? `<div class="tiles"><div class="tile"><b>${cnt('new')}</b><span>to contact</span></div><div class="tile"><b>${dueList().length}</b><span>past their date</span></div><div class="tile"><b>${cnt('contacted')}</b><span>contacted</span></div><div class="tile"><b>${cnt('joined')}</b><span>joined</span></div></div>` : '';
+  const stat = [['new', 'To contact'], ['contacted', 'Contacted'], ['joined', 'Joined'], ['later', 'Not now'], ['all', 'All']];
+  const inits = scoped().filter(i => people(i.id).length);
+  const parts = [];
+  if (Pp.chips) parts.push(`<div class="chips" role="group" aria-label="Filter by status">${stat.map(x => `<button type="button" class="chip" data-pstatus="${x[0]}" aria-pressed="${f.status === x[0]}">${x[1]}</button>`).join('')}</div>`);
+  if (Pp.init) parts.push(`<select class="sel" id="pinit" aria-label="Filter by idea"><option value="all">All ideas</option>${inits.map(i => `<option value="${i.id}"${String(f.init) === String(i.id) ? ' selected' : ''}>${esc(i.title.length > 44 ? i.title.slice(0, 42) + '...' : i.title)}</option>`).join('')}</select>`);
+  const tools = parts.length ? `<div class="tools">${parts.join('')}</div>` : '';
+  const rows = list.length ? list.map(p => {
+    const i = byId(p.init), done = p.status === 'joined' || p.status === 'later';
+    return `<div class="prow"><input type="checkbox" data-pick="${p.id}" aria-label="Select ${p.name}" ${f.picked.has(p.id) ? 'checked' : ''}>
+      <span class="av" aria-hidden="true">${p.name[0]}</span><span class="pi"><b>${p.name}</b><small>${p.email}</small></span>
+      <span class="pw">Offered to help with <b>${esc(i.title)}</b> <span class="tg">${i.board}</span></span>
+      <span class="pd">${pdue(p)}</span><span class="ps">${pstat(p)}</span>
+      <span class="pa">${done ? '' : `<button type="button" class="btn sm primary" data-msg="${p.id}">${ic('mail')}Message</button><button type="button" class="btn sm" data-pset="${p.id}:joined">Joined</button><button type="button" class="btn sm" data-pset="${p.id}:later">Not now</button>`}</span></div>`;
+  }).join('') : '<div class="empty">Nobody here. Nice work, or nobody has offered yet.</div>';
+  const bulk = f.picked.size ? `<div class="bulk"><span>${f.picked.size} selected</span><button type="button" class="btn" data-msg="bulk">${ic('mail')}Message selected</button></div>` : '';
+  return `${head}${tiles}${tools}<div class="box">${rows}</div>${bulk}`;
+}
+const MSG = {
+  first: ['First reach-out', 'Thanks for offering to help', (n, i, b) => `Hi ${n},\n\nThanks for offering to help with "${i.title}". The ${b.name} would love to have you. We meet weekly during the semester, and you are welcome to come to a meeting this week to see how it works.\n\nWould that work for you? You can also apply to join the board here: huskyproposals.example/apply/${b.id}\n\nThanks,\nSGA Campus Affairs`],
+  check: ['Check-in', 'Still interested in helping?', (n, i, b) => `Hi ${n},\n\nChecking in about "${i.title}". We would still love your help, and there is no pressure if your schedule has changed. Is there a good time this week to chat?\n\nThanks,\nSGA Campus Affairs`],
+  apply: ['Invite to apply', 'Applications for the ' + 'board are open', (n, i, b) => `Hi ${n},\n\nApplications for the ${b.name} are open. This is how to apply: huskyproposals.example/apply/${b.id}\n\nThanks,\nSGA Campus Affairs`]
+};
+function openMsg(ids) {
+  const rec = P.filter(p => ids.includes(p.id)); if (!rec.length) return;
+  st.msg = { ids, tpl: rec.every(p => p.status === 'contacted') ? 'check' : 'first' };
+  fillMsg(); renderMsg(); $('#msgdlg').showModal();
+}
+function fillMsg() {
+  const rec = P.filter(p => st.msg.ids.includes(p.id)), p = rec[0], i = byId(p.init), t = MSG[st.msg.tpl];
+  st.msg.subject = t[1]; st.msg.body = t[2]('{first name}', i, board(i.board));
+}
+function msgPreview() {
+  const p = P.find(x => x.id === st.msg.ids[0]);
+  return st.msg.body.replace(/\{first name\}/g, p.name.split(' ')[0]);
+}
+function renderMsg() {
+  const m = st.msg, n = m.ids.length;
+  $('#msgdlg').innerHTML = `<div class="dlg"><h3 id="msg-t">Message ${n} ${n === 1 ? 'person' : 'people'}</h3><p class="sub">Each message is sent separately and uses their first name. Replies come to sgacampusaffairs@northeastern.edu.</p>
+    <div class="fields"><div class="field full"><label for="m-tpl">Template</label><select id="m-tpl">${Object.keys(MSG).map(k => `<option value="${k}"${m.tpl === k ? ' selected' : ''}>${MSG[k][0]}</option>`).join('')}</select></div>
+    <div class="field full"><label for="m-sub">Subject</label><input id="m-sub" value="${esc(m.subject)}"></div>
+    <div class="field full"><label for="m-body">Message (use {first name} for their name)</label><textarea id="m-body" style="min-height:190px">${esc(m.body)}</textarea></div></div>
+    <p class="pvl" style="margin-top:12px">Preview for ${esc(P.find(x => x.id === m.ids[0]).name)}</p><div class="ledger" id="m-prev" style="white-space:pre-wrap">${esc(msgPreview())}</div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="msgcancel">Cancel</button><button type="button" class="btn primary" data-act="msgsend">${ic('mail')}Send</button></div></div>`;
+}
+function sendMsg() {
+  if (/\[.*\]/.test(st.msg.body)) return toast('Fill in the [bracketed] parts before sending.');
+  const ids = st.msg.ids;
+  P.forEach(p => { if (ids.includes(p.id)) { p.status = 'contacted'; p.cago = 0; } });
+  st.pp.picked.clear(); $('#msgdlg').close(); renderChrome(); render();
+  toast(`Sent to ${ids.length}. Next check-in ${dstr(st.opts.follow)}.`);
+}
+
+/* OPTIONS */
+function openOpts() { renderOpts(); $('#optdlg').showModal(); }
+function renderOpts() {
+  const o = st.opts;
+  const seg = (k, vals) => `<div class="seg" role="group">${vals.map(v => `<button type="button" data-opt="${k}:${v[0]}" aria-pressed="${String(o[k]) === String(v[0])}">${v[1]}</button>`).join('')}</div>`;
+  $('#optdlg').innerHTML = `<div class="dlg"><h3 id="opt-t">Options</h3><p class="sub">Rules to try. The numbers are guesses until you see real turnout.</p>
+    <div class="optrow"><b>Ideas in progress at once</b><small>A guideline, not a lock. Boards get a heads-up before going past it. A large idea counts as 2.</small>${seg('cap', [[1, '1'], [2, '2'], [3, '3']])}</div>
+    <div class="optrow"><b>Eligible at ${o.thr} supporters</b><small>Small ideas need half. Eligible ideas get looked at in the monthly review.</small><input type="range" min="25" max="400" step="25" value="${o.thr}" id="o-thr" style="width:100%;accent-color:var(--ink)"></div>
+    <div class="optrow"><b>Contact people within</b><small>Days after someone offers to help.</small>${seg('contact', [[3, '3 days'], [7, '7 days'], [14, '14 days']])}</div>
+    <div class="optrow"><b>Check in every</b><small>Days between follow-ups until they join or step back.</small>${seg('follow', [[7, '7 days'], [14, '14 days'], [21, '21 days']])}</div>
+    <div class="optrow"><b>Flag an idea with no update after</b><small>Days of silence on an idea that is in progress.</small>${seg('stale', [[14, '14 days'], [30, '30 days'], [45, '45 days']])}</div>
+    <div class="optrow"><b>Ideas proposed by leaders</b><small>Whether a leader's own idea waits in line like everyone else's.</small>${seg('leader', [['queue', 'Join the queue'], ['claim', 'Can start right away with a public reason']])}</div>
+    <div class="dlg-actions"><button type="button" class="btn" data-act="optreset">Reset</button><button type="button" class="btn primary" data-act="optclose">Done</button></div></div>`;
+}
+
+/* routing */
+function layoutText() {
+  const out = Object.values(CTL).map(c => {
+    const u = st.ui[c.key];
+    const hidden = c.groups.flatMap(g => g[1]).filter(x => !u[x[0]]).map(x => x[1].toLowerCase());
+    const segs = c.segs.map(x => `${x[1].toLowerCase()}: ${x[2].find(v => v[0] === u[x[0]])[1].toLowerCase()}`);
+    return `${c.title}: ` + segs.concat(hidden.length ? ['hides ' + hidden.join(', ')] : ['shows everything']).join('; ');
+  });
+  out.push('Tab badges: ' + (st.ui.badges ? 'on' : 'off'));
+  return out.join('\n');
+}
+function renderPanel() {
+  const el = $('#cpanel');
+  document.body.classList.toggle('panel-open', st.panel);
+  el.hidden = !st.panel;
+  if (!st.panel) return;
+  const sc = el.scrollTop, c = CTL[st.tab];
+  const chk = (path, label) => `<label class="chk"><input type="checkbox" data-ui="${path}" ${getp(path) ? 'checked' : ''}>${label}</label>`;
+  const seg = (path, vals) => `<div class="pseg" role="group">${vals.map(v => `<button type="button" data-uiset="${path}:${v[0]}" aria-pressed="${getp(path) === v[0]}">${v[1]}</button>`).join('')}</div>`;
+  let body = '<p class="note">Nothing to customize on this tab yet.</p>';
+  if (c) {
+    const same = name => Object.keys(PRESETS[c.key][name]).every(k => st.ui[c.key][k] === PRESETS[c.key][name][k]);
+    body = `<div class="ctl"><h2>${c.title} tab</h2>
+      ${c.presets.length ? `<div class="lab">Start from</div><div class="pseg" role="group">${c.presets.map(p => `<button type="button" data-preset="${c.key}:${p[0]}" aria-pressed="${same(p[0])}">${p[1]}</button>`).join('')}</div>` : ''}</div>
+      ${c.segs.map(x => `<div class="ctl"><h2>${x[1]}</h2>${seg(c.key + '.' + x[0], x[2])}</div>`).join('')}
+      ${c.groups.map(g => `<div class="ctl"><h2>${g[0]}</h2><div class="checks">${g[1].map(x => chk(c.key + '.' + x[0], x[1])).join('')}</div></div>`).join('')}`;
+  }
+  el.innerHTML = `<div class="cp-head"><b>Customize layout</b><button type="button" class="btn sm" data-act="custclose">Close</button></div>
+    <p class="note" style="margin:0 0 6px">Changes show on the page right now.</p>${body}
+    <div class="ctl"><h2>Everywhere</h2><div class="checks">${chk('badges', 'Number badges on tabs')}</div></div>
+    <div class="ctl"><h2>Your layout</h2><pre class="readout">${esc(layoutText())}</pre><div class="inline"><button type="button" class="btn" data-act="custcopy">Copy layout</button><button type="button" class="btn" data-act="custreset">Reset all</button></div></div>`;
+  el.scrollTop = sc;
+}
+function render() {
+  renderChrome();
+  $('#view').innerHTML = { queue: viewQueue, propose: viewPropose, updates: viewUpdates, people: viewPeople }[st.tab]();
+  renderPanel();
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-role],[data-tab],[data-board],[data-status],[data-go],[data-open],[data-act],[data-pickupd],[data-pstatus],[data-pstat],[data-msg],[data-pset],[data-opt],[data-uiset],[data-preset],#scrim');
+  if (!t) return;
+  const d = t.dataset, i = st.sel ? byId(st.sel) : null;
+  if (d.role) { st.role = d.role; st.f = { board: 'all', status: 'all', sort: 'sup', q: '' }; st.pp.picked.clear(); closeDrawer(); return render(); }
+  if (d.tab) { st.tab = d.tab; return render(); }
+  if (d.board) { st.f.board = d.board === 'all' || st.f.board === d.board ? 'all' : d.board; return render(); }
+  if (d.uiset) { const [path, v] = d.uiset.split(':'); setp(path, v); return render(); }
+  if (d.preset) { const [k, name] = d.preset.split(':'); Object.assign(st.ui[k], PRESETS[k][name]); return render(); }
+  if (d.status) { st.f.status = d.status; return render(); }
+  if (d.go) { if (d.go === 'elig') { st.tab = 'queue'; st.f.status = 'elig'; } else st.tab = d.go; return render(); }
+  if (d.open) return openDrawer(Number(d.open));
+  if (t.id === 'scrim') return closeDrawer();
+  if (d.pickupd) { setUpd(byId(Number(d.pickupd))); return render(); }
+  if (d.pstatus) { st.pp.status = d.pstatus; return render(); }
+  if (d.pset) { const [id, s] = d.pset.split(':'); P.find(p => p.id === Number(id)).status = s; renderChrome(); return render(); }
+  if (d.msg) return openMsg(d.msg === 'bulk' ? [...st.pp.picked] : [Number(d.msg)]);
+  if (d.opt) { const [k, v] = d.opt.split(':'); st.opts[k] = k === 'leader' ? v : Number(v); renderOpts(); renderChrome(); return render(); }
+  const a = d.act; if (!a) return;
+  if (a === 'cust') { st.panel = !st.panel; return renderPanel(); }
+  if (a === 'custclose') { st.panel = false; return renderPanel(); }
+  if (a === 'custreset') { st.ui = clone(UI_FULL); return render(); }
+  if (a === 'custcopy') return void navigator.clipboard.writeText(layoutText()).then(() => toast('Layout copied.')).catch(() => toast('Copy is blocked here. Select the text instead.'));
+  if (a === 'opts') return openOpts();
+  if (a === 'optclose') return $('#optdlg').close();
+  if (a === 'optreset') { st.opts = { ...DEF }; renderOpts(); renderChrome(); return render(); }
+  if (a === 'close') return closeDrawer();
+  if (a === 'msgcancel') return $('#msgdlg').close();
+  if (a === 'msgsend') return sendMsg();
+  if (a === 'submitProp') return submitProp();
+  if (a === 'sendUpd') return sendUpd();
+  if (a === 'people') { st.tab = 'people'; st.pp.init = String(i.id); st.pp.status = 'all'; closeDrawer(); return render(); }
+  if (!i) return;
+  if (a === 'start') {
+    if (used(i.board) + pts(i) > st.opts.cap) { st.confirm = i.id; return renderDrawer(); }
+    return startIdea(i);
+  }
+  if (a === 'startanyway') return startIdea(i);
+  if (a === 'startcancel') { st.confirm = null; return renderDrawer(); }
+  if (a === 'edit') return openEdit(i);
+  if (a === 'editcancel') return $('#editdlg').close();
+  if (a === 'editsave') {
+    const nb = $('#e-board').value;
+    if (nb !== i.board) { i.board = nb; i.upd.unshift({ d: 0, t: 'Moved to the ' + board(nb).name + '.' }); toast('Saved. Students will see the new board.'); }
+    $('#editdlg').close(); renderChrome(); render();
+    return inScope(i) ? renderDrawer() : closeDrawer();
+  }
+  if (a === 'review') return setStatus(i, 'review');
+  if (a === 'collect') { i.reason = ''; return setStatus(i, 'collecting'); }
+  if (a === 'wait') { i.reason = $('#reasonSel').value; return setStatus(i, 'waiting'); }
+  if (a === 'deliver') return setStatus(i, 'delivered', 'Delivered.');
+  if (a === 'post') { st.tab = 'updates'; setUpd(i); closeDrawer(); return render(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'boardSel') { st.board = t.value; st.f = { board: 'all', status: 'all', sort: 'sup', q: '' }; st.up.id = null; return render(); }
+  if (t.dataset.ui) { setp(t.dataset.ui, t.checked); return render(); }
+  if (t.id === 'sortSel') { st.f.sort = t.value; return render(); }
+  if (t.id === 'statSel') { st.f.status = t.value; return render(); }
+  if (t.id === 'boardFilter') { st.f.board = t.value; return render(); }
+  if (t.id === 'up-idea') { setUpd(byId(Number(t.value))); return render(); }
+  if (t.id === 'pinit') { st.pp.init = t.value; return render(); }
+  if (t.dataset.pick) { const id = Number(t.dataset.pick); if (t.checked) st.pp.picked.add(id); else st.pp.picked.delete(id); return render(); }
+  if (t.id === 'pf-claim') { st.pf.claim = t.checked; return render(); }
+  if (['pf-as', 'pf-board', 'pf-scale', 'pf-cost', 'pf-time'].includes(t.id)) { st.pf[t.id.slice(3)] = t.value; return render(); }
+  if (t.id === 'up-tpl') { const u = st.up; u.tpl = t.value; u.text = TPL[t.value][1](board(byId(u.id).board).name); return render(); }
+  if (t.id === 'up-status') { st.up.status = t.value; return; }
+  if (t.id === 'up-aud') { st.up.aud = t.value; return; }
+  if (t.id === 'm-tpl') { st.msg.tpl = t.value; fillMsg(); return renderMsg(); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q') { st.f.q = t.value; const pos = t.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); return; }
+  if (['pf-title', 'pf-desc', 'pf-reason'].includes(t.id)) { st.pf[t.id.slice(3)] = t.value; return $('#pvbox').innerHTML = pvHTML(); }
+  if (t.id === 'up-text') { st.up.text = t.value; return $('#upprev').innerHTML = updPrev(); }
+  if (t.id === 'm-sub') { st.msg.subject = t.value; return; }
+  if (t.id === 'm-body') { st.msg.body = t.value; return $('#m-prev').textContent = msgPreview(); }
+  if (t.id === 'o-thr') { st.opts.thr = Number(t.value); renderOptsKeep(); }
+});
+function renderOptsKeep() { const v = st.opts.thr; $$('#optdlg .optrow')[1].querySelector('b').textContent = `Eligible at ${v} supporters`; renderChrome(); render(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closeDrawer(); });
+
+render();
+</script>
+</body>
+</html>

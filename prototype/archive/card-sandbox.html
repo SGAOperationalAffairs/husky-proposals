@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Husky Proposals: proposal card sandbox</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #F1F2F5;
+  --surface: #FFFFFF;
+  --ink: #1A1D26;
+  --muted: #596070;
+  --line: #DADDE4;
+  --sky: #E3EBF7; --sky-ink: #26456F;
+  --amber: #FFF0CF; --amber-ink: #74480A;
+  --green: #DCF0E5; --green-ink: #17603B;
+  --grey: #E8EAEF; --grey-ink: #424959;
+  --focus: #1F5FBF;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* set by the controls */
+  --accent: #C8102E;
+  --accent-text: #C8102E;
+  --on-accent: #FFFFFF;
+  --r: 0px;
+  --pad: 18px;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  --r-sm: calc(var(--r) * 0.6);
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+    --sky: #1F2E47; --sky-ink: #A9C6F2;
+    --amber: #3A2D12; --amber-ink: #F0CB7D;
+    --green: #153325; --green-ink: #92D7B2;
+    --grey: #2A2E38; --grey-ink: #C4C9D4;
+    --focus: #7AA7F0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13151A; --surface: #1C1F27; --ink: #ECEEF3; --muted: #A0A7B5; --line: #2D313C;
+  --sky: #1F2E47; --sky-ink: #A9C6F2;
+  --amber: #3A2D12; --amber-ink: #F0CB7D;
+  --green: #153325; --green-ink: #92D7B2;
+  --grey: #2A2E38; --grey-ink: #C4C9D4;
+  --focus: #7AA7F0;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 1.1em; height: 1.1em; flex: none; }
+
+.page { max-width: 1280px; margin: 0 auto; padding: 20px 20px 48px; }
+.layout { display: grid; grid-template-columns: 330px 1fr; gap: 28px; align-items: start; }
+
+/* control panel (fixed look) */
+.panel {
+  position: sticky; top: calc(12px + env(safe-area-inset-top, 0px));
+  max-height: calc(100dvh - 24px); overflow: auto;
+  background: var(--surface); border: 1px solid var(--line); z-index: 30; font-size: 15px;
+}
+.handle { display: none; }
+.pbody { padding: 18px; }
+.panel h1 { font-size: 1.15rem; margin: 0 0 2px; font-weight: 650; }
+.panel .sub { margin: 0 0 12px; color: var(--muted); font-size: .88rem; }
+.ctl { padding: 14px 0; border-top: 1px solid var(--line); }
+.ctl h2 { font-size: .95rem; font-weight: 650; margin: 0 0 10px; }
+.lab { display: flex; justify-content: space-between; align-items: center; font-size: .86rem; color: var(--muted); margin: 10px 0 6px; }
+.lab:first-of-type { margin-top: 0; }
+.lab output { color: var(--ink); font-weight: 600; }
+.ctl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 0 0 6px; }
+.pseg { display: flex; border: 1px solid var(--line); margin-bottom: 4px; }
+.pseg button { flex: 1; appearance: none; border: 0; background: transparent; padding: 8px 6px; font-size: .86rem; }
+.pseg button + button { border-left: 1px solid var(--line); }
+.pseg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.opts { display: flex; flex-direction: column; border: 1px solid var(--line); margin-bottom: 4px; }
+.opts button { appearance: none; text-align: left; border: 0; background: transparent; padding: 8px 10px; font-size: .88rem; display: flex; align-items: center; gap: 8px; }
+.opts button + button { border-top: 1px solid var(--line); }
+.opts button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 10px; }
+.chk { display: flex; align-items: center; gap: 8px; font-size: .88rem; }
+.chk input { accent-color: var(--ink); width: 16px; height: 16px; margin: 0; }
+.psel { width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); margin-bottom: 4px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sw { appearance: none; width: 100%; aspect-ratio: 1; border: 3px solid var(--surface); background: var(--c); box-shadow: 0 0 0 1px var(--line); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.custom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: .86rem; color: var(--muted); }
+.custom input { width: 44px; height: 30px; padding: 0; border: 1px solid var(--line); background: transparent; cursor: pointer; }
+.readout { margin: 0 0 10px; padding: 10px 12px; background: var(--bg); font: 500 .8rem/1.55 var(--font); white-space: pre-wrap; user-select: text; }
+.prow { display: flex; gap: 8px; }
+.pbtn { flex: 1; appearance: none; border: 1px solid var(--line); background: transparent; padding: 8px 10px; font-size: .88rem; }
+
+/* board */
+.board { min-width: 0; }
+.board h2.t { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.015em; }
+.board .lede { margin: 0 0 18px; color: var(--muted); max-width: 66ch; }
+.frame { padding: 0; }
+.feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; align-items: start; }
+.feed.phone { max-width: 392px; margin: 0 auto; grid-template-columns: 1fr; padding: 14px; border: 1px solid var(--line); background: var(--bg); outline: 6px solid var(--surface); }
+
+/* the card */
+.card { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; font-size: .95rem; }
+.card.am-edge { border-left: 5px solid var(--accent); }
+.card.am-top { border-top: 4px solid var(--accent); }
+.card.clickable:hover { border-color: var(--accent); }
+.c-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: var(--pad) var(--pad) 0; flex-wrap: wrap; }
+.am-tint .c-head { background: var(--accent-soft); padding: calc(var(--pad) * 0.6) var(--pad); }
+.c-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.c-body { padding: var(--pad); display: flex; flex-direction: column; gap: 9px; }
+.c-head + .c-body { padding-top: calc(var(--pad) * 0.7); }
+.am-tint .c-head + .c-body { padding-top: var(--pad); }
+.c-title { margin: 0; font-size: 1.12rem; line-height: 1.25; font-weight: 650; }
+[data-density="compact"] .c-title { font-size: 1rem; }
+[data-density="compact"] .card { font-size: .9rem; }
+[data-density="compact"] .c-body { gap: 6px; }
+.am-title .c-title { color: var(--accent-text); }
+.stretch { appearance: none; background: none; border: 0; padding: 0; text-align: left; font: inherit; color: inherit; }
+.stretch::after { content: ""; position: absolute; inset: 0; }
+.card.clickable:hover .stretch { text-decoration: underline; }
+.num { font-size: .8rem; font-weight: 600; color: var(--muted); }
+.tg { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 600; padding: 2px 9px; border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent-text); }
+[data-tag="outline"] .tg { background: transparent; border: 1px solid var(--accent-text); }
+[data-tag="plain"] .tg { background: transparent; padding-left: 0; padding-right: 0; color: var(--muted); }
+.am-tint .tg { background: var(--surface); }
+[data-tag="plain"] .am-tint .tg { background: transparent; }
+.st { font-size: .78rem; font-weight: 600; padding: 2px 9px; border-radius: var(--r-sm); white-space: nowrap; }
+.st-proposed { background: var(--grey); color: var(--grey-ink); }
+.st-voted { background: var(--sky); color: var(--sky-ink); }
+.st-development { background: var(--amber); color: var(--amber-ink); }
+.st-delivered { background: var(--green); color: var(--green-ink); }
+[data-stat="accent"] .st { background: var(--accent); color: var(--on-accent); }
+[data-stat="accent"] .st-proposed { background: transparent; color: var(--accent-text); border: 1px solid var(--accent-text); }
+.c-meta, .c-stats { display: flex; flex-wrap: wrap; gap: 3px 14px; font-size: .82rem; color: var(--muted); }
+.c-meta span, .c-stats span { display: inline-flex; align-items: center; gap: 5px; }
+.c-desc { margin: 0; color: var(--muted); }
+.clamp-1, .clamp-2, .clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-1 { -webkit-line-clamp: 1; line-clamp: 1; }
+.clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+.clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+.c-back { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--ink); }
+.c-back .ic { color: var(--accent-text); }
+.c-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 2px; }
+.c-foot.flip { flex-direction: row-reverse; }
+.c-foot .c-stats { flex: 1; }
+.c-foot.flip .c-stats { justify-content: flex-end; }
+.lm { appearance: none; position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; }
+.lm-link { border: 0; background: transparent; padding: 2px 0; color: var(--accent-text); }
+.lm-link:hover { text-decoration: underline; }
+.lm-outline { border: 1px solid var(--accent-text); background: transparent; padding: 6px 14px; color: var(--accent-text); border-radius: var(--r-sm); }
+.lm-filled { border: 1px solid var(--accent); background: var(--accent); padding: 6px 14px; color: var(--on-accent); border-radius: var(--r-sm); }
+.lm-chev { border: 0; background: transparent; padding: 2px; color: var(--accent-text); }
+.lm-chev .ic { width: 1.5em; height: 1.5em; }
+.lm-bar { appearance: none; position: relative; z-index: 1; width: 100%; display: flex; align-items: center; justify-content: space-between; border: 0; border-top: 1px solid var(--line); background: var(--accent-soft); color: var(--accent-text); padding: calc(var(--pad) * 0.65) var(--pad); font-weight: 600; }
+.lm-bar:hover { background: var(--accent); color: var(--on-accent); }
+.empty { color: var(--muted); border: 1px dashed var(--line); padding: 24px; text-align: center; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; font-size: .9rem; z-index: 60; max-width: 92vw; text-align: center; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .board { padding-bottom: 96px; }
+  .panel {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; border-bottom: 0;
+    max-height: 66dvh; transform: translateY(calc(100% - 56px - env(safe-area-inset-bottom, 0px)));
+    transition: transform .2s; padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .panel.open { transform: none; }
+  .handle { display: flex; width: 100%; align-items: center; justify-content: space-between; height: 56px; padding: 0 18px; border: 0; background: transparent; font-weight: 650; font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="layout">
+    <aside class="panel" id="panel" aria-label="Card controls">
+      <button type="button" class="handle" id="handle" aria-expanded="false" aria-controls="pbody">
+        <span>Card controls</span>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+      <div class="pbody" id="pbody">
+        <h1>Proposal card sandbox</h1>
+        <p class="sub">Starts from the flat bordered card you picked.</p>
+
+        <section class="ctl">
+          <h2>Information</h2>
+          <div class="pseg" role="group" aria-label="Information preset">
+            <button type="button" data-preset="minimal">Minimal</button>
+            <button type="button" data-preset="standard">Standard</button>
+            <button type="button" data-preset="everything">Everything</button>
+          </div>
+          <div class="checks" id="checks"></div>
+          <div class="lab"><span>Description length</span></div>
+          <select class="psel" id="lines" aria-label="Description length">
+            <option value="1">1 line</option><option value="2">2 lines</option><option value="3">3 lines</option><option value="full">Full text</option>
+          </select>
+        </section>
+
+        <section class="ctl">
+          <h2>Accent</h2>
+          <div class="swatches" id="swatches"></div>
+          <div class="custom"><span>Custom color</span><input type="color" id="custom" value="#C8102E" aria-label="Custom accent color"></div>
+          <div class="lab"><span>Where the accent shows</span></div>
+          <div class="opts" id="usage"></div>
+          <div class="lab"><span>Division tag</span></div>
+          <div class="pseg" role="group" aria-label="Tag style">
+            <button type="button" data-set="tagStyle" data-val="tint">Tint</button>
+            <button type="button" data-set="tagStyle" data-val="outline">Outline</button>
+            <button type="button" data-set="tagStyle" data-val="plain">Plain</button>
+          </div>
+          <div class="lab"><span>Status chip color</span></div>
+          <div class="pseg" role="group" aria-label="Status chip color">
+            <button type="button" data-set="statColor" data-val="semantic">By status</button>
+            <button type="button" data-set="statColor" data-val="accent">Accent</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Learn more</h2>
+          <div class="opts" id="lmstyle"></div>
+          <div class="lab"><span>Wording</span></div>
+          <select class="psel" id="word" aria-label="Button wording">
+            <option>Learn more</option><option>View proposal</option><option>See details</option><option>Read more</option>
+          </select>
+          <div class="lab"><span>Placement</span></div>
+          <div class="pseg" role="group" aria-label="Placement">
+            <button type="button" data-set="place" data-val="left">Left</button>
+            <button type="button" data-set="place" data-val="right">Right</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Shape and preview</h2>
+          <div class="lab"><span>Corner roundness</span><output id="rout">0px</output></div>
+          <input type="range" id="r" min="0" max="16" step="2" value="0">
+          <div class="lab"><span>Density</span></div>
+          <div class="pseg" role="group" aria-label="Density">
+            <button type="button" data-set="density" data-val="comfortable">Comfortable</button>
+            <button type="button" data-set="density" data-val="compact">Compact</button>
+          </div>
+          <div class="lab"><span>Icons</span></div>
+          <div class="pseg" role="group" aria-label="Icons">
+            <button type="button" data-set="icons" data-val="on">On</button>
+            <button type="button" data-set="icons" data-val="off">Off</button>
+          </div>
+          <div class="lab"><span>Preview width</span></div>
+          <div class="pseg" role="group" aria-label="Preview width">
+            <button type="button" data-set="width" data-val="desktop">Desktop</button>
+            <button type="button" data-set="width" data-val="phone">Phone</button>
+          </div>
+          <div class="lab"><span>Mode</span></div>
+          <div class="pseg" role="group" aria-label="Mode">
+            <button type="button" data-set="mode" data-val="system">System</button>
+            <button type="button" data-set="mode" data-val="light">Light</button>
+            <button type="button" data-set="mode" data-val="dark">Dark</button>
+          </div>
+        </section>
+
+        <section class="ctl">
+          <h2>Your settings</h2>
+          <pre class="readout" id="readout"></pre>
+          <div class="prow">
+            <button type="button" class="pbtn" id="copy">Copy settings</button>
+            <button type="button" class="pbtn" id="reset">Reset</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="board">
+      <h2 class="t">Proposal card</h2>
+      <p class="lede">Four sample proposals, including one with a very long title and one with a long description, so you can see how each setting holds up.</p>
+      <div class="frame"><div class="feed" id="feed"></div></div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root = document.documentElement;
+
+const COLORS = [
+  { name: 'Husky red', hex: '#C8102E' }, { name: 'Harbor blue', hex: '#1F5FBF' }, { name: 'Pine green', hex: '#1E6B52' },
+  { name: 'Teal', hex: '#0E7C86' }, { name: 'Plum', hex: '#6B2D8C' }, { name: 'Tangerine', hex: '#D9480F' }, { name: 'Graphite', hex: '#2B2F3A' }
+];
+const FIELDS = [
+  ['number', 'Proposal number'], ['division', 'Division'], ['location', 'Location'], ['proposed', 'Date proposed'], ['by', 'Proposed by'],
+  ['scale', 'Scale'], ['cost', 'Cost'], ['time', 'Time horizon'], ['description', 'Description'], ['status', 'Status'],
+  ['votes', 'Vote count'], ['comments', 'Comment count'], ['clubs', 'Clubs backing']
+];
+const PRESETS = {
+  minimal: ['division', 'status', 'votes'],
+  standard: ['division', 'location', 'proposed', 'description', 'status', 'votes', 'comments'],
+  everything: FIELDS.map(f => f[0])
+};
+const USAGE = [
+  ['title', 'Title in the accent color'], ['edge', 'Accent bar on the left edge'], ['top', 'Accent rule across the top'],
+  ['tint', 'Tinted header strip'], ['quiet', 'Quiet card, accent on actions only']
+];
+const LMSTYLE = [
+  ['none', 'No button, whole card is the link'], ['link', 'Text link with arrow'], ['outline', 'Outline button'],
+  ['filled', 'Filled button'], ['bar', 'Full-width bar at the bottom'], ['chev', 'Chevron at the right edge']
+];
+const STATUS = { proposed: 'Proposed', voted: 'Voted', development: 'In development', delivered: 'Delivered' };
+
+const DEFAULTS = {
+  accent: '#C8102E', accentName: 'Husky red', usage: 'title', tagStyle: 'tint', statColor: 'semantic',
+  fields: [...PRESETS.standard], lines: '2', lm: 'link', word: 'Learn more', place: 'right',
+  density: 'comfortable', r: 0, icons: true, width: 'desktop', mode: 'system'
+};
+const state = JSON.parse(JSON.stringify(DEFAULTS));
+
+const SAMPLES = [
+  { id: 103, title: 'A student-hosted food pantry', desc: 'A free, stigma-free place to pick up groceries and essentials, hosted by an existing campus office.', div: 'Dining', loc: 'Central campus', ago: '5 days ago', scale: 'Large', cost: '$5k+', time: 'Within a year', status: 'development', votes: 412, comments: 18, clubs: 6, by: 'Maya T.' },
+  { id: 112, title: 'Ease peak-hour crowding at Marino', desc: 'Show live capacity and nudge people toward quieter hours so the afternoon rush spreads out.', div: 'Campus Planning', loc: 'Marino Center', ago: '4 days ago', scale: 'Medium', cost: '$1k to $5k', time: 'Next semester', status: 'voted', votes: 287, comments: 9, clubs: 2, by: 'Alex R.' },
+  { id: 87, title: 'Compost bins in every residence hall', desc: 'Put a clearly labeled compost bin on each floor with a simple pickup schedule. Start with the three largest halls, collect feedback on contamination and smell, then expand to the rest of campus housing once the pickup routine is working well.', div: 'Green Initiatives', loc: 'Residence halls', ago: '1 week ago', scale: 'Medium', cost: '$1k to $5k', time: 'This semester', status: 'delivered', votes: 365, comments: 24, clubs: 4, by: 'Sam K.' },
+  { id: 121, title: 'Extend study room reservations to 24 hours during finals week for all undergraduate and graduate students', desc: 'Let students book library study rooms overnight during finals so groups are not competing for the same few daytime slots.', div: 'Campus Planning', loc: 'Snell Library', ago: '2 days ago', scale: 'Small', cost: 'Under $1k', time: 'This semester', status: 'proposed', votes: 41, comments: 3, clubs: 0, by: 'Jordan P.' }
+];
+
+/* icons */
+const PATHS = {
+  pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  coins: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5c-.4-.9-1.3-1.3-2.5-1.3s-2.3.6-2.3 1.7c0 2.3 4.8 1.2 4.8 3.4 0 1.1-1.1 1.8-2.5 1.8s-2.2-.5-2.6-1.4"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 4.5a3.5 3.5 0 010 7M18 14.5c1.8.7 3 2.4 3 5.5"/>',
+  arrowUp: '<path d="M12 19V6M6 12l6-6 6 6"/>',
+  arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  message: '<path d="M4 5h16v11H9l-5 4V5z"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>'
+};
+const ic = n => state.icons ? `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[n]}</svg>` : '';
+
+/* color helpers */
+const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const rgb2hex = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const lum = h => { const [a, b, c] = hex2rgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * a + 0.7152 * b + 0.0722 * c; };
+const mix = (h, o, t) => { const a = hex2rgb(h), b = hex2rgb(o); return rgb2hex(a.map((v, i) => v + (b[i] - v) * t)); };
+function lighten(h, target) { let t = 0, c = h; while (lum(c) < target && t < 1) { t += 0.04; c = mix(h, '#ffffff', t); } return c; }
+function darken(h, target) { let t = 0, c = h; while (lum(c) > target && t < 1) { t += 0.04; c = mix(h, '#000000', t); } return c; }
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const isDark = () => state.mode === 'dark' || (state.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+
+function applyTheme() {
+  const dark = isDark();
+  const fill = dark ? lighten(state.accent, 0.18) : state.accent;
+  const text = dark ? lighten(state.accent, 0.32) : darken(state.accent, 0.18);
+  const on = contrast(fill, '#FFFFFF') >= contrast(fill, '#14161B') ? '#FFFFFF' : '#14161B';
+  const s = root.style;
+  s.setProperty('--accent', fill); s.setProperty('--accent-text', text); s.setProperty('--on-accent', on);
+  s.setProperty('--r', state.r + 'px');
+  s.setProperty('--pad', state.density === 'compact' ? '12px' : '18px');
+  root.dataset.density = state.density; root.dataset.tag = state.tagStyle; root.dataset.stat = state.statColor;
+  if (state.mode === 'system') root.removeAttribute('data-theme'); else root.dataset.theme = state.mode;
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.mode === 'system') applyTheme(); });
+
+/* card */
+function cardHTML(p) {
+  const on = k => state.fields.includes(k);
+  const clickable = state.lm === 'none';
+  const tags = [];
+  if (on('number')) tags.push(`<span class="num">Proposal ${p.id}</span>`);
+  if (on('division')) tags.push(`<span class="tg">${ic('tag')}${p.div}</span>`);
+  const status = on('status') ? `<span class="st st-${p.status}">${STATUS[p.status]}</span>` : '';
+  const head = (tags.length || status) ? `<div class="c-head"><div class="c-tags">${tags.join('')}</div>${status}</div>` : '';
+
+  const title = clickable ? `<button type="button" class="stretch" data-open>${p.title}</button>` : p.title;
+  const meta = [];
+  if (on('location')) meta.push(`<span>${ic('pin')}${p.loc}</span>`);
+  if (on('proposed')) meta.push(`<span>${ic('clock')}${p.ago}</span>`);
+  if (on('by')) meta.push(`<span>${ic('user')}${p.by}</span>`);
+  if (on('scale')) meta.push(`<span>${ic('layers')}${p.scale} scale</span>`);
+  if (on('cost')) meta.push(`<span>${ic('coins')}${p.cost}</span>`);
+  if (on('time')) meta.push(`<span>${ic('calendar')}${p.time}</span>`);
+  const desc = on('description') ? `<p class="c-desc${state.lines === 'full' ? '' : ' clamp-' + state.lines}">${p.desc}</p>` : '';
+  const back = (on('clubs') && p.clubs > 0) ? `<div class="c-back">${ic('users')}Backed by ${p.clubs} ${p.clubs === 1 ? 'club' : 'clubs'}</div>` : '';
+
+  const stats = [];
+  if (on('votes')) stats.push(`<span>${ic('arrowUp')}${p.votes} votes</span>`);
+  if (on('comments')) stats.push(`<span>${ic('message')}${p.comments} comments</span>`);
+  const arrow = ic('arrowRight');
+  const w = state.word;
+  let lm = '';
+  if (state.lm === 'link') lm = `<button type="button" class="lm lm-link" data-open>${w}${arrow}</button>`;
+  if (state.lm === 'outline') lm = `<button type="button" class="lm lm-outline" data-open>${w}${arrow}</button>`;
+  if (state.lm === 'filled') lm = `<button type="button" class="lm lm-filled" data-open>${w}${arrow}</button>`;
+  if (state.lm === 'chev') lm = `<button type="button" class="lm lm-chev" data-open aria-label="${w}: ${p.title}">${ic('chevron') || '&rsaquo;'}</button>`;
+  const flip = state.place === 'left' && ['link', 'outline', 'filled'].includes(state.lm);
+  const foot = (stats.length || lm) ? `<div class="c-foot${flip ? ' flip' : ''}"><div class="c-stats">${stats.join('')}</div>${lm}</div>` : '';
+  const bar = state.lm === 'bar' ? `<button type="button" class="lm-bar" data-open><span>${w}</span>${arrow || '&rarr;'}</button>` : '';
+
+  const cls = ['card', 'am-' + state.usage, clickable ? 'clickable' : ''].join(' ');
+  return `<article class="${cls}">${head}<div class="c-body"><h3 class="c-title">${title}</h3>${meta.length ? `<div class="c-meta">${meta.join('')}</div>` : ''}${desc}${back}${foot}</div>${bar}</article>`;
+}
+
+/* panel */
+function readout() {
+  const names = FIELDS.filter(f => state.fields.includes(f[0])).map(f => f[1].toLowerCase());
+  const usage = USAGE.find(u => u[0] === state.usage)[1].toLowerCase();
+  const lm = LMSTYLE.find(u => u[0] === state.lm)[1].toLowerCase();
+  return `Accent: ${state.accentName} ${state.accent}, used as: ${usage}
+Division tag: ${state.tagStyle}, status chip: ${state.statColor === 'accent' ? 'accent color' : 'color by status'}
+Shows: ${names.join(', ') || 'title only'}
+Description: ${state.lines === 'full' ? 'full text' : state.lines + (state.lines === '1' ? ' line' : ' lines')}
+Learn more: ${lm}, "${state.word}", placement ${state.place}
+Density: ${state.density}, corners: ${state.r}px, icons: ${state.icons ? 'on' : 'off'}`;
+}
+function syncPanel() {
+  $('#r').value = state.r; $('#rout').textContent = state.r + 'px';
+  $('#lines').value = state.lines; $('#word').value = state.word;
+  $$('[data-set]').forEach(b => {
+    const k = b.dataset.set, v = b.dataset.val;
+    const cur = k === 'icons' ? (state.icons ? 'on' : 'off') : state[k];
+    b.setAttribute('aria-pressed', String(cur === v));
+  });
+  $$('[data-usage]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.usage === state.usage)));
+  $$('[data-lm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lm === state.lm)));
+  $$('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hex.toLowerCase() === state.accent.toLowerCase() && state.accentName !== 'Custom')));
+  $$('[data-field]').forEach(c => { c.checked = state.fields.includes(c.dataset.field); });
+  $$('[data-preset]').forEach(b => {
+    const p = PRESETS[b.dataset.preset];
+    b.setAttribute('aria-pressed', String(p.length === state.fields.length && p.every(k => state.fields.includes(k))));
+  });
+  $('#custom').value = state.accent;
+  $('#readout').textContent = readout();
+}
+function render() {
+  applyTheme(); syncPanel();
+  const feed = $('#feed');
+  feed.className = 'feed' + (state.width === 'phone' ? ' phone' : '');
+  feed.innerHTML = SAMPLES.map(cardHTML).join('');
+}
+
+$('#checks').innerHTML = FIELDS.map(f => `<label class="chk"><input type="checkbox" data-field="${f[0]}">${f[1]}</label>`).join('');
+$('#swatches').innerHTML = COLORS.map(c => `<button type="button" class="sw" style="--c:${c.hex}" data-hex="${c.hex}" data-name="${c.name}" aria-label="${c.name}" title="${c.name}" aria-pressed="false"></button>`).join('');
+$('#usage').innerHTML = USAGE.map(u => `<button type="button" data-usage="${u[0]}" aria-pressed="false">${u[1]}</button>`).join('');
+$('#lmstyle').innerHTML = LMSTYLE.map(u => `<button type="button" data-lm="${u[0]}" aria-pressed="false">${u[1]}</button>`).join('');
+
+let tt;
+function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, 2400); }
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-set],[data-preset],[data-usage],[data-lm],.sw,[data-open],#copy,#reset,#handle');
+  if (!t) return;
+  if (t.dataset.set) { const k = t.dataset.set, v = t.dataset.val; if (k === 'icons') state.icons = v === 'on'; else state[k] = v; return render(); }
+  if (t.dataset.preset) { state.fields = [...PRESETS[t.dataset.preset]]; return render(); }
+  if (t.dataset.usage) { state.usage = t.dataset.usage; return render(); }
+  if (t.dataset.lm) { state.lm = t.dataset.lm; return render(); }
+  if (t.classList.contains('sw')) { state.accent = t.dataset.hex; state.accentName = t.dataset.name; return render(); }
+  if (t.hasAttribute('data-open')) return toast('Concept only: this opens the proposal page.');
+  if (t.id === 'handle') { const open = $('#panel').classList.toggle('open'); return t.setAttribute('aria-expanded', String(open)); }
+  if (t.id === 'copy') {
+    try { await navigator.clipboard.writeText(readout()); toast('Settings copied.'); }
+    catch (err) { toast('Copy is blocked here. Select the text above instead.'); }
+    return;
+  }
+  if (t.id === 'reset') { Object.assign(state, JSON.parse(JSON.stringify(DEFAULTS))); return render(); }
+});
+document.addEventListener('change', e => {
+  const c = e.target.closest('[data-field]');
+  if (c) {
+    const k = c.dataset.field;
+    state.fields = FIELDS.map(f => f[0]).filter(x => (x === k ? c.checked : state.fields.includes(x)));
+    return render();
+  }
+  if (e.target.id === 'lines') { state.lines = e.target.value; return render(); }
+  if (e.target.id === 'word') { state.word = e.target.value; return render(); }
+});
+$('#r').addEventListener('input', e => { state.r = Number(e.target.value); render(); });
+$('#custom').addEventListener('input', e => { state.accent = e.target.value; state.accentName = 'Custom'; render(); });
+
+render();
+</script>
+</body>
+</html>
