@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { BoardFilter } from "@/components/BoardFilter";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { IdeaCard, updatedText } from "@/components/IdeaCard";
@@ -161,13 +162,13 @@ function PreviewPage() {
           <Button variant="primary">Post an idea</Button>
         </header>
         <div role="group" aria-label="Board" className="flex flex-wrap gap-2">
-          <BoardFilter label="All boards" pressed={board === "all"} onClick={() => setBoard("all")} />
+          <BoardFilter label="All boards" selected={board === "all"} onClick={() => setBoard("all")} />
           {BOARD_CODES.map((code) => (
             <BoardFilter
               key={code}
               label={BOARDS[code].category}
               color={BOARDS[code].color}
-              pressed={board === code}
+              selected={board === code}
               onClick={() => setBoard(code)}
             />
           ))}
@@ -304,21 +305,6 @@ function PreviewPage() {
         </div>
       </Section>
     </div>
-  );
-}
-
-function BoardFilter(props: { label: string; color?: string; pressed: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      data-board={props.color}
-      aria-pressed={props.pressed}
-      onClick={props.onClick}
-      className="poster-btn inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold"
-    >
-      {props.color && <span aria-hidden className="board-swatch size-3" />}
-      {props.label}
-    </button>
   );
 }
 

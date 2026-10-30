@@ -79,17 +79,28 @@ export function SelectField({
   ...rest
 }: Shared & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
+  // appearance-none: Safari draws its own rounded select over rounded-field, so
+  // the arrow is ours (#61).
   return (
     <Wrap id={id} label={label} hint={hint} error={error}>
-      <select
-        id={id}
-        aria-invalid={!!error}
-        aria-describedby={describedBy(id, { label, hint, error })}
-        className={control}
-        {...rest}
-      >
-        {children}
-      </select>
+      <span className="relative block">
+        <select
+          id={id}
+          aria-invalid={!!error}
+          aria-describedby={describedBy(id, { label, hint, error })}
+          className={`${control} appearance-none pr-9`}
+          {...rest}
+        >
+          {children}
+        </select>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 fill-none stroke-current stroke-2"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </span>
     </Wrap>
   );
 }

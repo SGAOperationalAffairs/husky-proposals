@@ -123,7 +123,8 @@
     background: transparent;
     color: inherit;
   }
-  .poster-btn[aria-pressed="true"] {
+  /* A chosen filter chip is a link with aria-current, and looks pressed (#61). */
+  .poster-btn:is([aria-pressed="true"], [aria-current="true"]) {
     /* Outside a poster, a pressed button is ink on the page. */
     background: var(--press-bg, var(--ink));
     border-color: var(--press-bg, var(--ink));
