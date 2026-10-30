@@ -59,7 +59,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <p className="flex items-end gap-3">
             <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
             <span className="pb-2 leading-tight font-semibold">
-              students want this
+              {idea.status === "delivered" ? "students supported this" : "students want this"}
               <br />
               {idea.willingCount} will help
             </span>

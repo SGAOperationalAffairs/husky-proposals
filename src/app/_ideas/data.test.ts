@@ -57,3 +57,14 @@ describe("ideas list stand-in (#61)", () => {
     });
   });
 });
+
+describe("in progress list stand-in (#63)", () => {
+  it("shows only ideas a board has taken on, in progress or delivered", () => {
+    const ideas = listIdeas(parseIdeasQuery({}), "progress");
+    expect(ideas.map((i) => i.status).sort()).toEqual(["delivered", "in_progress", "in_progress"]);
+  });
+
+  it("has no status filter, since both kinds show together", () => {
+    expect(parseIdeasQuery({ status: "waiting" }, "progress")).toEqual({ sort: "support" });
+  });
+});

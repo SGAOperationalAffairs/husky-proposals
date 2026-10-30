@@ -32,6 +32,7 @@ export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
+  const delivered = props.status === "delivered";
   return (
     <article data-board={board.color} className="poster card-stack @container flex flex-col">
       {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
@@ -52,19 +53,24 @@ export function IdeaCard(props: Props) {
         <p className="flex flex-wrap items-end gap-x-2.5">
           <span className="poster-number heading tabular-nums">{props.supportCount}</span>
           <span className="pb-1 text-sm leading-tight font-semibold">
-            students want this
+            {/* Delivered ideas are done; support is in the past (#63). */}
+            {delivered ? "students supported this" : "students want this"}
             <br />
             {props.willingCount} will help
           </span>
         </p>
         <div className="flex items-center justify-between gap-3">
-          <SupportPair
-            ideaNumber={props.number}
-            supported={props.supported ?? false}
-            participating={props.participating ?? false}
-            onSupportChange={props.onSupportChange}
-            onParticipateChange={props.onParticipateChange}
-          />
+          {delivered ? (
+            <span className="text-sm font-bold">Delivered</span>
+          ) : (
+            <SupportPair
+              ideaNumber={props.number}
+              supported={props.supported ?? false}
+              participating={props.participating ?? false}
+              onSupportChange={props.onSupportChange}
+              onParticipateChange={props.onParticipateChange}
+            />
+          )}
           <a
             href={`/ideas/${props.number}`}
             className="text-sm font-bold whitespace-nowrap underline underline-offset-4"

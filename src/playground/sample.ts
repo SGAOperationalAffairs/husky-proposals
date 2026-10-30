@@ -72,6 +72,18 @@ export const IDEAS: IdeaCardData[] = [
     supportCount: 71,
     willingCount: 4,
   },
+  // A delivered idea, so the In progress tab (#63) shows both kinds.
+  {
+    number: 96,
+    title: "A late shuttle on Friday nights",
+    description: "Run the campus shuttle until 2 a.m. on Fridays, so students get home safely.",
+    location: "Campus shuttle",
+    board: "CSC",
+    status: "delivered",
+    updatedDaysAgo: 20,
+    supportCount: 305,
+    willingCount: 27,
+  },
   // More open ideas, so the ideas list (#61) has a full wall and every board.
   {
     number: 162,

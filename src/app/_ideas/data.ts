@@ -28,15 +28,23 @@ const querySchema = z.object({
   sort: z.enum(Object.keys(SORTS) as [Sort, ...Sort[]]).catch("support"),
 });
 
-export function parseIdeasQuery(params: Record<string, string | string[] | undefined>): IdeasQuery {
+// The two student lists: ideas open for support, and ideas a board has taken
+// on (#63). Only the open list filters by status.
+export type IdeaList = "open" | "progress";
+
+export function parseIdeasQuery(
+  params: Record<string, string | string[] | undefined>,
+  list: IdeaList = "open",
+): IdeasQuery {
   const parsed = querySchema.parse(params);
+  if (list === "progress") parsed.status = undefined;
   return Object.fromEntries(Object.entries(parsed).filter(([, v]) => v !== undefined)) as IdeasQuery;
 }
 
 const isOpen = (status: IdeaCardData["status"]): status is OpenStatus =>
   (OPEN_STATUSES as readonly string[]).includes(status);
 
-export function listIdeas(query: IdeasQuery): IdeaCardData[] {
+export function listIdeas(query: IdeasQuery, list: IdeaList = "open"): IdeaCardData[] {
   const words = query.q?.toLowerCase().split(/\s+/) ?? [];
   const byText = (i: IdeaCardData) => {
     const text = `${i.title} ${i.description}`.toLowerCase();
@@ -49,7 +57,7 @@ export function listIdeas(query: IdeasQuery): IdeaCardData[] {
   };
   return IDEAS.filter(
     (i) =>
-      isOpen(i.status) &&
+      isOpen(i.status) === (list === "open") &&
       (!query.board || i.board === query.board) &&
       (!query.status || i.status === query.status) &&
       byText(i),

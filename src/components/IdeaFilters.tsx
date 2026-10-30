@@ -10,18 +10,21 @@ import { SelectField, TextField } from "./Field";
 type Option = { value: string; label: string };
 
 type Props = {
+  // Where the form goes: the list it filters.
+  action: string;
   q?: string;
   board?: string;
   status?: string;
   sort: string;
-  statuses: Option[];
+  // No statuses means the list has no status filter (In progress, #63).
+  statuses?: Option[];
   sorts: Option[];
 };
 
-export function IdeaFilters({ q, board, status, sort, statuses, sorts }: Props) {
+export function IdeaFilters({ action, q, board, status, sort, statuses, sorts }: Props) {
   const submit = (e: React.ChangeEvent<HTMLSelectElement>) => e.currentTarget.form?.requestSubmit();
   return (
-    <Form action="/" className="grid grid-cols-2 items-end gap-3 @3xl:grid-cols-4">
+    <Form action={action} className="grid grid-cols-2 items-end gap-3 @3xl:grid-cols-4">
       {board && <input type="hidden" name="board" value={board} />}
       <div className="col-span-2 flex items-end gap-2">
         <div className="min-w-0 flex-1">
@@ -29,14 +32,16 @@ export function IdeaFilters({ q, board, status, sort, statuses, sorts }: Props) 
         </div>
         <Button type="submit">Search</Button>
       </div>
-      <SelectField label="Status" name="status" defaultValue={status ?? ""} onChange={submit}>
-        <option value="">All</option>
-        {statuses.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </SelectField>
+      {statuses && (
+        <SelectField label="Status" name="status" defaultValue={status ?? ""} onChange={submit}>
+          <option value="">All</option>
+          {statuses.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </SelectField>
+      )}
       <SelectField label="Sort by" name="sort" defaultValue={sort} onChange={submit}>
         {sorts.map((o) => (
           <option key={o.value} value={o.value}>

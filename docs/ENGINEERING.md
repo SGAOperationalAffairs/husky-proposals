@@ -38,8 +38,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
 | `scripts/port-*.mjs` | Port's scripts, copied verbatim from the plugin. Excluded from lint and Prettier; never edit by hand |
 | `tests/browser/` | Playwright tests against the production build (Chromium, iPhone WebKit; Firefox in `verify:all`) |
-| `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row, board filter chips, ideas list filters, site header, copy link |
-| `src/app/_ideas/` | The ideas list's stand-in data (#61): the playground's sample ideas behind `listIdeas()`, `parseIdeasQuery()`, and `getIdea()` (#62). Replaced by the public queries (#60) |
+| `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row, board filter chips, ideas list filters, site header with the list links (its tab look comes from `tabLook.ts`, a plain module so server components can call it), copy link |
+| `src/app/_ideas/` | The ideas list's stand-in data (#61): the playground's sample ideas behind `listIdeas()`, `parseIdeasQuery()`, and `getIdea()` (#62), plus `Wall.tsx`, the poster wall and filters shared by Ideas and In progress (#63). Replaced by the public queries (#60) |
 | `src/playground/` | The style playground (#29): templates, sample content, and the page itself. Local only |
 | `src/app/playground/*.dev.tsx` | The playground route. `.dev.tsx` files compile only when `APP_ENV` is local or test (`next.config.ts`) |
 | `design/tokens.css` | The single token source. `src/app/globals.css` maps it into Tailwind with `@theme inline` |

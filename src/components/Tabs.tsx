@@ -1,5 +1,7 @@
 "use client";
 
+import { tabLook } from "./tabLook";
+
 // Tabs with small red numbers for what needs attention (CLAUDE.md: no
 // dashboards; leaders open straight onto the list).
 export type TabItem = { id: string; label: string; count?: number };
@@ -23,9 +25,7 @@ export function Tabs({ label, tabs, selected, onSelect }: Props) {
             role="tab"
             aria-selected={active}
             onClick={() => onSelect?.(tab.id)}
-            className={`-mb-px inline-flex items-center gap-2 border-b-3 px-4 py-3 whitespace-nowrap ${
-              active ? "border-accent font-semibold text-accent-text" : "border-transparent font-medium"
-            }`}
+            className={tabLook(active)}
           >
             {tab.label}
             {tab.count !== undefined && <Badge count={tab.count} />}

@@ -65,3 +65,35 @@ test.describe("idea page (#62)", () => {
     }
   });
 });
+
+test.describe("in progress list (#63)", () => {
+  test("the header links switch lists and mark the current one", async ({ page }) => {
+    await page.goto("/");
+    const lists = page.getByRole("navigation", { name: "Lists" });
+    await expect(lists.getByRole("link", { name: "Ideas" })).toHaveAttribute("aria-current", "page");
+    await lists.getByRole("link", { name: "In progress" }).click();
+    await expect(page).toHaveURL(/\/in-progress$/);
+    await expect(page.getByRole("heading", { level: 1, name: "In progress" })).toBeVisible();
+    await expect(lists.getByRole("link", { name: "In progress" })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("shows only ideas in progress or delivered, and no status filter", async ({ page }) => {
+    await page.goto("/in-progress");
+    await expect(page.getByLabel("Status")).toHaveCount(0);
+    const posters = page.locator("article.poster");
+    await expect(posters.first()).toBeVisible();
+    for (const poster of await posters.all()) {
+      await expect(poster).toContainText(/In progress|Delivered/);
+    }
+  });
+
+  test("a board chip keeps you on In progress", async ({ page }) => {
+    await page.goto("/in-progress");
+    await page
+      .getByRole("navigation", { name: "Boards" })
+      .getByRole("link", { name: "Campus Services" })
+      .click();
+    await expect(page).toHaveURL(/\/in-progress\?board=CSC$/);
+    await expect(page.getByText("A late shuttle on Friday nights")).toBeVisible();
+  });
+});
