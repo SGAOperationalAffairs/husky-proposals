@@ -23,7 +23,8 @@ test.describe("public, but not searchable (PRD D18)", () => {
 // tokens in design/tokens.css. Read the allowed values from the page itself.
 test.describe("styles come from the tokens", () => {
   for (const path of PAGES) {
-    test(`${path} uses only token radii and border widths`, async ({ page }) => {
+    // Corners only: border widths are a convention by role, not a guarded rule (#33).
+    test(`${path} uses only token radii`, async ({ page }) => {
       await page.goto(path);
       const problems = await page.evaluate(() => {
         const root = getComputedStyle(document.documentElement);
@@ -33,7 +34,6 @@ test.describe("styles come from the tokens", () => {
           ["--card-radius", "--field-radius", "--button-radius", "--chip-radius"].map((n) => px(token(n))),
         );
         radii.add("0px");
-        const borders = new Set(["0px", px(token("--border")), px(token("--accent-rule"))]);
         const found: string[] = [];
         for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
           const box = el.getBoundingClientRect();
@@ -47,14 +47,6 @@ test.describe("styles come from the tokens", () => {
             s.borderBottomLeftRadius,
           ]) {
             if (!radii.has(corner)) found.push(`${tag}: radius ${corner}`);
-          }
-          for (const width of [
-            s.borderTopWidth,
-            s.borderRightWidth,
-            s.borderBottomWidth,
-            s.borderLeftWidth,
-          ]) {
-            if (!borders.has(width)) found.push(`${tag}: border ${width}`);
           }
         }
         return Array.from(new Set(found));

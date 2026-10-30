@@ -272,7 +272,7 @@ No conflict: port's branch names (`<issue>-<slug>`), commit format, rebase onto 
 - **Guard tests for conventions,** for example:
   - the Tailwind theme matches `design/tokens.css`;
   - no arbitrary Tailwind values and no hard-coded colors in components;
-  - in a real browser (Chromium and WebKit), every visible element's corner radius, border width, and colors come from the allowed token values;
+  - in a real browser (Chromium and WebKit), every visible element's corner radius comes from the radius tokens (border widths are a convention by role, in `docs/ENGINEERING.md`, not guarded; #33);
   - imports do not climb more than one folder.
 - **More unit and component tests, fewer browser tests.** A long browser suite did not get faster with more parallelism.
 
