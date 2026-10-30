@@ -27,8 +27,8 @@
   /* One color per board, and the text color that reads on it. */
   --board-dining: #c8102e;
   --on-board-dining: #ffffff;
-  --board-planning: #ef7d1a;
-  --on-board-planning: #111111;
+  --board-planning: #c25100;
+  --on-board-planning: #ffffff;
   --board-services: #f2c230;
   --on-board-services: #111111;
   --board-green: #2e7d32;
