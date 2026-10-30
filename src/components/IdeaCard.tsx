@@ -1,5 +1,5 @@
 import { BOARDS, type BoardCode } from "@/core/boards";
-import { STATUS_LABELS, type IdeaStatus } from "./StatusLabel";
+import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
 
 // An idea as a poster in its board's color (#29, the Poster direction): the

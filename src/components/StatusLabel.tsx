@@ -1,14 +1,7 @@
-// An idea's status, as students see it (CLAUDE.md, "Statuses"). Colors follow
-// the status chip notes in design/tokens.css.
-export type IdeaStatus = "collecting_support" | "under_review" | "in_progress" | "delivered" | "waiting";
+import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 
-export const STATUS_LABELS: Record<IdeaStatus, string> = {
-  collecting_support: "Collecting support",
-  under_review: "Under review",
-  in_progress: "In progress",
-  delivered: "Delivered",
-  waiting: "Waiting",
-};
+// Chip colors follow the status chip notes in design/tokens.css. The words live
+// in src/core/statuses.ts.
 
 const STYLES: Record<IdeaStatus, string> = {
   collecting_support: "bg-grey text-grey-ink",
