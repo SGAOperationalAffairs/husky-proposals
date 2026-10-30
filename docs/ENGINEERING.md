@@ -17,7 +17,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
   - Imports climb at most one folder. Use the `@/` alias (or `@design/` for `design/`) beyond that.
 - **Routes are thin.** `src/app/` receives requests and calls core modules. Rules (statuses, transitions, permissions, limits, viewer shapes) are plain TypeScript in `src/core/` with plain unit tests.
 - **Domain words live in `src/core/`.** A type or the student-facing label for a domain value (a status, a board) is defined once in `src/core/` and imported. Presentation for it (chip colors, icons) stays in the component. Examples: `src/core/boards.ts` holds board codes, names, and color names; `BoardTag` only renders them. `src/core/statuses.ts` holds the idea status type and labels; `StatusLabel` holds only the chip colors.
-- **A core type that mirrors a Prisma enum is pinned by a test** that reads the enum out of `prisma/schema.prisma` as text, the way `src/playground/templates.test.ts` reads `design/tokens.css`. Core cannot import Prisma, so the test is the link. Example: `src/core/statuses.test.ts`.
+- **A core type that mirrors a Prisma enum is pinned by a test** that reads the enum out of `prisma/schema.prisma` as text, the way `src/playground/templates.test.ts` reads `design/tokens.css`. Core cannot import Prisma, so the test is the link. Example: `src/core/statuses.test.ts`. Use the shared reader, `prismaEnum()` in `src/core/testing/prismaEnum.ts` (test-only), as `statuses.test.ts` and `review.test.ts` do.
 - **Dev-only routes** use the `.dev.tsx` extension and compile only when `APP_ENV` is `local` or `test` (`next.config.ts`). A browser test checks `/playground` is a 404 in a production build.
 
 ### Where things live
@@ -52,6 +52,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **One component per visual element.** An element shown in two places is one component, with a prop for a variant (for example, on a poster versus on the page). Do not inline a copy.
 - **Tailwind first, a named class when it must.** Write layout and spacing as Tailwind classes in the component. Add a class to `@layer components` in `globals.css` only when it needs token arithmetic, attribute selectors (`[aria-pressed="true"]`), or line clamping (`.poster-title-lines`, `.support-icon`). Add a `@utility` for a reusable single-purpose rule (`bordered`, `heading`, `queue-cols`).
 - **Borders by role (a convention, not a guarded rule).** `bordered` (the 2px `--border` token) for outlines of controls, cards, and tags; `accent-rule` (5px) for the rule across the top of a card; Tailwind's 1px `border` (with `border-line`) for hairline dividers between rows and under tab lists. Pick by role, not by taste.
+- **Core rules return a result, never throw.** A rule returns `{ ok: true, ... }` or `{ ok: false, error: { code } }`, with `code` a closed union the caller can switch on. The function says what to write and the caller writes it (`src/core/review.ts`).
 - **Exported shapes:** a component's data type is exported as `<Name>Data` (`IdeaCardData`, `QueueRowData`); its props type stays local as `Props`.
 
 Still to add, no later than the fifth feature: one hook per feature, the shared rules module (E2), and the validation helpers.
