@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Pages to scan. Add each new route here as it lands.
-const PAGES = ["/"];
+const PAGES = ["/", "/ideas/103"];
 
 test("the style playground is not in a production build (#29)", async ({ page }) => {
   const response = await page.goto("/playground");

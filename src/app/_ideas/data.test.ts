@@ -1,5 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { listIdeas, parseIdeasQuery } from "./data";
+import { getIdea, listIdeas, parseIdeasNumber, parseIdeasQuery } from "./data";
+
+describe("idea page stand-in (#62)", () => {
+  it("finds an idea by its public number, and nothing for an unknown one", () => {
+    expect(getIdea(131)?.title).toBe("A late-night dining option on weeknights");
+    expect(getIdea(9999)).toBeUndefined();
+  });
+
+  it("reads the number from the URL strictly", () => {
+    expect(parseIdeasNumber("131")).toBe(131);
+    for (const bad of ["abc", "0", "-1", "1.5", "131abc", ""]) expect(parseIdeasNumber(bad)).toBeUndefined();
+  });
+
+  it("names the author only when the post is not anonymous", () => {
+    const named = getIdea(131)!;
+    expect(named.author).toBe("Jordan P.");
+    const anonymous = getIdea(151)!;
+    expect("author" in anonymous).toBe(false);
+  });
+
+  it("ranks an idea among its board's ideas that are not delivered", () => {
+    expect(getIdea(103)?.rank).toEqual({ position: 1, of: 3, board: "Dining" });
+    expect(getIdea(131)?.rank).toEqual({ position: 2, of: 3, board: "Dining" });
+    expect(getIdea(174)?.rank).toEqual({ position: 3, of: 3, board: "Dining" });
+  });
+
+  it("always gives a waiting idea its reason", () => {
+    expect(getIdea(140)?.waitingReason).toBeTruthy();
+  });
+});
 
 describe("ideas list stand-in (#61)", () => {
   it("shows only ideas still open for support, most supported first", () => {

@@ -25,8 +25,10 @@ type Props = IdeaCardData & {
   onParticipateChange?: (participating: boolean) => void;
 };
 
-export const updatedText = (days: number) =>
-  days === 0 ? "updated today" : days === 1 ? "updated yesterday" : `updated ${days} days ago`;
+// Dates read as people say them (docs/DESIGN.md, "Copy and tone").
+export const daysAgoText = (days: number) =>
+  days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
+export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
@@ -64,10 +66,10 @@ export function IdeaCard(props: Props) {
             onParticipateChange={props.onParticipateChange}
           />
           <a
-            href={`#proposal-${props.number}`}
+            href={`/ideas/${props.number}`}
             className="text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >
-            Learn more
+            Learn more<span className="sr-only"> about proposal {props.number}</span>
           </a>
         </div>
       </div>

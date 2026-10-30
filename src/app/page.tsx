@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
+import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/components/StatusLabel";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { listIdeas, OPEN_STATUSES, parseIdeasQuery, SORTS, type IdeasQuery } from "./_ideas/data";
@@ -11,12 +12,7 @@ import { listIdeas, OPEN_STATUSES, parseIdeasQuery, SORTS, type IdeasQuery } fro
 export default function Home({ searchParams }: PageProps<"/">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
-      <header className="flex items-center gap-3">
-        <span aria-hidden className="bordered px-1.5 heading text-lg leading-tight">
-          SGA
-        </span>
-        <span className="font-bold">Husky Proposals</span>
-      </header>
+      <SiteHeader />
       <div>
         <h1 className="heading text-6xl @3xl:text-8xl">Ideas for campus</h1>
         <p className="mt-3 max-w-prose text-muted">

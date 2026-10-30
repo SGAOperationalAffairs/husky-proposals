@@ -73,6 +73,11 @@
 @utility queue-cols-wide {
   grid-template-columns: 44px minmax(0, 1fr) 110px 110px 70px 140px;
 }
+/* The idea page's rows (#62): the side column spans all three, and the last row
+   takes any extra height, so no gap opens between the poster and the details. */
+@utility idea-rows {
+  grid-template-rows: auto auto 1fr;
+}
 
 /* Heading type from the tokens: family, weight, and tracking. */
 @utility heading {

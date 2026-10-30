@@ -33,3 +33,35 @@ test.describe("ideas list (#61)", () => {
     await expect(page.getByText("No ideas match. Try a different search or another board.")).toBeVisible();
   });
 });
+
+test.describe("idea page (#62)", () => {
+  test("Learn more opens the idea's own page", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Learn more about proposal 131" }).click();
+    await expect(page).toHaveURL(/\/ideas\/131$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "A late-night dining option on weeknights",
+    );
+    await expect(page.getByText("Posted by Jordan P., 40 days ago")).toBeVisible();
+  });
+
+  test("an anonymous post shows no name", async ({ page }) => {
+    await page.goto("/ideas/151");
+    await expect(page.getByText("Posted by a student, 18 days ago")).toBeVisible();
+  });
+
+  test("a waiting idea says why", async ({ page }) => {
+    await page.goto("/ideas/140");
+    await expect(
+      page.getByText("On hold. Waiting on university partners. It stays on the list and keeps its support."),
+    ).toBeVisible();
+  });
+
+  // The shell streams first, so the status is 200 (see not-found.tsx); assert what students see.
+  test("unknown or malformed numbers say no idea has that number", async ({ page }) => {
+    for (const path of ["/ideas/9999", "/ideas/abc"]) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { name: "No idea with that number" }), path).toBeVisible();
+    }
+  });
+});
