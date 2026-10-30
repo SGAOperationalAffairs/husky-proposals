@@ -29,6 +29,7 @@ enum ReviewStatus {
   pending
   approved
   declined
+  withdrawn // set by the author; final, never public (#49)
 }
 
 // Only set once an idea is approved.
@@ -71,6 +72,13 @@ enum TimeHorizon {
 enum ReviewDecision {
   approved
   declined
+}
+
+// review is the decision on a submission. take_down returns an approved idea
+// to declined (#49).
+enum ReviewKind {
+  review
+  take_down
 }
 
 enum ContactStatus {
@@ -182,6 +190,13 @@ model Board {
 //   the migration). New approvals start at collecting_support.
 // Rule: waitingReason is required when status is waiting (check constraint).
 // Rule: the board is the only field SGA can change on a posted idea.
+// Rule: only the author can withdraw, and only from pending or declined.
+//   withdrawn is final and writes no Review row. Withdrawn posts never count
+//   toward the 3-pending limit and are never public (#49).
+// Rule: a take-down sets reviewStatus to declined and clears status and
+//   waitingReason, as the "status is null unless approved" constraint needs.
+//   The author can then edit and resubmit, as after any decline (#49).
+// Provisional: an idea that is taken down and approved again keeps its number.
 model Idea {
   id String @id @default(uuid(7)) @db.Uuid
 
@@ -250,23 +265,28 @@ model IdeaRevision {
   isAnonymous Boolean      @map("is_anonymous")
   submittedAt DateTime     @default(now()) @map("submitted_at")
 
-  idea   Idea    @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  review Review?
+  idea    Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  reviews Review[] // a list since a take-down is a second row on the same revision (#49)
 
   @@unique([ideaId, version])
   @@map("idea_revisions")
 }
 
-// One decision per revision.
+// One review decision per revision, plus at most one take-down (#49).
+// Rule: a take-down has decision = declined (check constraint).
+// Rule: reason is required whenever decision = declined, which covers a
+//   decline and a take-down (check constraint). Only the author and leaders
+//   ever see it.
 // Rule: only a reviewer for the idea's board (its chair or director) or the
-//   VP of Campus Affairs can decide.
-// Rule: reason is required when declined (check constraint). Only the author
-//   and leaders ever see it.
+//   VP of Campus Affairs can decide or take down.
+// Rule: a take-down applies only to an idea whose reviewStatus is approved,
+//   and only to the revision that was approved.
 model Review {
   id         String         @id @default(uuid(7)) @db.Uuid
   ideaId     String         @map("idea_id") @db.Uuid
-  revisionId String         @unique @map("revision_id") @db.Uuid
+  revisionId String         @map("revision_id") @db.Uuid
   reviewerId String?        @map("reviewer_id") @db.Uuid // nullable for account deletion (D14)
+  kind       ReviewKind     @default(review)
   decision   ReviewDecision
   reason     String?
   decidedAt  DateTime       @default(now()) @map("decided_at")
@@ -275,6 +295,9 @@ model Review {
   revision IdeaRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   reviewer User?        @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
 
+  // At most one review decision and one take-down per revision, so a retry or
+  // double click cannot record two. Also serves lookups by revisionId.
+  @@unique([revisionId, kind])
   @@index([ideaId, decidedAt])
   @@map("reviews")
 }
@@ -384,7 +407,7 @@ model EmailOutbox {
   userId            String    @map("user_id") @db.Uuid
   type              EmailType
   priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3
-  dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<revisionId>
+  dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<reviewId>, since a take-down is a second decision on one revision (#49)
   payload           Json
   createdAt         DateTime  @default(now()) @map("created_at")
   sendAfter         DateTime  @default(now()) @map("send_after")
