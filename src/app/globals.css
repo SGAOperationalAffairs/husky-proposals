@@ -221,6 +221,44 @@
     display: var(--card-show-buttons);
   }
   /* A swatch of the board's color, for lists outside a poster. */
+  /* The proposal number as "Proposal 103", "#103", or "103". */
+  .card-number-word {
+    display: var(--card-number-word);
+  }
+  .card-number-hash {
+    display: var(--card-number-hash);
+  }
+  /* Support and participate as text buttons, or as outline icons. */
+  .card-btn-text {
+    display: var(--card-btn-text);
+  }
+  .card-btn-icons {
+    display: var(--card-btn-icons);
+  }
+  .support-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: var(--button-radius);
+    color: inherit;
+  }
+  .support-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .support-icon[aria-pressed="true"] {
+    background: var(--press-bg, var(--ink));
+    color: var(--press-fg, var(--surface));
+  }
+  .support-icon[aria-pressed="true"] .support-icon-fill {
+    fill: currentColor;
+  }
   .board-swatch {
     background: var(--b);
   }

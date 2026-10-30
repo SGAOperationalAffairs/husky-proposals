@@ -32,14 +32,19 @@ export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   return (
     <article data-board={board.color} className="poster @container flex flex-col gap-3">
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 text-xs font-bold">
-        <span className="flex flex-wrap gap-x-3">
-          <span className="card-board">{board.category}</span>
-          <span className="card-number">Proposal {props.number}</span>
+      {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
+      <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="card-board truncate">{board.category}</span>
+          <span className="card-number shrink-0">
+            <span className="card-number-word">{"Proposal "}</span>
+            <span className="card-number-hash">#</span>
+            {props.number}
+          </span>
         </span>
-        <span className="flex items-center gap-2">
-          {props.fromSga && <span className="card-sga border border-current px-1.5">From SGA</span>}
-          <span className="card-status">{STATUS_LABELS[props.status]}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          {props.fromSga && <span className="card-sga shrink-0 border border-current px-1.5">From SGA</span>}
+          <span className="card-status truncate">{STATUS_LABELS[props.status]}</span>
         </span>
       </div>
       <div className="card-headline">

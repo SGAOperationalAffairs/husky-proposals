@@ -63,8 +63,8 @@
   --card-gap: 20px;
   --poster-title: 2.25rem;
   --poster-number: 3.75rem;
-  --desc-lines: none;
-  --title-lines: none;
+  --desc-lines: 2;
+  --title-lines: 3;
   /* What each idea card shows: block to show a part, none to hide it. */
   --card-show-board: block;
   --card-show-number: block;
@@ -72,11 +72,17 @@
   --card-show-sga: block;
   --card-show-headline: block;
   --card-show-desc: block;
-  --card-show-place: block;
+  --card-show-place: none;
   --card-show-count: block;
   --card-show-helpers: block;
-  --card-show-learn: block;
+  --card-show-learn: none;
   --card-show-buttons: block;
+  /* The proposal number's prefix ("Proposal " or "#", inline or none), and
+     the support buttons' look (text or icons, block or none). */
+  --card-number-word: inline;
+  --card-number-hash: none;
+  --card-btn-text: block;
+  --card-btn-icons: none;
 }
 @media (prefers-color-scheme: dark) {
   :root {

@@ -34,6 +34,10 @@ export const SHARED_KEYS = [
   "card-show-helpers",
   "card-show-learn",
   "card-show-buttons",
+  "card-number-word",
+  "card-number-hash",
+  "card-btn-text",
+  "card-btn-icons",
 ] as const;
 
 export const COLOR_KEYS = [

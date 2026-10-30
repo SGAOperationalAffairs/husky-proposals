@@ -1,5 +1,5 @@
 import palettes from "@design/playground-palettes.json";
-import type { Overrides } from "./templates";
+import { DEFAULT_TEMPLATE, type Overrides } from "./templates";
 
 // The playground's dials (#29). Each option is a set of token overrides, so
 // "Copy settings" captures whatever is chosen. Shared tokens apply in both
@@ -15,6 +15,7 @@ export type Dial = {
   kind?: "toggle";
   label: string;
   options: Record<string, Choice>;
+  /** The option matching design/tokens.css, so the playground opens there. */
   initial: string;
 };
 
@@ -23,12 +24,11 @@ const PALETTES = palettes as {
   backgrounds: Record<"White", Overrides["light"]>;
 };
 
-export const DIALS: Dial[] = [
+const SPECS: Omit<Dial, "initial">[] = [
   {
     id: "perRow",
     group: "Layout",
     label: "Cards per row",
-    initial: "3",
     options: {
       "2": { shared: { "cards-per-row": "2" } },
       "3": { shared: { "cards-per-row": "3" } },
@@ -39,7 +39,6 @@ export const DIALS: Dial[] = [
     id: "gap",
     group: "Layout",
     label: "Gap between cards",
-    initial: "Standard",
     options: {
       Tight: { shared: { "card-gap": "10px" } },
       Standard: { shared: { "card-gap": "20px" } },
@@ -50,7 +49,6 @@ export const DIALS: Dial[] = [
     id: "density",
     group: "Layout",
     label: "Padding inside cards",
-    initial: "Standard",
     options: {
       Compact: { shared: { "card-pad": "16px" } },
       Standard: { shared: { "card-pad": "20px" } },
@@ -61,7 +59,6 @@ export const DIALS: Dial[] = [
     id: "case",
     group: "Type",
     label: "Headline case",
-    initial: "All caps",
     options: {
       "All caps": { shared: { "heading-case": "uppercase" } },
       "Sentence case": { shared: { "heading-case": "none" } },
@@ -71,7 +68,6 @@ export const DIALS: Dial[] = [
     id: "titleSize",
     group: "Type",
     label: "Headline size",
-    initial: "Medium",
     options: {
       Small: { shared: { "poster-title": "1.75rem" } },
       Medium: { shared: { "poster-title": "2.25rem" } },
@@ -82,7 +78,6 @@ export const DIALS: Dial[] = [
     id: "weight",
     group: "Type",
     label: "Headline weight",
-    initial: "Extra bold",
     options: {
       Bold: { shared: { "heading-weight": "700" } },
       "Extra bold": { shared: { "heading-weight": "800" } },
@@ -93,7 +88,6 @@ export const DIALS: Dial[] = [
     id: "number",
     group: "Type",
     label: "Support number",
-    initial: "Large",
     options: {
       Medium: { shared: { "poster-number": "2.75rem" } },
       Large: { shared: { "poster-number": "3.75rem" } },
@@ -104,7 +98,6 @@ export const DIALS: Dial[] = [
     id: "titleLines",
     group: "Type",
     label: "Headline length",
-    initial: "Full",
     options: {
       Full: { shared: { "title-lines": "none" } },
       "3 lines": { shared: { "title-lines": "3" } },
@@ -115,7 +108,6 @@ export const DIALS: Dial[] = [
     id: "desc",
     group: "Type",
     label: "Description length",
-    initial: "Full",
     options: {
       Full: { shared: { "desc-lines": "none" } },
       "3 lines": { shared: { "desc-lines": "3" } },
@@ -126,7 +118,6 @@ export const DIALS: Dial[] = [
     id: "boards",
     group: "Color and lines",
     label: "Board colors",
-    initial: "Vivid",
     options: {
       Vivid: {},
       Deep: { colors: PALETTES.boards.Deep },
@@ -137,14 +128,12 @@ export const DIALS: Dial[] = [
     id: "bg",
     group: "Color and lines",
     label: "Page background",
-    initial: "Grey",
     options: { Grey: {}, White: { light: PALETTES.backgrounds.White } },
   },
   {
     id: "border",
     group: "Color and lines",
     label: "Border weight",
-    initial: "2px",
     options: {
       "1px": { shared: { border: "1px" } },
       "2px": { shared: { border: "2px" } },
@@ -155,7 +144,6 @@ export const DIALS: Dial[] = [
     id: "corners",
     group: "Color and lines",
     label: "Corners",
-    initial: "Square",
     options: {
       Square: {
         shared: { "card-radius": "0", "field-radius": "0", "button-radius": "0", "chip-radius": "0" },
@@ -175,6 +163,28 @@ export const DIALS: Dial[] = [
   },
 ];
 
+SPECS.push(
+  {
+    id: "numberStyle",
+    group: "Card contents",
+    label: "Number style",
+    options: {
+      "Proposal 103": { shared: { "card-number-word": "inline", "card-number-hash": "none" } },
+      "With a # sign": { shared: { "card-number-word": "none", "card-number-hash": "inline" } },
+      "Number only": { shared: { "card-number-word": "none", "card-number-hash": "none" } },
+    },
+  },
+  {
+    id: "buttonStyle",
+    group: "Card contents",
+    label: "Support buttons",
+    options: {
+      "Text buttons": { shared: { "card-btn-text": "block", "card-btn-icons": "none" } },
+      Icons: { shared: { "card-btn-text": "none", "card-btn-icons": "block" } },
+    },
+  },
+);
+
 // On/off toggles for each part of an idea card, shown as checkboxes.
 const CARD_PARTS: [part: string, label: string][] = [
   ["board", "Board"],
@@ -190,17 +200,28 @@ const CARD_PARTS: [part: string, label: string][] = [
   ["buttons", "Support and participate buttons"],
 ];
 for (const [part, label] of CARD_PARTS)
-  DIALS.push({
+  SPECS.push({
     id: `show-${part}`,
     group: "Card contents",
     kind: "toggle",
     label,
-    initial: "On",
     options: {
       On: { shared: { [`card-show-${part}`]: "block" } },
       Off: { shared: { [`card-show-${part}`]: "none" } },
     },
   });
+
+const isDefault = (choice: Choice) =>
+  !choice.colors &&
+  !choice.light &&
+  Object.entries(choice.shared ?? {}).every(
+    ([key, value]) => DEFAULT_TEMPLATE.shared[key as keyof typeof DEFAULT_TEMPLATE.shared] === value,
+  );
+
+export const DIALS: Dial[] = SPECS.map((d) => ({
+  ...d,
+  initial: Object.keys(d.options).find((o) => isDefault(d.options[o]!)) ?? Object.keys(d.options)[0]!,
+}));
 
 export const INITIAL_DIALS = Object.fromEntries(DIALS.map((d) => [d.id, d.initial]));
 
