@@ -39,7 +39,7 @@ export function QueueRow(row: QueueRowData) {
           className="board-swatch mr-2 inline-block size-3"
         />
         <b className="mr-1.5">{row.title}</b>
-        {/* Visible text is #103, as on posters; screen readers hear "Proposal 103" (#36). */}
+        {/* Visible text is the number with a hash, as on posters; screen readers hear "Proposal 103" (#36). */}
         <span className="text-sm text-muted">
           <span className="sr-only">Proposal {row.number}</span>
           <span aria-hidden data-number>
