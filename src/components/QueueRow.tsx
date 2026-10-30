@@ -39,8 +39,13 @@ export function QueueRow(row: QueueRowData) {
           className="board-swatch mr-2 inline-block size-3"
         />
         <b className="mr-1.5">{row.title}</b>
+        {/* Visible text is #103, as on posters; screen readers hear "Proposal 103" (#36). */}
         <span className="text-sm text-muted">
-          Proposal {row.number}, {row.board}
+          <span className="sr-only">Proposal {row.number}</span>
+          <span aria-hidden data-number>
+            #{row.number}
+          </span>
+          , {row.board}
         </span>
       </span>
       <span className="col-start-2 text-sm @2xl:col-start-auto">{row.supportCount} supporters</span>
