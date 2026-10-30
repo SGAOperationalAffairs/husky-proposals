@@ -23,6 +23,16 @@ const rawSqlOnlyInDbSql = {
   message: "Raw SQL lives only in src/db/sql/, as tagged $queryRaw parsed with zod.",
 };
 
+// Core takes the time as input so due dates and cadence are testable (#43).
+const noDateNow = {
+  selector: "CallExpression[callee.object.name='Date'][callee.property.name='now']",
+  message: "Core takes the time as input. Pass a Clock or a Date (src/core/clock.ts).",
+};
+const noBareNewDate = {
+  selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+  message: "Core takes the time as input. Pass a Clock or a Date (src/core/clock.ts).",
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -69,6 +79,15 @@ const eslintConfig = defineConfig([
           ],
         },
       ],
+      // Last block wins, so this repeats the SQL rules from the base block.
+      "no-restricted-syntax": ["error", noUnsafeSql, rawSqlOnlyInDbSql, noDateNow, noBareNewDate],
+    },
+  },
+  {
+    // The one place in core that reads the time.
+    files: ["src/core/clock.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", noUnsafeSql, rawSqlOnlyInDbSql],
     },
   },
   // Port's scripts are copied verbatim from the plugin (#32), so /port:init can diff them on reconcile.

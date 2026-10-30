@@ -26,10 +26,12 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 |---|---|
 | `src/app/` | Next.js routes, layouts, and server actions. Thin: they receive requests and call core modules |
 | `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
-| `src/db/` (planned, T0.5) | The only place that talks to Prisma: shared field lists, filters, and named queries |
-| `src/db/sql/` (planned) | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule) |
+| `src/db/` | The only place that talks to Prisma. `client.ts` builds a client with the Postgres adapter (T0.5 adds the runtime singleton, shared field lists, filters, and named queries) |
+| `src/db/sql/` | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule). `ping.ts` is the first |
+| `src/db/testing/` | Database test helpers (`describeWithDatabase`, `withRollback`), factories, and invented fixtures |
+| `src/testing/` | Framework-free test fakes, such as the fake clock |
 | `src/auth/` (planned, T0.6) | The sign-in module: SGAuth session, the development stand-in, and positions to boards |
-| `src/email/` (planned) | `sendEmail()`, the outbox worker, and templates |
+| `src/email/` | The `sendEmail()` contract and the capturing mailer. The Resend mailer, outbox worker, and templates come with E9 |
 | `src/env.ts` | The only reader of `process.env`, validated with zod. Checked at server start by `src/instrumentation.ts` |
 | `src/generated/prisma/` | The generated Prisma client. Not committed; `npm install` rebuilds it |
 | `prisma/schema.prisma` | The data model's source of truth. `prisma/views/` holds the `idea_stats` view SQL |
@@ -54,13 +56,17 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Borders by role (a convention, not a guarded rule).** `bordered` (the 2px `--border` token) for outlines of controls, cards, and tags; `accent-rule` (5px) for the rule across the top of a card; Tailwind's 1px `border` (with `border-line`) for hairline dividers between rows and under tab lists. Pick by role, not by taste.
 - **Exported shapes:** a component's data type is exported as `<Name>Data` (`IdeaCardData`, `QueueRowData`); its props type stays local as `Props`.
 
+- **Core takes a `Clock`,** or a plain `now: Date`, and never reads the time (`src/core/clock.ts`). Lint bans `Date.now()` and `new Date()` with no argument in `src/core/` except in `clock.ts`. Tests pass `createFakeClock()` from `src/testing/fakeClock.ts` and `advance` it (#43).
+- **Tests send email only through a capturing mailer.** Call `sendEmail(mailer, message)` with `createCapturingMailer()` and read `mailer.sent`; `failNext(error)` makes the next send fail for retry tests (#43).
+- **Database tests** use `describeWithDatabase` and `withRollback` from `src/db/testing/database.ts`, and never commit. Build rows with the factories in `src/db/testing/factories.ts`, which are typed as Prisma create inputs (#43).
+
 Still to add, no later than the fifth feature: one hook per feature, the shared rules module (E2), and the validation helpers.
 
 ## 3. Data and integrity
 
 - **Environment:** read only through `env()` in `src/env.ts`. Add each variable to the zod schema, to `.env.example`, and to `src/env.test.ts` with the feature that first needs it. The one exception is `next.config.ts`'s build-time `APP_ENV` check (commented there).
 - **Validate everything from outside our code with zod:** SGAuth responses, Resend webhooks, and every student submission. Validate on read as well as on write. Repair what can be repaired, record what was repaired, never silently drop anything. One set of shared validation helpers; no local copies (`docs/dev-process.md`).
-- **Prisma rules** (shared selects, `idea_stats` for counts and rank, additive migrations, no TypedSQL) are in `CLAUDE.md`, "Database rules." Each raw query in `src/db/sql/` has a test against the Neon test branch, named `*.db.test.ts`, which runs only in CI.
+- **Prisma rules** (shared selects, `idea_stats` for counts and rank, additive migrations, no TypedSQL) are in `CLAUDE.md`, "Database rules." Each raw query in `src/db/sql/` has a test against the Neon test branch, named `*.db.test.ts`. These skip locally, with a printed reason, when `DATABASE_URL` is unset, and are required in CI (the config fails CI if the secret is missing). To run them locally, export `DATABASE_URL` for the test branch in your shell; Vitest does not read `.env.local`.
 
 ## 4. Security
 
@@ -87,7 +93,7 @@ Still to add, no later than the fifth feature: one hook per feature, the shared 
 - **TypeScript is strict** with `noUncheckedIndexedAccess`, `noImplicitOverride`, and `noFallthroughCasesInSwitch` (`tsconfig.json`). Map a closed set with `Record<Union, ...>` so a new member fails to compile (`STATUS_LABELS`, `BOARDS`, `VARIANTS`).
 - **Prettier** at width 110 with the Tailwind class sorter; ESLint with zero warnings. `npm run format` and `npm run lint:fix` fix most of it.
 - **Comments explain why and cite the issue,** for example `// ... (#29)`. Match the comment density around them.
-- **Tests sit beside the code:** `*.test.ts` (unit, Node), `*.test.tsx` (component, jsdom), `*.db.test.ts` (database, CI only), `tests/browser/*.spec.ts` (Playwright). The top `describe` names the feature and cites the issue: `describe("environment (#26)", ...)`.
+- **Tests sit beside the code:** `*.test.ts` (unit, Node), `*.test.tsx` (component, jsdom), `*.db.test.ts` (database, needs `DATABASE_URL`; required in CI), `tests/browser/*.spec.ts` (Playwright). The top `describe` names the feature and cites the issue: `describe("environment (#26)", ...)`.
 - **Test data is invented.** Seed data comes from the prototype's sample ideas.
 - **Assert on state, not on timing.** No retries in Playwright (`retries: 0`).
 
