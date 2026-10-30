@@ -6,7 +6,7 @@ How work on Husky Proposals is planned, built, tested, and recorded. It draws on
 
 ## Who owns what
 
-- **SGA Operations (Digital Innovation)** owns the repository (`SGAOperations/husky-proposals`) and the infrastructure.
+- **SGA Operations (Digital Innovation)** owns the repository (`SGAOperationalAffairs/husky-proposals`) and the infrastructure.
 - **Luis Sarmiento** is the primary developer and directs the product, alongside stakeholder feedback.
 - All changes go through pull requests. Nothing is pushed straight to `dev` or `main`.
 
@@ -154,7 +154,7 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
 {
   "$schema": "https://raw.githubusercontent.com/b-at-neu/port/main/schema/port.config.schema.json",
   "tracker": "github",
-  "repo": "SGAOperations/husky-proposals",
+  "repo": "SGAOperationalAffairs/husky-proposals",
   "branches": { "integration": "dev", "production": "main" },
   "commands": {
     "bootstrap": ["npm ci"],
@@ -225,7 +225,7 @@ Run it after the scaffold. On an empty repository it has nothing to sample. Re-r
 | Merge-button settings: squash for features, merge commits for releases, no rebase merging, squash message from the pull request title | Maintain or admin |
 | Rulesets on `dev` and `main`, required checks, the approval gate | Admin |
 | Changing the default branch | Admin |
-| A Projects board owned by the SGAOperations org | An org member allowed to create projects |
+| A Projects board owned by the SGAOperationalAffairs org | An org member allowed to create projects |
 
 ### Where port and our rules conflicted
 

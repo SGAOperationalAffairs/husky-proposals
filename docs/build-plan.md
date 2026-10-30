@@ -2,7 +2,7 @@
 
 **Tracking:**
 - Each task has acceptance criteria.
-- Tasks are grouped into epics in `feature-map.md`, and become GitHub issues in `SGAOperations/husky-proposals` (see `dev-process.md`). This file is the plan. The issues are the live backlog.
+- Tasks are grouped into epics in `feature-map.md`, and become GitHub issues in `SGAOperationalAffairs/husky-proposals` (see `dev-process.md`). This file is the plan. The issues are the live backlog.
 - Task numbers stay fixed even when a task moves to another week, so references do not break.
 
 Updated October 22, 2026: the sign-in and email spikes are answered, and scalability, testing, and governance tasks are added.
