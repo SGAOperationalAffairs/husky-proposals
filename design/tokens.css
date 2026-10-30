@@ -27,14 +27,14 @@
   /* One color per board, and the text color that reads on it. */
   --board-dining: #c8102e;
   --on-board-dining: #ffffff;
-  --board-planning: #213f99;
-  --on-board-planning: #ffffff;
-  --board-services: #00796b;
-  --on-board-services: #ffffff;
+  --board-planning: #ef7d1a;
+  --on-board-planning: #111111;
+  --board-services: #f2c230;
+  --on-board-services: #111111;
   --board-green: #2e7d32;
   --on-board-green: #ffffff;
-  --board-sust: #f2c230;
-  --on-board-sust: #111111;
+  --board-sust: #213f99;
+  --on-board-sust: #ffffff;
 
   /* Type: Public Sans for reading, Big Shoulders for headlines and big numbers.
      The --font-* faces are loaded by next/font in src/app/layout.tsx. */
@@ -89,7 +89,7 @@
     --grey: #2e2e2e;
     --grey-ink: #e0e0e0;
     --focus: #7aa7f0;
-    --board-planning: #3355c4;
+    --board-sust: #3355c4;
   }
 }
 /* Status chip colors:

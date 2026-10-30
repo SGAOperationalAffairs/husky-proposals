@@ -34,10 +34,10 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 | Board | Name | Color | Text on it |
 |---|---|---|---|
 | DAB | `dining` | `#c8102e` | `#ffffff` |
-| CPAB | `planning` | `#213f99` (dark `#3355c4`) | `#ffffff` |
-| CSC | `services` | `#00796b` | `#ffffff` |
+| CPAB | `planning` | `#ef7d1a` (orange) | `#111111` |
+| CSC | `services` | `#f2c230` (yellow) | `#111111` |
 | GIB | `green` | `#2e7d32` | `#ffffff` |
-| SC | `sust` | `#f2c230` | `#111111` |
+| SC | `sust` | `#213f99` (blue; dark `#3355c4`) | `#ffffff` |
 
 **Contrast, computed from the tokens (WCAG ratio, light / dark).** AA needs 4.5 for normal text. `src/app/contrast.test.ts` checks every pairing below in both modes (#37).
 
@@ -49,7 +49,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 | on-accent on accent | 5.88 | 4.78 (dark accent darkened from `#e0334f`, #37) |
 | chip inks on their chips | 8.08 to 11.43 | 8.30 to 10.29 |
 | focus on bg / surface | 5.10 / 6.09 | 7.42 / 6.53 |
-| text on board colors | 5.13 (green) to 11.27 (sust) | 5.13 to 11.27 (planning 6.49) |
+| text on board colors | 5.13 (green) to 11.27 (services) | 5.13 to 11.27 (sustainability 6.49) |
 
 **Shape and depth:**
 - Corners: `--card-radius`, `--field-radius`, `--button-radius`, `--chip-radius`, all `0`. Use only `rounded-card`, `rounded-field`, `rounded-button`, `rounded-chip` (style guard and browser guard).

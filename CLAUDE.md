@@ -245,7 +245,7 @@ Patterns are filled in as the first features land, and no later than the fifth f
   - WCAG AA contrast;
   - reduced motion is respected;
   - any visual-only display, such as the support squares, has a text alternative.
-- **Match `design/tokens.css`, the Poster direction (#29):** each idea reads as a poster in its board's color (Dining red, Planning blue, Services teal, Green green, Sustainability yellow), with big condensed Big Shoulders headlines and Public Sans text. Picked in the playground (#29):
+- **Match `design/tokens.css`, the Poster direction (#29):** each idea reads as a poster in its board's color (Dining red, Planning orange, Services yellow, Green green, Sustainability blue), with big condensed Big Shoulders headlines and Public Sans text. Picked in the playground (#29):
   - **Cards:** full-color posters, 3 per row at most (fewer on narrow screens, one on a phone), all the same height. The top line holds the board, the number as `#103`, the status, and From SGA, on one line. Headlines are capped at 3 lines, descriptions at 2. No place line on the card.
   - **Support and I'll participate:** a matched pair, always together. On the ideas wall they are outline icons (a heart and a raised hand) that fill in when tapped, with Learn more on the right. On an idea's own page they are labeled buttons with the same icons inside. Build both looks with `SupportPair`'s `look` prop.
   - **Corners are square.** All four radius tokens (`--card-radius`, `--field-radius`, `--button-radius`, `--chip-radius`) are `0`. Use only `rounded-card`, `rounded-field`, `rounded-button`, and `rounded-chip`, never another radius class; change a corner by changing its token.
