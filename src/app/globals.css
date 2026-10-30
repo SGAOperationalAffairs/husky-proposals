@@ -175,6 +175,39 @@
         1fr
       )
     );
+    /* Every row as tall as the tallest card, so all cards match. */
+    grid-auto-rows: 1fr;
+  }
+  /* Card content toggles (#29): each part shows or hides by its token. */
+  .card-board {
+    display: var(--card-show-board);
+  }
+  .card-status {
+    display: var(--card-show-status);
+  }
+  .card-sga {
+    display: var(--card-show-sga);
+  }
+  .card-headline {
+    display: var(--card-show-headline);
+  }
+  .card-desc {
+    display: var(--card-show-desc);
+  }
+  .card-place {
+    display: var(--card-show-place);
+  }
+  .card-count {
+    display: var(--card-show-count);
+  }
+  .card-helpers {
+    display: var(--card-show-helpers);
+  }
+  .card-learn {
+    display: var(--card-show-learn);
+  }
+  .card-buttons {
+    display: var(--card-show-buttons);
   }
   /* A swatch of the board's color, for lists outside a poster. */
   .board-swatch {

@@ -10,7 +10,7 @@ import { SupportSquares } from "@/components/SupportSquares";
 import { Tabs } from "@/components/Tabs";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { IDEAS, QUEUE } from "./sample";
-import { applyDials, DIALS, INITIAL_DIALS } from "./dials";
+import { applyDials, DIAL_GROUPS, DIALS, INITIAL_DIALS } from "./dials";
 import { TEMPLATES, emptyOverrides, settingsBlob, tokenStyle, type Mode, type Overrides } from "./templates";
 
 // The style playground (T0.3b, #29), inside the Poster direction. Local only:
@@ -81,18 +81,29 @@ export function Playground() {
           </Button>
         </div>
 
-        {(["Layout", "Type", "Color and lines"] as const).map((group) => (
+        {DIAL_GROUPS.map((group) => (
           <fieldset key={group} className="flex flex-col gap-3">
             <legend className="mb-1 text-sm font-bold">{group}</legend>
-            {DIALS.filter((d) => d.group === group).map((d) => (
-              <Preset
-                key={d.id}
-                label={d.label}
-                value={dials[d.id] ?? d.initial}
-                options={Object.keys(d.options)}
-                onChange={(v) => setDials({ ...dials, [d.id]: v })}
-              />
-            ))}
+            {DIALS.filter((d) => d.group === group).map((d) =>
+              d.kind === "toggle" ? (
+                <label key={d.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(dials[d.id] ?? d.initial) === "On"}
+                    onChange={(e) => setDials({ ...dials, [d.id]: e.target.checked ? "On" : "Off" })}
+                  />
+                  {d.label}
+                </label>
+              ) : (
+                <Preset
+                  key={d.id}
+                  label={d.label}
+                  value={dials[d.id] ?? d.initial}
+                  options={Object.keys(d.options)}
+                  onChange={(v) => setDials({ ...dials, [d.id]: v })}
+                />
+              ),
+            )}
           </fieldset>
         ))}
         <Button onClick={() => setDials(INITIAL_DIALS)}>Reset dials</Button>

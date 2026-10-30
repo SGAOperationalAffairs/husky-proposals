@@ -6,9 +6,13 @@ import type { Overrides } from "./templates";
 // modes; `colors` apply to light and dark alike.
 type Choice = { shared?: Overrides["shared"]; colors?: Overrides["light"]; light?: Overrides["light"] };
 
+export const DIAL_GROUPS = ["Layout", "Card contents", "Type", "Color and lines"] as const;
+
 export type Dial = {
   id: string;
-  group: "Layout" | "Type" | "Color and lines";
+  group: (typeof DIAL_GROUPS)[number];
+  /** A select by default; a toggle is a checkbox with On and Off options. */
+  kind?: "toggle";
   label: string;
   options: Record<string, Choice>;
   initial: string;
@@ -99,7 +103,7 @@ export const DIALS: Dial[] = [
   {
     id: "desc",
     group: "Type",
-    label: "Description",
+    label: "Description length",
     initial: "Full",
     options: {
       Full: { shared: { "desc-lines": "none" } },
@@ -159,6 +163,32 @@ export const DIALS: Dial[] = [
     },
   },
 ];
+
+// On/off toggles for each part of an idea card, shown as checkboxes.
+const CARD_PARTS: [part: string, label: string][] = [
+  ["board", "Board and proposal number"],
+  ["status", "Status"],
+  ["sga", "From SGA tag"],
+  ["headline", "Headline"],
+  ["desc", "Description"],
+  ["place", "Place and last update"],
+  ["count", "Support count"],
+  ["helpers", "Will help count"],
+  ["learn", "Learn more link"],
+  ["buttons", "Support and participate buttons"],
+];
+for (const [part, label] of CARD_PARTS)
+  DIALS.push({
+    id: `show-${part}`,
+    group: "Card contents",
+    kind: "toggle",
+    label,
+    initial: "On",
+    options: {
+      On: { shared: { [`card-show-${part}`]: "block" } },
+      Off: { shared: { [`card-show-${part}`]: "none" } },
+    },
+  });
 
 export const INITIAL_DIALS = Object.fromEntries(DIALS.map((d) => [d.id, d.initial]));
 

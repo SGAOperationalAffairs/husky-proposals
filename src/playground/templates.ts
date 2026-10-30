@@ -22,6 +22,16 @@ export const SHARED_KEYS = [
   "poster-title",
   "poster-number",
   "desc-lines",
+  "card-show-board",
+  "card-show-status",
+  "card-show-sga",
+  "card-show-headline",
+  "card-show-desc",
+  "card-show-place",
+  "card-show-count",
+  "card-show-helpers",
+  "card-show-learn",
+  "card-show-buttons",
 ] as const;
 
 export const COLOR_KEYS = [

@@ -24,7 +24,17 @@
         "card-gap": "20px",
         "poster-title": "2.25rem",
         "poster-number": "3.75rem",
-        "desc-lines": "none"
+        "desc-lines": "none",
+        "card-show-board": "block",
+        "card-show-status": "block",
+        "card-show-sga": "block",
+        "card-show-headline": "block",
+        "card-show-desc": "block",
+        "card-show-place": "block",
+        "card-show-count": "block",
+        "card-show-helpers": "block",
+        "card-show-learn": "block",
+        "card-show-buttons": "block"
       },
       "light": {
         "bg": "#dedfdc",
@@ -112,7 +122,17 @@
         "card-gap": "20px",
         "poster-title": "2.25rem",
         "poster-number": "3.75rem",
-        "desc-lines": "none"
+        "desc-lines": "none",
+        "card-show-board": "block",
+        "card-show-status": "block",
+        "card-show-sga": "block",
+        "card-show-headline": "block",
+        "card-show-desc": "block",
+        "card-show-place": "block",
+        "card-show-count": "block",
+        "card-show-helpers": "block",
+        "card-show-learn": "block",
+        "card-show-buttons": "block"
       },
       "light": {
         "bg": "#efefec",
@@ -200,7 +220,17 @@
         "card-gap": "20px",
         "poster-title": "2.25rem",
         "poster-number": "3.75rem",
-        "desc-lines": "none"
+        "desc-lines": "none",
+        "card-show-board": "block",
+        "card-show-status": "block",
+        "card-show-sga": "block",
+        "card-show-headline": "block",
+        "card-show-desc": "block",
+        "card-show-place": "block",
+        "card-show-count": "block",
+        "card-show-helpers": "block",
+        "card-show-learn": "block",
+        "card-show-buttons": "block"
       },
       "light": {
         "bg": "#efefec",
