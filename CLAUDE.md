@@ -199,6 +199,7 @@ SGAuth's repository is a useful reference for plumbing (environment validation, 
 - **Node 22** (`.nvmrc`). Prisma 7 does not support Node 23, and npm refuses to install on it here. If your default Node is another version: `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"`, or use nvm.
 - **First time:** `npm install` (also generates the Prisma client), then `cp .env.example .env.local`. The server refuses to start if `src/env.ts` finds a variable missing or invalid.
 - **Develop:** `npm run dev`, then open http://localhost:3000.
+- **Style playground:** with `APP_ENV=local` (the `.env.local` default), open http://localhost:3000/playground. It is compiled only for local and test, never into a production build. Its starting point is `design/playground-templates.json`, which must match `design/tokens.css` (a test checks); the dials only override tokens, and "Copy settings" lists what changed.
 - **Check:** `npm run verify` (everything, as in CI), `npm run verify:agent` (no build or browser tests; what port's agents run), `npm run verify:all` (adds Firefox).
 - **Fix formatting and lint:** `npm run format` and `npm run lint:fix`.
 
@@ -244,13 +245,17 @@ Patterns are filled in as the first features land, and no later than the fifth f
   - WCAG AA contrast;
   - reduced motion is respected;
   - any visual-only display, such as the support squares, has a text alternative.
-- **Match `design/tokens.css`:** Husky red `#C8102E`, the system font, flat bordered cards with a 5px accent rule across the top, and light and dark mode. Corner radius is being chosen in the playground (T0.3b): square today, as in the prototype. Once picked, the allowed radii are listed here.
+- **Match `design/tokens.css`, the Poster direction (#29):** each idea reads as a poster in its board's color (Dining red, Planning blue, Services teal, Green green, Sustainability yellow), with big condensed Big Shoulders headlines and Public Sans text. Picked in the playground (#29):
+  - **Cards:** full-color posters, 3 per row at most (fewer on narrow screens, one on a phone), all the same height. The top line holds the board, the number as `#103`, the status, and From SGA, on one line. Headlines are capped at 3 lines, descriptions at 2. No place line on the card.
+  - **Support and I'll participate:** a matched pair, always together. On the ideas wall they are outline icons (a heart and a raised hand) that fill in when tapped, with Learn more on the right. On an idea's own page they are labeled buttons with the same icons inside. Build both looks with `SupportPair`'s `look` prop.
+  - **Corners are square.** All four radius tokens (`--card-radius`, `--field-radius`, `--button-radius`, `--chip-radius`) are `0`. Use only `rounded-card`, `rounded-field`, `rounded-button`, and `rounded-chip`, never another radius class; change a corner by changing its token.
+  - No tape, tilt, or tear-off tabs. Light and dark mode.
 - **Test the review flow and the privacy rules carefully.** They are the riskiest parts.
 
 ## Current state (October 29, 2026)
 
 - The scaffold is in (#26): Next.js 16, Tailwind on our tokens, lint and style guards, `verify` with tests on Chromium and WebKit, CI, the environment module, and Prisma generating offline.
-- **Next:** the playground (T0.3b), the test harness with a Neon test branch (T0.4), migrations (T0.5), and the sign-in stand-in (T0.6). Dates are in `docs/timeline.md`.
+- **Next:** the test harness with a Neon test branch (T0.4), migrations (T0.5), and the sign-in stand-in (T0.6). Dates are in `docs/timeline.md`.
 - **To confirm with Eli:** the Vercel plan, the product registration, and the subdomains.
 - **Waiting on SGAuth:** see the milestones in `docs/sgauth-integration.md`.
 - **Waiting on Luis to raise with Eli:** the email limit proposal (PRD D19).

@@ -12,16 +12,21 @@ import { spawnSync } from "node:child_process";
 
 const tier = process.argv[2] ?? "full";
 
+// Types and the build run as production, so local-only pages (the playground)
+// are left out whatever .env.local says (process env wins over .env files),
+// and the generated route types agree with each other.
+const PRODUCTION = { APP_ENV: "production" };
+
 const fast = [
   ["format", "npx", ["prettier", "--check", "."]],
   ["lint", "npx", ["eslint", "--max-warnings=0"]],
-  ["types", "npm", ["run", "--silent", "typecheck"]],
+  ["types", "npm", ["run", "--silent", "typecheck"], PRODUCTION],
   ["styles", "node", ["scripts/check-styles.mjs"]],
   ["schema", "npx", ["prisma", "validate"]],
   ["unit and component tests", "npx", ["vitest", "run"]],
 ];
 const slow = [
-  ["build", "npx", ["next", "build"]],
+  ["build", "npx", ["next", "build"], PRODUCTION],
   ["browser tests", "npx", ["playwright", "test"]],
 ];
 // Database tests join here once the Neon test branch exists (T0.4).
@@ -31,9 +36,13 @@ const env = { ...process.env, VITE_CONFIG_NATIVE_IGNORE_WARNING: "true" };
 if (tier === "all") env.PLAYWRIGHT_FIREFOX = "1";
 
 const failures = [];
-for (const [name, cmd, args] of steps) {
+for (const [name, cmd, args, extraEnv] of steps) {
   const start = Date.now();
-  const run = spawnSync(cmd, args, { encoding: "utf8", env, shell: process.platform === "win32" });
+  const run = spawnSync(cmd, args, {
+    encoding: "utf8",
+    env: { ...env, ...extraEnv },
+    shell: process.platform === "win32",
+  });
   const seconds = ((Date.now() - start) / 1000).toFixed(1);
   const ok = run.status === 0;
   console.log(`${ok ? "pass" : "FAIL"}  ${name} (${seconds}s)`);

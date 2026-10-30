@@ -1,57 +1,95 @@
-/* Husky Proposals design tokens, taken from prototype/concept-2.html.
-   Square corners, system font, flat bordered cards with a 5px accent rule across the top.
-   This is the single token source. The Tailwind theme maps to it (#20). The corner
-   radius and the overall direction are picked in the playground (T0.3b). */
+/* Husky Proposals design tokens: the Poster direction (#29), picked from the
+   direction sketches. Ideas read as posters in their board's color, with big
+   condensed headlines. This is the single token source; the Tailwind theme maps
+   to it (#20), and the playground tunes it live. Set every token directly;
+   never derive one token from another on :root, so live overrides work. */
 :root {
   color-scheme: light;
-  --bg: #f1f2f5;
+  --bg: #dedfdc;
   --surface: #ffffff;
-  --ink: #1a1d26;
-  --muted: #596070;
-  --line: #dadde4;
+  --ink: #111111;
+  --muted: #4a4a4a;
+  --line: #111111;
   --accent: #c8102e;
-  --accent-text: #c8102e;
+  --accent-text: #b00d28;
   --on-accent: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
-  --sky: #e3ebf7;
-  --sky-ink: #26456f;
-  --amber: #fff0cf;
-  --amber-ink: #74480a;
-  --green: #dcf0e5;
-  --green-ink: #17603b;
-  --grey: #e8eaef;
-  --grey-ink: #424959;
+  --sky: #dbe7fb;
+  --sky-ink: #1a3a66;
+  --amber: #fdebb8;
+  --amber-ink: #5c3a00;
+  --green: #d4eedd;
+  --green-ink: #0c4d2b;
+  --grey: #e7e7e4;
+  --grey-ink: #2b2b2b;
   --focus: #1f5fbf;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* Corner radius, one token per kind of element (T0.3b picks the values).
-     Set each directly; never derive one token from another, so the
-     playground can tune them live. */
+
+  /* One color per board, and the text color that reads on it. */
+  --board-dining: #c8102e;
+  --on-board-dining: #ffffff;
+  --board-planning: #213f99;
+  --on-board-planning: #ffffff;
+  --board-services: #00796b;
+  --on-board-services: #ffffff;
+  --board-green: #2e7d32;
+  --on-board-green: #ffffff;
+  --board-sust: #f2c230;
+  --on-board-sust: #111111;
+
+  /* Type: Public Sans for reading, Big Shoulders for headlines and big numbers.
+     The --font-* faces are loaded by next/font in src/app/layout.tsx. */
+  --font: var(--font-public-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-big-shoulders), "Arial Narrow", sans-serif;
+  --heading-weight: 800;
+  --heading-tracking: 0.005em;
+  --heading-case: uppercase;
+
+  /* Corners, one token per kind of element. */
   --card-radius: 0;
   --field-radius: 0;
   --button-radius: 0;
   --chip-radius: 0;
-  --border: 1px;
+  --border: 2px;
   --accent-rule: 5px;
+  --rule-color: #c8102e;
+  /* Card depth and density. "none" means flat. */
+  --card-shadow: none;
+  --card-pad: 20px;
+  /* A poster's top and bottom padding, and the space between its parts. */
+  --card-pad-y: 20px;
+  --card-stack: 12px;
+  /* The wall of posters: the most cards per row (fewer when a card would be
+     narrower than 12rem, so phones show 1), the gap between them, and the
+     poster's type sizes. --desc-lines and --title-lines are line caps: a
+     number, or none for no cap. */
+  --cards-per-row: 3;
+  --card-gap: 20px;
+  --poster-title: 2.25rem;
+  --poster-number: 3.75rem;
+  --desc-lines: 2;
+  --title-lines: 3;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #13151a;
-    --surface: #1c1f27;
-    --ink: #eceef3;
-    --muted: #a0a7b5;
-    --line: #2d313c;
-    --accent: #d52f47;
-    --accent-text: #ff8696;
-    --sky: #1f2e47;
-    --sky-ink: #a9c6f2;
-    --amber: #3a2d12;
-    --amber-ink: #f0cb7d;
-    --green: #153325;
-    --green-ink: #92d7b2;
-    --grey: #2a2e38;
-    --grey-ink: #c4c9d4;
+    --bg: #161616;
+    --surface: #222222;
+    --ink: #f2f2f2;
+    --muted: #b5b5b5;
+    --line: #f2f2f2;
+    --accent: #e0334f;
+    --accent-text: #ff7a8e;
+    --rule-color: #e0334f;
+    --sky: #1c2e4d;
+    --sky-ink: #b3d1ff;
+    --amber: #3d2f0c;
+    --amber-ink: #f5cf73;
+    --green: #12382a;
+    --green-ink: #8fe0b3;
+    --grey: #2e2e2e;
+    --grey-ink: #e0e0e0;
     --focus: #7aa7f0;
+    --board-planning: #3355c4;
   }
 }
 /* Status chip colors:

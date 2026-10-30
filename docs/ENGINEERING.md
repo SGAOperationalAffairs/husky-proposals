@@ -8,7 +8,10 @@ Created with the scaffold (#26).
 
 ## Patterns
 
-None yet. Fill this in as the first features land, and no later than the fifth feature:
+- **Board color:** put `data-board="dining"` (or planning, services, green, sust) on an element; it and its children get `--b` and `--on-b`. `.poster` is an idea in its board's color, `.poster-btn` is the matched Support / I'll participate button, `.board-swatch` is a square of the color (`src/app/globals.css`). Board codes, names, and colors live in `src/core/boards.ts`.
+- **Responsive components use container queries** (`@container` on a parent, `@lg:` and `@2xl:` on the component), not screen breakpoints, so they fit narrow columns, drawers, and the playground's phone preview. Screen breakpoints (`md:`, `lg:`) are for page layout only (#29).
+
+None yet. Fill this in as the first features land (the rest), and no later than the fifth feature:
 - one component per idea (cards, chips, dialogs);
 - one hook per feature;
 - the shared rules module;
@@ -31,5 +34,9 @@ None yet. Fill this in as the first features land, and no later than the fifth f
 | `scripts/verify.mjs` | `npm run verify` and its tiers |
 | `tests/browser/` | Playwright tests against the production build (Chromium, iPhone WebKit; Firefox in `verify:all`) |
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
+| `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row |
+| `src/playground/` | The style playground (#29): templates, sample content, and the page itself. Local only |
+| `src/app/playground/*.dev.tsx` | The playground route. `.dev.tsx` files compile only when `APP_ENV` is local or test (`next.config.ts`) |
+| `design/playground-templates.json` | Whole-app style templates as token sets. Civic must match `design/tokens.css` (a test checks) |
 | `design/tokens.css` | The single source of design tokens, mapped into Tailwind in `src/app/globals.css` |
 | `prisma/schema.prisma` | The data model's source of truth |

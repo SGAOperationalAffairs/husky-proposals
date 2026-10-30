@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@design/*": ["./design/*"]
     },
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -33,5 +34,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".next/dev"]
 }

@@ -2,7 +2,10 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-const alias = { "@": fileURLToPath(new URL("./src", import.meta.url)) };
+const alias = {
+  "@design": fileURLToPath(new URL("./design", import.meta.url)),
+  "@": fileURLToPath(new URL("./src", import.meta.url)),
+};
 
 // Two kinds of fast tests, both with fakes for every outside service:
 // unit tests (*.test.ts, plain Node) and component tests (*.test.tsx, jsdom).

@@ -4,7 +4,7 @@
 // Fails on, in src/**/*.{ts,tsx}:
 // - arbitrary Tailwind values or properties, like `p-[13px]` or `[border-width:3px]`;
 // - corner radius classes other than our radius tokens;
-// - shadow classes (the tokens define no shadows);
+// - shadow classes other than `shadow-card` (the --card-shadow token);
 // - hex colors (colors come from design/tokens.css only).
 //
 // Usage: node scripts/check-styles.mjs [root]   (exits 1 on any finding)
@@ -33,8 +33,10 @@ export const rules = [
     allow: new RegExp(`rounded-(?:${SIDES})?(?:${RADIUS_TOKENS.join("|")})$`),
   },
   {
-    name: "shadow class",
+    name: "shadow class that is not a token",
     pattern: /(?<![\w-])(?:[a-z][\w-]*:)*(?:drop-|inset-|text-)?shadow(?:-[\w-]+)?(?![\w-])/g,
+    // `shadow-card` reads the --card-shadow token, so it is allowed.
+    allow: /^shadow-card$/,
   },
   {
     name: "hex color",
