@@ -71,7 +71,15 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**"]),
+  // Port's scripts are copied verbatim from the plugin (#32), so /port:init can diff them on reconcile.
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "src/generated/**",
+    "scripts/port-*.mjs",
+  ]),
 ]);
 
 export default eslintConfig;
