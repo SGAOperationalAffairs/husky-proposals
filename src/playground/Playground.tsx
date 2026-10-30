@@ -10,6 +10,7 @@ import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
 import { Tabs } from "@/components/Tabs";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
+import palettes from "@design/playground-palettes.json";
 import { contrast, contrastVerdict } from "./contrast";
 import { IDEAS, QUEUE } from "./sample";
 import { applyDials, DIAL_GROUPS, DIALS, INITIAL_DIALS } from "./dials";
@@ -134,13 +135,17 @@ export function Playground() {
 }
 
 type BoardColor = (typeof BOARDS)[BoardCode]["color"];
-type Tuned = Partial<Record<BoardColor, { color: string; text: "#ffffff" | "#111111" }>>;
+// Text on a board color is white or black; the values live with the other
+// playground colors in design/ (colors never live in src/).
+type TextColor = keyof typeof palettes.text;
+const TEXT = palettes.text;
+type Tuned = Partial<Record<BoardColor, { color: string; text: TextColor }>>;
 
 function applyTuned(overrides: Overrides, tuned: Tuned): Overrides {
   for (const [board, pick] of Object.entries(tuned)) {
     for (const modeOverrides of [overrides.light, overrides.dark]) {
       modeOverrides[`board-${board}` as ColorKey] = pick.color;
-      modeOverrides[`on-board-${board}` as ColorKey] = pick.text;
+      modeOverrides[`on-board-${board}` as ColorKey] = TEXT[pick.text];
     }
   }
   return overrides;
@@ -163,9 +168,9 @@ function BoardTuner(props: {
       {BOARD_CODES.map((code) => {
         const { color: name, category } = BOARDS[code];
         const color = current(`board-${name}` as ColorKey);
-        const text = current(`on-board-${name}` as ColorKey) === "#111111" ? "#111111" : "#ffffff";
-        const ratio = contrast(text, color);
-        const set = (pick: { color?: string; text?: "#ffffff" | "#111111" }) =>
+        const text: TextColor = current(`on-board-${name}` as ColorKey) === TEXT.black ? "black" : "white";
+        const ratio = contrast(TEXT[text], color);
+        const set = (pick: { color?: string; text?: TextColor }) =>
           props.onChange({ ...props.tuned, [name]: { color, text, ...pick } });
         return (
           <div key={code} className="flex flex-col gap-1.5">
@@ -183,16 +188,15 @@ function BoardTuner(props: {
               <select
                 aria-label={`${category} text color`}
                 value={text}
-                onChange={(e) => set({ text: e.target.value as "#ffffff" | "#111111" })}
+                onChange={(e) => set({ text: e.target.value as TextColor })}
                 className="rounded-field bordered bg-surface px-1.5 py-1 text-sm"
               >
-                <option value="#ffffff">White text</option>
-                <option value="#111111">Black text</option>
+                <option value="white">White text</option>
+                <option value="black">Black text</option>
               </select>
             </div>
             <p className={`text-xs ${ratio >= 4.5 ? "text-muted" : "font-semibold text-accent-text"}`}>
-              {color} with {text === "#ffffff" ? "white" : "black"} text: {ratio.toFixed(2)}:1,{" "}
-              {contrastVerdict(ratio)}
+              {color} with {text} text: {ratio.toFixed(2)}:1, {contrastVerdict(ratio)}
             </p>
           </div>
         );
