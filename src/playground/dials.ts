@@ -101,6 +101,17 @@ export const DIALS: Dial[] = [
     },
   },
   {
+    id: "titleLines",
+    group: "Type",
+    label: "Headline length",
+    initial: "Full",
+    options: {
+      Full: { shared: { "title-lines": "none" } },
+      "3 lines": { shared: { "title-lines": "3" } },
+      "2 lines": { shared: { "title-lines": "2" } },
+    },
+  },
+  {
     id: "desc",
     group: "Type",
     label: "Description length",
@@ -166,7 +177,8 @@ export const DIALS: Dial[] = [
 
 // On/off toggles for each part of an idea card, shown as checkboxes.
 const CARD_PARTS: [part: string, label: string][] = [
-  ["board", "Board and proposal number"],
+  ["board", "Board"],
+  ["number", "Proposal number"],
   ["status", "Status"],
   ["sga", "From SGA tag"],
   ["headline", "Headline"],

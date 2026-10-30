@@ -152,6 +152,14 @@
     font-size: min(var(--poster-title), 15cqi);
     overflow-wrap: break-word;
   }
+  /* --title-lines caps the headline, like --desc-lines for the description. */
+  .poster-title-lines {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--title-lines);
+    line-clamp: var(--title-lines);
+    overflow: hidden;
+  }
   .poster-number {
     font-size: min(var(--poster-number), 28cqi);
   }
@@ -181,6 +189,9 @@
   /* Card content toggles (#29): each part shows or hides by its token. */
   .card-board {
     display: var(--card-show-board);
+  }
+  .card-number {
+    display: var(--card-show-number);
   }
   .card-status {
     display: var(--card-show-status);

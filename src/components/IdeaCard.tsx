@@ -33,15 +33,18 @@ export function IdeaCard(props: Props) {
   return (
     <article data-board={board.color} className="poster @container flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 text-xs font-bold">
-        <span className="card-board">
-          {board.category}, proposal {props.number}
+        <span className="flex flex-wrap gap-x-3">
+          <span className="card-board">{board.category}</span>
+          <span className="card-number">Proposal {props.number}</span>
         </span>
         <span className="flex items-center gap-2">
           {props.fromSga && <span className="card-sga border border-current px-1.5">From SGA</span>}
           <span className="card-status">{STATUS_LABELS[props.status]}</span>
         </span>
       </div>
-      <h3 className="card-headline poster-title heading text-balance">{props.title}</h3>
+      <div className="card-headline">
+        <h3 className="poster-title poster-title-lines heading text-balance">{props.title}</h3>
+      </div>
       <div className="card-desc">
         <p className="poster-desc text-sm">{props.description}</p>
       </div>

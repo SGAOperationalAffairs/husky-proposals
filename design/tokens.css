@@ -56,15 +56,18 @@
   --card-shadow: none;
   --card-pad: 20px;
   /* The wall of posters: the most cards per row (fewer when a card would be
-     narrower than 12rem, so phones show 1), the gap between them, and the poster's type sizes. --desc-lines is a
-     line clamp: a number, or none for the full description. */
+     narrower than 12rem, so phones show 1), the gap between them, and the
+     poster's type sizes. --desc-lines and --title-lines are line caps: a
+     number, or none for no cap. */
   --cards-per-row: 3;
   --card-gap: 20px;
   --poster-title: 2.25rem;
   --poster-number: 3.75rem;
   --desc-lines: none;
+  --title-lines: none;
   /* What each idea card shows: block to show a part, none to hide it. */
   --card-show-board: block;
+  --card-show-number: block;
   --card-show-status: block;
   --card-show-sga: block;
   --card-show-headline: block;
