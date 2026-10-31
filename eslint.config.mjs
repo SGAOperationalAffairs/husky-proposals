@@ -72,7 +72,9 @@ const eslintConfig = defineConfig([
     },
   },
   // Port's scripts are copied verbatim from the plugin (#32), so /port:init can diff them on reconcile.
+  // Port's agent worktrees are full checkouts of other branches, never on this one (#69).
   globalIgnores([
+    ".claude/worktrees/**",
     ".next/**",
     "out/**",
     "build/**",
