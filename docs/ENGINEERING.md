@@ -55,7 +55,9 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Core rules return a result, never throw.** A rule returns `{ ok: true, ... }` or `{ ok: false, error: { code } }`, with `code` a closed union the caller can switch on. The function says what to write and the caller writes it (`src/core/review.ts`).
 - **Exported shapes:** a component's data type is exported as `<Name>Data` (`IdeaCardData`, `QueueRowData`); its props type stays local as `Props`.
 
-Still to add, no later than the fifth feature: one hook per feature, the shared rules module (E2), and the validation helpers.
+- **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
+
+Still to add, no later than the fifth feature: one hook per feature and the validation helpers.
 
 ## 3. Data and integrity
 
