@@ -50,6 +50,9 @@ export function IdeaWall({ ideas, list, path }: Props) {
     const next = parseIdeasQuery({ ...query, ...change }, list);
     const href = ideasHref(path, next);
     setQuery(next);
+    // A filter ends the first arrival (#84). Cards it takes away never finish
+    // their rise, so they would otherwise rise again when it brings them back.
+    setArriving(null);
     setSeenKey(href.split("?")[1] ?? "");
     window.history.pushState(null, "", href);
   };
