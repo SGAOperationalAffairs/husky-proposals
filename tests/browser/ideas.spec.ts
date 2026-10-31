@@ -155,8 +155,12 @@ test("filtering redraws the cards without asking the server (#61)", async ({ pag
   await page.goto("/");
   await page.waitForLoadState("networkidle");
   const requests: string[] = [];
+  // Learn more links prefetch their idea pages as new cards appear (#73);
+  // those are not the list, so only other requests count.
   page.on("request", (r) => {
-    if (r.resourceType() === "fetch" || r.resourceType() === "document") requests.push(r.url());
+    const prefetch = new URL(r.url()).pathname.startsWith("/ideas/");
+    if ((r.resourceType() === "fetch" || r.resourceType() === "document") && !prefetch)
+      requests.push(r.url());
   });
   await page.getByRole("navigation", { name: "Boards" }).getByRole("link", { name: "Dining" }).click();
   await expect(page).toHaveURL(/board=DAB/);
@@ -167,4 +171,66 @@ test("filtering redraws the cards without asking the server (#61)", async ({ pag
   await search.press("Enter");
   await expect(page.getByRole("status")).toHaveText("1 idea");
   expect(requests).toEqual([]);
+});
+
+test.describe("page transitions (#73)", () => {
+  // Record the durations of the view transition animations the browser runs.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { vtDurations: number[] };
+      w.vtDurations = [];
+      const start = document.startViewTransition?.bind(document);
+      if (!start) return;
+      document.startViewTransition = ((arg: Parameters<typeof start>[0]) => {
+        const vt = start(arg);
+        vt.ready
+          .then(() => {
+            for (const a of document.getAnimations()) {
+              const target = (a.effect as KeyframeEffect | null)?.pseudoElement ?? "";
+              if (target.startsWith("::view-transition")) {
+                w.vtDurations.push(Number(a.effect?.getComputedTiming().duration ?? 0));
+              }
+            }
+          })
+          .catch(() => {});
+        return vt;
+      }) as typeof document.startViewTransition;
+    });
+  });
+
+  const openIdea = async (page: import("@playwright/test").Page) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Learn more about proposal 131" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "A late-night dining option on weeknights",
+    );
+    return page.evaluate(() => (window as unknown as { vtDurations: number[] }).vtDurations);
+  };
+
+  test("opening an idea cross-fades at the token's duration", async ({ page }) => {
+    test.skip(!(await page.evaluate(() => "startViewTransition" in document)), "no view transitions here");
+    const durations = await openIdea(page);
+    // React also runs zero-length passes for parts that did not change, so
+    // check the fade itself runs at --motion-page and nothing runs longer.
+    expect(durations).toContain(200);
+    expect(Math.max(...durations)).toBe(200);
+  });
+
+  // Instant: the browser may still create the animations, at 0 or 0.01ms.
+  test("with reduced motion, opening an idea and filtering are instant", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const d of await openIdea(page)) expect(d).toBeLessThanOrEqual(0.01);
+    await page.goto("/");
+    await page.getByLabel("Status").selectOption("waiting");
+    await expect(page.getByRole("status")).toHaveText("1 idea");
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  });
+});
+
+test.describe("QR code in the share (#64)", () => {
+  test("the idea page draws a QR code for its own link", async ({ page }) => {
+    await page.goto("/ideas/103");
+    const qr = page.getByRole("img", { name: /^QR code for http:\/\/localhost:\d+\/ideas\/103$/ });
+    await expect(qr).toBeVisible();
+  });
 });

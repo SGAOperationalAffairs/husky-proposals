@@ -5,6 +5,8 @@ import { BoardFilter } from "@/components/BoardFilter";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { IdeaCard, updatedText } from "@/components/IdeaCard";
+import { IdeaPlaceholder, WallPlaceholder } from "@/components/Placeholder";
+import { QrCode } from "@/components/QrCode";
 import { QueueHeader, QueueRow } from "@/components/QueueRow";
 import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
@@ -303,6 +305,17 @@ function PreviewPage() {
             />
           </aside>
         </div>
+      </Section>
+
+      {/* What the wall and an idea page show while they load (#73), and the
+          share QR code (#64), held still so they can be looked at. */}
+      <Section title="Loading">
+        <WallPlaceholder />
+        <IdeaPlaceholder />
+      </Section>
+
+      <Section title="Share">
+        <QrCode path={`/ideas/${idea.number}`} />
       </Section>
 
       <Section title="Post an idea">

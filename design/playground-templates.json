@@ -26,7 +26,9 @@
         "poster-title": "2.25rem",
         "poster-number": "3.75rem",
         "desc-lines": "2",
-        "title-lines": "3"
+        "title-lines": "3",
+        "motion-fast": "150ms",
+        "motion-page": "200ms"
       },
       "light": {
         "bg": "#ebebe8",
@@ -57,7 +59,10 @@
         "on-board-green": "#ffffff",
         "board-sust": "#213f99",
         "on-board-sust": "#ffffff",
-        "rule-color": "#c8102e"
+        "rule-color": "#c8102e",
+        "scrim": "rgb(17 17 17 / 0.55)",
+        "qr-ink": "#111111",
+        "qr-paper": "#ffffff"
       },
       "dark": {
         "bg": "#161616",
@@ -88,7 +93,10 @@
         "on-board-green": "#ffffff",
         "board-sust": "#3355c4",
         "on-board-sust": "#ffffff",
-        "rule-color": "#d92b48"
+        "rule-color": "#d92b48",
+        "scrim": "rgb(0 0 0 / 0.7)",
+        "qr-ink": "#111111",
+        "qr-paper": "#ffffff"
       }
     }
   ]

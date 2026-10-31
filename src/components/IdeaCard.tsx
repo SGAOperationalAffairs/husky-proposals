@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
@@ -72,12 +73,12 @@ export function IdeaCard(props: Props) {
               onParticipateChange={props.onParticipateChange}
             />
           )}
-          <a
+          <Link
             href={`/ideas/${props.number}`}
             className="text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >
             Learn more<span className="sr-only"> about proposal {props.number}</span>
-          </a>
+          </Link>
         </div>
       </div>
     </article>

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { WallPlaceholder } from "@/components/Placeholder";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Wall } from "./_ideas/Wall";
 
@@ -16,7 +17,7 @@ export default function Home() {
         </p>
       </div>
       {/* The wall renders per request with the URL's filters, so it waits in a boundary. */}
-      <Suspense fallback={<p className="text-muted">Loading ideas</p>}>
+      <Suspense fallback={<WallPlaceholder />}>
         <Wall list="open" path="/" />
       </Suspense>
     </main>

@@ -84,8 +84,11 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 
 ## 5. Motion and feedback
 
-- No animations or transitions exist yet. Pressed state is shown by fill (icons fill, buttons invert), not motion.
-- Any motion added must respect `prefers-reduced-motion`; `globals.css` already reduces all durations under it.
+- Motion answers what the student did, and nothing else (#73). Two durations, both tokens: `--motion-fast` (150ms) for a sheet or dialog opening, and `--motion-page` (200ms) for the page cross-fade. Never write a duration in a component.
+- Moving between pages is one cross-fade everywhere: React's `ViewTransition` in `src/app/layout.tsx`, run by Next's `Link`. No entrance animations on the wall.
+- While a page loads, placeholders shaped like the content hold its place (`WallPlaceholder`, `IdeaPlaceholder`). Flat, no shimmer.
+- Pressed state is shown by fill (icons fill, buttons invert), not motion.
+- All motion respects `prefers-reduced-motion`: `globals.css` makes every animation, transition, and view transition instant under it.
 
 ## 6. Copy and tone
 

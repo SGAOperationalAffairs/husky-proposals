@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Wall } from "@/app/_ideas/Wall";
+import { WallPlaceholder } from "@/components/Placeholder";
 import { SiteHeader } from "@/components/SiteHeader";
 
 // The In progress list (#63): ideas a board has taken on, in progress or
@@ -16,7 +17,7 @@ export default function InProgress() {
         </p>
       </div>
       {/* The wall renders per request with the URL's filters, so it waits in a boundary. */}
-      <Suspense fallback={<p className="text-muted">Loading ideas</p>}>
+      <Suspense fallback={<WallPlaceholder />}>
         <Wall list="progress" path="/in-progress" />
       </Suspense>
     </main>

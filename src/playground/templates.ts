@@ -25,6 +25,8 @@ export const SHARED_KEYS = [
   "poster-number",
   "desc-lines",
   "title-lines",
+  "motion-fast",
+  "motion-page",
 ] as const;
 
 export const COLOR_KEYS = [
@@ -46,6 +48,9 @@ export const COLOR_KEYS = [
   "grey",
   "grey-ink",
   "focus",
+  "scrim",
+  "qr-ink",
+  "qr-paper",
   "board-dining",
   "on-board-dining",
   "board-planning",

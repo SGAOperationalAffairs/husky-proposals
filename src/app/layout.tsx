@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, Public_Sans } from "next/font/google";
+import { ViewTransition } from "react";
 import "./globals.css";
 
 // The Poster direction's faces (#29). design/tokens.css reads these variables.
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`h-full ${publicSans.variable} ${bigShoulders.variable}`}>
-      <body className="@container flex min-h-full flex-col font-sans antialiased">{children}</body>
+      <body className="@container flex min-h-full flex-col font-sans antialiased">
+        {/* One page transition everywhere (#73): a quick cross-fade when a Link
+            navigates, timed by --motion-page in globals.css. */}
+        <ViewTransition>{children}</ViewTransition>
+      </body>
     </html>
   );
 }

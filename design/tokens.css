@@ -23,6 +23,11 @@
   --grey: #e7e7e4;
   --grey-ink: #2b2b2b;
   --focus: #1f5fbf;
+  /* Behind a dialog or sheet (#67). */
+  --scrim: rgb(17 17 17 / 0.55);
+  /* A QR code is dark on light in both modes (#64). */
+  --qr-ink: #111111;
+  --qr-paper: #ffffff;
 
   /* One color per board, and the text color that reads on it. */
   --board-dining: #c8102e;
@@ -68,6 +73,10 @@
   --poster-number: 3.75rem;
   --desc-lines: 2;
   --title-lines: 3;
+  /* Motion (#73): how long a change that answers a tap takes, and the page
+     cross-fade. Reduced motion turns both into an instant change. */
+  --motion-fast: 150ms;
+  --motion-page: 200ms;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -89,6 +98,7 @@
     --grey: #2e2e2e;
     --grey-ink: #e0e0e0;
     --focus: #7aa7f0;
+    --scrim: rgb(0 0 0 / 0.7);
     --board-sust: #3355c4;
   }
 }

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
+import { IdeaPlaceholder } from "@/components/Placeholder";
+import { QrCode } from "@/components/QrCode";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
@@ -27,7 +29,7 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
         Back to ideas
       </Link>
       {/* The number comes from the URL, which is request data, so it waits in a boundary. */}
-      <Suspense fallback={<p className="text-muted">Loading the idea</p>}>
+      <Suspense fallback={<IdeaPlaceholder />}>
         <Idea params={params} />
       </Suspense>
     </main>
@@ -101,6 +103,12 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
             <CopyLink />
+            <figure className="flex items-center gap-4 border-t border-line pt-4">
+              <QrCode path={`/ideas/${idea.number}`} />
+              <figcaption className="text-sm text-muted">
+                Scan to open this idea. Show it at a table, or put it on a flyer.
+              </figcaption>
+            </figure>
           </section>
         </aside>
 

@@ -36,6 +36,9 @@
   --color-grey: var(--grey);
   --color-grey-ink: var(--grey-ink);
   --color-focus: var(--focus);
+  --color-scrim: var(--scrim);
+  --color-qr-ink: var(--qr-ink);
+  --color-qr-paper: var(--qr-paper);
 
   --font-sans: var(--font);
   --font-heading: var(--font-heading);
@@ -230,6 +233,69 @@
   .board-swatch {
     background: var(--b);
   }
+  /* Loading placeholders (#73). A bar is transparent text on a flat token
+     color, so it has the real line's height; box-decoration-break gives each
+     wrapped line its own bar. Grey bars on surface-colored blocks, so they
+     read on the page background in both modes. The whole placeholder is
+     transparent text, so line clamping draws no visible ellipsis. */
+  .placeholder {
+    color: transparent;
+  }
+  .placeholder-text {
+    background: var(--grey);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .placeholder-poster {
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    padding: var(--card-pad-y) var(--card-pad);
+  }
+  .placeholder-chip {
+    background: var(--surface);
+    border: var(--border) solid var(--surface);
+  }
+  /* The participate confirmation (#67): a sheet from the bottom on phones, a
+     small dialog in the middle from 40rem up. Base UI marks the way in and out
+     with data-starting-style and data-ending-style. A page-level overlay, so a
+     screen breakpoint, not a container query. Borders and padding live here,
+     not in utilities, because the phone sheet has only a top edge. */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    transition: opacity var(--motion-fast) ease-out;
+  }
+  .sheet {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    border-top: var(--border) solid var(--line);
+    padding: var(--card-pad) var(--card-pad) calc(var(--card-pad) + env(safe-area-inset-bottom));
+    transition:
+      transform var(--motion-fast) ease-out,
+      opacity var(--motion-fast) ease-out;
+  }
+  .sheet-backdrop:is([data-starting-style], [data-ending-style]) {
+    opacity: 0;
+  }
+  .sheet:is([data-starting-style], [data-ending-style]) {
+    transform: translateY(100%);
+  }
+  @media (width >= 40rem) {
+    .sheet {
+      inset: 50% auto auto 50%;
+      width: min(28rem, calc(100vw - 2rem));
+      translate: -50% -50%;
+      border: var(--border) solid var(--line);
+      border-radius: var(--card-radius);
+      padding: var(--card-pad);
+    }
+    .sheet:is([data-starting-style], [data-ending-style]) {
+      transform: none;
+      opacity: 0;
+    }
+  }
 }
 
 body {
@@ -260,6 +326,14 @@ input[type="submit"] {
   outline-offset: 2px;
 }
 
+/* The page cross-fade (#73, ViewTransition in layout.tsx). The browser's
+   default fade, at our duration. */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: var(--motion-page);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -268,5 +342,11 @@ input[type="submit"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* View transitions run on pseudo-elements the rule above does not reach. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
