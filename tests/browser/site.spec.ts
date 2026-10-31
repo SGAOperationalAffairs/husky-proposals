@@ -8,6 +8,11 @@ test("the style playground is not in a production build (#29)", async ({ page })
   expect(response?.status()).toBe(404);
 });
 
+test("the sign-in stand-in is not in a production build (#45)", async ({ page }) => {
+  const response = await page.goto("/stand-in");
+  expect(response?.status()).toBe(404);
+});
+
 test.describe("public, but not searchable (PRD D18)", () => {
   for (const path of PAGES) {
     test(`${path} sends noindex as a header and a meta tag`, async ({ page }) => {

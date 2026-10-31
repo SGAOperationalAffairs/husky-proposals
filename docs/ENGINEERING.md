@@ -28,7 +28,9 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
 | `src/db/` (planned, T0.5) | The only place that talks to Prisma: shared field lists, filters, and named queries |
 | `src/db/sql/` (planned) | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule) |
-| `src/auth/` (planned, T0.6) | The sign-in module: SGAuth session, the development stand-in, and positions to boards |
+| `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), and `session.ts`, the one module the app calls (`getSession()`) |
+| `src/core/positions.ts` | SGAuth position keys to boards and roles (`rolesFromPositions`, `boardsRun`), and `isSgaLeader`, the one function for PRD D16. A test pins its keys to `docs/sgauth-integration.md` |
+| `src/app/stand-in/` | The dev-only sign-in stand-in page (`page.dev.tsx`), its actions, and a presentational panel |
 | `src/email/` (planned) | `sendEmail()`, the outbox worker, and templates |
 | `src/env.ts` | The only reader of `process.env`, validated with zod. Checked at server start by `src/instrumentation.ts` |
 | `src/generated/prisma/` | The generated Prisma client. Not committed; `npm install` rebuilds it |
@@ -59,6 +61,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 
 - **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
 
+- **Who is signed in:** call `getSession()` from `src/auth/session.ts` inside `<Suspense>` (it reads cookies, so the page is never cached). Never read the cookie, positions, or SGAuth directly. Roles come from `session.roles`; who counts as a leader comes only from `isSgaLeader` (#45).
+
 Still to add, no later than the fifth feature: one hook per feature and the validation helpers.
 
 ## 3. Data and integrity
@@ -69,7 +73,7 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 
 ## 4. Security
 
-- **The sign-in stand-in runs only when `APP_ENV` is `local` or `test`.** `src/env.ts` refuses to start otherwise, and `src/env.test.ts` checks every other environment.
+- **The sign-in stand-in runs only when `APP_ENV` is `local` or `test`.** `src/env.ts` refuses to start otherwise, and `src/env.test.ts` checks every other environment. The stand-in page is `.dev.tsx`, and `startStandInSession` also refuses when `AUTH_STAND_IN` is off.
 - **Public, but not searchable.** Every response sends `X-Robots-Tag: noindex` (`next.config.ts`) and the root layout sets `robots: { index: false }`. `tests/browser/site.spec.ts` checks both for every path in `PAGES`.
 - **Viewer shapes and same-origin writes** are in `CLAUDE.md`, "Architecture rules." A test must fail if a private field reaches the student shape.
 
