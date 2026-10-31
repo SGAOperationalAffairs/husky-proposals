@@ -12,6 +12,14 @@ export function BoardTag({ board }: { board: BoardCode }) {
   );
 }
 
-export function FromSgaTag() {
-  return <span className="bordered px-1.5 text-xs font-bold">From SGA</span>;
+// One tag, two looks (#35). "poster" outlines in the poster's text color
+// (`border-current`) and takes the type of its line, so it reads on any board
+// color. `shrink-0` keeps it whole in the card's one-line top row.
+const FROM_SGA_LOOKS = {
+  plain: "text-xs font-bold",
+  poster: "border-current",
+} satisfies Record<string, string>;
+
+export function FromSgaTag({ look = "plain" }: { look?: keyof typeof FROM_SGA_LOOKS }) {
+  return <span className={`shrink-0 bordered px-1.5 ${FROM_SGA_LOOKS[look]}`}>From SGA</span>;
 }

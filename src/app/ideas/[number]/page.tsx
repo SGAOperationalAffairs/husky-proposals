@@ -8,6 +8,7 @@ import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
 import { SupportPair } from "@/components/SupportPair";
+import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS } from "@/core/boards";
 
@@ -48,7 +49,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold">
             <span>{board.name}</span>
             <span>#{idea.number}</span>
-            {idea.fromSga && <span className="border border-current px-1.5">From SGA</span>}
+            {idea.fromSga && <FromSgaTag look="poster" />}
             <span className="ml-auto">{STATUS_LABELS[idea.status]}</span>
           </p>
           <h1 className="heading text-5xl text-balance @3xl:text-7xl">{idea.title}</h1>
