@@ -36,7 +36,18 @@ function Wrap({ id, label, hint, error, children }: Shared & { id: string; child
 const describedBy = (id: string, { hint, error }: Shared) =>
   error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
-export function TextField({ label, hint, error, ...rest }: Shared & InputHTMLAttributes<HTMLInputElement>) {
+// onPage: the field takes the page background instead of a white surface, for a
+// field that sits on the page rather than in a panel (the ideas search, #61).
+// joinedEnd: no right edge, because a button sits flush against it and draws
+// the shared edge, so the seam is one line, not two (#61).
+export function TextField({
+  label,
+  hint,
+  error,
+  onPage = false,
+  joinedEnd = false,
+  ...rest
+}: Shared & { onPage?: boolean; joinedEnd?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   return (
     <Wrap id={id} label={label} hint={hint} error={error}>
@@ -44,7 +55,10 @@ export function TextField({ label, hint, error, ...rest }: Shared & InputHTMLAtt
         id={id}
         aria-invalid={!!error}
         aria-describedby={describedBy(id, { label, hint, error })}
-        className={control}
+        // Joined with a space here, not inside the strings: Prettier's class sorter trims them.
+        className={[onPage ? control.replace("bg-surface", "bg-bg") : control, joinedEnd && "joined-end"]
+          .filter(Boolean)
+          .join(" ")}
         {...rest}
       />
     </Wrap>
@@ -79,17 +93,28 @@ export function SelectField({
   ...rest
 }: Shared & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
+  // appearance-none: Safari draws its own rounded select over rounded-field, so
+  // the arrow is ours (#61).
   return (
     <Wrap id={id} label={label} hint={hint} error={error}>
-      <select
-        id={id}
-        aria-invalid={!!error}
-        aria-describedby={describedBy(id, { label, hint, error })}
-        className={control}
-        {...rest}
-      >
-        {children}
-      </select>
+      <span className="relative block">
+        <select
+          id={id}
+          aria-invalid={!!error}
+          aria-describedby={describedBy(id, { label, hint, error })}
+          className={`${control} appearance-none pr-9`}
+          {...rest}
+        >
+          {children}
+        </select>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 fill-none stroke-current stroke-2"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </span>
     </Wrap>
   );
 }

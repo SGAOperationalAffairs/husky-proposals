@@ -29,7 +29,7 @@
         "title-lines": "3"
       },
       "light": {
-        "bg": "#dedfdc",
+        "bg": "#ebebe8",
         "surface": "#ffffff",
         "ink": "#111111",
         "muted": "#4a4a4a",
@@ -49,14 +49,14 @@
         "focus": "#1f5fbf",
         "board-dining": "#c8102e",
         "on-board-dining": "#ffffff",
-        "board-planning": "#213f99",
-        "on-board-planning": "#ffffff",
-        "board-services": "#00796b",
-        "on-board-services": "#ffffff",
+        "board-planning": "#ff8700",
+        "on-board-planning": "#111111",
+        "board-services": "#f2c230",
+        "on-board-services": "#111111",
         "board-green": "#2e7d32",
         "on-board-green": "#ffffff",
-        "board-sust": "#f2c230",
-        "on-board-sust": "#111111",
+        "board-sust": "#213f99",
+        "on-board-sust": "#ffffff",
         "rule-color": "#c8102e"
       },
       "dark": {
@@ -80,14 +80,14 @@
         "focus": "#7aa7f0",
         "board-dining": "#c8102e",
         "on-board-dining": "#ffffff",
-        "board-planning": "#3355c4",
-        "on-board-planning": "#ffffff",
-        "board-services": "#00796b",
-        "on-board-services": "#ffffff",
+        "board-planning": "#ff8700",
+        "on-board-planning": "#111111",
+        "board-services": "#f2c230",
+        "on-board-services": "#111111",
         "board-green": "#2e7d32",
         "on-board-green": "#ffffff",
-        "board-sust": "#f2c230",
-        "on-board-sust": "#111111",
+        "board-sust": "#3355c4",
+        "on-board-sust": "#ffffff",
         "rule-color": "#d92b48"
       }
     }

@@ -38,7 +38,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
 | `scripts/port-*.mjs` | Port's scripts, copied verbatim from the plugin. Excluded from lint and Prettier; never edit by hand |
 | `tests/browser/` | Playwright tests against the production build (Chromium, iPhone WebKit; Firefox in `verify:all`) |
-| `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row |
+| `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row, board filter chips, ideas list filters, site header with the list links (its tab look comes from `tabLook.ts`, a plain module so server components can call it), copy link |
+| `src/app/_ideas/` | The ideas list's stand-in data (#61): the playground's sample ideas behind `listIdeas()`, `parseIdeasQuery()`, and `getIdea()` (#62), `filter.ts` (the filter and sort rules, plain functions the browser and server share), and `Wall.tsx` with `IdeaWall.tsx`: the server loads a list's public ideas once and the wall filters them in the browser, so search, sort, and chips redraw only the cards with no request (#61, #63). Replaced by the public queries (#60) |
 | `src/playground/` | The style playground (#29): templates, sample content, and the page itself. Local only |
 | `src/app/playground/*.dev.tsx` | The playground route. `.dev.tsx` files compile only when `APP_ENV` is local or test (`next.config.ts`) |
 | `design/tokens.css` | The single token source. `src/app/globals.css` maps it into Tailwind with `@theme inline` |
@@ -53,6 +54,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Tailwind first, a named class when it must.** Write layout and spacing as Tailwind classes in the component. Add a class to `@layer components` in `globals.css` only when it needs token arithmetic, attribute selectors (`[aria-pressed="true"]`), or line clamping (`.poster-title-lines`, `.support-icon`). Add a `@utility` for a reusable single-purpose rule (`bordered`, `heading`, `queue-cols`).
 - **Borders by role (a convention, not a guarded rule).** `bordered` (the 2px `--border` token) for outlines of controls, cards, and tags; `accent-rule` (5px) for the rule across the top of a card; Tailwind's 1px `border` (with `border-line`) for hairline dividers between rows and under tab lists. Pick by role, not by taste.
 - **Core rules return a result, never throw.** A rule returns `{ ok: true, ... }` or `{ ok: false, error: { code } }`, with `code` a closed union the caller can switch on. The function says what to write and the caller writes it (`src/core/review.ts`).
+- **Everything clickable shows the pointer,** even before it does anything (a Support button before E6). One global rule in `globals.css` covers links, buttons, dropdowns, tabs, and `role="button"`; disabled controls show `not-allowed`. `tests/browser/site.spec.ts` checks every page in `PAGES`. A new kind of clickable element joins the rule's selector, never a per-component `cursor-pointer`.
 - **Exported shapes:** a component's data type is exported as `<Name>Data` (`IdeaCardData`, `QueueRowData`); its props type stays local as `Props`.
 
 - **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
@@ -101,6 +103,7 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 - [ ] An element already built in `src/components/` is reused, not copied inline.
 - [ ] No arbitrary Tailwind values, hex colors, or radius and shadow classes outside the tokens (`npm run check:styles`). A new token is added to `design/tokens.css`, to `@theme inline` in `globals.css` if a class needs it, and to `design/playground-templates.json`.
 - [ ] A new route is added to `PAGES` in `tests/browser/site.spec.ts`.
+- [ ] Anything clickable shows the pointer cursor (the browser guard checks it).
 - [ ] Copy promises nothing, never says "petition" or "slots," and new user-facing copy has a test like `src/app/page.test.tsx`'s.
 - [ ] A visual-only display has a text alternative; every control works by keyboard.
 - [ ] Nothing private reaches the student shape, and a test proves it.

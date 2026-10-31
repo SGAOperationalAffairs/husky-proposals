@@ -65,6 +65,13 @@
   border-top-color: var(--rule-color);
 }
 
+/* No right edge on a field with a button flush against it, so the seam is one
+   line (#61). A custom utility like accent-rule, because Tailwind orders its own
+   border-r-0 before bordered, and bordered would win. */
+@utility joined-end {
+  border-right-width: 0;
+}
+
 /* The SGA queue's columns (prototype .row): rank, idea, supporters, willing
    to help, age, status. Stacked on narrow screens. */
 @utility queue-cols {
@@ -72,6 +79,11 @@
 }
 @utility queue-cols-wide {
   grid-template-columns: 44px minmax(0, 1fr) 110px 110px 70px 140px;
+}
+/* The idea page's rows (#62): the side column spans all three, and the last row
+   takes any extra height, so no gap opens between the poster and the details. */
+@utility idea-rows {
+  grid-template-rows: auto auto 1fr;
 }
 
 /* Heading type from the tokens: family, weight, and tracking. */
@@ -123,7 +135,8 @@
     background: transparent;
     color: inherit;
   }
-  .poster-btn[aria-pressed="true"] {
+  /* A chosen filter chip is a link with aria-current, and looks pressed (#61). */
+  .poster-btn:is([aria-pressed="true"], [aria-current="true"]) {
     /* Outside a poster, a pressed button is ink on the page. */
     background: var(--press-bg, var(--ink));
     border-color: var(--press-bg, var(--ink));
@@ -223,6 +236,23 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
+}
+
+/* Everything clickable shows the pointer, even before it does anything
+   (tests/browser/site.spec.ts checks every page). Tailwind's reset gives
+   buttons the default arrow. Disabled controls say so instead. */
+a[href],
+button,
+select,
+summary,
+[role="button"],
+[role="tab"],
+input[type="submit"] {
+  cursor: pointer;
+}
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 :focus-visible {

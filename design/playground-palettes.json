@@ -4,29 +4,35 @@
     "Deep": {
       "board-dining": "#9e0b23",
       "on-board-dining": "#ffffff",
-      "board-planning": "#172d70",
+      "board-planning": "#9a3a00",
       "on-board-planning": "#ffffff",
-      "board-services": "#00594f",
-      "on-board-services": "#ffffff",
+      "board-services": "#c99a0e",
+      "on-board-services": "#111111",
       "board-green": "#1f5a23",
       "on-board-green": "#ffffff",
-      "board-sust": "#c99a0e",
-      "on-board-sust": "#111111"
+      "board-sust": "#172d70",
+      "on-board-sust": "#ffffff"
     },
     "Soft": {
       "board-dining": "#f7d0d6",
       "on-board-dining": "#111111",
-      "board-planning": "#d3dcf7",
+      "board-planning": "#fbdcc7",
       "on-board-planning": "#111111",
-      "board-services": "#c9e9e4",
+      "board-services": "#fae8a8",
       "on-board-services": "#111111",
       "board-green": "#d3ebd3",
       "on-board-green": "#111111",
-      "board-sust": "#fae8a8",
+      "board-sust": "#d3dcf7",
       "on-board-sust": "#111111"
     }
   },
   "backgrounds": {
-    "White": { "bg": "#ffffff" }
+    "White": {
+      "bg": "#ffffff"
+    }
+  },
+  "text": {
+    "white": "#ffffff",
+    "black": "#111111"
   }
 }
