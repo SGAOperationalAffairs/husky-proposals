@@ -84,8 +84,8 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 
 ## 5. Motion and feedback
 
-- Motion answers what the student did, and nothing else (#73). Two durations, both tokens: `--motion-fast` (150ms) for a sheet or dialog opening, and `--motion-page` (200ms) for the page cross-fade. Never write a duration in a component.
-- Moving between pages is one cross-fade everywhere: React's `ViewTransition` in `src/app/layout.tsx`, run by Next's `Link`. No entrance animations on the wall.
+- Motion answers what the student did, and nothing else (#73). The values are tokens: `--motion-fast` (150ms) for a sheet or dialog and for the old page fading out, `--motion-page` (240ms) and `--motion-rise` (12px) for new page content rising into place. Never write a duration in a component.
+- Moving between pages or tabs is one rise everywhere: React's `ViewTransition` in `src/app/layout.tsx`, run by a `Link` marked with `PAGE`. Filter changes never animate. The site header holds still, so only the tab underline moves. No per-card entrance animations on the wall.
 - While a page loads, placeholders shaped like the content hold its place (`WallPlaceholder`, `IdeaPlaceholder`). Flat, no shimmer.
 - Pressed state is shown by fill (icons fill, buttons invert), not motion.
 - All motion respects `prefers-reduced-motion`: `globals.css` makes every animation, transition, and view transition instant under it.

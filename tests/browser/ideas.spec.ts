@@ -170,7 +170,7 @@ test("filtering redraws the cards without asking the server (#61)", async ({ pag
   await search.fill("late");
   await search.press("Enter");
   await expect(page.getByRole("status")).toHaveText("1 idea");
-  expect(requests).toEqual([]);
+  expect(requests, requests.join(", ")).toEqual([]);
 });
 
 test.describe("page transitions (#73)", () => {
@@ -207,13 +207,27 @@ test.describe("page transitions (#73)", () => {
     return page.evaluate(() => (window as unknown as { vtDurations: number[] }).vtDurations);
   };
 
-  test("opening an idea cross-fades at the token's duration", async ({ page }) => {
+  test("opening an idea rises into place at the token's duration", async ({ page }) => {
     test.skip(!(await page.evaluate(() => "startViewTransition" in document)), "no view transitions here");
     const durations = await openIdea(page);
     // React also runs zero-length passes for parts that did not change, so
-    // check the fade itself runs at --motion-page and nothing runs longer.
-    expect(durations).toContain(200);
-    expect(Math.max(...durations)).toBe(200);
+    // check the rise runs at --motion-page and nothing runs longer.
+    expect(durations).toContain(240);
+    expect(Math.max(...durations)).toBe(240);
+  });
+
+  test("switching tabs rises too, and a filter change does not animate", async ({ page }) => {
+    test.skip(!(await page.evaluate(() => "startViewTransition" in document)), "no view transitions here");
+    await page.goto("/");
+    await page.getByRole("navigation", { name: "Lists" }).getByRole("link", { name: "In progress" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "In progress" })).toBeVisible();
+    const vt = () => page.evaluate(() => (window as unknown as { vtDurations: number[] }).vtDurations);
+    expect(await vt()).toContain(240);
+    const before = (await vt()).length;
+    // Next keeps the Ideas page in the DOM, hidden, for Back; use the visible one.
+    await page.getByLabel("Sort by").filter({ visible: true }).selectOption("newest");
+    await expect(page).toHaveURL(/sort=newest/);
+    expect((await vt()).length).toBe(before);
   });
 
   // Instant: the browser may still create the animations, at 0 or 0.01ms.
@@ -227,10 +241,44 @@ test.describe("page transitions (#73)", () => {
   });
 });
 
-test.describe("QR code in the share (#64)", () => {
-  test("the idea page draws a QR code for its own link", async ({ page }) => {
+test.describe("share (#64)", () => {
+  test("the share dialog has the link, the poster, and the flyer with its QR code", async ({ page }) => {
     await page.goto("/ideas/103");
-    const qr = page.getByRole("img", { name: /^QR code for http:\/\/localhost:\d+\/ideas\/103$/ });
-    await expect(qr).toBeVisible();
+    await page.getByRole("button", { name: "Share", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Share this idea" });
+    await expect(dialog.getByLabel("Link to this idea")).toHaveValue(/\/ideas\/103$/);
+    await dialog.getByRole("tab", { name: "Flyer" }).click();
+    await expect(
+      dialog.getByRole("img", { name: /^QR code for http:\/\/localhost:\d+\/ideas\/103$/ }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
   });
+
+  test("the poster is a portrait PNG, and an unknown idea has none", async ({ request }) => {
+    const poster = await request.get("/ideas/103/poster");
+    expect(poster.status()).toBe(200);
+    expect(poster.headers()["content-type"]).toBe("image/png");
+    const png = await poster.body();
+    // Width and height sit at bytes 16 to 24 of a PNG's header.
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1350]);
+    expect((await request.get("/ideas/9999/poster")).status()).toBe(404);
+  });
+
+  test("the flyer page shows the idea and a print button", async ({ page }) => {
+    await page.goto("/ideas/103/flyer");
+    await expect(page.getByRole("heading", { name: "A student-hosted food pantry" })).toBeVisible();
+    await expect(page.getByRole("img", { name: /^QR code for .*\/ideas\/103$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Print flyer" })).toBeVisible();
+  });
+});
+
+test("an idea page asks before I'll participate counts (#67)", async ({ page }) => {
+  await page.goto("/ideas/131");
+  const hand = page.getByRole("button", { name: "I'll participate", pressed: false });
+  await hand.click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "I'll participate" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("button", { name: "Participating", pressed: true })).toBeFocused();
 });

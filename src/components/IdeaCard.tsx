@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
@@ -74,6 +75,7 @@ export function IdeaCard(props: Props) {
             />
           )}
           <Link
+            transitionTypes={PAGE}
             href={`/ideas/${props.number}`}
             className="text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >

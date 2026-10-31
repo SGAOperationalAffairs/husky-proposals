@@ -37,8 +37,8 @@
   --color-grey-ink: var(--grey-ink);
   --color-focus: var(--focus);
   --color-scrim: var(--scrim);
-  --color-qr-ink: var(--qr-ink);
-  --color-qr-paper: var(--qr-paper);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
 
   --font-sans: var(--font);
   --font-heading: var(--font-heading);
@@ -295,6 +295,21 @@
       transform: none;
       opacity: 0;
     }
+    /* The share dialog (#64) holds a preview, so it is wider. */
+    .sheet-wide {
+      width: min(36rem, calc(100vw - 2rem));
+    }
+  }
+  /* A tall sheet scrolls inside itself instead of running off the screen. */
+  .sheet {
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+  /* Board colors on the printed flyer (#64). Browsers drop backgrounds when
+     printing unless told to keep them. */
+  .print-exact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
 
@@ -302,6 +317,22 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
+}
+
+/* The flyer page prints on letter paper with no site around it (#64). */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+  body {
+    background: var(--paper);
+  }
+  /* The page's printable height (11in less the margins), so the footer
+     sits at the bottom of the sheet. */
+  .flyer-sheet {
+    min-height: 10in;
+  }
 }
 
 /* Everything clickable shows the pointer, even before it does anything
@@ -326,12 +357,40 @@ input[type="submit"] {
   outline-offset: 2px;
 }
 
-/* The page cross-fade (#73, ViewTransition in layout.tsx). The browser's
-   default fade, at our duration. */
-::view-transition-group(*),
-::view-transition-old(*),
-::view-transition-new(*) {
+/* Page changes (#73, ViewTransition in layout.tsx): the old page fades out
+   quickly and the new one rises into place. Tabs and links between pages
+   use it, and so does a page whose content replaces its placeholder. The
+   site header holds still (its own transition name, in SiteHeader), so only
+   the tab underline moves. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-rise));
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+::view-transition-group(*) {
   animation-duration: var(--motion-page);
+}
+::view-transition-old(*) {
+  animation: fade-out var(--motion-fast) ease-in both;
+}
+::view-transition-new(*) {
+  animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(site-header),
+::view-transition-new(site-header) {
+  animation: none;
+}
+::view-transition-old(site-header) {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

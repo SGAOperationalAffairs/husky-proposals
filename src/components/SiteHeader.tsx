@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { tabLook } from "./tabLook";
 
 // The site's name and the two student lists, at the top of every student page
@@ -12,8 +13,8 @@ const LISTS = [
 
 export function SiteHeader({ current }: Props) {
   return (
-    <header className="flex flex-col gap-4">
-      <Link href="/" className="inline-flex items-center gap-3 self-start">
+    <header className="site-header flex flex-col gap-4">
+      <Link transitionTypes={PAGE} href="/" className="inline-flex items-center gap-3 self-start">
         <span aria-hidden className="bordered px-1.5 heading text-lg leading-tight">
           SGA
         </span>
@@ -22,6 +23,7 @@ export function SiteHeader({ current }: Props) {
       <nav aria-label="Lists" className="flex gap-0.5 border-b border-line">
         {LISTS.map((list) => (
           <Link
+            transitionTypes={PAGE}
             key={list.id}
             href={list.href}
             aria-current={current === list.id ? "page" : undefined}

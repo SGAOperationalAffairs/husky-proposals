@@ -6,11 +6,12 @@ import { Button } from "./Button";
 
 // The copy-link share (#62): copies this page's address and says so in words,
 // which screen readers hear through the status region.
-export function CopyLink() {
+// `text` is what to copy; by default, this page's address.
+export function CopyLink({ text }: { text?: string } = {}) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(text ?? window.location.href);
       setState("copied");
     } catch {
       setState("failed");

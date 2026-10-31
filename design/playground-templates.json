@@ -28,7 +28,8 @@
         "desc-lines": "2",
         "title-lines": "3",
         "motion-fast": "150ms",
-        "motion-page": "200ms"
+        "motion-page": "240ms",
+        "motion-rise": "12px"
       },
       "light": {
         "bg": "#ebebe8",
@@ -61,8 +62,8 @@
         "on-board-sust": "#ffffff",
         "rule-color": "#c8102e",
         "scrim": "rgb(17 17 17 / 0.55)",
-        "qr-ink": "#111111",
-        "qr-paper": "#ffffff"
+        "paper": "#ffffff",
+        "paper-ink": "#111111"
       },
       "dark": {
         "bg": "#161616",
@@ -95,8 +96,8 @@
         "on-board-sust": "#ffffff",
         "rule-color": "#d92b48",
         "scrim": "rgb(0 0 0 / 0.7)",
-        "qr-ink": "#111111",
-        "qr-paper": "#ffffff"
+        "paper": "#ffffff",
+        "paper-ink": "#111111"
       }
     }
   ]

@@ -19,9 +19,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`h-full ${publicSans.variable} ${bigShoulders.variable}`}>
       <body className="@container flex min-h-full flex-col font-sans antialiased">
-        {/* One page transition everywhere (#73): a quick cross-fade when a Link
-            navigates, timed by --motion-page in globals.css. */}
-        <ViewTransition>{children}</ViewTransition>
+        {/* One page transition everywhere (#73): new content rises into place
+            when a Link marked with PAGE navigates (src/components/pageTransition.ts),
+            and nothing else animates. The look is in globals.css. */}
+        <ViewTransition default={{ page: "auto", default: "none" }}>{children}</ViewTransition>
       </body>
     </html>
   );

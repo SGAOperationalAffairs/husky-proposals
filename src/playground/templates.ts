@@ -27,6 +27,7 @@ export const SHARED_KEYS = [
   "title-lines",
   "motion-fast",
   "motion-page",
+  "motion-rise",
 ] as const;
 
 export const COLOR_KEYS = [
@@ -49,8 +50,8 @@ export const COLOR_KEYS = [
   "grey-ink",
   "focus",
   "scrim",
-  "qr-ink",
-  "qr-paper",
+  "paper",
+  "paper-ink",
   "board-dining",
   "on-board-dining",
   "board-planning",

@@ -6,7 +6,8 @@ import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { IdeaCard, updatedText } from "@/components/IdeaCard";
 import { IdeaPlaceholder, WallPlaceholder } from "@/components/Placeholder";
-import { QrCode } from "@/components/QrCode";
+import { Flyer } from "@/components/Flyer";
+import { ShareDialog } from "@/components/ShareDialog";
 import { QueueHeader, QueueRow } from "@/components/QueueRow";
 import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
@@ -308,14 +309,29 @@ function PreviewPage() {
       </Section>
 
       {/* What the wall and an idea page show while they load (#73), and the
-          share QR code (#64), held still so they can be looked at. */}
+          share dialog with its flyer (#64), held still so they can be looked at. */}
       <Section title="Loading">
         <WallPlaceholder />
         <IdeaPlaceholder />
       </Section>
 
       <Section title="Share">
-        <QrCode path={`/ideas/${idea.number}`} />
+        <div className="flex flex-col items-start gap-4">
+          <ShareDialog
+            number={idea.number}
+            title={idea.title}
+            description={idea.description}
+            board={idea.board}
+          />
+          <div className="w-full max-w-sm bordered p-4">
+            <Flyer
+              number={idea.number}
+              title={idea.title}
+              description={idea.description}
+              board={idea.board}
+            />
+          </div>
+        </div>
       </Section>
 
       <Section title="Post an idea">

@@ -1,15 +1,16 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
 import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
-import { QrCode } from "@/components/QrCode";
+import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
-import { SupportPair } from "@/components/SupportPair";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS } from "@/core/boards";
@@ -22,6 +23,7 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
       <SiteHeader />
       <Link
+        transitionTypes={PAGE}
         href="/"
         className="inline-flex items-center gap-2 self-start font-semibold underline underline-offset-4"
       >
@@ -69,7 +71,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           </p>
           {idea.status !== "delivered" && (
             <>
-              <SupportPair look="buttons" ideaNumber={idea.number} supported={false} participating={false} />
+              <LocalSupportPair ideaNumber={idea.number} />
               <p className="text-sm">
                 &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves
                 forward.
@@ -102,13 +104,16 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <section className="flex flex-col gap-3 bordered bg-surface p-card">
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
-            <CopyLink />
-            <figure className="flex items-center gap-4 border-t border-line pt-4">
-              <QrCode path={`/ideas/${idea.number}`} />
-              <figcaption className="text-sm text-muted">
-                Scan to open this idea. Show it at a table, or put it on a flyer.
-              </figcaption>
-            </figure>
+            <div className="flex flex-wrap items-start gap-3">
+              <CopyLink />
+              <ShareDialog
+                number={idea.number}
+                title={idea.title}
+                description={idea.description}
+                board={idea.board}
+              />
+            </div>
+            <p className="text-sm text-muted">Share also makes a poster image and a flyer with a QR code.</p>
           </section>
         </aside>
 
