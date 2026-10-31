@@ -132,7 +132,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | See the People list (volunteers) | No | No | Own board | All boards | Open |
 | Turn promotion on (admin switch, off by default; later) | No | No | No | Yes | No |
 
-"Open" means not decided yet.
+"Open" means not decided yet. In the chair or director column, "Yes" means every board and "Own board" means only the board they lead. A chair or director sees who posted and who supported on every board, but the People list only for their own board (#52).
 
 ## Screens (from the prototype)
 
