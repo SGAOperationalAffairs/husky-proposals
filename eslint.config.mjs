@@ -63,6 +63,10 @@ const eslintConfig = defineConfig([
             },
             { group: ["@/db", "@/db/*"], message: "src/core never imports the database. Pass data in." },
             {
+              group: ["@/auth", "@/auth/*"],
+              message: "src/core never imports the sign-in module. Pass roles in.",
+            },
+            {
               group: ["@/app", "@/app/*", "@/components/*"],
               message: "src/core never imports routes or UI.",
             },
