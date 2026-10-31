@@ -41,6 +41,14 @@
   --on-board-green: #ffffff;
   --board-sust: #213f99;
   --on-board-sust: #ffffff;
+  /* Each board's color as text on the page or a card: an idea page's links
+     and tabs when its accent takes the board's color (#64). AA on --bg and
+     --surface (src/app/contrast.test.ts). */
+  --board-dining-text: #b00d28;
+  --board-planning-text: #a84800;
+  --board-services-text: #7a5900;
+  --board-green-text: #256628;
+  --board-sust-text: #213f99;
 
   /* Type: Public Sans for reading, Big Shoulders for headlines and big numbers.
      The --font-* faces are loaded by next/font in src/app/layout.tsx. */
@@ -79,7 +87,7 @@
   --motion-fast: 150ms;
   --motion-page: 240ms;
   /* How far new page content rises into place. */
-  --motion-rise: 12px;
+  --motion-rise: 24px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -103,6 +111,11 @@
     --focus: #7aa7f0;
     --scrim: rgb(0 0 0 / 0.7);
     --board-sust: #3355c4;
+    --board-dining-text: #ff7a8e;
+    --board-planning-text: #ff8700;
+    --board-services-text: #f2c230;
+    --board-green-text: #6cc070;
+    --board-sust-text: #93a9ff;
   }
 }
 /* Status chip colors:

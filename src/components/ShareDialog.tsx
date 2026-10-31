@@ -4,6 +4,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { Tabs } from "@base-ui/react/tabs";
 import { Download, Mail, MessageSquare, Printer, Share2 } from "lucide-react";
 import Image from "next/image";
+import { BOARDS } from "@/core/boards";
 import { Button, buttonLook } from "./Button";
 import { CopyLink } from "./CopyLink";
 import { Flyer, type FlyerData } from "./Flyer";
@@ -28,14 +29,19 @@ export function ShareDialog(idea: FlyerData) {
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   return (
-    <Dialog.Root>
+    // trap-focus, not a full modal: focus stays inside, but the page is not made
+    // inert, so the "Link copied." toast is heard and its buttons work.
+    <Dialog.Root modal="trap-focus">
       <Dialog.Trigger render={<Button />}>
         <Share2 aria-hidden className="size-4" />
         Share
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="sheet-backdrop" />
-        <Dialog.Popup className="sheet sheet-wide flex flex-col gap-4 bg-surface text-ink">
+        <Dialog.Popup
+          data-board={BOARDS[idea.board].color}
+          className="sheet sheet-wide board-accent flex flex-col gap-4 bg-surface text-ink"
+        >
           <div className="flex items-start justify-between gap-4">
             <Dialog.Title className="heading text-4xl">Share this idea</Dialog.Title>
             <Dialog.Close render={<Button size="sm" />}>Close</Dialog.Close>
@@ -59,7 +65,9 @@ export function ShareDialog(idea: FlyerData) {
                   className="w-full rounded-field bordered bg-bg px-3 py-2"
                 />
               </label>
-              <CopyLink text={url} />
+              <div className="flex">
+                <CopyLink text={url} board={idea.board} />
+              </div>
               <div className="flex flex-wrap gap-2">
                 <a href={`sms:?&body=${encodeURIComponent(message)}`} className={buttonLook()}>
                   <MessageSquare aria-hidden className="size-4" />

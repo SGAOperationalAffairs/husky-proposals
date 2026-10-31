@@ -2,6 +2,7 @@
 
 import { Dialog } from "@base-ui/react/dialog";
 import type { RefObject } from "react";
+import { BOARDS, type BoardCode } from "@/core/boards";
 import { Button } from "./Button";
 
 // Asks before an "I'll participate" tap counts (#67, agreed in #31): it is a
@@ -14,14 +15,19 @@ type Props = {
   onConfirm: () => void;
   onCancel: () => void;
   returnFocus: RefObject<HTMLButtonElement | null>;
+  board?: BoardCode;
 };
 
-export function ParticipateDialog({ ideaNumber, open, onConfirm, onCancel, returnFocus }: Props) {
+export function ParticipateDialog({ ideaNumber, open, onConfirm, onCancel, returnFocus, board }: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onCancel()}>
       <Dialog.Portal>
         <Dialog.Backdrop className="sheet-backdrop" />
-        <Dialog.Popup finalFocus={returnFocus} className="sheet flex flex-col gap-4 bg-surface text-ink">
+        <Dialog.Popup
+          finalFocus={returnFocus}
+          data-board={board ? BOARDS[board].color : undefined}
+          className="sheet board-accent flex flex-col gap-4 bg-surface text-ink"
+        >
           <Dialog.Title className="heading text-4xl">Help with #{ideaNumber}?</Dialog.Title>
           {/* Placeholder wording: who sees the name waits on PRD D16. */}
           <Dialog.Description className="max-w-prose">

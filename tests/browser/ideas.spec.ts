@@ -155,12 +155,11 @@ test("filtering redraws the cards without asking the server (#61)", async ({ pag
   await page.goto("/");
   await page.waitForLoadState("networkidle");
   const requests: string[] = [];
-  // Learn more links prefetch their idea pages as new cards appear (#73);
-  // those are not the list, so only other requests count.
+  // Links prefetch other pages (idea pages, the In progress tab), sometimes
+  // late; those are not this list, so only requests for "/" count.
   page.on("request", (r) => {
-    const prefetch = new URL(r.url()).pathname.startsWith("/ideas/");
-    if ((r.resourceType() === "fetch" || r.resourceType() === "document") && !prefetch)
-      requests.push(r.url());
+    const thisList = new URL(r.url()).pathname === "/";
+    if ((r.resourceType() === "fetch" || r.resourceType() === "document") && thisList) requests.push(r.url());
   });
   await page.getByRole("navigation", { name: "Boards" }).getByRole("link", { name: "Dining" }).click();
   await expect(page).toHaveURL(/board=DAB/);
@@ -177,12 +176,15 @@ test.describe("page transitions (#73)", () => {
   // Record the durations of the view transition animations the browser runs.
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      const w = window as unknown as { vtDurations: number[] };
+      const w = window as unknown as { vtDurations: number[]; vtRunning: number };
       w.vtDurations = [];
+      w.vtRunning = 0;
       const start = document.startViewTransition?.bind(document);
       if (!start) return;
       document.startViewTransition = ((arg: Parameters<typeof start>[0]) => {
         const vt = start(arg);
+        w.vtRunning++;
+        vt.finished.finally(() => w.vtRunning--).catch(() => {});
         vt.ready
           .then(() => {
             for (const a of document.getAnimations()) {
@@ -223,11 +225,14 @@ test.describe("page transitions (#73)", () => {
     await expect(page.getByRole("heading", { level: 1, name: "In progress" })).toBeVisible();
     const vt = () => page.evaluate(() => (window as unknown as { vtDurations: number[] }).vtDurations);
     expect(await vt()).toContain(240);
+    // The cards rise in after the page does; let both finish before the sort.
+    await expect(page.locator("article.poster").filter({ visible: true }).first()).toBeVisible();
+    await page.waitForFunction(() => (window as unknown as { vtRunning: number }).vtRunning === 0);
     const before = (await vt()).length;
     // Next keeps the Ideas page in the DOM, hidden, for Back; use the visible one.
     await page.getByLabel("Sort by").filter({ visible: true }).selectOption("newest");
     await expect(page).toHaveURL(/sort=newest/);
-    expect((await vt()).length).toBe(before);
+    expect((await vt()).slice(before)).toEqual([]);
   });
 
   // Instant: the browser may still create the animations, at 0 or 0.01ms.
@@ -237,7 +242,11 @@ test.describe("page transitions (#73)", () => {
     await page.goto("/");
     await page.getByLabel("Status").selectOption("waiting");
     await expect(page.getByRole("status")).toHaveText("1 idea");
-    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+    // WebKit keeps finished animations in the list, so check none takes time.
+    const slow = await page.evaluate(() =>
+      document.getAnimations().filter((a) => Number(a.effect?.getComputedTiming().duration ?? 0) > 0.01),
+    );
+    expect(slow).toHaveLength(0);
   });
 });
 
@@ -277,8 +286,52 @@ test("an idea page asks before I'll participate counts (#67)", async ({ page }) 
   await page.goto("/ideas/131");
   const hand = page.getByRole("button", { name: "I'll participate", pressed: false });
   await hand.click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: /^Help with #/ });
   await dialog.getByRole("button", { name: "I'll participate" }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("button", { name: "Participating", pressed: true })).toBeFocused();
+});
+
+test("the wall's hand icon asks before I'll participate counts (#67)", async ({ page }) => {
+  await page.goto("/");
+  const card = page.locator("article.poster").filter({ hasText: "#131" });
+  await card.getByRole("button", { name: "I'll participate" }).click();
+  const dialog = page.getByRole("dialog", { name: /^Help with #/ });
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(card.getByRole("button", { name: "I'll participate" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await card.getByRole("button", { name: "I'll participate" }).click();
+  await page
+    .getByRole("dialog", { name: /^Help with #/ })
+    .getByRole("button", { name: "I'll participate" })
+    .click();
+  await expect(card.getByRole("button", { name: "I'll participate" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});
+
+test.describe("toasts (#67)", () => {
+  test("support says so in a toast, and Undo takes it back", async ({ page }) => {
+    await page.goto("/");
+    const card = page.locator("article.poster").filter({ hasText: "#131" });
+    const support = card.getByRole("button", { name: "Support" });
+    await support.click();
+    await expect(page.getByText("You support #131.")).toBeVisible();
+    await expect(support).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(support).toHaveAttribute("aria-pressed", "false");
+    await expect(page.getByText("You support #131.")).toBeHidden();
+  });
+
+  test("copying the link from the share dialog shows a toast in front of it", async ({ page }) => {
+    await page.goto("/ideas/103");
+    await page.getByRole("button", { name: "Share", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Copy link" }).click();
+    // Headless browsers may block the clipboard; either way the toast says what happened.
+    await expect(page.getByText(/^(Link copied\.|Could not copy\.)$/)).toBeVisible();
+  });
 });

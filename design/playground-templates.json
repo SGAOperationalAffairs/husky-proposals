@@ -29,7 +29,7 @@
         "title-lines": "3",
         "motion-fast": "150ms",
         "motion-page": "240ms",
-        "motion-rise": "12px"
+        "motion-rise": "24px"
       },
       "light": {
         "bg": "#ebebe8",
@@ -63,7 +63,12 @@
         "rule-color": "#c8102e",
         "scrim": "rgb(17 17 17 / 0.55)",
         "paper": "#ffffff",
-        "paper-ink": "#111111"
+        "paper-ink": "#111111",
+        "board-dining-text": "#b00d28",
+        "board-planning-text": "#a84800",
+        "board-services-text": "#7a5900",
+        "board-green-text": "#256628",
+        "board-sust-text": "#213f99"
       },
       "dark": {
         "bg": "#161616",
@@ -97,7 +102,12 @@
         "rule-color": "#d92b48",
         "scrim": "rgb(0 0 0 / 0.7)",
         "paper": "#ffffff",
-        "paper-ink": "#111111"
+        "paper-ink": "#111111",
+        "board-dining-text": "#ff7a8e",
+        "board-planning-text": "#ff8700",
+        "board-services-text": "#f2c230",
+        "board-green-text": "#6cc070",
+        "board-sust-text": "#93a9ff"
       }
     }
   ]

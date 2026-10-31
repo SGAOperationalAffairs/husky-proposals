@@ -99,26 +99,43 @@
 }
 
 /* Board color scope: `data-board="dining"` (and so on) gives an element and
-   its children --b (the board's color) and --on-b (the text color on it). */
+   its children --b (the board's color), --on-b (the text color on it), and
+   --b-text (the board's color as text on the page). */
 [data-board="dining"] {
   --b: var(--board-dining);
   --on-b: var(--on-board-dining);
+  --b-text: var(--board-dining-text);
 }
 [data-board="planning"] {
   --b: var(--board-planning);
   --on-b: var(--on-board-planning);
+  --b-text: var(--board-planning-text);
 }
 [data-board="services"] {
   --b: var(--board-services);
   --on-b: var(--on-board-services);
+  --b-text: var(--board-services-text);
 }
 [data-board="green"] {
   --b: var(--board-green);
   --on-b: var(--on-board-green);
+  --b-text: var(--board-green-text);
 }
 [data-board="sust"] {
   --b: var(--board-sust);
   --on-b: var(--on-board-sust);
+  --b-text: var(--board-sust-text);
+}
+
+/* The accent in a board's color (#64): an idea's page, and the dialogs that
+   belong to it, use its board's color where the site uses Husky red. Put it
+   with data-board on the same element. */
+.board-accent {
+  --accent: var(--b);
+  --on-accent: var(--on-b);
+  --accent-text: var(--b-text);
+  --rule-color: var(--b);
+  --accent-soft: color-mix(in srgb, var(--b) 14%, var(--surface));
 }
 
 @layer components {
@@ -300,6 +317,39 @@
       width: min(36rem, calc(100vw - 2rem));
     }
   }
+  /* Toasts (#67): stacked at the bottom, centered on phones and at the right
+     on wider screens, each rising in and fading out. The rule on the left is
+     the idea's board color, or Husky red. */
+  .toast-viewport {
+    position: fixed;
+    inset-inline: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 0.5rem;
+    pointer-events: none;
+    /* Above an open dialog and its backdrop, which are portaled after it. */
+    z-index: 1;
+  }
+  .toast {
+    width: min(24rem, 100%);
+    pointer-events: auto;
+    border-left: 6px solid var(--b, var(--accent));
+    border-radius: var(--card-radius);
+    transition:
+      transform var(--motion-fast) ease-out,
+      opacity var(--motion-fast) ease-out;
+  }
+  .toast:is([data-starting-style], [data-ending-style]) {
+    opacity: 0;
+    transform: translateY(var(--motion-rise));
+  }
+  @media (width >= 40rem) {
+    .toast-viewport {
+      align-items: flex-end;
+    }
+  }
   /* A tall sheet scrolls inside itself instead of running off the screen. */
   .sheet {
     max-height: 90dvh;
@@ -379,8 +429,10 @@ input[type="submit"] {
 ::view-transition-old(*) {
   animation: fade-out var(--motion-fast) ease-in both;
 }
+/* The new content starts rising as the old is half gone, so the two never
+   sit on top of each other for long. */
 ::view-transition-new(*) {
-  animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--motion-fast) / 2) both;
 }
 .site-header {
   view-transition-name: site-header;

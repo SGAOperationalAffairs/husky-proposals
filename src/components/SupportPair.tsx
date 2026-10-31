@@ -1,5 +1,6 @@
 "use client";
 
+import type { BoardCode } from "@/core/boards";
 import { useRef, useState } from "react";
 import { ParticipateDialog } from "./ParticipateDialog";
 
@@ -22,6 +23,8 @@ type Props = {
   onSupportChange?: (supported: boolean) => void;
   onParticipateChange?: (participating: boolean) => void;
   look?: "icons" | "buttons";
+  // The idea's board, so its confirmation takes the board's color.
+  board?: BoardCode;
 };
 
 export function SupportPair({
@@ -31,6 +34,7 @@ export function SupportPair({
   onSupportChange,
   onParticipateChange,
   look = "icons",
+  board,
 }: Props) {
   const [confirming, setConfirming] = useState(false);
   const handButton = useRef<HTMLButtonElement>(null);
@@ -46,6 +50,7 @@ export function SupportPair({
   const dialog = (
     <ParticipateDialog
       ideaNumber={ideaNumber}
+      board={board}
       open={confirming}
       returnFocus={handButton}
       onCancel={() => setConfirming(false)}

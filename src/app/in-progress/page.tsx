@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Reveal } from "@/components/Reveal";
 import { Wall } from "@/app/_ideas/Wall";
 import { WallPlaceholder } from "@/components/Placeholder";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -17,8 +18,16 @@ export default function InProgress() {
         </p>
       </div>
       {/* The wall renders per request with the URL's filters, so it waits in a boundary. */}
-      <Suspense fallback={<WallPlaceholder />}>
-        <Wall list="progress" path="/in-progress" />
+      <Suspense
+        fallback={
+          <Reveal.Out>
+            <WallPlaceholder />
+          </Reveal.Out>
+        }
+      >
+        <Reveal>
+          <Wall list="progress" path="/in-progress" />
+        </Reveal>
       </Suspense>
     </main>
   );

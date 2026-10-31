@@ -1,36 +1,27 @@
 "use client";
 
-import { Check, Link as LinkIcon } from "lucide-react";
-import { useState } from "react";
+import { Link as LinkIcon } from "lucide-react";
+import type { BoardCode } from "@/core/boards";
 import { Button } from "./Button";
+import { useToast } from "./Toast";
 
-// The copy-link share (#62): copies this page's address and says so in words,
-// which screen readers hear through the status region.
-// `text` is what to copy; by default, this page's address.
-export function CopyLink({ text }: { text?: string } = {}) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+// The copy-link share (#62): copies a link and says so in a toast, which
+// screen readers hear without losing their place. `text` is what to copy; by
+// default, this page's address.
+export function CopyLink({ text, board }: { text?: string; board?: BoardCode } = {}) {
+  const toast = useToast();
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text ?? window.location.href);
-      setState("copied");
+      toast({ title: "Link copied.", board });
     } catch {
-      setState("failed");
+      toast({ title: "Could not copy.", description: "Copy the address from your browser instead.", board });
     }
   };
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Button variant="primary" onClick={copy}>
-        {state === "copied" ? (
-          <Check aria-hidden className="size-4" />
-        ) : (
-          <LinkIcon aria-hidden className="size-4" />
-        )}
-        Copy link
-      </Button>
-      <span role="status" className="text-sm font-semibold">
-        {state === "copied" && "Link copied."}
-        {state === "failed" && "Could not copy. Copy the address from your browser instead."}
-      </span>
-    </div>
+    <Button variant="primary" onClick={copy}>
+      <LinkIcon aria-hidden className="size-4" />
+      Copy link
+    </Button>
   );
 }

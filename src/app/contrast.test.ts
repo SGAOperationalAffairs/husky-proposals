@@ -35,6 +35,11 @@ const PAIRS: [string, string][] = [
   ["focus", "bg"],
   ["focus", "surface"],
   ...BOARDS.map((b): [string, string] => [`on-board-${b}`, `board-${b}`]),
+  // An idea page's accent takes its board's color (#64): links and tab text.
+  ...BOARDS.flatMap((b): [string, string][] => [
+    [`board-${b}-text`, "bg"],
+    [`board-${b}-text`, "surface"],
+  ]),
 ];
 
 describe("token contrast (#37)", () => {

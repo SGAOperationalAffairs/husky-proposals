@@ -68,6 +68,7 @@ export function IdeaCard(props: Props) {
           ) : (
             <SupportPair
               ideaNumber={props.number}
+              board={props.board}
               supported={props.supported ?? false}
               participating={props.participating ?? false}
               onSupportChange={props.onSupportChange}

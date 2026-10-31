@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PAGE } from "@/components/pageTransition";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Reveal } from "@/components/Reveal";
 import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
 import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
@@ -31,8 +32,16 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
         Back to ideas
       </Link>
       {/* The number comes from the URL, which is request data, so it waits in a boundary. */}
-      <Suspense fallback={<IdeaPlaceholder />}>
-        <Idea params={params} />
+      <Suspense
+        fallback={
+          <Reveal.Out>
+            <IdeaPlaceholder />
+          </Reveal.Out>
+        }
+      >
+        <Reveal>
+          <Idea params={params} />
+        </Reveal>
       </Suspense>
     </main>
   );
@@ -45,7 +54,8 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
   const board = BOARDS[idea.board];
 
   return (
-    <>
+    // The page's accent takes the idea's board color (#64); `contents` keeps the layout.
+    <div data-board={board.color} className="board-accent contents">
       {/* One order for every reader: poster, where it stands, about, join. On wide
           screens the right column runs beside the other three (idea-rows). */}
       <div className="grid items-start gap-6 @3xl:grid-cols-5 @3xl:idea-rows">
@@ -71,7 +81,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           </p>
           {idea.status !== "delivered" && (
             <>
-              <LocalSupportPair ideaNumber={idea.number} />
+              <LocalSupportPair ideaNumber={idea.number} board={idea.board} />
               <p className="text-sm">
                 &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves
                 forward.
@@ -105,7 +115,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
             <div className="flex flex-wrap items-start gap-3">
-              <CopyLink />
+              <CopyLink board={idea.board} />
               <ShareDialog
                 number={idea.number}
                 title={idea.title}
@@ -134,7 +144,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </section>
         <Join idea={idea} />
       </div>
-    </>
+    </div>
   );
 }
 

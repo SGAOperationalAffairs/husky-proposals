@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ShareDialog } from "./ShareDialog";
+import { ToastProvider } from "./Toast";
 
 afterEach(cleanup);
 
@@ -13,7 +14,11 @@ const idea = {
 const link = `${window.location.origin}/ideas/103`;
 
 async function open() {
-  render(<ShareDialog {...idea} />);
+  render(
+    <ToastProvider>
+      <ShareDialog {...idea} />
+    </ToastProvider>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
   return screen.findByRole("dialog", { name: "Share this idea" });
 }
@@ -24,6 +29,9 @@ describe("share dialog (#64)", () => {
     expect(within(dialog).getByRole("tab", { name: "Link", selected: true })).toBeTruthy();
     expect((within(dialog).getByLabelText("Link to this idea") as HTMLInputElement).value).toBe(link);
     expect(within(dialog).getByRole("button", { name: "Copy link" })).toBeTruthy();
+    // The dialog takes the idea's board color (#64).
+    expect(dialog.getAttribute("data-board")).toBe("dining");
+    expect(dialog.classList.contains("board-accent")).toBe(true);
     const text = within(dialog).getByRole("link", { name: "Text" }).getAttribute("href")!;
     expect(text.startsWith("sms:")).toBe(true);
     expect(decodeURIComponent(text)).toContain(link);

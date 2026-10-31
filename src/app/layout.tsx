@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, Public_Sans } from "next/font/google";
 import { ViewTransition } from "react";
+import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
 // The Poster direction's faces (#29). design/tokens.css reads these variables.
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* One page transition everywhere (#73): new content rises into place
             when a Link marked with PAGE navigates (src/components/pageTransition.ts),
             and nothing else animates. The look is in globals.css. */}
-        <ViewTransition default={{ page: "auto", default: "none" }}>{children}</ViewTransition>
+        <ToastProvider>
+          <ViewTransition default={{ page: "auto", default: "none" }}>{children}</ViewTransition>
+        </ToastProvider>
       </body>
     </html>
   );
