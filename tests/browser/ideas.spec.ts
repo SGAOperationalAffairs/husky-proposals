@@ -250,6 +250,112 @@ test.describe("page transitions (#73)", () => {
   });
 });
 
+test.describe("poster arrival (#84)", () => {
+  // The posters' animation timing, read from computed styles. Computed styles
+  // resolve at once, unlike document.getAnimations(), which can be empty while
+  // a busy browser has not yet run the animations.
+  const timings = (page: import("@playwright/test").Page) =>
+    page.locator("article.poster").evaluateAll((els) =>
+      els.map((el) => {
+        const s = getComputedStyle(el);
+        return {
+          arriving: el.classList.contains("poster-arrive"),
+          name: s.animationName,
+          delay: parseFloat(s.animationDelay),
+          duration: parseFloat(s.animationDuration),
+          opacity: s.opacity,
+        };
+      }),
+    );
+
+  test("with reduced motion, every poster appears at once", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    const posters = page.locator("article.poster");
+    await expect(posters.first()).toBeVisible();
+    expect(await posters.count()).toBeGreaterThan(1);
+    // The server marks the first arrival's posters, so the rise is in the page.
+    // Reduced motion cuts each rise to 0.01ms with no delay, and the class can
+    // already be gone once it ends, so accept either a finished rise or none.
+    const html = await (await page.request.get("/")).text();
+    expect(html).toContain("poster-arrive");
+    for (const t of await timings(page)) {
+      expect(t.name === "rise" || t.name === "none", JSON.stringify(t)).toBe(true);
+      expect(t.delay, JSON.stringify(t)).toBeLessThanOrEqual(0);
+      expect(t.duration, JSON.stringify(t)).toBeLessThanOrEqual(0.001);
+    }
+    // The opacity is full at once, not after a fade.
+    await expect.poll(() => posters.first().evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+  });
+
+  test("without reduced motion, posters rise one after another", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("article.poster").first()).toBeVisible();
+    const delays = (await timings(page)).map((t) => t.delay);
+    expect(new Set(delays).size, delays.join(", ")).toBeGreaterThan(1);
+    expect(Math.min(...delays)).toBe(0);
+  });
+
+  test("the rise moves and fades only, so the layout does not shift while cards arrive", async ({ page }) => {
+    await page.goto("/");
+    const properties = await page.evaluate(() => {
+      const props = new Set<string>();
+      for (const sheet of Array.from(document.styleSheets)) {
+        for (const rule of Array.from(sheet.cssRules)) {
+          if (rule instanceof CSSKeyframesRule && rule.name === "rise") {
+            for (const frame of Array.from(rule.cssRules)) {
+              for (const p of Array.from((frame as CSSKeyframeRule).style)) props.add(p);
+            }
+          }
+        }
+      }
+      return [...props].sort();
+    });
+    expect(properties).toEqual(["opacity", "transform"]);
+  });
+
+  // Slow the browser's animation clock (Chromium only, over CDP), so the first
+  // arrival is still running when the filter changes. Cards the filter takes
+  // away never finish their rise, and must not rise again when the filter
+  // brings them back.
+  test("a filter during the arrival does not rise the cards it brings back", async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== "chromium", "slowing animations needs the Chrome DevTools protocol");
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Animation.enable");
+    await cdp.send("Animation.setPlaybackRate", { playbackRate: 0.02 });
+    await page.goto("/");
+    const posters = page.locator("article.poster");
+    await expect(posters.first()).toBeVisible();
+    expect(await page.locator(".poster-arrive").count()).toBeGreaterThan(0);
+    // Before hydration a chip click is a full page load, which starts a new
+    // arrival. React marks the nodes it hydrates with __reactProps keys, so wait
+    // for that on a chip, then each click filters in place.
+    const hydrated = () =>
+      page.waitForFunction(() =>
+        Object.keys(document.querySelector('nav[aria-label="Boards"] a') ?? {}).some((k) =>
+          k.startsWith("__reactProps"),
+        ),
+      );
+    const nav = page.getByRole("navigation", { name: "Boards" });
+    await hydrated();
+    // A dispatched click, not a mouse click: under the slowed clock the page is
+    // still easing in, so the chip moves and a click would miss it. React
+    // handles the event the same way (a plain left click, no modifiers).
+    await nav.getByRole("link", { name: "Dining" }).dispatchEvent("click");
+    await expect(page).toHaveURL(/board=DAB/);
+    await nav.getByRole("link", { name: "All boards" }).dispatchEvent("click");
+    await expect(page).not.toHaveURL(/board=/);
+    // Every card on the wall, including those brought back, is at rest.
+    for (const t of await timings(page)) {
+      expect(t.arriving, JSON.stringify(t)).toBe(false);
+      expect(t.name, JSON.stringify(t)).toBe("none");
+    }
+  });
+});
+
 test.describe("share (#64)", () => {
   test("the share dialog has the link, the poster, and the flyer with its QR code", async ({ page }) => {
     await page.goto("/ideas/103");
