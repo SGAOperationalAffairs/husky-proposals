@@ -1,5 +1,9 @@
 "use client";
 
+import type { BoardCode } from "@/core/boards";
+import { useRef, useState } from "react";
+import { ParticipateDialog } from "./ParticipateDialog";
+
 // Support and "I'll participate" are a matched pair, always shown together
 // (PRD decision log). Taps set a state, they never toggle on the server: the
 // handlers receive the state the student wants.
@@ -7,6 +11,11 @@
 // Two looks (#29): "icons" on the ideas wall, a heart and a raised hand that
 // fill in when tapped; "buttons" on an idea's own page, the same icons inside
 // labeled buttons, where students actually decide.
+//
+// "I'll participate" asks first (#67): a tap opens ParticipateDialog, and only
+// its confirm calls onParticipateChange(true). Withdrawing and Support stay
+// plain toggles. With no handler (before E6 saves taps) nothing opens, so the
+// dialog never confirms a tap that does nothing.
 type Props = {
   ideaNumber: number;
   supported: boolean;
@@ -14,6 +23,8 @@ type Props = {
   onSupportChange?: (supported: boolean) => void;
   onParticipateChange?: (participating: boolean) => void;
   look?: "icons" | "buttons";
+  // The idea's board, so its confirmation takes the board's color.
+  board?: BoardCode;
 };
 
 export function SupportPair({
@@ -23,10 +34,32 @@ export function SupportPair({
   onSupportChange,
   onParticipateChange,
   look = "icons",
+  board,
 }: Props) {
+  const [confirming, setConfirming] = useState(false);
+  const handButton = useRef<HTMLButtonElement>(null);
   const support = { "aria-pressed": supported, onClick: () => onSupportChange?.(!supported) };
-  const participate = { "aria-pressed": participating, onClick: () => onParticipateChange?.(!participating) };
+  const participate = {
+    ref: handButton,
+    "aria-pressed": participating,
+    "aria-haspopup": participating || !onParticipateChange ? undefined : ("dialog" as const),
+    onClick: () =>
+      participating ? onParticipateChange?.(false) : onParticipateChange && setConfirming(true),
+  };
   const group = { role: "group", "aria-label": `Your support for proposal ${ideaNumber}` };
+  const dialog = (
+    <ParticipateDialog
+      ideaNumber={ideaNumber}
+      board={board}
+      open={confirming}
+      returnFocus={handButton}
+      onCancel={() => setConfirming(false)}
+      onConfirm={() => {
+        setConfirming(false);
+        onParticipateChange?.(true);
+      }}
+    />
+  );
 
   if (look === "buttons") {
     const button =
@@ -41,6 +74,7 @@ export function SupportPair({
           <HandIcon />
           {participating ? "Participating" : "I'll participate"}
         </button>
+        {dialog}
       </div>
     );
   }
@@ -58,6 +92,7 @@ export function SupportPair({
       >
         <HandIcon />
       </button>
+      {dialog}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
   type IdeaList,
   type IdeasQuery,
 } from "./filter";
+import { useLocalTaps } from "./useLocalTaps";
 
 // The wall of posters with its board chips and filters (#61, #63). The list's
 // ideas arrive once; every search, sort, and chip filters them here and redraws
@@ -52,6 +53,7 @@ export function IdeaWall({ ideas, list, path }: Props) {
     window.history.pushState(null, "", href);
   };
 
+  const taps = useLocalTaps();
   const shown = useMemo(() => filterIdeas(ideas, query, list), [ideas, query, list]);
   const chip = (board: BoardCode | undefined) => ({
     href: ideasHref(path, { ...query, board }),
@@ -88,7 +90,7 @@ export function IdeaWall({ ideas, list, path }: Props) {
       {shown.length > 0 ? (
         <div className="card-grid">
           {shown.map((idea) => (
-            <IdeaCard key={idea.number} {...idea} />
+            <IdeaCard key={idea.number} {...idea} {...taps(idea.number, idea.board)} />
           ))}
         </div>
       ) : (

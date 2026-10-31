@@ -36,6 +36,9 @@
   --color-grey: var(--grey);
   --color-grey-ink: var(--grey-ink);
   --color-focus: var(--focus);
+  --color-scrim: var(--scrim);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
 
   --font-sans: var(--font);
   --font-heading: var(--font-heading);
@@ -96,26 +99,62 @@
 }
 
 /* Board color scope: `data-board="dining"` (and so on) gives an element and
-   its children --b (the board's color) and --on-b (the text color on it). */
+   its children --b (the board's color), --on-b (the text color on it), and
+   --b-text (the board's color as text on the page). */
 [data-board="dining"] {
   --b: var(--board-dining);
   --on-b: var(--on-board-dining);
+  --b-text: var(--board-dining-text);
 }
 [data-board="planning"] {
   --b: var(--board-planning);
   --on-b: var(--on-board-planning);
+  --b-text: var(--board-planning-text);
 }
 [data-board="services"] {
   --b: var(--board-services);
   --on-b: var(--on-board-services);
+  --b-text: var(--board-services-text);
 }
 [data-board="green"] {
   --b: var(--board-green);
   --on-b: var(--on-board-green);
+  --b-text: var(--board-green-text);
 }
 [data-board="sust"] {
   --b: var(--board-sust);
   --on-b: var(--on-board-sust);
+  --b-text: var(--board-sust-text);
+}
+
+/* Being tried on the playground: an idea page whose whole background is its
+   board's color. The header and loose text read in the board's text color;
+   cards keep the surface and the board accent. */
+.board-backdrop {
+  background: var(--b);
+  color: var(--on-b);
+}
+.board-backdrop .site-header {
+  --accent: var(--on-b);
+  --accent-text: var(--on-b);
+  --line: var(--on-b);
+}
+
+/* Being tried on the playground: parts of the page floating on a hard offset
+   shadow in the line color instead of an outline. */
+.edge-float {
+  box-shadow: 6px 6px 0 var(--line);
+}
+
+/* The accent in a board's color (#64): an idea's page, and the dialogs that
+   belong to it, use its board's color where the site uses Husky red. Put it
+   with data-board on the same element. */
+.board-accent {
+  --accent: var(--b);
+  --on-accent: var(--on-b);
+  --accent-text: var(--b-text);
+  --rule-color: var(--b);
+  --accent-soft: color-mix(in srgb, var(--b) 14%, var(--surface));
 }
 
 @layer components {
@@ -230,12 +269,174 @@
   .board-swatch {
     background: var(--b);
   }
+  /* Loading placeholders (#73). A bar is transparent text on a flat token
+     color, so it has the real line's height; box-decoration-break gives each
+     wrapped line its own bar. Grey bars on surface-colored blocks, so they
+     read on the page background in both modes. The whole placeholder is
+     transparent text, so line clamping draws no visible ellipsis. */
+  .placeholder {
+    color: transparent;
+  }
+  .placeholder-text {
+    background: var(--grey);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+  .placeholder-poster {
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    padding: var(--card-pad-y) var(--card-pad);
+  }
+  .placeholder-chip {
+    background: var(--surface);
+    border: var(--border) solid var(--surface);
+  }
+  /* The participate confirmation (#67): a sheet from the bottom on phones, a
+     small dialog in the middle from 40rem up. Base UI marks the way in and out
+     with data-starting-style and data-ending-style. A page-level overlay, so a
+     screen breakpoint, not a container query. Borders and padding live here,
+     not in utilities, because the phone sheet has only a top edge. */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    transition: opacity var(--motion-fast) ease-out;
+  }
+  .sheet {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    border-top: var(--border) solid var(--line);
+    padding: var(--card-pad) var(--card-pad) calc(var(--card-pad) + env(safe-area-inset-bottom));
+    transition:
+      transform var(--motion-fast) ease-out,
+      opacity var(--motion-fast) ease-out;
+  }
+  .sheet-backdrop:is([data-starting-style], [data-ending-style]) {
+    opacity: 0;
+  }
+  .sheet:is([data-starting-style], [data-ending-style]) {
+    transform: translateY(100%);
+  }
+  @media (width >= 40rem) {
+    .sheet {
+      inset: 50% auto auto 50%;
+      width: min(28rem, calc(100vw - 2rem));
+      translate: -50% -50%;
+      border: var(--border) solid var(--line);
+      border-radius: var(--card-radius);
+      padding: var(--card-pad);
+    }
+    .sheet:is([data-starting-style], [data-ending-style]) {
+      transform: none;
+      opacity: 0;
+    }
+    /* The share dialog (#64) holds a preview, so it is wider. */
+    .sheet-wide {
+      width: min(36rem, calc(100vw - 2rem));
+    }
+  }
+  /* Toasts (#67): a deck at the bottom, centered on phones and at the right
+     on wider screens. Base UI gives each toast its place (--toast-index) and
+     marks the stack expanded on hover or focus; collapsed, the newest is in
+     front and up to two peek out behind it, so a burst of taps never climbs
+     the page. Surface and ink, so they follow light and dark; the rule on
+     the left is the idea's board color, or Husky red. */
+  .toast-viewport {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+    left: 1rem;
+    margin-inline: auto;
+    width: min(24rem, calc(100vw - 2rem));
+    /* Above an open dialog and its backdrop, which are portaled after it. */
+    z-index: 1;
+  }
+  .toast {
+    --gap: 0.5rem;
+    --peek: 0.5rem;
+    --scale: calc(max(0, 1 - (var(--toast-index) * 0.05)));
+    --height: var(--toast-frontmost-height, var(--toast-height));
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: var(--height);
+    z-index: calc(10 - var(--toast-index));
+    transform-origin: bottom center;
+    transform: translateY(
+        calc(
+          var(--toast-swipe-movement-y) - var(--toast-index) * var(--peek) - (1 - var(--scale)) *
+            var(--height)
+        )
+      )
+      scale(var(--scale));
+    border: var(--border) solid var(--line);
+    border-left: 6px solid var(--b, var(--accent));
+    border-radius: var(--card-radius);
+    transition:
+      transform var(--motion-page) ease-out,
+      opacity var(--motion-page) ease-out,
+      height var(--motion-page) ease-out;
+  }
+  .toast[data-expanded] {
+    height: var(--toast-height);
+    transform: translateY(
+      calc(var(--toast-offset-y) * -1 - var(--toast-index) * var(--gap) + var(--toast-swipe-movement-y))
+    );
+  }
+  .toast:is([data-starting-style], [data-ending-style]) {
+    opacity: 0;
+    transform: translateY(calc(var(--motion-rise) * 2));
+  }
+  .toast[data-limited] {
+    opacity: 0;
+  }
+  /* Behind the front toast, only its edge shows. */
+  .toast-content {
+    transition: opacity var(--motion-page) ease-out;
+  }
+  .toast-content[data-behind]:not([data-expanded]) {
+    opacity: 0;
+  }
+  @media (width >= 40rem) {
+    .toast-viewport {
+      margin-right: 0;
+    }
+  }
+  /* A tall sheet scrolls inside itself instead of running off the screen. */
+  .sheet {
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+  /* Board colors on the printed flyer (#64). Browsers drop backgrounds when
+     printing unless told to keep them. */
+  .print-exact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
+}
+
+/* The flyer page prints on letter paper with no site around it (#64). */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+  body {
+    background: var(--paper);
+  }
+  /* The page's printable height (11in less the margins), so the footer
+     sits at the bottom of the sheet. */
+  .flyer-sheet {
+    min-height: 10in;
+  }
 }
 
 /* Everything clickable shows the pointer, even before it does anything
@@ -260,6 +461,44 @@ input[type="submit"] {
   outline-offset: 2px;
 }
 
+/* Page changes (#73, ViewTransition in layout.tsx): the old page fades out
+   quickly and the new one rises into place. Tabs and links between pages
+   use it, and so does a page whose content replaces its placeholder. The
+   site header holds still (its own transition name, in SiteHeader), so only
+   the tab underline moves. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-rise));
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+::view-transition-group(*) {
+  animation-duration: var(--motion-page);
+}
+::view-transition-old(*) {
+  animation: fade-out var(--motion-fast) ease-in both;
+}
+/* The new content starts rising as the old is half gone, so the two never
+   sit on top of each other for long. */
+::view-transition-new(*) {
+  animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--motion-fast) / 2) both;
+}
+.site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(site-header),
+::view-transition-new(site-header) {
+  animation: none;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -268,5 +507,11 @@ input[type="submit"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* View transitions run on pseudo-elements the rule above does not reach. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

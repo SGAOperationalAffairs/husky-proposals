@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // The poster image reads its fonts and the board colors from files at
+  // request time (#64), so the deployment must include them.
+  outputFileTracingIncludes: {
+    "/ideas/[number]/poster": ["./src/app/_share/fonts/*.woff", "./design/tokens.css"],
+  },
   turbopack: {
     rules: {
       "*.css": {

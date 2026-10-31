@@ -1,13 +1,17 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Reveal } from "@/components/Reveal";
+import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
 import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
+import { IdeaPlaceholder } from "@/components/Placeholder";
+import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
-import { SupportPair } from "@/components/SupportPair";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS } from "@/core/boards";
@@ -20,6 +24,7 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
       <SiteHeader />
       <Link
+        transitionTypes={PAGE}
         href="/"
         className="inline-flex items-center gap-2 self-start font-semibold underline underline-offset-4"
       >
@@ -27,8 +32,16 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
         Back to ideas
       </Link>
       {/* The number comes from the URL, which is request data, so it waits in a boundary. */}
-      <Suspense fallback={<p className="text-muted">Loading the idea</p>}>
-        <Idea params={params} />
+      <Suspense
+        fallback={
+          <Reveal.Out>
+            <IdeaPlaceholder />
+          </Reveal.Out>
+        }
+      >
+        <Reveal>
+          <Idea params={params} />
+        </Reveal>
       </Suspense>
     </main>
   );
@@ -41,7 +54,8 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
   const board = BOARDS[idea.board];
 
   return (
-    <>
+    // The page's accent takes the idea's board color (#64); `contents` keeps the layout.
+    <div data-board={board.color} className="board-accent contents">
       {/* One order for every reader: poster, where it stands, about, join. On wide
           screens the right column runs beside the other three (idea-rows). */}
       <div className="grid items-start gap-6 @3xl:grid-cols-5 @3xl:idea-rows">
@@ -67,7 +81,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           </p>
           {idea.status !== "delivered" && (
             <>
-              <SupportPair look="buttons" ideaNumber={idea.number} supported={false} participating={false} />
+              <LocalSupportPair ideaNumber={idea.number} board={idea.board} />
               <p className="text-sm">
                 &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves
                 forward.
@@ -100,7 +114,16 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <section className="flex flex-col gap-3 bordered bg-surface p-card">
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
-            <CopyLink />
+            <div className="flex flex-wrap items-start gap-3">
+              <CopyLink board={idea.board} />
+              <ShareDialog
+                number={idea.number}
+                title={idea.title}
+                description={idea.description}
+                board={idea.board}
+              />
+            </div>
+            <p className="text-sm text-muted">Share also makes a poster image and a flyer with a QR code.</p>
           </section>
         </aside>
 
@@ -121,7 +144,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </section>
         <Join idea={idea} />
       </div>
-    </>
+    </div>
   );
 }
 
