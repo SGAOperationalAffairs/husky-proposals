@@ -80,7 +80,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - **Fields** (`TextField`, `TextArea`, `SelectField`): label above, then the control (`rounded-field bordered bg-surface`), then a muted hint or an `accent-text` error, never both.
 - **Tabs and badges** (`Tabs`, `Badge`): the active tab is `accent-text` with an accent underline; the badge is accent when its count is above 0, grey at 0.
 - **Queue row** (`QueueRow`): accent-soft on hover; a stale idea shows "Needs an update" in `accent-text` beside its status.
-- **Tags** (`BoardTag`, `FromSgaTag`): a square board swatch with the category; From SGA as an outlined label.
+- **Tags** (`BoardTag`, `FromSgaTag`): a square board swatch with the category; From SGA as an outlined label (`bordered`): `look="plain"` off a poster, and `look="poster"` on one, in the poster's text color.
 
 ## 5. Motion and feedback
 

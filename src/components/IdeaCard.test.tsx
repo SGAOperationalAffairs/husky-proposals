@@ -14,6 +14,20 @@ const idea = {
   willingCount: 27,
 };
 
+describe("idea card From SGA tag (#35)", () => {
+  it("renders the shared tag in the poster's color when fromSga is set", () => {
+    render(<IdeaCard {...idea} status="collecting_support" fromSga />);
+    const tag = screen.getByText("From SGA");
+    expect(tag.classList.contains("bordered")).toBe(true);
+    expect(tag.classList.contains("border-current")).toBe(true);
+  });
+
+  it("shows no tag without fromSga", () => {
+    render(<IdeaCard {...idea} status="collecting_support" />);
+    expect(screen.queryByText("From SGA")).toBeNull();
+  });
+});
+
 describe("idea card on a delivered idea (#63)", () => {
   it("drops Support and I'll participate, and speaks of support in the past", () => {
     render(<IdeaCard {...idea} status="delivered" />);

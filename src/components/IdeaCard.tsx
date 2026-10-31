@@ -1,6 +1,7 @@
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
+import { FromSgaTag } from "./Tag";
 
 // An idea as a poster in its board's color (#29, the Poster direction): the
 // board and number on one line, a big condensed headline, the support count as
@@ -42,7 +43,7 @@ export function IdeaCard(props: Props) {
           <span className="shrink-0">#{props.number}</span>
         </span>
         <span className="flex min-w-0 items-center gap-2">
-          {props.fromSga && <span className="shrink-0 border border-current px-1.5">From SGA</span>}
+          {props.fromSga && <FromSgaTag look="poster" />}
           <span className="truncate">{STATUS_LABELS[props.status]}</span>
         </span>
       </div>
