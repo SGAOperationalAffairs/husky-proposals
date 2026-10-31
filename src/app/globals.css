@@ -488,6 +488,13 @@ input[type="submit"] {
 ::view-transition-new(*) {
   animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--motion-fast) / 2) both;
 }
+/* Posters rise in one after another when the wall first arrives (#84). Each
+   poster sets its own --arrival step; only posters from the first load have
+   this class (see IdeaWall). */
+.poster-arrive {
+  animation: rise var(--motion-page) cubic-bezier(0.2, 0.7, 0.2, 1)
+    calc(var(--arrival, 0) * var(--motion-stagger)) both;
+}
 .site-header {
   view-transition-name: site-header;
 }
@@ -507,6 +514,10 @@ input[type="submit"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* The stagger is a delay, which the rule above leaves alone (#84). */
+  .poster-arrive {
+    animation-delay: 0ms !important;
   }
   /* View transitions run on pseudo-elements the rule above does not reach. */
   ::view-transition-group(*),

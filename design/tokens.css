@@ -88,6 +88,8 @@
   --motion-page: 240ms;
   /* How far new page content rises into place. */
   --motion-rise: 24px;
+  /* The pause between posters rising in on the wall (#84). */
+  --motion-stagger: 40ms;
 }
 @media (prefers-color-scheme: dark) {
   :root {

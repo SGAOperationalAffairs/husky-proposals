@@ -28,6 +28,7 @@ export const SHARED_KEYS = [
   "motion-fast",
   "motion-page",
   "motion-rise",
+  "motion-stagger",
 ] as const;
 
 export const COLOR_KEYS = [

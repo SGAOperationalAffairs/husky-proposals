@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type AnimationEvent } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard, type IdeaCardData } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
@@ -16,6 +16,7 @@ import {
   type IdeaList,
   type IdeasQuery,
 } from "./filter";
+import { arrivalSteps } from "./arrival";
 import { useLocalTaps } from "./useLocalTaps";
 
 // The wall of posters with its board chips and filters (#61, #63). The list's
@@ -55,6 +56,26 @@ export function IdeaWall({ ideas, list, path }: Props) {
 
   const taps = useLocalTaps();
   const shown = useMemo(() => filterIdeas(ideas, query, list), [ideas, query, list]);
+
+  // The posters that rise in when the wall first arrives (#84), with their
+  // steps. Taken once, from the URL's filters, so the server and the first
+  // render agree. Each poster leaves the map when its rise ends, so a filter
+  // never moves it again.
+  const [arriving, setArriving] = useState<Map<number, number> | null>(() =>
+    arrivalSteps(
+      filterIdeas(ideas, parseIdeasQuery(Object.fromEntries(params), list), list).map((i) => i.number),
+    ),
+  );
+  const onRiseEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.animationName !== "rise") return;
+    const number = Number((event.target as HTMLElement).dataset.idea);
+    setArriving((prev) => {
+      if (!prev?.has(number)) return prev;
+      const next = new Map(prev);
+      next.delete(number);
+      return next.size > 0 ? next : null;
+    });
+  };
   const chip = (board: BoardCode | undefined) => ({
     href: ideasHref(path, { ...query, board }),
     onSelect: () => apply({ board }),
@@ -88,9 +109,14 @@ export function IdeaWall({ ideas, list, path }: Props) {
         {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
       </p>
       {shown.length > 0 ? (
-        <div className="card-grid">
+        <div className="card-grid" onAnimationEnd={onRiseEnd}>
           {shown.map((idea) => (
-            <IdeaCard key={idea.number} {...idea} {...taps(idea.number, idea.board)} />
+            <IdeaCard
+              key={idea.number}
+              {...idea}
+              {...taps(idea.number, idea.board)}
+              arrival={arriving?.get(idea.number)}
+            />
           ))}
         </div>
       ) : (

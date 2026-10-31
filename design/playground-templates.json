@@ -29,7 +29,8 @@
         "title-lines": "3",
         "motion-fast": "150ms",
         "motion-page": "240ms",
-        "motion-rise": "24px"
+        "motion-rise": "24px",
+        "motion-stagger": "40ms"
       },
       "light": {
         "bg": "#ebebe8",
