@@ -433,6 +433,9 @@ function PreviewPage() {
 // pair, and cards, so the comparison is honest.
 function IdeaBackdrop() {
   const [backdrop, setBackdrop] = useState<"page" | "board">("board");
+  const [edges, setEdges] = useState<"border" | "float">("float");
+  // Cards outlined (today) or floating on a hard offset shadow (being tried).
+  const card = `flex flex-col gap-3 bg-surface p-card text-ink ${edges === "float" ? "edge-float" : "bordered"}`;
   const [code, setCode] = useState<BoardCode>("CPAB");
   const idea = IDEAS.find((i) => i.board === code) ?? IDEAS[0]!;
   const board = BOARDS[code];
@@ -449,6 +452,19 @@ function IdeaBackdrop() {
               onClick={() => setBackdrop(v)}
             >
               {v === "board" ? "Board color" : "Page"}
+            </Button>
+          ))}
+        </div>
+        <div role="group" aria-label="Edges" className="flex gap-2">
+          {(["float", "border"] as const).map((v) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={edges === v ? "primary" : "plain"}
+              aria-pressed={edges === v}
+              onClick={() => setEdges(v)}
+            >
+              {v === "float" ? "Hard shadow" : "Border"}
             </Button>
           ))}
         </div>
@@ -469,7 +485,9 @@ function IdeaBackdrop() {
         <SiteHeader />
         <span className="font-semibold underline underline-offset-4">Back to ideas</span>
         <div className="grid items-start gap-6 @3xl:grid-cols-5">
-          <article className="poster flex flex-col gap-4 @3xl:col-span-3">
+          <article
+            className={`poster flex flex-col gap-4 @3xl:col-span-3 ${edges === "float" ? "edge-float" : ""}`}
+          >
             <p className="flex flex-wrap gap-3 text-sm font-bold">
               <span>{board.name}</span>
               <span>#{idea.number}</span>
@@ -493,7 +511,7 @@ function IdeaBackdrop() {
             />
           </article>
           <aside className="flex flex-col gap-6 @3xl:col-span-2">
-            <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
+            <section className={card}>
               <h4 className="heading text-3xl">Where it stands</h4>
               <p>
                 This idea is collecting support. The {board.name} looks at its ideas regularly and usually
@@ -501,11 +519,11 @@ function IdeaBackdrop() {
               </p>
               <p className="text-sm text-muted">Updated 3 days ago.</p>
             </section>
-            <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
+            <section className={card}>
               <h4 className="heading text-3xl">{idea.supportCount} supporters</h4>
               <SupportSquares count={idea.supportCount} board={code} />
             </section>
-            <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
+            <section className={card}>
               <h4 className="heading text-3xl">Share this idea</h4>
               <div className="flex flex-wrap gap-3">
                 <CopyLink board={code} />

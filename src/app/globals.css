@@ -140,6 +140,12 @@
   --line: var(--on-b);
 }
 
+/* Being tried on the playground: parts of the page floating on a hard offset
+   shadow in the line color instead of an outline. */
+.edge-float {
+  box-shadow: 6px 6px 0 var(--line);
+}
+
 /* The accent in a board's color (#64): an idea's page, and the dialogs that
    belong to it, use its board's color where the site uses Husky red. Put it
    with data-board on the same element. */
