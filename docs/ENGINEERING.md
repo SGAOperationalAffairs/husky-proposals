@@ -28,6 +28,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
 | `src/db/` (planned, T0.5) | The only place that talks to Prisma: shared field lists, filters, and named queries |
 | `src/db/sql/` (planned) | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule) |
+| `src/core/permissions.ts` | Who may do what (`can`, `boardsFor`, `canSeeWhoPosted`, `isAuthor`), built from the table in `docs/data-model.md`, which a test pins. "Open" cells go through `otherLeaderMay` (D16) |
 | `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), and `session.ts`, the one module the app calls (`getSession()`) |
 | `src/core/positions.ts` | SGAuth position keys to boards and roles (`rolesFromPositions`, `boardsRun`), and `isSgaLeader`, the one function for PRD D16. A test pins its keys to `docs/sgauth-integration.md` |
 | `src/app/stand-in/` | The dev-only sign-in stand-in page (`page.dev.tsx`), its actions, and a presentational panel |
@@ -62,6 +63,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
 
 - **Who is signed in:** call `getSession()` from `src/auth/session.ts` inside `<Suspense>` (it reads cookies, so the page is never cached). Never read the cookie, positions, or SGAuth directly. Roles come from `session.roles`; who counts as a leader comes only from `isSgaLeader` (#45).
+
+- **Who may do what:** call `can()` from `src/core/permissions.ts`. Never check `roles.leads`, `roles.vpCampusAffairs`, or `isSgaLeader` directly to allow an action. Who posted goes through `canSeeWhoPosted`, never `see_names` alone (#52).
 
 Still to add, no later than the fifth feature: one hook per feature and the validation helpers.
 
