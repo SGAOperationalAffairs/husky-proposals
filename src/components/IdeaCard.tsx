@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { PAGE } from "@/components/pageTransition";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
@@ -26,6 +27,9 @@ type Props = IdeaCardData & {
   participating?: boolean;
   onSupportChange?: (supported: boolean) => void;
   onParticipateChange?: (participating: boolean) => void;
+  // Set only on the wall's first arrival, to rise in after the posters before
+  // it (#84). Omitted on filtered cards, so they do not move.
+  arrival?: number;
 };
 
 // Dates read as people say them (docs/DESIGN.md, "Copy and tone").
@@ -33,11 +37,23 @@ export const daysAgoText = (days: number) =>
   days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
 export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 
+// The arrival class is added as its own word, so the Tailwind formatter cannot
+// fuse it onto the last one (#84).
+const posterClass = (arrival: number | undefined) =>
+  arrival === undefined
+    ? "poster card-stack @container flex flex-col"
+    : "poster card-stack @container flex flex-col poster-arrive";
+
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   const delivered = props.status === "delivered";
   return (
-    <article data-board={board.color} className="poster card-stack @container flex flex-col">
+    <article
+      data-board={board.color}
+      data-idea={props.number}
+      className={posterClass(props.arrival)}
+      style={props.arrival === undefined ? undefined : ({ "--arrival": props.arrival } as CSSProperties)}
+    >
       {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
       <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
         <span className="flex min-w-0 items-center gap-2">
