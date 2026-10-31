@@ -127,6 +127,19 @@
   --b-text: var(--board-sust-text);
 }
 
+/* Being tried on the playground: an idea page whose whole background is its
+   board's color. The header and loose text read in the board's text color;
+   cards keep the surface and the board accent. */
+.board-backdrop {
+  background: var(--b);
+  color: var(--on-b);
+}
+.board-backdrop .site-header {
+  --accent: var(--on-b);
+  --accent-text: var(--on-b);
+  --line: var(--on-b);
+}
+
 /* The accent in a board's color (#64): an idea's page, and the dialogs that
    belong to it, use its board's color where the site uses Husky red. Put it
    with data-board on the same element. */
@@ -317,37 +330,72 @@
       width: min(36rem, calc(100vw - 2rem));
     }
   }
-  /* Toasts (#67): stacked at the bottom, centered on phones and at the right
-     on wider screens, each rising in and fading out. The rule on the left is
-     the idea's board color, or Husky red. */
+  /* Toasts (#67): a deck at the bottom, centered on phones and at the right
+     on wider screens. Base UI gives each toast its place (--toast-index) and
+     marks the stack expanded on hover or focus; collapsed, the newest is in
+     front and up to two peek out behind it, so a burst of taps never climbs
+     the page. Surface and ink, so they follow light and dark; the rule on
+     the left is the idea's board color, or Husky red. */
   .toast-viewport {
     position: fixed;
-    inset-inline: 1rem;
+    right: 1rem;
     bottom: calc(1rem + env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: center;
-    gap: 0.5rem;
-    pointer-events: none;
+    left: 1rem;
+    margin-inline: auto;
+    width: min(24rem, calc(100vw - 2rem));
     /* Above an open dialog and its backdrop, which are portaled after it. */
     z-index: 1;
   }
   .toast {
-    width: min(24rem, 100%);
-    pointer-events: auto;
+    --gap: 0.5rem;
+    --peek: 0.5rem;
+    --scale: calc(max(0, 1 - (var(--toast-index) * 0.05)));
+    --height: var(--toast-frontmost-height, var(--toast-height));
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: var(--height);
+    z-index: calc(10 - var(--toast-index));
+    transform-origin: bottom center;
+    transform: translateY(
+        calc(
+          var(--toast-swipe-movement-y) - var(--toast-index) * var(--peek) - (1 - var(--scale)) *
+            var(--height)
+        )
+      )
+      scale(var(--scale));
+    border: var(--border) solid var(--line);
     border-left: 6px solid var(--b, var(--accent));
     border-radius: var(--card-radius);
     transition:
-      transform var(--motion-fast) ease-out,
-      opacity var(--motion-fast) ease-out;
+      transform var(--motion-page) ease-out,
+      opacity var(--motion-page) ease-out,
+      height var(--motion-page) ease-out;
+  }
+  .toast[data-expanded] {
+    height: var(--toast-height);
+    transform: translateY(
+      calc(var(--toast-offset-y) * -1 - var(--toast-index) * var(--gap) + var(--toast-swipe-movement-y))
+    );
   }
   .toast:is([data-starting-style], [data-ending-style]) {
     opacity: 0;
-    transform: translateY(var(--motion-rise));
+    transform: translateY(calc(var(--motion-rise) * 2));
+  }
+  .toast[data-limited] {
+    opacity: 0;
+  }
+  /* Behind the front toast, only its edge shows. */
+  .toast-content {
+    transition: opacity var(--motion-page) ease-out;
+  }
+  .toast-content[data-behind]:not([data-expanded]) {
+    opacity: 0;
   }
   @media (width >= 40rem) {
     .toast-viewport {
-      align-items: flex-end;
+      margin-right: 0;
     }
   }
   /* A tall sheet scrolls inside itself instead of running off the screen. */

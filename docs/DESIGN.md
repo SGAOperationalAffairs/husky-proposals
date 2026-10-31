@@ -90,7 +90,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - Moving between pages or tabs is one rise everywhere: React's `ViewTransition` in `src/app/layout.tsx`, run by a `Link` marked with `PAGE`. Filter changes never animate. The site header holds still, so only the tab underline moves. No per-card entrance animations on the wall.
 - While a page loads, placeholders shaped like the content hold its place (`WallPlaceholder`, `IdeaPlaceholder`). Flat, no shimmer.
 - Pressed state is shown by fill (icons fill, buttons invert), not motion.
-- Small confirmations are toasts (#67): bottom center on phones, bottom right on wider screens, ink with a rule in the idea's board color. They rise in, close after 5 seconds, and never take focus. Support and I'll participate offer Undo.
+- Small confirmations are toasts (#67): bottom center on phones, bottom right on wider screens, on the surface color with a rule in the idea's board color. They rise in, close after 5 seconds, and never take focus. Support and I'll participate offer Undo. A toast about the same thing replaces the last one (`id`), and more than one collapse into a deck of at most three that fans out on hover or focus.
 - All motion respects `prefers-reduced-motion`: `globals.css` makes every animation, transition, and view transition instant under it.
 
 ## 6. Copy and tone

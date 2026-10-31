@@ -327,6 +327,13 @@ test.describe("toasts (#67)", () => {
     await expect(page.getByText("You support #131.")).toBeHidden();
   });
 
+  test("a burst of taps keeps one toast per idea, and at most three show", async ({ page }) => {
+    await page.goto("/");
+    const hearts = page.locator("article.poster").getByRole("button", { name: "Support" });
+    for (const i of [0, 0, 0, 1, 2, 3, 4]) await hearts.nth(i).click();
+    await expect(page.locator(".toast:not([data-limited])")).toHaveCount(3);
+  });
+
   test("copying the link from the share dialog shows a toast in front of it", async ({ page }) => {
     await page.goto("/ideas/103");
     await page.getByRole("button", { name: "Share", exact: true }).click();

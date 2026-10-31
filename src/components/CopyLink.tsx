@@ -13,9 +13,14 @@ export function CopyLink({ text, board }: { text?: string; board?: BoardCode } =
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text ?? window.location.href);
-      toast({ title: "Link copied.", board });
+      toast({ id: "copy-link", title: "Link copied.", board });
     } catch {
-      toast({ title: "Could not copy.", description: "Copy the address from your browser instead.", board });
+      toast({
+        id: "copy-link",
+        title: "Could not copy.",
+        description: "Copy the address from your browser instead.",
+        board,
+      });
     }
   };
   return (

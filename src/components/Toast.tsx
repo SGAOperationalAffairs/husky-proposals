@@ -11,6 +11,9 @@ import { BOARDS, type BoardCode } from "@/core/boards";
 // app in layout.tsx; components call useToast(). A toast about an idea takes
 // its board's color for the rule on its left.
 type ToastOptions = {
+  // Toasts about the same thing share an id, so a new one replaces the old
+  // in place instead of stacking (support-103, copy-link).
+  id?: string;
   title: string;
   description?: string;
   action?: { label: string; onClick: () => void };
@@ -19,9 +22,10 @@ type ToastOptions = {
 
 export function useToast() {
   const manager = Toast.useToastManager();
-  return ({ title, description, action, board }: ToastOptions) => {
+  return ({ id: key, title, description, action, board }: ToastOptions) => {
     // An action finishes the toast's job, so it closes it too.
     const id: string = manager.add({
+      id: key,
       title,
       description,
       data: { board },
@@ -59,18 +63,20 @@ function Toasts() {
         key={toast.id}
         toast={toast}
         data-board={board ? BOARDS[board].color : undefined}
-        className="toast flex items-start gap-3 bg-ink p-3 text-bg"
+        className="toast bg-surface text-ink"
       >
-        <Toast.Content className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <Toast.Title className="font-semibold" />
-          <Toast.Description className="text-sm" />
+        <Toast.Content className="toast-content flex items-start gap-3 p-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <Toast.Title className="font-semibold" />
+            <Toast.Description className="text-sm text-muted" />
+          </div>
+          {toast.actionProps && (
+            <Toast.Action className="rounded-button bordered px-2.5 py-1 text-sm font-semibold" />
+          )}
+          <Toast.Close aria-label="Dismiss" className="grid size-7 shrink-0 place-items-center">
+            <X aria-hidden className="size-4" />
+          </Toast.Close>
         </Toast.Content>
-        {toast.actionProps && (
-          <Toast.Action className="rounded-button border-2 border-bg px-2.5 py-1 text-sm font-semibold" />
-        )}
-        <Toast.Close aria-label="Dismiss" className="grid size-7 shrink-0 place-items-center">
-          <X aria-hidden className="size-4" />
-        </Toast.Close>
       </Toast.Root>
     );
   });

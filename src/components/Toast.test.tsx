@@ -12,7 +12,7 @@ function Demo({ onUndo }: { onUndo: () => void }) {
       onClick={() =>
         toast({
           title: "You support #103.",
-          description: "Support helps SGA decide.",
+          description: "Support helps SGA decide!",
           action: { label: "Undo", onClick: onUndo },
           board: "DAB",
         })
@@ -34,7 +34,7 @@ describe("toast (#67)", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Show" }));
     const title = await screen.findByText("You support #103.");
-    expect(screen.getByText("Support helps SGA decide.")).toBeTruthy();
+    expect(screen.getByText("Support helps SGA decide!")).toBeTruthy();
     expect(title.closest("[data-board]")?.getAttribute("data-board")).toBe("dining");
   });
 

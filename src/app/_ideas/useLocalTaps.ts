@@ -25,12 +25,13 @@ export function useLocalTaps() {
       toast(
         v
           ? {
+              id: `support-${n}`,
               title: `You support #${n}.`,
-              description: "Support helps SGA decide.",
+              description: "Support helps SGA decide!",
               action: { label: "Undo", onClick: () => setSupport(n, false) },
               board,
             }
-          : { title: `You no longer support #${n}.`, board },
+          : { id: `support-${n}`, title: `You no longer support #${n}.`, board },
       );
     },
     onParticipateChange: (v: boolean) => {
@@ -38,12 +39,13 @@ export function useLocalTaps() {
       toast(
         v
           ? {
+              id: `participate-${n}`,
               title: `You offered to help with #${n}.`,
               description: "SGA may email you if it moves forward.",
               action: { label: "Undo", onClick: () => setParticipate(n, false) },
               board,
             }
-          : { title: `You withdrew your offer to help with #${n}.`, board },
+          : { id: `participate-${n}`, title: `You withdrew your offer to help with #${n}.`, board },
       );
     },
   });
