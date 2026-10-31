@@ -187,7 +187,8 @@ describe("permissions (#52)", () => {
     });
 
     it("gets both boards when they lead two", () => {
-      for (const action of OWN_ACTIONS) expect(boardsFor(twoBoardLead, action), action).toEqual(["DAB", "SC"]);
+      for (const action of OWN_ACTIONS)
+        expect(boardsFor(twoBoardLead, action), action).toEqual(["DAB", "SC"]);
     });
   });
 

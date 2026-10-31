@@ -112,10 +112,7 @@ export function boardsFor(viewer: Viewer, action: BoardAction): BoardCode[] {
 // supporters: using it alone for the author would show an anonymous author to a
 // chair from another board. The author always goes through here. A named author's
 // public display name is #53's call (gap 6), not this function's.
-export function canSeeWhoPosted(
-  viewer: Viewer,
-  idea: { boardId: BoardCode; isAnonymous: boolean },
-): boolean {
+export function canSeeWhoPosted(viewer: Viewer, idea: { boardId: BoardCode; isAnonymous: boolean }): boolean {
   return can(viewer, idea.isAnonymous ? "see_anonymous_author" : "see_names", idea.boardId);
 }
 
