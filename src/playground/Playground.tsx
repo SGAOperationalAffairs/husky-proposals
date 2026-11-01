@@ -434,9 +434,10 @@ function PreviewPage() {
 function IdeaBackdrop() {
   const [backdrop, setBackdrop] = useState<"page" | "board">("board");
   const [edges, setEdges] = useState<"border" | "float">("float");
-  // The big poster's own shadow, separate from the cards' edges, so it can go
-  // without changing the cards beside it.
-  const [posterShadow, setPosterShadow] = useState<"on" | "off">("off");
+  // The big poster's own edge, separate from the cards' edges, so it can change
+  // without changing the cards beside it. On a board-colored page it can be a
+  // hard shadow, a border in the text color, or nothing.
+  const [posterEdge, setPosterEdge] = useState<"float" | "border" | "none">("none");
   // Cards outlined (today) or floating on a hard offset shadow (being tried).
   const card = `flex flex-col gap-3 bg-surface p-card text-ink ${edges === "float" ? "edge-float" : "bordered"}`;
   const [code, setCode] = useState<BoardCode>("CPAB");
@@ -471,16 +472,16 @@ function IdeaBackdrop() {
             </Button>
           ))}
         </div>
-        <div role="group" aria-label="Poster shadow" className="flex gap-2">
-          {(["on", "off"] as const).map((v) => (
+        <div role="group" aria-label="Poster edge" className="flex gap-2">
+          {(["float", "border", "none"] as const).map((v) => (
             <Button
               key={v}
               size="sm"
-              variant={posterShadow === v ? "primary" : "plain"}
-              aria-pressed={posterShadow === v}
-              onClick={() => setPosterShadow(v)}
+              variant={posterEdge === v ? "primary" : "plain"}
+              aria-pressed={posterEdge === v}
+              onClick={() => setPosterEdge(v)}
             >
-              {v === "on" ? "Poster shadow" : "No poster shadow"}
+              {v === "float" ? "Poster shadow" : v === "border" ? "Poster border" : "No poster edge"}
             </Button>
           ))}
         </div>
@@ -502,7 +503,7 @@ function IdeaBackdrop() {
         <span className="font-semibold underline underline-offset-4">Back to ideas</span>
         <div className="grid items-start gap-6 @3xl:grid-cols-5">
           <article
-            className={`poster flex flex-col gap-4 @3xl:col-span-3 ${posterShadow === "on" ? "edge-float" : ""}`}
+            className={`poster flex flex-col gap-4 @3xl:col-span-3 ${posterEdge === "float" ? "edge-float" : posterEdge === "border" ? "poster-bordered" : ""}`}
           >
             <p className="flex flex-wrap gap-3 text-sm font-bold">
               <span>{board.name}</span>

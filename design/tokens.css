@@ -68,6 +68,10 @@
   --rule-color: #c8102e;
   /* Card depth and density. "none" means flat. */
   --card-shadow: none;
+  /* The hard offset shadow on floating edges (.edge-float: the big poster on an
+     idea page, and its cards). "none" turns it off everywhere at once. The
+     shadow is in the line color, so it follows light and dark mode. */
+  --edge-shadow: 6px 6px 0 var(--line);
   --card-pad: 20px;
   /* A poster's top and bottom padding, and the space between its parts. */
   --card-pad-y: 20px;

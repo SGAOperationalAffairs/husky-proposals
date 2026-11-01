@@ -54,7 +54,8 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
   const board = BOARDS[idea.board];
 
   return (
-    // The page's accent takes the idea's board color (#64); `contents` keeps the layout.
+    // The page's accent takes the idea's board color (#64). The page stays in the
+    // page color; only the poster takes the board's color. `contents` keeps the layout.
     <div data-board={board.color} className="board-accent contents">
       {/* One order for every reader: poster, where it stands, about, join. On wide
           screens the right column runs beside the other three (idea-rows). */}
@@ -91,7 +92,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </article>
 
         <aside aria-label="Where it stands" className="flex flex-col gap-6 @3xl:col-span-2 @3xl:row-span-3">
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
             <h2 className="heading text-3xl">Where it stands</h2>
             <p>{standing(idea)}</p>
             <p className="text-sm text-muted">{capitalize(updatedText(idea.updatedDaysAgo))}.</p>
@@ -107,11 +108,11 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
               </ol>
             )}
           </section>
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
             <h2 className="heading text-3xl">{idea.supportCount} supporters</h2>
             <SupportSquares count={idea.supportCount} board={idea.board} rank={idea.rank} />
           </section>
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bordered bg-surface p-card text-ink">
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
             <div className="flex flex-wrap items-start gap-3">
@@ -127,7 +128,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           </section>
         </aside>
 
-        <section className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-3">
+        <section className="flex flex-col gap-4 bordered bg-surface p-card text-ink @3xl:col-span-3">
           <h2 className="heading text-3xl">About this idea</h2>
           {idea.about.map((p) => (
             <p key={p} className="max-w-prose">
@@ -192,7 +193,7 @@ function Join({ idea }: { idea: IdeaPageData }) {
   const join = JOIN[idea.board];
   const working = idea.status === "in_progress";
   return (
-    <section className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-3">
+    <section className="flex flex-col gap-4 bordered bg-surface p-card text-ink @3xl:col-span-3">
       <h2 className="heading text-3xl">{working ? "Join the board working on this" : "Want to help?"}</h2>
       <p className="max-w-prose">
         {working

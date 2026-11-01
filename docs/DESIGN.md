@@ -55,6 +55,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - Corners: `--card-radius`, `--field-radius`, `--button-radius`, `--chip-radius`, all `0`. Use only `rounded-card`, `rounded-field`, `rounded-button`, `rounded-chip` (style guard and browser guard).
 - Borders: `--border: 2px` (the `bordered` utility), `--accent-rule: 5px` in `--rule-color` (`#c8102e`, dark `#d92b48`; the `accent-rule` utility), and Tailwind's 1px `border` for hairlines. Which to use is in `docs/ENGINEERING.md`, "Borders by role."
 - Shadow: `--card-shadow: none` (`shadow-card`). No other shadow class exists.
+- Idea page color: the idea page stays in the page color. Only the poster takes its board's color. A/B testing in November 2026 preferred the page color over a board-colored page. The cards use a 2px border (`bordered`). Feedback on a hard offset shadow (`.edge-float`, `--edge-shadow`, `6px 6px 0` in the line color) was mixed, so it is kept for a later decision (#91).
 - Spacing: Tailwind's default scale, plus `--card-pad: 20px` (`p-card`), `--card-pad-y: 20px`, `--card-stack: 12px` (`.card-stack`), `--card-gap: 20px`.
 
 ## 2. Typography

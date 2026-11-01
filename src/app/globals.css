@@ -140,10 +140,19 @@
   --line: var(--on-b);
 }
 
-/* Being tried on the playground: parts of the page floating on a hard offset
-   shadow in the line color instead of an outline. */
+/* A poster's border, in its text color, so it shows on a board-colored page
+   as well as on the page itself (playground, #67). */
+.poster-bordered {
+  border-style: solid;
+  border-width: var(--border);
+  border-color: var(--on-b);
+}
+
+/* Parts of the page floating on a hard offset shadow instead of an outline.
+   The shadow is a token (--edge-shadow), so one change in tokens.css turns it
+   off or restyles it everywhere (#67 playground). */
 .edge-float {
-  box-shadow: 6px 6px 0 var(--line);
+  box-shadow: var(--edge-shadow);
 }
 
 /* The accent in a board's color (#64): an idea's page, and the dialogs that
