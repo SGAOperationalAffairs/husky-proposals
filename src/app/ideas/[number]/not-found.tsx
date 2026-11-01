@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { SiteHeader } from "@/components/SiteHeader";
 
 // No approved idea has this number (#62). The same words whether the number never
@@ -11,7 +12,11 @@ export default function IdeaNotFound() {
       <section className="flex max-w-prose flex-col gap-3 bordered bg-surface p-card">
         <h1 className="heading text-4xl">No idea with that number</h1>
         <p>Check the link, or look through all the ideas.</p>
-        <Link href="/" className="self-start font-semibold underline underline-offset-4">
+        <Link
+          transitionTypes={PAGE}
+          href="/"
+          className="self-start font-semibold underline underline-offset-4"
+        >
           See all ideas
         </Link>
       </section>

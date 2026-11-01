@@ -5,6 +5,11 @@ import { BoardFilter } from "@/components/BoardFilter";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { IdeaCard, updatedText } from "@/components/IdeaCard";
+import { IdeaPlaceholder, WallPlaceholder } from "@/components/Placeholder";
+import { Flyer } from "@/components/Flyer";
+import { ShareDialog } from "@/components/ShareDialog";
+import { SiteHeader } from "@/components/SiteHeader";
+import { CopyLink } from "@/components/CopyLink";
 import { QueueHeader, QueueRow } from "@/components/QueueRow";
 import { SupportPair } from "@/components/SupportPair";
 import { SupportSquares } from "@/components/SupportSquares";
@@ -305,6 +310,37 @@ function PreviewPage() {
         </div>
       </Section>
 
+      {/* Trying an idea page whose whole background is its board's color. */}
+      <Section title="Idea page in its color">
+        <IdeaBackdrop />
+      </Section>
+
+      {/* What the wall and an idea page show while they load (#73), and the
+          share dialog with its flyer (#64), held still so they can be looked at. */}
+      <Section title="Loading">
+        <WallPlaceholder />
+        <IdeaPlaceholder />
+      </Section>
+
+      <Section title="Share">
+        <div className="flex flex-col items-start gap-4">
+          <ShareDialog
+            number={idea.number}
+            title={idea.title}
+            description={idea.description}
+            board={idea.board}
+          />
+          <div className="w-full max-w-sm bordered p-4">
+            <Flyer
+              number={idea.number}
+              title={idea.title}
+              description={idea.description}
+              board={idea.board}
+            />
+          </div>
+        </div>
+      </Section>
+
       <Section title="Post an idea">
         <div className="grid items-start gap-6 @3xl:grid-cols-2">
           <form
@@ -388,6 +424,120 @@ function PreviewPage() {
           <Button size="sm">Change board</Button>
         </div>
       </Section>
+    </div>
+  );
+}
+
+// An idea page with its board's color as the whole background, beside the
+// current look (page background, poster in color). The real header, poster,
+// pair, and cards, so the comparison is honest.
+function IdeaBackdrop() {
+  const [backdrop, setBackdrop] = useState<"page" | "board">("board");
+  const [edges, setEdges] = useState<"border" | "float">("float");
+  // Cards outlined (today) or floating on a hard offset shadow (being tried).
+  const card = `flex flex-col gap-3 bg-surface p-card text-ink ${edges === "float" ? "edge-float" : "bordered"}`;
+  const [code, setCode] = useState<BoardCode>("CPAB");
+  const idea = IDEAS.find((i) => i.board === code) ?? IDEAS[0]!;
+  const board = BOARDS[code];
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Background" className="flex gap-2">
+          {(["board", "page"] as const).map((v) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={backdrop === v ? "primary" : "plain"}
+              aria-pressed={backdrop === v}
+              onClick={() => setBackdrop(v)}
+            >
+              {v === "board" ? "Board color" : "Page"}
+            </Button>
+          ))}
+        </div>
+        <div role="group" aria-label="Edges" className="flex gap-2">
+          {(["float", "border"] as const).map((v) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={edges === v ? "primary" : "plain"}
+              aria-pressed={edges === v}
+              onClick={() => setEdges(v)}
+            >
+              {v === "float" ? "Hard shadow" : "Border"}
+            </Button>
+          ))}
+        </div>
+        {BOARD_CODES.map((c) => (
+          <BoardFilter
+            key={c}
+            label={BOARDS[c].category}
+            color={BOARDS[c].color}
+            selected={code === c}
+            onClick={() => setCode(c)}
+          />
+        ))}
+      </div>
+      <div
+        data-board={board.color}
+        className={`board-accent flex flex-col gap-6 p-6 @lg:p-8 ${backdrop === "board" ? "board-backdrop" : "bg-bg"}`}
+      >
+        <SiteHeader />
+        <span className="font-semibold underline underline-offset-4">Back to ideas</span>
+        <div className="grid items-start gap-6 @3xl:grid-cols-5">
+          <article
+            className={`poster flex flex-col gap-4 @3xl:col-span-3 ${edges === "float" ? "edge-float" : ""}`}
+          >
+            <p className="flex flex-wrap gap-3 text-sm font-bold">
+              <span>{board.name}</span>
+              <span>#{idea.number}</span>
+            </p>
+            <h3 className="heading text-6xl text-balance">{idea.title}</h3>
+            <p className="max-w-prose">{idea.description}</p>
+            <p className="flex items-end gap-3">
+              <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
+              <span className="pb-2 leading-tight font-semibold">
+                students want this
+                <br />
+                {idea.willingCount} will help
+              </span>
+            </p>
+            <SupportPair
+              look="buttons"
+              ideaNumber={idea.number}
+              board={code}
+              supported={false}
+              participating={false}
+            />
+          </article>
+          <aside className="flex flex-col gap-6 @3xl:col-span-2">
+            <section className={card}>
+              <h4 className="heading text-3xl">Where it stands</h4>
+              <p>
+                This idea is collecting support. The {board.name} looks at its ideas regularly and usually
+                works on 1 to 2 at a time.
+              </p>
+              <p className="text-sm text-muted">Updated 3 days ago.</p>
+            </section>
+            <section className={card}>
+              <h4 className="heading text-3xl">{idea.supportCount} supporters</h4>
+              <SupportSquares count={idea.supportCount} board={code} />
+            </section>
+            <section className={card}>
+              <h4 className="heading text-3xl">Share this idea</h4>
+              <div className="flex flex-wrap gap-3">
+                <CopyLink board={code} />
+                <ShareDialog
+                  number={idea.number}
+                  title={idea.title}
+                  description={idea.description}
+                  board={code}
+                />
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }

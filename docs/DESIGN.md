@@ -82,10 +82,16 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - **Queue row** (`QueueRow`): accent-soft on hover; a stale idea shows "Needs an update" in `accent-text` beside its status.
 - **Tags** (`BoardTag`, `FromSgaTag`): a square board swatch with the category; From SGA as an outlined label (`bordered`): `look="plain"` off a poster, and `look="poster"` on one, in the poster's text color.
 
+- **An idea's page takes its board's color as its accent** (#64): buttons, links, the share dialog's tabs, and the participate confirmation. Text uses `--board-<board>-text`, a shade of the board color that passes AA on the page and on cards in both modes. The rest of the site keeps Husky red.
+
 ## 5. Motion and feedback
 
-- No animations or transitions exist yet. Pressed state is shown by fill (icons fill, buttons invert), not motion.
-- Any motion added must respect `prefers-reduced-motion`; `globals.css` already reduces all durations under it.
+- Motion answers what the student did, and nothing else (#73). The values are tokens: `--motion-fast` (150ms) for a sheet or dialog and for the old page fading out, `--motion-page` (240ms) and `--motion-rise` (24px) for new page content rising into place. Never write a duration in a component.
+- Moving between pages or tabs is one rise everywhere: React's `ViewTransition` in `src/app/layout.tsx`, run by a `Link` marked with `PAGE`. Filter changes never animate. The site header holds still, so only the tab underline moves. No per-card entrance animations on the wall.
+- While a page loads, placeholders shaped like the content hold its place (`WallPlaceholder`, `IdeaPlaceholder`). Flat, no shimmer.
+- Pressed state is shown by fill (icons fill, buttons invert), not motion.
+- Small confirmations are toasts (#67): bottom center on phones, bottom right on wider screens, on the surface color with a rule in the idea's board color. They rise in, close after 5 seconds, and never take focus. Support and I'll participate offer Undo. A toast about the same thing replaces the last one (`id`), and more than one collapse into a deck of at most three that fans out on hover or focus.
+- All motion respects `prefers-reduced-motion`: `globals.css` makes every animation, transition, and view transition instant under it.
 
 ## 6. Copy and tone
 

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { PAGE } from "@/components/pageTransition";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
@@ -66,18 +68,20 @@ export function IdeaCard(props: Props) {
           ) : (
             <SupportPair
               ideaNumber={props.number}
+              board={props.board}
               supported={props.supported ?? false}
               participating={props.participating ?? false}
               onSupportChange={props.onSupportChange}
               onParticipateChange={props.onParticipateChange}
             />
           )}
-          <a
+          <Link
+            transitionTypes={PAGE}
             href={`/ideas/${props.number}`}
             className="text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >
             Learn more<span className="sr-only"> about proposal {props.number}</span>
-          </a>
+          </Link>
         </div>
       </div>
     </article>

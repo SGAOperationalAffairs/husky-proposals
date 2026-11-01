@@ -22,6 +22,14 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   outlined?: boolean;
 };
 
+// The button look, for a link that should look like a button (the share
+// dialog's Text, Email, and download links, #64).
+export const buttonLook = (variant: ButtonVariant = "plain", size: "md" | "sm" = "md", outlined = false) => {
+  const sizing = size === "sm" ? "px-2.5 py-1 text-sm" : "px-3.5 py-2";
+  const border = outlined ? "border-line" : BORDERS[variant];
+  return `inline-flex items-center justify-center gap-2 rounded-button bordered font-medium aria-disabled:opacity-55 ${VARIANTS[variant]} ${border} ${sizing}`;
+};
+
 export function Button({
   variant = "plain",
   size = "md",
@@ -30,13 +38,5 @@ export function Button({
   type = "button",
   ...rest
 }: Props) {
-  const sizing = size === "sm" ? "px-2.5 py-1 text-sm" : "px-3.5 py-2";
-  const border = outlined ? "border-line" : BORDERS[variant];
-  return (
-    <button
-      type={type}
-      className={`inline-flex items-center justify-center gap-2 rounded-button bordered font-medium aria-disabled:opacity-55 ${VARIANTS[variant]} ${border} ${sizing} ${className}`}
-      {...rest}
-    />
-  );
+  return <button type={type} className={`${buttonLook(variant, size, outlined)} ${className}`} {...rest} />;
 }
