@@ -37,6 +37,13 @@ export async function startStandInSession(
   return { ok: true };
 }
 
+// Where sign-in starts, or null when nothing can sign you in. The stand-in
+// picker today; the SGAuth ticket (103) points this at SGAuth. Only /sign-in calls it (#93).
+export function signInUrl(next: string): string | null {
+  if (!env().AUTH_STAND_IN) return null;
+  return `/stand-in?next=${encodeURIComponent(next)}`;
+}
+
 // T2.5 replaces this with SGAuth's sign-out.
 export async function endSession(): Promise<void> {
   const jar = await cookies();

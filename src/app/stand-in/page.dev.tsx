@@ -2,18 +2,23 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getSession } from "@/auth/session";
 import { STAND_IN_USERS } from "@/auth/standIn";
+import { safeNextPath } from "@/core/nextPath";
 import { env } from "@/env";
 import { signInAs, signOut } from "./actions";
 import { StandInPanel } from "./StandInPanel";
 
 export const metadata: Metadata = { title: "Sign-in stand-in" };
 
-async function Current() {
+type Props = { searchParams: Promise<{ next?: string | string[] }> };
+
+async function Current({ searchParams }: Props) {
   const session = await getSession();
+  const { next } = await searchParams;
   return (
     <StandInPanel
       enabled={env().AUTH_STAND_IN}
       session={session}
+      next={safeNextPath(typeof next === "string" ? next : undefined)}
       users={STAND_IN_USERS}
       signInAs={signInAs}
       signOut={signOut}
@@ -22,7 +27,7 @@ async function Current() {
 }
 
 // Dev-only (.dev.tsx): pick a test user and see what their session grants (#45).
-export default function StandIn() {
+export default function StandIn({ searchParams }: Props) {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
       <div>
@@ -34,7 +39,7 @@ export default function StandIn() {
       </div>
       {/* getSession reads cookies, so the panel renders per request inside a boundary. */}
       <Suspense fallback={<p className="text-muted">Loading</p>}>
-        <Current />
+        <Current searchParams={searchParams} />
       </Suspense>
     </main>
   );

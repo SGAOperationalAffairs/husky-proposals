@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Pages to scan. Add each new route here as it lands.
-const PAGES = ["/", "/in-progress", "/ideas/103"];
+const PAGES = ["/", "/in-progress", "/ideas/103", "/sign-in"];
 
 test("the style playground is not in a production build (#29)", async ({ page }) => {
   const response = await page.goto("/playground");
@@ -11,6 +11,12 @@ test("the style playground is not in a production build (#29)", async ({ page })
 test("the sign-in stand-in is not in a production build (#45)", async ({ page }) => {
   const response = await page.goto("/stand-in");
   expect(response?.status()).toBe(404);
+});
+
+test("sign-in says it is not open yet in a production build (#93)", async ({ page }) => {
+  await page.goto("/sign-in?next=/post");
+  await expect(page.getByRole("heading", { name: "Sign-in isn't open yet." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Browse ideas" })).toHaveAttribute("href", "/");
 });
 
 test.describe("public, but not searchable (PRD D18)", () => {

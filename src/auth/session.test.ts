@@ -15,7 +15,7 @@ vi.mock("next/headers", () => ({
 vi.mock("@/env", () => ({ env: () => ({ AUTH_STAND_IN: standIn }) }));
 
 import { STAND_IN_COOKIE } from "./standIn";
-import { endSession, getSession, startStandInSession } from "./session";
+import { endSession, getSession, signInUrl, startStandInSession } from "./session";
 
 beforeEach(() => {
   jar.clear();
@@ -62,5 +62,14 @@ describe("session module (#45)", () => {
   it("ends the session by deleting the cookie", async () => {
     await endSession();
     expect(del).toHaveBeenCalledWith(STAND_IN_COOKIE);
+  });
+
+  it("starts sign-in at the stand-in picker, carrying next encoded (#93)", () => {
+    expect(signInUrl("/ideas/103?x=1")).toBe("/stand-in?next=%2Fideas%2F103%3Fx%3D1");
+  });
+
+  it("has nowhere to start sign-in when the stand-in is off (#93)", () => {
+    standIn = false;
+    expect(signInUrl("/post")).toBeNull();
   });
 });
