@@ -307,6 +307,11 @@ Agreed October 23, 2026.
 | UI design | `prototype/concept-2.html` for layouts, Figma when screens need comments, and the frontend-design skill for all UI code | The app must not look generated. Follow `design/tokens.css` and the prototype, not generic component-library defaults. |
 | Workshops and feedback | Miro | As in the validation plan. |
 
+## Running locally
+
+- **Keep the checkout out of cloud-synced folders,** such as iCloud Drive, Dropbox, and OneDrive. Sync tools rewrite files while the dev server runs, and a worktree install there floods Turbopack with file events.
+- **Use a plain local folder** that sync does not touch, for example `~/Developer/husky-proposals`.
+
 ## Planning order
 
 1. **Feature map:** split the December scope into epics.
