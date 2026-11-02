@@ -1,5 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { parseEnv } from "./env";
+import { parseEnv, parseTestDatabaseEnv } from "./env";
+
+describe("test database environment (#104)", () => {
+  it("leaves everything off when nothing is set, with no APP_ENV needed", () => {
+    const parsed = parseTestDatabaseEnv({});
+    expect(parsed.TEST_DATABASE_URL).toBeUndefined();
+    expect(parsed.TEST_DATABASE_ALLOWED_HOSTS).toEqual([]);
+    expect(parsed.REQUIRE_TEST_DATABASE).toBe(false);
+  });
+
+  it("treats an empty URL as unset", () => {
+    expect(parseTestDatabaseEnv({ TEST_DATABASE_URL: "" }).TEST_DATABASE_URL).toBeUndefined();
+  });
+
+  it("refuses a URL that is not Postgres, naming the variable", () => {
+    expect(() => parseTestDatabaseEnv({ TEST_DATABASE_URL: "mysql://host/db" })).toThrow(/TEST_DATABASE_URL/);
+  });
+
+  it("parses the allowed hosts as a trimmed, lowercased list without empties", () => {
+    const parsed = parseTestDatabaseEnv({
+      TEST_DATABASE_ALLOWED_HOSTS: " EP-One.neon.tech, ,ep-two.neon.tech,",
+    });
+    expect(parsed.TEST_DATABASE_ALLOWED_HOSTS).toEqual(["ep-one.neon.tech", "ep-two.neon.tech"]);
+  });
+
+  it("only accepts 1 or 0 for REQUIRE_TEST_DATABASE", () => {
+    expect(parseTestDatabaseEnv({ REQUIRE_TEST_DATABASE: "1" }).REQUIRE_TEST_DATABASE).toBe(true);
+    expect(() => parseTestDatabaseEnv({ REQUIRE_TEST_DATABASE: "yes" })).toThrow(/REQUIRE_TEST_DATABASE/);
+  });
+});
 
 describe("environment (#26)", () => {
   it("accepts a valid local environment", () => {
