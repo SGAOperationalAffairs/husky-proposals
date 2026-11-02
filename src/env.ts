@@ -14,17 +14,22 @@ function postgresUrl(name: string) {
   );
 }
 
+// Pooled connection for the app at runtime, and direct connection for migrations (#43).
+// Optional, so the server and browser tests start without a database. Empty means
+// unset: GitHub Actions passes a missing secret as "". One definition, shared by the
+// main schema and databaseUrls() below (#44).
+const databaseUrlFields = z.object({
+  DATABASE_URL: postgresUrl("DATABASE_URL"),
+  DIRECT_URL: postgresUrl("DIRECT_URL"),
+});
+
 const schema = z
   .object({
     // Which deployment this is. Vercel sets it per environment.
     APP_ENV: z.enum(["local", "test", "preview", "dev", "production"], {
       error: "APP_ENV must be one of local, test, preview, dev, production",
     }),
-    // Pooled connection for the app at runtime, and direct connection for migrations (#43).
-    // Optional until src/db first queries (T0.5), so the server and browser tests start
-    // without a database. Empty means unset: GitHub Actions passes a missing secret as "".
-    DATABASE_URL: postgresUrl("DATABASE_URL"),
-    DIRECT_URL: postgresUrl("DIRECT_URL"),
+    ...databaseUrlFields.shape,
     // The development sign-in stand-in (T0.6). "1" turns it on.
     AUTH_STAND_IN: z
       .enum(["0", "1"], { error: "AUTH_STAND_IN must be 1 or 0" })
@@ -55,6 +60,18 @@ let cached: Env | undefined;
 export function env(): Env {
   cached ??= parseEnv(process.env);
   return cached;
+}
+
+// The Prisma CLI (prisma.config.ts, migrations, the seed) needs only these two URLs,
+// and must not need APP_ENV: `prisma generate` runs at install time with no
+// secrets. Missing is not an error here; the caller decides what to do (#44).
+export function databaseUrls(source: Record<string, string | undefined> = process.env): {
+  pooled: string | undefined;
+  direct: string | undefined;
+} {
+  const result = databaseUrlFields.safeParse(source);
+  if (!result.success) throw new Error(formatIssues(result.error));
+  return { pooled: result.data.DATABASE_URL, direct: result.data.DIRECT_URL };
 }
 
 // The database test harness reads its own variables (issue 104). Separate from env()

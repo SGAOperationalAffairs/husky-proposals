@@ -1,7 +1,10 @@
 -- idea_stats: counts, rank, and the update-cadence flag for approved ideas (#6, #12).
--- Draft. Created in a hand-written migration with the scaffold (T0.5) and
--- read through the IdeaStats view in schema.prisma. One grouped pass, so a
--- page never runs one query per idea.
+-- The source of the view created by prisma/migrations (#44). Edit this file and add a
+-- new migration with CREATE OR REPLACE VIEW; never edit a migration that has shipped.
+-- A unit test (src/db/migrations.test.ts) keeps this body and the migration's identical.
+--
+-- One grouped pass, so a page never runs one query per idea. Read through the
+-- IdeaStats view in schema.prisma.
 --
 -- Rank: within the board, among approved ideas that are not delivered, by
 -- support count. Ties share a rank. Wording in the app must not read rank as
@@ -10,7 +13,8 @@
 -- Stale: an in-progress idea whose latest counting update is older than its
 -- board's update_cadence_days. Board updates and check-ins count, and so does
 -- starting work (status_changed_at). Other system updates, such as moving
--- boards, do not reset the clock.
+-- boards, do not reset the clock. An idea with no counting activity at all is
+-- stale. is_stale is never NULL.
 
 CREATE VIEW idea_stats AS
 WITH counts AS (
@@ -45,8 +49,11 @@ SELECT
   END AS rank_in_board,
   last_update_at,
   (
-    status = 'in_progress'
-    AND greatest(last_counting_update_at, status_changed_at)
-        < now() - make_interval(days => update_cadence_days)
+    coalesce(status = 'in_progress', false)
+    AND coalesce(
+      greatest(last_counting_update_at, status_changed_at)
+        < now() - make_interval(days => update_cadence_days),
+      true
+    )
   ) AS is_stale
 FROM counts;

@@ -2,7 +2,11 @@ import { BOARD_CODES } from "@/core/boards";
 import {
   buildApprovedIdea,
   buildBoard,
+  buildFollow,
   buildIdea,
+  buildParticipation,
+  buildRevision,
+  buildReview,
   buildSupport,
   buildUpdate,
   buildUser,
@@ -152,3 +156,34 @@ export const updates = {
     createdAt: daysBefore(9),
   }),
 };
+
+// Every idea has a first version, the words that were submitted (#44).
+export const revisions = Object.values(ideas).map((idea) => buildRevision(idea));
+
+// Approved ideas by their board's chair (DAB) or the VP (the rest); the declined post
+// by the VP with a reason. A decline with no reason is refused by a check constraint.
+export const reviews = Object.values(ideas).flatMap((idea) => {
+  const revision = revisions.find((r) => r.ideaId === idea.id)!;
+  if (idea.reviewStatus === "approved") {
+    const reviewerId = idea.boardId === "DAB" ? users.dabChair.id : users.vp.id;
+    return [buildReview({ ideaId: idea.id, revisionId: revision.id, decision: "approved", reviewerId })];
+  }
+  if (idea.reviewStatus === "declined") {
+    return [
+      buildReview({
+        ideaId: idea.id,
+        revisionId: revision.id,
+        decision: "declined",
+        reason: "This repeats an open idea. Support that one instead.",
+        reviewerId: users.vp.id,
+      }),
+    ];
+  }
+  return [];
+});
+
+export const participations = [
+  buildParticipation({ userId: users.secondStudent.id, ideaId: ideas.foodPantry.id }),
+];
+
+export const follows = [buildFollow({ userId: users.student.id, ideaId: ideas.lateNightDining.id })];
