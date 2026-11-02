@@ -72,7 +72,7 @@ export const IDEAS: IdeaCardData[] = [
     supportCount: 71,
     willingCount: 4,
   },
-  // A delivered idea, so the In progress tab (#63) shows both kinds.
+  // A delivered idea, so the list shows picked-up ideas of both kinds (#55).
   {
     number: 96,
     title: "A late shuttle on Friday nights",

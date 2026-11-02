@@ -1,22 +1,22 @@
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import { IDEAS } from "@/playground/sample";
-import { filterIdeas, isOpen, type IdeaList, type IdeasQuery } from "./filter";
+import { filterIdeas, type IdeasQuery } from "./filter";
 
 // Stand-in for the public ideas query (#60), so the ideas list (#61) can be
 // built before the database exists. It reads the playground's invented sample
 // ideas, which hold public fields only. #60 replaces this file; the pages keep
 // calling listWall() and getIdea(). Filtering lives in filter.ts.
 
-// Every public idea on one list, for the wall to filter in the browser (#61).
-// #60's query returns the same: all of a list's public ideas, once.
-export function listWall(list: IdeaList): IdeaCardData[] {
-  return IDEAS.filter((i) => isOpen(i.status) === (list === "open"));
+// Every public idea, for the wall to filter in the browser (#61, #55).
+// #60's query returns the same: all public ideas, once.
+export function listWall(): IdeaCardData[] {
+  return IDEAS;
 }
 
 // The filtered list, for tests and for anything that needs it on the server.
-export function listIdeas(query: IdeasQuery, list: IdeaList = "open"): IdeaCardData[] {
-  return filterIdeas(IDEAS, query, list);
+export function listIdeas(query: IdeasQuery): IdeaCardData[] {
+  return filterIdeas(IDEAS, query);
 }
 
 // The idea page (#62). The fields an idea's own page adds to its poster.
