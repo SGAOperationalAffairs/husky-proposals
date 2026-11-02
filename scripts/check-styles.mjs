@@ -47,7 +47,18 @@ export const rules = [
 // Only class-like strings are checked for Tailwind rules, to avoid flagging prose.
 const CLASS_CONTEXT = /(?:className|class|cn|clsx|tw)\s*[=(]\s*(?:\{\s*)?(["'`])([\s\S]*?)\1/g;
 
-export function findViolations(source) {
+// Comments are blanked before the scan, keeping their line breaks, so an issue
+// reference in a comment, such as (#137), is not read as a hex color.
+export function blankComments(source) {
+  const blank = (text) => text.replace(/[^\n]/g, " ");
+  return source
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(/(^|\s)\/\/.*$/gm, (m, lead) => lead + blank(m.slice(lead.length)));
+}
+
+export function findViolations(sourceWithComments) {
+  const source = blankComments(sourceWithComments);
   const found = [];
   const lineOf = (index) => source.slice(0, index).split("\n").length;
   for (const match of source.matchAll(CLASS_CONTEXT)) {
