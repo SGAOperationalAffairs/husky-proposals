@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getIdea, listIdeas, listWall, parseIdeasNumber } from "./data";
+import { IDEAS } from "@/playground/sample";
 import { ideasHref, parseIdeasQuery } from "./filter";
 
 describe("idea page stand-in (#62)", () => {
@@ -32,10 +33,13 @@ describe("idea page stand-in (#62)", () => {
 });
 
 describe("ideas list stand-in (#61)", () => {
-  it("shows only ideas still open for support, most supported first", () => {
+  // One list (#55): open and picked-up ideas share it, so a student sees every
+  // idea in one place. Picked-up ideas get a mark, not a separate tab.
+  it("shows every public idea, open and picked up, most supported first", () => {
     const ideas = listIdeas(parseIdeasQuery({}));
-    expect(ideas.length).toBeGreaterThan(0);
-    for (const i of ideas) expect(["collecting_support", "under_review", "waiting"]).toContain(i.status);
+    expect(new Set(ideas.map((i) => i.status))).toEqual(
+      new Set(["collecting_support", "under_review", "in_progress", "waiting", "delivered"]),
+    );
     const counts = ideas.map((i) => i.supportCount);
     expect(counts).toEqual([...counts].sort((a, b) => b - a));
   });
@@ -53,35 +57,26 @@ describe("ideas list stand-in (#61)", () => {
   });
 
   it("ignores values it does not know instead of failing", () => {
-    expect(parseIdeasQuery({ board: "XYZ", status: "in_progress", sort: "random", q: ["a", "b"] })).toEqual({
+    expect(parseIdeasQuery({ board: "XYZ", status: "nope", sort: "random", q: ["a", "b"] })).toEqual({
       sort: "support",
     });
   });
-});
 
-describe("in progress list stand-in (#63)", () => {
-  it("shows only ideas a board has taken on, in progress or delivered", () => {
-    const ideas = listIdeas(parseIdeasQuery({}), "progress");
-    expect(ideas.map((i) => i.status).sort()).toEqual(["delivered", "in_progress", "in_progress"]);
-  });
-
-  it("has no status filter, since both kinds show together", () => {
-    expect(parseIdeasQuery({ status: "waiting" }, "progress")).toEqual({ sort: "support" });
-  });
-});
-
-describe("the wall's data and links (#61)", () => {
-  it("sends each list all its public ideas once, for the browser to filter", () => {
+  it("filters by any status, including in progress and delivered", () => {
     expect(
-      listWall("open").every((i) => ["collecting_support", "under_review", "waiting"].includes(i.status)),
+      listIdeas(parseIdeasQuery({ status: "in_progress" })).every((i) => i.status === "in_progress"),
     ).toBe(true);
-    expect(listWall("progress").every((i) => ["in_progress", "delivered"].includes(i.status))).toBe(true);
+    expect(listIdeas(parseIdeasQuery({ status: "delivered" })).length).toBeGreaterThan(0);
+  });
+});
+
+describe("the wall's data and links (#61, #55)", () => {
+  it("sends the wall all its public ideas once, for the browser to filter", () => {
+    expect(listWall()).toHaveLength(IDEAS.length);
   });
 
   it("writes short, shareable URLs that leave defaults out", () => {
     expect(ideasHref("/", { sort: "support" })).toBe("/");
-    expect(ideasHref("/in-progress", { board: "CSC", sort: "newest" })).toBe(
-      "/in-progress?board=CSC&sort=newest",
-    );
+    expect(ideasHref("/", { board: "CSC", sort: "newest" })).toBe("/?board=CSC&sort=newest");
   });
 });

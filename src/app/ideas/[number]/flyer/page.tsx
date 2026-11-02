@@ -1,12 +1,11 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { Button, buttonLook } from "@/components/Button";
 import { PAGE } from "@/components/pageTransition";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getIdea, parseIdeasNumber } from "@/app/_ideas/data";
 import { PrintButton } from "@/app/_share/PrintButton";
 import { Flyer } from "@/components/Flyer";
-import { buttonLook } from "@/components/Button";
 
 // A printable flyer for one idea (#64), opened from the share dialog. On
 // screen it sits on a sheet of paper with a print button; printed, it is the
@@ -28,14 +27,14 @@ async function FlyerFor({ params }: { params: PageProps<"/ideas/[number]/flyer">
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link
-          transitionTypes={PAGE}
+        <Button
+          variant="text"
           href={`/ideas/${idea.number}`}
-          className="inline-flex items-center gap-2 font-semibold underline underline-offset-4"
+          transitionTypes={PAGE}
+          icon={<ChevronLeft aria-hidden className="size-4" />}
         >
-          <ArrowLeft aria-hidden className="size-4" />
           Back to the idea
-        </Link>
+        </Button>
         <div className="flex flex-wrap gap-3">
           <a href={`/ideas/${idea.number}/flyer.pdf`} download className={buttonLook("primary")}>
             Download PDF

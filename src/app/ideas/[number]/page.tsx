@@ -1,5 +1,5 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/Button";
 import { PAGE } from "@/components/pageTransition";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -23,14 +23,15 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
       <SiteHeader />
-      <Link
-        transitionTypes={PAGE}
+      <Button
+        variant="text"
         href="/"
-        className="inline-flex items-center gap-2 self-start font-semibold underline underline-offset-4"
+        transitionTypes={PAGE}
+        className="self-start"
+        icon={<ChevronLeft aria-hidden className="size-4" />}
       >
-        <ArrowLeft aria-hidden className="size-4" />
         Back to ideas
-      </Link>
+      </Button>
       {/* The number comes from the URL, which is request data, so it waits in a boundary. */}
       <Suspense
         fallback={
@@ -91,7 +92,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </article>
 
         <aside aria-label="Where it stands" className="flex flex-col gap-6 @3xl:col-span-2 @3xl:row-span-3">
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Where it stands</h2>
             <p>{standing(idea)}</p>
             <p className="text-sm text-muted">{capitalize(updatedText(idea.updatedDaysAgo))}.</p>
@@ -107,11 +108,11 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
               </ol>
             )}
           </section>
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">{idea.supportCount} supporters</h2>
             <SupportSquares count={idea.supportCount} board={idea.board} rank={idea.rank} />
           </section>
-          <section className="flex flex-col gap-3 bordered bg-surface p-card">
+          <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Share this idea</h2>
             <p className="text-sm text-muted">Anyone with the link can see this idea without signing in.</p>
             <div className="flex flex-wrap items-start gap-3">
@@ -127,7 +128,7 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           </section>
         </aside>
 
-        <section className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-3">
+        <section className="flex flex-col gap-4 bg-surface p-card surface-float @3xl:col-span-3">
           <h2 className="heading text-3xl">About this idea</h2>
           {idea.about.map((p) => (
             <p key={p} className="max-w-prose">
@@ -192,7 +193,7 @@ function Join({ idea }: { idea: IdeaPageData }) {
   const join = JOIN[idea.board];
   const working = idea.status === "in_progress";
   return (
-    <section className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-3">
+    <section className="flex flex-col gap-4 bg-surface p-card surface-float @3xl:col-span-3">
       <h2 className="heading text-3xl">{working ? "Join the board working on this" : "Want to help?"}</h2>
       <p className="max-w-prose">
         {working

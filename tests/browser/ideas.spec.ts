@@ -66,35 +66,21 @@ test.describe("idea page (#62)", () => {
   });
 });
 
-test.describe("in progress list (#63)", () => {
-  test("the header links switch lists and mark the current one", async ({ page }) => {
+test.describe("one list with picked-up ideas (#55)", () => {
+  test("the status filter finds ideas a board has picked up", async ({ page }) => {
     await page.goto("/");
-    const lists = page.getByRole("navigation", { name: "Lists" });
-    await expect(lists.getByRole("link", { name: "Ideas" })).toHaveAttribute("aria-current", "page");
-    await lists.getByRole("link", { name: "In progress" }).click();
-    await expect(page).toHaveURL(/\/in-progress$/);
-    await expect(page.getByRole("heading", { level: 1, name: "In progress" })).toBeVisible();
-    await expect(lists.getByRole("link", { name: "In progress" })).toHaveAttribute("aria-current", "page");
-  });
-
-  test("shows only ideas in progress or delivered, and no status filter", async ({ page }) => {
-    await page.goto("/in-progress");
-    await expect(page.getByLabel("Status")).toHaveCount(0);
+    await page.getByLabel("Status").selectOption("in_progress");
+    await expect(page).toHaveURL(/status=in_progress/);
     const posters = page.locator("article.poster");
     await expect(posters.first()).toBeVisible();
-    for (const poster of await posters.all()) {
-      await expect(poster).toContainText(/In progress|Delivered/);
-    }
+    // Retrying, so a redraw in progress cannot pass or fail the check by accident.
+    await expect(posters.filter({ hasNotText: "In progress" })).toHaveCount(0);
+    await expect(posters.filter({ hasText: "In progress" }).first()).toBeVisible();
   });
 
-  test("a board chip keeps you on In progress", async ({ page }) => {
-    await page.goto("/in-progress");
-    await page
-      .getByRole("navigation", { name: "Boards" })
-      .getByRole("link", { name: "Campus Services" })
-      .click();
-    await expect(page).toHaveURL(/\/in-progress\?board=CSC$/);
-    await expect(page.getByText("A late shuttle on Friday nights")).toBeVisible();
+  test("the header has no list tabs", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("navigation", { name: "Lists" })).toHaveCount(0);
   });
 });
 
@@ -155,8 +141,8 @@ test("filtering redraws the cards without asking the server (#61)", async ({ pag
   await page.goto("/");
   await page.waitForLoadState("networkidle");
   const requests: string[] = [];
-  // Links prefetch other pages (idea pages, the In progress tab), sometimes
-  // late; those are not this list, so only requests for "/" count.
+  // Links prefetch other pages (idea pages), sometimes late; those are not
+  // this list, so only requests for "/" count.
   page.on("request", (r) => {
     const thisList = new URL(r.url()).pathname === "/";
     if ((r.resourceType() === "fetch" || r.resourceType() === "document") && thisList) requests.push(r.url());
@@ -218,18 +204,14 @@ test.describe("page transitions (#73)", () => {
     expect(Math.max(...durations)).toBe(240);
   });
 
-  test("switching tabs rises too, and a filter change does not animate", async ({ page }) => {
+  test("a filter change does not animate", async ({ page }) => {
     test.skip(!(await page.evaluate(() => "startViewTransition" in document)), "no view transitions here");
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Lists" }).getByRole("link", { name: "In progress" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "In progress" })).toBeVisible();
     const vt = () => page.evaluate(() => (window as unknown as { vtDurations: number[] }).vtDurations);
-    expect(await vt()).toContain(240);
-    // The cards rise in after the page does; let both finish before the sort.
+    // The cards rise in on arrival; let that finish before the sort.
     await expect(page.locator("article.poster").filter({ visible: true }).first()).toBeVisible();
     await page.waitForFunction(() => (window as unknown as { vtRunning: number }).vtRunning === 0);
     const before = (await vt()).length;
-    // Next keeps the Ideas page in the DOM, hidden, for Back; use the visible one.
     await page.getByLabel("Sort by").filter({ visible: true }).selectOption("newest");
     await expect(page).toHaveURL(/sort=newest/);
     expect((await vt()).slice(before)).toEqual([]);

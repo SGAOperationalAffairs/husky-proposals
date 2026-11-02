@@ -100,7 +100,7 @@ export async function posterImage(idea: IdeaPageData, host: string) {
         <span style={{ fontWeight: 700 }}>
           Support it at {host}/ideas/{idea.number}
         </span>
-        <span>Support helps SGA decide; it is not a vote.</span>
+        <span>Support helps SGA decide.</span>
       </div>
     </div>,
     { ...SIZE, fonts: await fonts() },

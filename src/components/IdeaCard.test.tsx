@@ -41,3 +41,37 @@ describe("idea card on a delivered idea (#63)", () => {
     expect(screen.getByRole("button", { name: "I'll participate" })).toBeTruthy();
   });
 });
+
+// The whole card goes to the idea page: the title's link stretches over the card,
+// and the controls sit above it, so they still work without opening the page (#91 cards).
+describe("idea card as one link", () => {
+  it("links the title to the idea page", () => {
+    render(<IdeaCard {...idea} status="collecting_support" />);
+    const link = screen.getByRole("link", { name: idea.title });
+    expect(link.getAttribute("href")).toBe("/ideas/96");
+  });
+
+  it("keeps the support controls out of the title link", () => {
+    render(<IdeaCard {...idea} status="collecting_support" />);
+    const link = screen.getByRole("link", { name: idea.title });
+    expect(link.querySelector("button")).toBeNull();
+  });
+});
+
+describe("picked-up stamp (#112)", () => {
+  it("shows for in-progress and delivered ideas", () => {
+    for (const status of ["in_progress", "delivered"] as const) {
+      const { unmount } = render(<IdeaCard {...idea} status={status} />);
+      expect(screen.getByText("Picked up by a board")).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it("does not show for open or waiting ideas", () => {
+    for (const status of ["collecting_support", "under_review", "waiting"] as const) {
+      const { unmount } = render(<IdeaCard {...idea} status={status} />);
+      expect(screen.queryByText("Picked up by a board")).toBeNull();
+      unmount();
+    }
+  });
+});

@@ -21,7 +21,7 @@ export function SupportSquares({ count, board, rank }: Props) {
       </div>
       <p className="mt-2 text-sm text-muted">
         <b className="text-ink">{count} students</b> support this. Each square is one student. Support helps
-        SGA decide; it is not a vote.
+        SGA decide.
       </p>
       {rank && (
         <p className="mt-2.5 flex items-center gap-1.5 text-sm font-semibold">
