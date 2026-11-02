@@ -1,7 +1,7 @@
 // Husky Proposals data model. Draft for review (#6), from docs/data-model.md.
 //
-// This file is the source of truth for the data model. Migrations come with
-// the scaffold (T0.5). Rules the schema cannot express live in the shared
+// This file is the source of truth for the data model. Migrations live in
+// prisma/migrations (#44). Rules the schema cannot express live in the shared
 // rules module and are noted here as "Rule:" comments so they are not lost.
 //
 // "Provisional" marks a choice the plan has not settled. Each can change
@@ -456,8 +456,9 @@ model AccessLog {
 // Derived values (read-only view)
 // ---------------------------------------------------------------------------
 
-// Counts and rank come from this view, never from app code. Draft SQL in
-// prisma/views/public/idea_stats.sql; created in a hand-written migration.
+// Counts and rank come from this view, never from app code. Source SQL in
+// prisma/views/public/idea_stats.sql; created by the hand-written migration
+// 20261102120100_idea_stats_view_and_checks (#44).
 // One row per approved idea.
 view IdeaStats {
   ideaId        String    @unique @map("idea_id") @db.Uuid

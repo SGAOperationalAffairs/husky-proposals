@@ -26,7 +26,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 |---|---|
 | `src/app/` | Next.js routes, layouts, and server actions. Thin: they receive requests and call core modules |
 | `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
-| `src/db/` | The only place that talks to Prisma. `client.ts` builds a client with the Postgres adapter (T0.5 adds the runtime singleton, shared field lists, filters, and named queries) |
+| `src/db/` | The only place that talks to Prisma. `client.ts` builds a client with the Postgres adapter (#60 adds the runtime singleton). `seed.ts` writes the invented development data (#44) |
 | `src/db/sql/` | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule). `ping.ts` is the first |
 | `src/db/safeTarget.ts` | The host guard, `assertSafeDatabaseTarget`: only localhost or an allowlisted test branch. The seed calls it too (#104) |
 | `src/db/testing/` | Database test helpers (`describeWithDatabase`, `withRollback`), `globalSetup.ts` (creates, migrates, and drops each run's database), `runDatabase.ts` (names and the run registry), factories, and invented fixtures |
@@ -42,7 +42,10 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/env.ts` | The only reader of `process.env`, validated with zod. Checked at server start by `src/instrumentation.ts` |
 | `src/generated/prisma/` | The generated Prisma client. Not committed; `npm install` rebuilds it |
 | `prisma/schema.prisma` | The data model's source of truth. `prisma/views/` holds the `idea_stats` view SQL |
-| `prisma.config.ts` | Prisma CLI config: migrations path and the direct URL, with a placeholder for offline commands |
+| `prisma/migrations/` | The migrations (#44): `*_init` is generated from the schema; `*_idea_stats_view_and_checks` is hand-written for the view and the check constraints. Committed migrations are never edited |
+| `prisma/seed.ts` | `npm run db:seed` (`prisma db seed`): invented data for local and test only, through `src/db/seed.ts` |
+| `src/db/testing/seededTransaction.ts` | `withSeed()`: a rolled-back transaction with the seed written in, for database tests (#44) |
+| `prisma.config.ts` | Prisma CLI config: migrations path, the seed command, and the direct URL read through `databaseUrls()` in `src/env.ts`, with a placeholder for offline commands |
 | `scripts/verify.mjs` | `npm run verify` and its tiers |
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
 | `scripts/port-*.mjs` | Port's scripts, copied verbatim from the plugin. Excluded from lint and Prettier; never edit by hand |
@@ -89,6 +92,7 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 
 ## 3. Data and integrity
 
+- **Migrations (#44):** additive only, and a committed migration is never edited. To change the schema, run `npx --no-install prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script --output prisma/migrations/<timestamp>_<name>/migration.sql` against a migrated database, or write the file by hand. A view change needs a new `CREATE OR REPLACE VIEW` migration and the same edit to `prisma/views/public/idea_stats.sql`; `src/db/migrations.test.ts` fails until they match. Run `npm run db:migrate` and `npm run db:seed` with `DIRECT_URL` (or `DATABASE_URL`) exported in the shell, like the database tests. The seed refuses any `APP_ENV` but `local` or `test`.
 - **Environment:** read only through `env()` in `src/env.ts`. Add each variable to the zod schema, to `.env.example`, and to `src/env.test.ts` with the feature that first needs it. The one exception is `next.config.ts`'s build-time `APP_ENV` check (commented there).
 - **Validate everything from outside our code with zod:** SGAuth responses, Resend webhooks, and every student submission. Validate on read as well as on write. Repair what can be repaired, record what was repaired, never silently drop anything. One set of shared validation helpers; no local copies (`docs/dev-process.md`).
 - **Prisma rules** (shared selects, `idea_stats` for counts and rank, additive migrations, no TypedSQL) are in `CLAUDE.md`, "Database rules." Each raw query in `src/db/sql/` has a test named `*.db.test.ts`. These skip, with a printed reason, when `TEST_DATABASE_URL` is unset, and run in CI's own `database` job against the Neon test branch, one at a time. To run them locally, use a local Postgres that matches the Neon major version:

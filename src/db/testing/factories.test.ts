@@ -3,9 +3,14 @@ import { BOARDS } from "@/core/boards";
 import {
   buildApprovedIdea,
   buildBoard,
+  buildFollow,
   buildIdea,
+  buildParticipation,
+  buildReview,
+  buildRevision,
   buildUpdate,
   buildUser,
+  FIXTURE_TIME,
   resetFactories,
   testUuid,
 } from "./factories";
@@ -59,5 +64,41 @@ describe("factories (#43)", () => {
       expect(user.displayName).toMatch(/Test|Chair|Campus-Affairs/);
     }
     expect(Object.keys(ideas)).toContain("pending");
+  });
+});
+
+describe("revision, review, participation, and follow builders (#44)", () => {
+  it("a v1 revision copies the idea's content and submission time", () => {
+    const idea = buildApprovedIdea({ id: testUuid(300), title: "Copied", description: "Same words" });
+    const revision = buildRevision(idea);
+    expect(revision).toMatchObject({
+      ideaId: idea.id,
+      version: 1,
+      title: "Copied",
+      description: "Same words",
+      isAnonymous: false,
+      submittedAt: idea.submittedAt,
+    });
+  });
+
+  it("a review points at its revision and carries the decision and reason", () => {
+    const review = buildReview({
+      ideaId: testUuid(300),
+      revisionId: testUuid(301),
+      decision: "declined",
+      reason: "Too similar to an open idea.",
+    });
+    expect(review).toMatchObject({
+      kind: "review",
+      decision: "declined",
+      reason: "Too similar to an open idea.",
+    });
+  });
+
+  it("a participation and a follow stamp their times with the fixture clock", () => {
+    const participation = buildParticipation({ userId: testUuid(1), ideaId: testUuid(300) });
+    expect(participation.createdAt).toEqual(FIXTURE_TIME);
+    expect(participation.updatedAt).toEqual(FIXTURE_TIME);
+    expect(buildFollow({ userId: testUuid(1), ideaId: testUuid(300) }).createdAt).toEqual(FIXTURE_TIME);
   });
 });
