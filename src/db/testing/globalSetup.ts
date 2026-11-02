@@ -19,7 +19,26 @@ declare module "vitest" {
 // One database per run (issue 104): create it on the target server, migrate it,
 // check it against prisma/schema.prisma, hand its URL to the tests, drop it after.
 // The host guard runs before every connection, including the Prisma CLI's.
+// Vitest prints a startup error by parsing its stack, and that crashes on some
+// errors (it hid this failure as "No test files found"). Log the message as plain
+// text first, then rethrow, so the CI log always shows the real cause (issue 104).
 export default async function setup(project: TestProject): Promise<(() => Promise<void>) | undefined> {
+  try {
+    return await setupRun(project);
+  } catch (error) {
+    console.error(`Database test setup failed (issue 104): ${describeError(error)}`);
+    throw error;
+  }
+}
+
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const code = (error as { code?: unknown }).code;
+  const cause = error.cause instanceof Error ? ` (cause: ${error.cause.message})` : "";
+  return `${error.name}: ${error.message}${code === undefined ? "" : ` [code ${String(code)}]`}${cause}`;
+}
+
+async function setupRun(project: TestProject): Promise<(() => Promise<void>) | undefined> {
   const { TEST_DATABASE_URL: adminUrl, TEST_DATABASE_ALLOWED_HOSTS: allowedHosts, ...ci } = testDatabaseEnv();
   project.provide("testDatabaseAllowedHosts", allowedHosts);
   if (!adminUrl) {
@@ -58,7 +77,9 @@ export default async function setup(project: TestProject): Promise<(() => Promis
     }
   };
 
+  console.log(`Creating test database ${name} (issue 104).`);
   await withAdmin((admin) => createDatabase(admin, name, registry));
+  console.log(`Created test database ${name}; migrating (issue 104).`);
   try {
     migrate(runUrl);
     project.provide("testDatabaseUrl", runUrl);
