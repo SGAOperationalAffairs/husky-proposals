@@ -12,7 +12,7 @@ import { BOARDS } from "@/core/boards";
 const SIZE = { width: 1080, height: 1350 };
 const root = (...parts: string[]) => join(process.cwd(), ...parts);
 
-async function fonts() {
+export async function fonts() {
   const read = (file: string) => readFile(root("src/app/_share/fonts", file));
   const [heading, regular, bold] = await Promise.all([
     read("big-shoulders-display-latin-800-normal.woff"),

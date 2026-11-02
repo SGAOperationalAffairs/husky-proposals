@@ -1,6 +1,6 @@
 "use client";
 
-import qrcode from "qrcode-generator";
+import { qrModules } from "./qrModules";
 import { useOrigin } from "./useOrigin";
 
 // A QR code for an idea's link (#64), for tabling and flyers. Drawn here as one
@@ -10,8 +10,6 @@ import { useOrigin } from "./useOrigin";
 // The page only knows its path; the address comes from the browser.
 // `className` sets the size (size-40 by default).
 type Props = { path: string; className?: string };
-
-const QUIET_ZONE = 4;
 
 export function QrCode({ path, className = "size-40" }: Props) {
   const origin = useOrigin();
@@ -30,21 +28,4 @@ export function QrCode({ path, className = "size-40" }: Props) {
       <path d={d} className="fill-paper-ink" />
     </svg>
   );
-}
-
-// The code's dark modules as one path of 1x1 squares, offset by the quiet zone
-// that scanners need around the code. Error correction M, which survives a
-// scuffed flyer.
-export function qrModules(text: string) {
-  const code = qrcode(0, "M");
-  code.addData(text);
-  code.make();
-  const n = code.getModuleCount();
-  let d = "";
-  for (let row = 0; row < n; row++) {
-    for (let col = 0; col < n; col++) {
-      if (code.isDark(row, col)) d += `M${col + QUIET_ZONE} ${row + QUIET_ZONE}h1v1h-1z`;
-    }
-  }
-  return { size: n + QUIET_ZONE * 2, d };
 }
