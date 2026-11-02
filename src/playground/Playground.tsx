@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/Button";
-import { SelectField, TextArea, TextField } from "@/components/Field";
+import { SelectField } from "@/components/Field";
 import { IdeaCard, updatedText } from "@/components/IdeaCard";
 import { IdeaPlaceholder, WallPlaceholder } from "@/components/Placeholder";
 import { Flyer } from "@/components/Flyer";
 import { ShareDialog } from "@/components/ShareDialog";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SubmitYours } from "@/components/SubmitYours";
+import { PostForm } from "@/app/_post/PostForm";
+import { ButtonsSection } from "./sections/ButtonsSection";
+import { FiltersSection } from "./sections/FiltersSection";
+import { InProgressCardsSection } from "./sections/InProgressCardsSection";
+import { SurfacesSection } from "./sections/SurfacesSection";
+import { TextSection } from "./sections/TextSection";
+import { TOP_BAR_STYLES, TopBarSection, type TopBarStyle } from "./sections/TopBarSection";
+import { POST_INTRO } from "@/app/_post/intro";
 import { CopyLink } from "@/components/CopyLink";
 import { QueueHeader, QueueRow } from "@/components/QueueRow";
 import { SupportPair } from "@/components/SupportPair";
@@ -35,6 +45,80 @@ import {
 
 type Taps = Record<number, boolean>;
 
+// Every choice the sidebar makes (#55 playground). The preview only shows them.
+type Choices = {
+  boardTiles: "grid" | "line";
+  iconAlign: "above" | "inline";
+  submitAt: "title" | "end";
+  backdrop: "page" | "board";
+  edges: "border" | "float";
+  posterShadow: "on" | "off";
+  textWidth: "prose" | "full";
+  topBarStyle: TopBarStyle;
+  logoInline: boolean;
+  fullWidth: boolean;
+};
+const INITIAL_CHOICES: Choices = {
+  boardTiles: "grid",
+  iconAlign: "inline",
+  submitAt: "title",
+  backdrop: "board",
+  edges: "float",
+  posterShadow: "off",
+  textWidth: "full",
+  topBarStyle: "underline",
+  logoInline: false,
+  fullWidth: true,
+};
+
+// The preview shows one section at a time, as Resume Studio's playground does.
+const SECTIONS = [
+  { id: "ideas", label: "Ideas", title: "Ideas" },
+  { id: "filters", label: "Filters", title: "Filters" },
+  { id: "topbar", label: "Top bar", title: "Top bar" },
+  { id: "buttons", label: "Buttons", title: "Buttons" },
+  { id: "surfaces", label: "Surfaces", title: "Surfaces" },
+  { id: "text", label: "Text", title: "Text" },
+  { id: "one", label: "One idea", title: "One idea" },
+  { id: "idea-page", label: "Idea page", title: "Idea page in its color" },
+  { id: "in-progress-cards", label: "In progress cards", title: "In progress cards" },
+  { id: "loading", label: "Loading", title: "Loading" },
+  { id: "share", label: "Share", title: "Share" },
+  { id: "post", label: "Post an idea", title: "Post an idea" },
+  { id: "queue", label: "SGA queue", title: "SGA queue" },
+] as const;
+type SectionId = (typeof SECTIONS)[number]["id"];
+
+// The settings each page uses. A page's sidebar shows only these; the card layout
+// dials are for the wall and the placeholder grid, not one idea or the queue.
+const LAYOUT = ["perRow", "gap", "density"];
+const TYPE = ["case", "titleSize", "weight"];
+const LOOK = ["boards", "bg", "border", "corners"];
+const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choices)[]; tuner: boolean }> = {
+  ideas: { dials: [...LAYOUT, ...TYPE, "titleLines", "desc", ...LOOK], choices: ["submitAt"], tuner: true },
+  // The new sections have no settings of their own, so they show the shared dials for what they draw.
+  filters: { dials: LOOK, choices: [], tuner: true },
+  topbar: { dials: [...TYPE, ...LOOK], choices: ["topBarStyle", "logoInline", "fullWidth"], tuner: true },
+  buttons: { dials: LOOK, choices: [], tuner: true },
+  surfaces: { dials: ["density", ...LOOK], choices: [], tuner: true },
+  text: { dials: [...TYPE, ...LOOK], choices: ["textWidth"], tuner: true },
+  one: { dials: [...TYPE, "number", "titleLines", "desc", ...LOOK], choices: [], tuner: true },
+  "idea-page": {
+    dials: [...TYPE, "number", "titleLines", "desc", ...LOOK],
+    choices: ["backdrop", "posterShadow"],
+    tuner: true,
+  },
+  "in-progress-cards": { dials: [...TYPE, "titleLines", "desc", ...LOOK], choices: [], tuner: true },
+  loading: { dials: [...LAYOUT, "bg", "border", "corners"], choices: [], tuner: false },
+  share: { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
+  post: {
+    dials: [...TYPE, ...LOOK],
+    choices: ["boardTiles", "iconAlign"],
+    tuner: true,
+  },
+  queue: { dials: ["boards", "bg", "border", "corners"], choices: [], tuner: true },
+};
+
 export function Playground() {
   const [mode, setMode] = useState<Mode>("light");
   const [phone, setPhone] = useState(false);
@@ -44,6 +128,8 @@ export function Playground() {
   const [copied, setCopied] = useState("");
   // Hide the panel to see the preview at the full window width.
   const [panelOpen, setPanelOpen] = useState(true);
+  const [choices, setChoices] = useState<Choices>(INITIAL_CHOICES);
+  const [section, setSection] = useState<SectionId>("ideas");
 
   const template = DEFAULT_TEMPLATE;
   const overrides: Overrides = applyTuned(applyDials(emptyOverrides(), dials), tuned);
@@ -90,25 +176,39 @@ export function Playground() {
           </Button>
         </div>
 
-        {DIAL_GROUPS.map((group) => (
-          <fieldset key={group} className="flex flex-col gap-3">
-            <legend className="mb-1 text-sm font-bold">{group}</legend>
-            {DIALS.filter((d) => d.group === group).map((d) => (
-              <Preset
-                key={d.id}
-                label={d.label}
-                value={dials[d.id] ?? d.initial}
-                options={Object.keys(d.options)}
-                onChange={(v) => setDials({ ...dials, [d.id]: v })}
-              />
-            ))}
-          </fieldset>
-        ))}
-        <BoardTuner template={template} overrides={overrides} mode={mode} tuned={tuned} onChange={setTuned} />
+        <SectionSettings section={section} choices={choices} onChange={setChoices} />
+        {DIAL_GROUPS.map((group) => {
+          const shown = DIALS.filter((d) => d.group === group && PAGE_SETTINGS[section].dials.includes(d.id));
+          if (shown.length === 0) return null;
+          return (
+            <fieldset key={group} className="flex flex-col gap-3">
+              <legend className="mb-1 text-sm font-bold">{group}</legend>
+              {shown.map((d) => (
+                <Preset
+                  key={d.id}
+                  label={d.label}
+                  value={dials[d.id] ?? d.initial}
+                  options={Object.keys(d.options)}
+                  onChange={(v) => setDials({ ...dials, [d.id]: v })}
+                />
+              ))}
+            </fieldset>
+          );
+        })}
+        {PAGE_SETTINGS[section].tuner && (
+          <BoardTuner
+            template={template}
+            overrides={overrides}
+            mode={mode}
+            tuned={tuned}
+            onChange={setTuned}
+          />
+        )}
         <Button
           onClick={() => {
             setDials(INITIAL_DIALS);
             setTuned({});
+            setChoices(INITIAL_CHOICES);
           }}
         >
           Reset dials
@@ -126,13 +226,13 @@ export function Playground() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-x-auto p-4 lg:p-8">
+      <main className="flex-1 overflow-x-auto p-4 lg:p-6">
         <div
           data-testid="preview"
           style={tokenStyle(template, overrides, mode)}
           className={`@container mx-auto bg-bg font-sans text-ink ${phone ? "max-w-sm" : "max-w-6xl"}`}
         >
-          <PreviewPage />
+          <PreviewPage choices={choices} section={section} onSection={setSection} />
         </div>
       </main>
     </div>
@@ -210,6 +310,177 @@ function BoardTuner(props: {
   );
 }
 
+// A row of buttons for one choice. Lives in the sidebar with every other setting.
+function ChoiceGroup<T extends string>(props: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1 text-sm font-bold">{props.label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {props.options.map((o) => (
+          <Button
+            key={o.value}
+            size="sm"
+            variant={props.value === o.value ? "primary" : "plain"}
+            aria-pressed={props.value === o.value}
+            onClick={() => props.onChange(o.value)}
+          >
+            {o.label}
+          </Button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+// A switch with its label. The label is the button's name; the On or Off word
+// repeats the state for anyone who cannot see the track.
+function ToggleRow(props: { label: string; on: boolean; onChange: (on: boolean) => void; note?: string }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-3">
+        <span id={id} className="text-sm font-semibold">
+          {props.label}
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="text-sm text-muted">{props.on ? "On" : "Off"}</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={props.on}
+            aria-labelledby={id}
+            onClick={() => props.onChange(!props.on)}
+            className={`relative inline-flex h-6 w-11 shrink-0 bordered ${props.on ? "border-accent bg-accent" : "bg-bg"}`}
+          >
+            <span
+              aria-hidden
+              className={`absolute top-0.5 left-0.5 size-4 transition-transform duration-(--motion-fast) ease-out motion-reduce:transition-none ${
+                props.on ? "translate-x-5.5 bg-on-accent" : "bg-line"
+              }`}
+            />
+          </button>
+        </span>
+      </div>
+      {props.note && <p className="text-sm text-muted">{props.note}</p>}
+    </div>
+  );
+}
+
+// The settings for the section being shown. Each section lists only its own
+// choices; the token dials and board colors below apply to every section.
+function SectionSettings({
+  section,
+  choices,
+  onChange,
+}: {
+  section: SectionId;
+  choices: Choices;
+  onChange: (c: Choices) => void;
+}) {
+  const set = <K extends keyof Choices>(key: K, value: Choices[K]) => onChange({ ...choices, [key]: value });
+  const name = SECTIONS.find((x) => x.id === section)?.label ?? "";
+  return (
+    <fieldset className="flex flex-col gap-3">
+      <legend className="mb-1 text-sm font-bold">Settings for {name}</legend>
+      {section === "post" && (
+        <>
+          <ChoiceGroup
+            label="Board tiles"
+            value={choices.boardTiles}
+            options={[
+              { value: "grid", label: "Grid" },
+              { value: "line", label: "One line" },
+            ]}
+            onChange={(v) => set("boardTiles", v)}
+          />
+          <ChoiceGroup
+            label="Board icon"
+            value={choices.iconAlign}
+            options={[
+              { value: "above", label: "Above the name" },
+              { value: "inline", label: "In line with it" },
+            ]}
+            onChange={(v) => set("iconAlign", v)}
+          />
+        </>
+      )}
+      {section === "text" && (
+        <ChoiceGroup
+          label="Intro width"
+          value={choices.textWidth}
+          options={[
+            { value: "full", label: "Full width" },
+            { value: "prose", label: "Reading width" },
+          ]}
+          onChange={(v) => set("textWidth", v)}
+        />
+      )}
+      {section === "topbar" && (
+        <>
+          <ChoiceGroup
+            label="Top bar style"
+            value={choices.topBarStyle}
+            options={TOP_BAR_STYLES.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(v) => set("topBarStyle", v)}
+          />
+          <ToggleRow
+            label="Logo inline with the list choice"
+            on={choices.logoInline}
+            onChange={(v) => set("logoInline", v)}
+            note={
+              TOP_BAR_STYLES.find((o) => o.id === choices.topBarStyle)?.logoAlwaysInline
+                ? "No effect on this style: it already puts the logo inline."
+                : undefined
+            }
+          />
+          <ToggleRow label="Full width" on={choices.fullWidth} onChange={(v) => set("fullWidth", v)} />
+        </>
+      )}
+      {section === "ideas" && (
+        <ChoiceGroup
+          label="Submit yours"
+          value={choices.submitAt}
+          options={[
+            { value: "title", label: "Under the title" },
+            { value: "end", label: "End of the ideas" },
+          ]}
+          onChange={(v) => set("submitAt", v)}
+        />
+      )}
+      {section === "idea-page" && (
+        <>
+          <ChoiceGroup
+            label="Background"
+            value={choices.backdrop}
+            options={[
+              { value: "board", label: "Board color" },
+              { value: "page", label: "Page" },
+            ]}
+            onChange={(v) => set("backdrop", v)}
+          />
+          <ChoiceGroup
+            label="Poster shadow"
+            value={choices.posterShadow}
+            options={[
+              { value: "on", label: "On" },
+              { value: "off", label: "Off" },
+            ]}
+            onChange={(v) => set("posterShadow", v)}
+          />
+        </>
+      )}
+      {PAGE_SETTINGS[section].choices.length === 0 && (
+        <p className="text-sm text-muted">No settings only for this page.</p>
+      )}
+    </fieldset>
+  );
+}
+
 function Preset(props: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
   return (
     <SelectField label={props.label} value={props.value} onChange={(e) => props.onChange(e.target.value)}>
@@ -222,12 +493,20 @@ function Preset(props: { label: string; value: string; options: string[]; onChan
 
 // A whole page in miniature, from the real components: the ideas list, one
 // idea, posting with a live preview, and the SGA queue.
-function PreviewPage() {
+function PreviewPage({
+  choices,
+  section,
+  onSection,
+}: {
+  choices: Choices;
+  section: SectionId;
+  onSection: (s: SectionId) => void;
+}) {
   const [board, setBoard] = useState<BoardCode | "all">("all");
   const [sgaTab, setSgaTab] = useState("queue");
   const [supported, setSupported] = useState<Taps>({ 103: true });
   const [participating, setParticipating] = useState<Taps>({});
-  const [draft, setDraft] = useState({ title: "A late-night dining option", board: "DAB" as BoardCode });
+  const { boardTiles, iconAlign, submitAt, textWidth } = choices;
   const idea = IDEAS[0]!;
   const shown = IDEAS.filter((i) => board === "all" || i.board === board);
   const taps = (n: number) => ({
@@ -238,192 +517,203 @@ function PreviewPage() {
   });
 
   return (
-    <div className="flex flex-col gap-14 p-4 @lg:p-8">
-      <Section title="Ideas">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
+    <div className="flex flex-col gap-6 p-4 @lg:p-6">
+      <Tabs
+        label="Playground sections"
+        tabs={SECTIONS.map((x) => ({ id: x.id, label: x.label }))}
+        selected={section}
+        onSelect={(id) => onSection(id as SectionId)}
+      />
+      {section === "ideas" && (
+        <Section title="Ideas">
+          <SiteHeader />
+          {/* The title, with the way to post right under it, as on the real Ideas page (#55). */}
+          <div className="flex flex-col gap-4">
             <h2 className="heading text-7xl @3xl:text-8xl">Ideas for campus</h2>
-            <p className="mt-3 max-w-prose text-muted">
-              Every poster is an idea a student posted. Support the ones you care about, or offer to help.
-              Support helps SGA decide; it is not a vote.
-            </p>
+            {submitAt === "title" && <SubmitYours />}
           </div>
-          <Button variant="primary">Post an idea</Button>
-        </header>
-        <div role="group" aria-label="Board" className="flex flex-wrap gap-2">
-          <BoardFilter label="All boards" selected={board === "all"} onClick={() => setBoard("all")} />
-          {BOARD_CODES.map((code) => (
-            <BoardFilter
-              key={code}
-              label={BOARDS[code].category}
-              color={BOARDS[code].color}
-              selected={board === code}
-              onClick={() => setBoard(code)}
-            />
-          ))}
-        </div>
-        <div className="card-grid">
-          {shown.map((i) => (
-            <IdeaCard key={i.number} {...i} {...taps(i.number)} />
-          ))}
-        </div>
-      </Section>
+          <div role="group" aria-label="Board" className="flex flex-wrap gap-2">
+            <BoardFilter label="All boards" selected={board === "all"} onClick={() => setBoard("all")} />
+            {BOARD_CODES.map((code) => (
+              <BoardFilter
+                key={code}
+                label={BOARDS[code].category}
+                color={BOARDS[code].color}
+                selected={board === code}
+                onClick={() => setBoard(code)}
+              />
+            ))}
+          </div>
+          <div className="card-grid">
+            {shown.map((i) => (
+              <IdeaCard key={i.number} {...i} {...taps(i.number)} />
+            ))}
+          </div>
+          {submitAt === "end" && <SubmitYours />}
+        </Section>
+      )}
 
-      <Section title="One idea">
-        <div className="grid items-start gap-6 @3xl:grid-cols-5">
-          <article
-            data-board={BOARDS[idea.board].color}
-            className="poster flex flex-col gap-4 @3xl:col-span-3"
-          >
-            <p className="flex gap-3 text-sm font-bold">
-              <span>{BOARDS[idea.board].name}</span>
-              <span>#{idea.number}</span>
-            </p>
-            <h3 className="heading text-7xl text-balance">{idea.title}</h3>
-            <p className="max-w-prose">{idea.description}</p>
-            <p className="flex items-end gap-3">
-              <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
-              <span className="pb-2 leading-tight font-semibold">
-                students want this
-                <br />
-                {idea.willingCount} will help
-              </span>
-            </p>
-            <SupportPair look="buttons" ideaNumber={idea.number} {...taps(idea.number)} />
-            <p className="text-sm">
-              &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves forward.
-            </p>
-          </article>
-          <aside className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-2">
-            <h4 className="heading text-3xl">Where it stands</h4>
-            <p>
-              In progress, {updatedText(idea.updatedDaysAgo)}. The board met with Student Life about space in
-              the Curry Student Center and is pricing shelving and a weekly restock.
-            </p>
-            <h4 className="heading text-3xl">{idea.supportCount} supporters</h4>
-            <SupportSquares
-              count={idea.supportCount}
-              board={idea.board}
-              rank={{ position: 1, of: 9, board: "Dining" }}
-            />
-          </aside>
-        </div>
-      </Section>
+      {section === "filters" && (
+        <Section title="Filters">
+          <FiltersSection />
+        </Section>
+      )}
+
+      {section === "topbar" && (
+        <Section title="Top bar">
+          <TopBarSection
+            style={choices.topBarStyle}
+            logoInline={choices.logoInline}
+            fullWidth={choices.fullWidth}
+          />
+        </Section>
+      )}
+
+      {section === "buttons" && (
+        <Section title="Buttons">
+          <ButtonsSection />
+        </Section>
+      )}
+
+      {section === "surfaces" && (
+        <Section title="Surfaces">
+          <SurfacesSection />
+        </Section>
+      )}
+
+      {section === "text" && (
+        <Section title="Text">
+          <TextSection textWidth={textWidth} />
+        </Section>
+      )}
+
+      {section === "one" && (
+        <Section title="One idea">
+          <div className="grid items-start gap-6 @3xl:grid-cols-5">
+            <article
+              data-board={BOARDS[idea.board].color}
+              className="poster flex flex-col gap-4 @3xl:col-span-3"
+            >
+              <p className="flex gap-3 text-sm font-bold">
+                <span>{BOARDS[idea.board].name}</span>
+                <span>#{idea.number}</span>
+              </p>
+              <h3 className="heading text-7xl text-balance">{idea.title}</h3>
+              <p className="max-w-prose">{idea.description}</p>
+              <p className="flex items-end gap-3">
+                <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
+                <span className="pb-2 leading-tight font-semibold">
+                  students want this
+                  <br />
+                  {idea.willingCount} will help
+                </span>
+              </p>
+              <SupportPair look="buttons" ideaNumber={idea.number} {...taps(idea.number)} />
+              <p className="text-sm">
+                &ldquo;I&rsquo;ll participate&rdquo; tells SGA you would help work on this if it moves
+                forward.
+              </p>
+            </article>
+            <aside className="flex flex-col gap-4 bordered bg-surface p-card @3xl:col-span-2">
+              <h4 className="heading text-3xl">Where it stands</h4>
+              <p>
+                In progress, {updatedText(idea.updatedDaysAgo)}. The board met with Student Life about space
+                in the Curry Student Center and is pricing shelving and a weekly restock.
+              </p>
+              <h4 className="heading text-3xl">{idea.supportCount} supporters</h4>
+              <SupportSquares
+                count={idea.supportCount}
+                board={idea.board}
+                rank={{ position: 1, of: 9, board: "Dining" }}
+              />
+            </aside>
+          </div>
+        </Section>
+      )}
 
       {/* Trying an idea page whose whole background is its board's color. */}
-      <Section title="Idea page in its color">
-        <IdeaBackdrop />
-      </Section>
+      {section === "idea-page" && (
+        <Section title="Idea page in its color">
+          <IdeaBackdrop
+            backdrop={choices.backdrop}
+            edges={choices.edges}
+            posterShadow={choices.posterShadow}
+          />
+        </Section>
+      )}
 
       {/* What the wall and an idea page show while they load (#73), and the
           share dialog with its flyer (#64), held still so they can be looked at. */}
-      <Section title="Loading">
-        <WallPlaceholder />
-        <IdeaPlaceholder />
-      </Section>
+      {section === "in-progress-cards" && (
+        <Section title="In progress cards">
+          <InProgressCardsSection />
+        </Section>
+      )}
 
-      <Section title="Share">
-        <div className="flex flex-col items-start gap-4">
-          <ShareDialog
-            number={idea.number}
-            title={idea.title}
-            description={idea.description}
-            board={idea.board}
-          />
-          <div className="w-full max-w-sm bordered p-4">
-            <Flyer
+      {section === "loading" && (
+        <Section title="Loading">
+          <WallPlaceholder />
+          <IdeaPlaceholder />
+        </Section>
+      )}
+
+      {section === "share" && (
+        <Section title="Share">
+          <div className="flex flex-col items-start gap-4">
+            <ShareDialog
               number={idea.number}
               title={idea.title}
               description={idea.description}
               board={idea.board}
             />
-          </div>
-        </div>
-      </Section>
-
-      <Section title="Post an idea">
-        <div className="grid items-start gap-6 @3xl:grid-cols-2">
-          <form
-            className="flex flex-col gap-3 bordered bg-surface p-card"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <h3 className="heading text-4xl">Post an idea</h3>
-            <TextField
-              label="Headline"
-              value={draft.title}
-              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            />
-            <SelectField
-              label="Board"
-              value={draft.board}
-              onChange={(e) => setDraft({ ...draft, board: e.target.value as BoardCode })}
-            >
-              {BOARD_CODES.map((code) => (
-                <option key={code} value={code}>
-                  {BOARDS[code].category}
-                </option>
-              ))}
-            </SelectField>
-            <TextField label="Where on campus" hint="Optional" placeholder="Stetson East" />
-            <TextArea
-              label="What would change"
-              error="Add a sentence or two so reviewers know what you mean."
-              placeholder="Who it helps, and how"
-            />
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-0.5" />
-              <span>
-                Anonymous to students. This board&rsquo;s reviewer and the VP of Campus Affairs will still see
-                your name, so they can follow up.
-              </span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="primary" type="submit">
-                Submit for review
-              </Button>
-              <Button>Save draft</Button>
+            <div className="w-full max-w-sm bordered p-4">
+              <Flyer
+                number={idea.number}
+                title={idea.title}
+                description={idea.description}
+                board={idea.board}
+              />
             </div>
-          </form>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-bold text-muted">Your poster, as students will see it</p>
-            <IdeaCard
-              number={160}
-              title={draft.title || "Your headline"}
-              description="Keep one dining hall open later for students coming out of labs."
-              board={draft.board}
-              status="collecting_support"
-              updatedDaysAgo={0}
-              supportCount={0}
-              willingCount={0}
-            />
           </div>
-        </div>
-      </Section>
+        </Section>
+      )}
 
-      <Section title="SGA queue">
-        <Tabs
-          label="SGA pages"
-          selected={sgaTab}
-          onSelect={setSgaTab}
-          tabs={[
-            { id: "review", label: "To review", count: 3 },
-            { id: "queue", label: "Queue" },
-            { id: "updates", label: "Updates", count: 1 },
-            { id: "people", label: "People", count: 0 },
-          ]}
-        />
-        <div className="overflow-hidden bordered bg-surface">
-          <QueueHeader />
-          {QUEUE.map((row) => (
-            <QueueRow key={row.number} {...row} />
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="primary">Start working on this</Button>
-          <Button variant="line">Put on hold</Button>
-          <Button size="sm">Change board</Button>
-        </div>
-      </Section>
+      {section === "post" && (
+        <Section title="Post an idea">
+          <header className="flex flex-col gap-3">
+            <h2 className="heading text-7xl @3xl:text-8xl">Post an idea</h2>
+            <p className="text-muted">{POST_INTRO.short}</p>
+          </header>
+          <PostForm pendingCount={0} boardTiles={boardTiles} iconAlign={iconAlign} />
+        </Section>
+      )}
+
+      {section === "queue" && (
+        <Section title="SGA queue">
+          <Tabs
+            label="SGA pages"
+            selected={sgaTab}
+            onSelect={setSgaTab}
+            tabs={[
+              { id: "review", label: "To review", count: 3 },
+              { id: "queue", label: "Queue" },
+              { id: "updates", label: "Updates", count: 1 },
+              { id: "people", label: "People", count: 0 },
+            ]}
+          />
+          <div className="overflow-hidden bordered bg-surface">
+            <QueueHeader />
+            {QUEUE.map((row) => (
+              <QueueRow key={row.number} {...row} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="primary">Start working on this</Button>
+            <Button variant="line">Put on hold</Button>
+            <Button size="sm">Change board</Button>
+          </div>
+        </Section>
+      )}
     </div>
   );
 }
@@ -431,12 +721,15 @@ function PreviewPage() {
 // An idea page with its board's color as the whole background, beside the
 // current look (page background, poster in color). The real header, poster,
 // pair, and cards, so the comparison is honest.
-function IdeaBackdrop() {
-  const [backdrop, setBackdrop] = useState<"page" | "board">("board");
-  const [edges, setEdges] = useState<"border" | "float">("float");
-  // The big poster's own shadow, separate from the cards' edges, so it can go
-  // without changing the cards beside it.
-  const [posterShadow, setPosterShadow] = useState<"on" | "off">("off");
+function IdeaBackdrop({
+  backdrop,
+  edges,
+  posterShadow,
+}: {
+  backdrop: Choices["backdrop"];
+  edges: Choices["edges"];
+  posterShadow: Choices["posterShadow"];
+}) {
   // Cards outlined (today) or floating on a hard offset shadow (being tried).
   const card = `flex flex-col gap-3 bg-surface p-card text-ink ${edges === "float" ? "edge-float" : "bordered"}`;
   const [code, setCode] = useState<BoardCode>("CPAB");
@@ -445,45 +738,6 @@ function IdeaBackdrop() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Background" className="flex gap-2">
-          {(["board", "page"] as const).map((v) => (
-            <Button
-              key={v}
-              size="sm"
-              variant={backdrop === v ? "primary" : "plain"}
-              aria-pressed={backdrop === v}
-              onClick={() => setBackdrop(v)}
-            >
-              {v === "board" ? "Board color" : "Page"}
-            </Button>
-          ))}
-        </div>
-        <div role="group" aria-label="Edges" className="flex gap-2">
-          {(["float", "border"] as const).map((v) => (
-            <Button
-              key={v}
-              size="sm"
-              variant={edges === v ? "primary" : "plain"}
-              aria-pressed={edges === v}
-              onClick={() => setEdges(v)}
-            >
-              {v === "float" ? "Hard shadow" : "Border"}
-            </Button>
-          ))}
-        </div>
-        <div role="group" aria-label="Poster shadow" className="flex gap-2">
-          {(["on", "off"] as const).map((v) => (
-            <Button
-              key={v}
-              size="sm"
-              variant={posterShadow === v ? "primary" : "plain"}
-              aria-pressed={posterShadow === v}
-              onClick={() => setPosterShadow(v)}
-            >
-              {v === "on" ? "Poster shadow" : "No poster shadow"}
-            </Button>
-          ))}
-        </div>
         {BOARD_CODES.map((c) => (
           <BoardFilter
             key={c}
@@ -499,7 +753,9 @@ function IdeaBackdrop() {
         className={`board-accent flex flex-col gap-6 p-6 @lg:p-8 ${backdrop === "board" ? "board-backdrop" : "bg-bg"}`}
       >
         <SiteHeader />
-        <span className="font-semibold underline underline-offset-4">Back to ideas</span>
+        <Button variant="text" className="self-start" icon={<ChevronLeft className="size-4" />}>
+          Back to ideas
+        </Button>
         <div className="grid items-start gap-6 @3xl:grid-cols-5">
           <article
             className={`poster flex flex-col gap-4 @3xl:col-span-3 ${posterShadow === "on" ? "edge-float" : ""}`}
