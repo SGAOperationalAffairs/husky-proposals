@@ -32,7 +32,7 @@ export function Flyer({ number, title, description, board }: FlyerData) {
             <div className="flex flex-col gap-1 @xl:gap-3">
               <p className="heading text-2xl @xl:text-6xl">Scan to support this idea</p>
               <p className="text-xs @xl:text-xl">
-                Read it, support it, or offer to help. Support helps SGA decide; it is not a vote.
+                Read it, support it, or offer to help. Support helps SGA decide.
               </p>
             </div>
           </div>

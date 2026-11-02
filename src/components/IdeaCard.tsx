@@ -41,8 +41,8 @@ export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 // fuse it onto the last one (#84).
 const posterClass = (arrival: number | undefined) =>
   arrival === undefined
-    ? "poster card-stack @container flex flex-col"
-    : "poster card-stack @container flex flex-col poster-arrive";
+    ? "group poster card-stack @container relative flex flex-col motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1"
+    : "group poster card-stack @container relative flex flex-col poster-arrive motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1";
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
@@ -65,7 +65,15 @@ export function IdeaCard(props: Props) {
           <span className="truncate">{STATUS_LABELS[props.status]}</span>
         </span>
       </div>
-      <h3 className="poster-title poster-title-lines heading text-balance">{props.title}</h3>
+      <h3 className="poster-title poster-title-lines heading text-balance">
+        <Link
+          transitionTypes={PAGE}
+          href={`/ideas/${props.number}`}
+          className="after:absolute after:inset-0 focus-visible:outline-none"
+        >
+          {props.title}
+        </Link>
+      </h3>
       <p className="poster-desc text-sm">{props.description}</p>
       {/* The count and buttons sit at the bottom, so they line up across a row. */}
       <div className="card-stack mt-auto flex flex-col pt-1">
@@ -82,19 +90,21 @@ export function IdeaCard(props: Props) {
           {delivered ? (
             <span className="text-sm font-bold">Delivered</span>
           ) : (
-            <SupportPair
-              ideaNumber={props.number}
-              board={props.board}
-              supported={props.supported ?? false}
-              participating={props.participating ?? false}
-              onSupportChange={props.onSupportChange}
-              onParticipateChange={props.onParticipateChange}
-            />
+            <div className="relative z-10">
+              <SupportPair
+                ideaNumber={props.number}
+                board={props.board}
+                supported={props.supported ?? false}
+                participating={props.participating ?? false}
+                onSupportChange={props.onSupportChange}
+                onParticipateChange={props.onParticipateChange}
+              />
+            </div>
           )}
           <Link
             transitionTypes={PAGE}
             href={`/ideas/${props.number}`}
-            className="text-sm font-bold whitespace-nowrap underline underline-offset-4"
+            className="relative z-10 text-sm font-bold whitespace-nowrap underline underline-offset-4"
           >
             Learn more<span className="sr-only"> about proposal {props.number}</span>
           </Link>

@@ -146,6 +146,14 @@
   box-shadow: 6px 6px 0 var(--line);
 }
 
+/* The default surface for a panel on the page color (Luis's feedback): a hard
+   offset shadow in the line color lifts it, instead of a border, and it takes the
+   page color, not white. No hover transform here; if one is ever added, put it
+   under motion-safe. */
+@utility surface-float {
+  box-shadow: 6px 6px 0 var(--line);
+}
+
 /* The accent in a board's color (#64): an idea's page, and the dialogs that
    belong to it, use its board's color where the site uses Husky red. Put it
    with data-board on the same element. */
@@ -448,7 +456,17 @@ select,
 summary,
 [role="button"],
 [role="tab"],
-input[type="submit"] {
+[role="radio"],
+[role="checkbox"],
+[role="switch"],
+[role="option"],
+[role="link"],
+input[type="submit"],
+input[type="color"]:not(:disabled),
+input[type="range"]:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="radio"]:not(:disabled),
+label:has(> input[type="checkbox"]:not(:disabled)) {
   cursor: pointer;
 }
 :disabled,
@@ -524,5 +542,18 @@ input[type="submit"] {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+}
+
+/* The post form's panel changes to its board's color in place (#55). Only the
+   color moves; reduced motion gets the change at once. */
+.board-shift {
+  transition:
+    background-color 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    color 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-shift {
+    transition: none;
   }
 }

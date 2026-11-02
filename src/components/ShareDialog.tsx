@@ -5,7 +5,7 @@ import { Tabs } from "@base-ui/react/tabs";
 import { Download, Mail, MessageSquare, Printer, Share2 } from "lucide-react";
 import Image from "next/image";
 import { BOARDS } from "@/core/boards";
-import { Button, buttonLook } from "./Button";
+import { Button } from "./Button";
 import { CopyLink } from "./CopyLink";
 import { Flyer, type FlyerData } from "./Flyer";
 import { tabLook } from "./tabLook";
@@ -69,17 +69,18 @@ export function ShareDialog(idea: FlyerData) {
                 <CopyLink text={url} board={idea.board} />
               </div>
               <div className="flex flex-wrap gap-2">
-                <a href={`sms:?&body=${encodeURIComponent(message)}`} className={buttonLook()}>
-                  <MessageSquare aria-hidden className="size-4" />
-                  Text
-                </a>
-                <a
-                  href={`mailto:?subject=${encodeURIComponent(idea.title)}&body=${encodeURIComponent(message)}`}
-                  className={buttonLook()}
+                <Button
+                  href={`sms:?&body=${encodeURIComponent(message)}`}
+                  icon={<MessageSquare className="size-4" />}
                 >
-                  <Mail aria-hidden className="size-4" />
+                  Text
+                </Button>
+                <Button
+                  href={`mailto:?subject=${encodeURIComponent(idea.title)}&body=${encodeURIComponent(message)}`}
+                  icon={<Mail className="size-4" />}
+                >
                   Email
-                </a>
+                </Button>
                 {canShare && (
                   <Button
                     onClick={() => navigator.share({ title: idea.title, text: message, url }).catch(() => {})}
@@ -100,14 +101,14 @@ export function ShareDialog(idea: FlyerData) {
                 unoptimized
                 className="mx-auto h-80 w-auto bordered"
               />
-              <a
+              <Button
+                variant="primary"
                 href={`${path}/poster`}
                 download={`idea-${idea.number}-poster.png`}
-                className={buttonLook("primary")}
+                icon={<Download className="size-4" />}
               >
-                <Download aria-hidden className="size-4" />
                 Download poster
-              </a>
+              </Button>
               <p className="text-sm text-muted">
                 A picture for stories and group chats. It shows today&rsquo;s support count, so it goes out of
                 date as support grows.
@@ -118,10 +119,15 @@ export function ShareDialog(idea: FlyerData) {
               <div className="print-exact mx-auto w-full max-w-sm bordered bg-paper p-4">
                 <Flyer {...idea} />
               </div>
-              <a href={`${path}/flyer`} target="_blank" rel="noopener" className={buttonLook("primary")}>
-                <Printer aria-hidden className="size-4" />
+              <Button
+                variant="primary"
+                href={`${path}/flyer`}
+                target="_blank"
+                rel="noopener"
+                icon={<Printer className="size-4" />}
+              >
                 Open the flyer to print
-              </a>
+              </Button>
               <p className="text-sm text-muted">
                 For tabling and bulletin boards. To get a PDF, choose Save as PDF in the print dialog.
               </p>

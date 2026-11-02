@@ -85,13 +85,16 @@ export function TextArea({
   );
 }
 
+// onPage: as on TextField, the page color instead of a white surface (#61). The
+// ideas list's dropdowns use it, so they sit on the page like the search field.
 export function SelectField({
   label,
   hint,
   error,
+  onPage = false,
   children,
   ...rest
-}: Shared & SelectHTMLAttributes<HTMLSelectElement>) {
+}: Shared & { onPage?: boolean } & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
   // appearance-none: Safari draws its own rounded select over rounded-field, so
   // the arrow is ours (#61).
@@ -102,7 +105,7 @@ export function SelectField({
           id={id}
           aria-invalid={!!error}
           aria-describedby={describedBy(id, { label, hint, error })}
-          className={`${control} appearance-none pr-9`}
+          className={`${onPage ? control.replace("bg-surface", "bg-bg") : control} appearance-none pr-9`}
           {...rest}
         >
           {children}

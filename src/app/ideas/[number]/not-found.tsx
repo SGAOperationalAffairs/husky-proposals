@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Button } from "@/components/Button";
 import { PAGE } from "@/components/pageTransition";
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -9,16 +9,12 @@ export default function IdeaNotFound() {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
       <SiteHeader />
-      <section className="flex max-w-prose flex-col gap-3 bordered bg-surface p-card">
+      <section className="flex max-w-prose flex-col gap-3 p-card surface-float">
         <h1 className="heading text-4xl">No idea with that number</h1>
         <p>Check the link, or look through all the ideas.</p>
-        <Link
-          transitionTypes={PAGE}
-          href="/"
-          className="self-start font-semibold underline underline-offset-4"
-        >
+        <Button variant="text" href="/" transitionTypes={PAGE} className="self-start">
           See all ideas
-        </Link>
+        </Button>
       </section>
     </main>
   );
