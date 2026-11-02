@@ -23,10 +23,10 @@ export function Flyer({ number, title, description, board }: FlyerData) {
             <span>{b.name}</span>
             <span>#{number}</span>
           </p>
-          <h2 className="heading text-3xl text-balance @xl:text-7xl">{title}</h2>
+          <h2 className="line-clamp-4 heading text-3xl text-balance @xl:text-7xl">{title}</h2>
         </div>
         <div className="flex flex-1 flex-col justify-center gap-4 py-4 @xl:gap-8 @xl:py-10">
-          <p className="text-sm @xl:text-2xl">{description}</p>
+          <p className="line-clamp-3 text-sm @xl:text-2xl">{description}</p>
           <div className="flex items-center gap-4 @xl:gap-8">
             <QrCode path={`/ideas/${number}`} className="size-28 shrink-0 @xl:size-64" />
             <div className="flex flex-col gap-1 @xl:gap-3">
