@@ -1,7 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import qrcode from "qrcode-generator";
 import { afterEach, describe, expect, it } from "vitest";
-import { QrCode, qrModules } from "./QrCode";
+import { QrCode } from "./QrCode";
+import { qrModules } from "./qrModules";
 
 afterEach(cleanup);
 

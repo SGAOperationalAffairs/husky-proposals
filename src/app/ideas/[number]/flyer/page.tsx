@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { getIdea, parseIdeasNumber } from "@/app/_ideas/data";
 import { PrintButton } from "@/app/_share/PrintButton";
 import { Flyer } from "@/components/Flyer";
+import { buttonLook } from "@/components/Button";
 
 // A printable flyer for one idea (#64), opened from the share dialog. On
 // screen it sits on a sheet of paper with a print button; printed, it is the
@@ -35,9 +36,16 @@ async function FlyerFor({ params }: { params: PageProps<"/ideas/[number]/flyer">
           <ArrowLeft aria-hidden className="size-4" />
           Back to the idea
         </Link>
-        <PrintButton />
+        <div className="flex flex-wrap gap-3">
+          <a href={`/ideas/${idea.number}/flyer.pdf`} download className={buttonLook("primary")}>
+            Download PDF
+          </a>
+          <PrintButton />
+        </div>
       </div>
-      <p className="text-sm text-muted print:hidden">To get a PDF, choose Save as PDF in the print dialog.</p>
+      <p className="text-sm text-muted print:hidden">
+        Download the PDF to print it at the right size, or print this page and choose Save as PDF.
+      </p>
       <div className="flyer-sheet flex min-h-240 flex-col bordered bg-paper p-10 print:border-0 print:p-0">
         <Flyer number={idea.number} title={idea.title} description={idea.description} board={idea.board} />
       </div>
