@@ -4,7 +4,9 @@ import type { IdeaCategory, Prisma } from "@/generated/prisma/client";
 
 // Plain builders, no database access (#43). Each returns a Prisma create input
 // (`satisfies`), so a schema change breaks the build instead of a test at runtime.
-// Insert helpers and their database tests arrive with T0.5, once tables exist.
+// Insert helpers and their database tests arrive with T0.5, once tables exist. The
+// rule-bearing builders (#44) do not check the rules; the check constraints do, and
+// constraints.db.test.ts proves it.
 
 // The fake clock's default start, so default timestamps agree with a default fake clock.
 export const FIXTURE_TIME = new Date("2026-11-02T14:00:00.000Z");
@@ -143,4 +145,64 @@ export function buildUpdate(
     createdAt: FIXTURE_TIME,
     ...overrides,
   } satisfies Prisma.UpdateUncheckedCreateInput;
+}
+
+// The first version of a post: a copy of what was submitted (#44). The review that
+// approves it points at this row, so a reviewer's decision is tied to exact words.
+export function buildRevision(
+  idea: Prisma.IdeaUncheckedCreateInput & { id: string },
+  overrides: Partial<Prisma.IdeaRevisionUncheckedCreateInput> = {},
+): Prisma.IdeaRevisionUncheckedCreateInput & { id: string } {
+  const n = next();
+  return {
+    id: testUuid(3000 + n),
+    ideaId: idea.id,
+    version: 1,
+    title: idea.title,
+    description: idea.description,
+    fullText: idea.fullText ?? null,
+    category: idea.category,
+    location: idea.location ?? null,
+    scale: idea.scale ?? null,
+    costBand: idea.costBand ?? null,
+    timeHorizon: idea.timeHorizon ?? null,
+    isAnonymous: idea.isAnonymous ?? false,
+    // Factories always set Date values; a string here would be a bug, so fall back to the fixture clock.
+    submittedAt: idea.submittedAt instanceof Date ? idea.submittedAt : FIXTURE_TIME,
+    ...overrides,
+  } satisfies Prisma.IdeaRevisionUncheckedCreateInput & { id: string };
+}
+
+// A review decision on one revision. `kind` is "review" unless it is a take-down.
+export function buildReview(
+  overrides: Pick<Prisma.ReviewUncheckedCreateInput, "ideaId" | "revisionId" | "decision"> &
+    Partial<Prisma.ReviewUncheckedCreateInput>,
+): Prisma.ReviewUncheckedCreateInput & { id: string } {
+  const n = next();
+  return {
+    id: testUuid(4000 + n),
+    kind: "review",
+    reason: null,
+    decidedAt: FIXTURE_TIME,
+    ...overrides,
+  } satisfies Prisma.ReviewUncheckedCreateInput & { id: string };
+}
+
+// "I'll participate." Both timestamps are set, since @updatedAt has no database default.
+export function buildParticipation(
+  overrides: Pick<Prisma.ParticipationUncheckedCreateInput, "userId" | "ideaId"> &
+    Partial<Prisma.ParticipationUncheckedCreateInput>,
+): Prisma.ParticipationUncheckedCreateInput {
+  return {
+    createdAt: FIXTURE_TIME,
+    updatedAt: FIXTURE_TIME,
+    ...overrides,
+  } satisfies Prisma.ParticipationUncheckedCreateInput;
+}
+
+export function buildFollow(
+  overrides: Pick<Prisma.FollowUncheckedCreateInput, "userId" | "ideaId"> &
+    Partial<Prisma.FollowUncheckedCreateInput>,
+): Prisma.FollowUncheckedCreateInput {
+  return { createdAt: FIXTURE_TIME, ...overrides } satisfies Prisma.FollowUncheckedCreateInput;
 }

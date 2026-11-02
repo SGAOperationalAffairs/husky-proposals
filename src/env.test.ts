@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEnv, parseTestDatabaseEnv } from "./env";
+import { databaseUrls, parseEnv, parseTestDatabaseEnv } from "./env";
 
 describe("test database environment (#104)", () => {
   it("leaves everything off when nothing is set, with no APP_ENV needed", () => {
@@ -89,5 +89,34 @@ describe("environment (#26)", () => {
 
   it("only accepts 1 or 0 for AUTH_STAND_IN", () => {
     expect(() => parseEnv({ APP_ENV: "local", AUTH_STAND_IN: "yes" })).toThrow(/AUTH_STAND_IN/);
+  });
+});
+
+describe("database URLs for the Prisma CLI (#44)", () => {
+  it("is missing for both, with no APP_ENV needed, so offline commands run", () => {
+    expect(databaseUrls({})).toEqual({ pooled: undefined, direct: undefined });
+  });
+
+  it("treats an empty URL as unset", () => {
+    expect(databaseUrls({ DATABASE_URL: "", DIRECT_URL: "" })).toEqual({
+      pooled: undefined,
+      direct: undefined,
+    });
+  });
+
+  it("returns the two URLs it was given", () => {
+    const parsed = databaseUrls({
+      DATABASE_URL: "postgresql://app@pooler.example/db",
+      DIRECT_URL: "postgresql://app@direct.example/db",
+    });
+    expect(parsed).toEqual({
+      pooled: "postgresql://app@pooler.example/db",
+      direct: "postgresql://app@direct.example/db",
+    });
+  });
+
+  it("refuses a URL that is not Postgres, naming the variable", () => {
+    expect(() => databaseUrls({ DATABASE_URL: "mysql://x" })).toThrow(/DATABASE_URL/);
+    expect(() => databaseUrls({ DIRECT_URL: "mysql://x" })).toThrow(/DIRECT_URL/);
   });
 });
