@@ -12,12 +12,13 @@ function sessionFor(slug: string) {
   return result.session;
 }
 
-function panel(session: ReturnType<typeof sessionFor> | null, enabled = true) {
+function panel(session: ReturnType<typeof sessionFor> | null, enabled = true, next: string | null = null) {
   const noop = async () => {};
   return render(
     <StandInPanel
       enabled={enabled}
       session={session}
+      next={next}
       users={STAND_IN_USERS}
       signInAs={noop}
       signOut={noop}
@@ -62,6 +63,15 @@ describe("stand-in panel (#45)", () => {
     expect(getByLabelText("Sign in as Jordan Lee")).toBeTruthy();
     expect(queryByLabelText("Sign in as Sam Rivera")).toBeNull();
     expect(getAllByText("Signed in").length).toBe(1);
+  });
+
+  it("carries next in each sign-in form when set, and sends none otherwise (#93)", () => {
+    const withNext = panel(null, true, "/post");
+    const fields = withNext.container.querySelectorAll<HTMLInputElement>('input[name="next"]');
+    expect(fields.length).toBeGreaterThan(0);
+    expect(Array.from(fields).every((field) => field.value === "/post")).toBe(true);
+    cleanup();
+    expect(panel(null).container.querySelector('input[name="next"]')).toBeNull();
   });
 
   it("says a signed-out viewer sees what a visitor sees, with no sign out button", () => {

@@ -10,6 +10,8 @@ type Props = {
   enabled: boolean;
   session: Session | null;
   users: typeof STAND_IN_USERS;
+  // Where to go after signing in: already checked by safeNextPath (#93).
+  next: string | null;
   // Passed in, so a test can stub them (#45).
   signInAs: Action;
   signOut: Action;
@@ -24,7 +26,7 @@ function boardsText(session: Session): string {
 
 // The dev-only stand-in: shows what a test user's session grants (#45). Plain
 // form posts, so it works without JavaScript.
-export function StandInPanel({ enabled, session, users, signInAs, signOut }: Props) {
+export function StandInPanel({ enabled, session, users, next, signInAs, signOut }: Props) {
   if (!enabled) {
     return (
       <section className="bordered bg-surface p-4">
@@ -77,6 +79,7 @@ export function StandInPanel({ enabled, session, users, signInAs, signOut }: Pro
               ) : (
                 <form action={signInAs}>
                   <input type="hidden" name="user" value={user.slug} />
+                  {next && <input type="hidden" name="next" value={next} />}
                   <Button type="submit" variant="line" size="sm" aria-label={`Sign in as ${user.name}`}>
                     Sign in
                   </Button>
