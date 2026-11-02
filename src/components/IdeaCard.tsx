@@ -48,7 +48,7 @@ export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   const delivered = props.status === "delivered";
   // The wrapper's top padding leaves room for the stamp above the poster, on
-  // every card, so a row's posters stay level whether or not they have one (#112).
+  // every card, so a row's posters stay level whether or not they have one (issue 112).
   return (
     <div className="flex flex-col pt-7">
       <article
@@ -57,7 +57,7 @@ export function IdeaCard(props: Props) {
         className={posterClass(props.arrival)}
         style={props.arrival === undefined ? undefined : ({ "--arrival": props.arrival } as CSSProperties)}
       >
-        {/* Black stamp on the top edge for ideas a board has picked up (#112). It sits
+        {/* Black stamp on the top edge for ideas a board has picked up (issue 112). It sits
           above the poster, so it never covers the status line. */}
         {(props.status === "in_progress" || props.status === "delivered") && (
           <span className="absolute -top-6 right-0 bg-line px-3 py-1 heading text-lg text-surface">
