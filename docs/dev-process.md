@@ -194,7 +194,7 @@ Written October 23, 2026, from port's README, `docs/USAGE.md`, `plugins/port/doc
 - **`checks`** are objects with `run` and `fix`, never bare strings. Each must be a script in `package.json`, start with its binary, and match a step CI runs.
 - **Trimmed at init:** no separate `prisma generate` in `bootstrap`, because `npm ci` runs `postinstall`, which generates the client; and no separate `typecheck` check, because `verify:agent` already runs the types. Format and lint stay as their own checks because they are the only ones with a `fix`, so port can repair them before failing.
 - **Agents need Node 22.** They run `bootstrap` with the Node on the session's `PATH`, and `engine-strict=true` makes `npm ci` fail on Node 23. Make Node 22 the default before running `/port:pipeline` (see the Node note in `CLAUDE.md`).
-- **`verify:agent`** is the part of `verify` that needs no secrets: unit and component tests with fakes. Agent worktrees get no `.env`, so the build, database tests, and browser tests run only in CI, which runs the full `npm run verify`. The review agent treats a red CI check as Critical, so CI is still the gate.
+- **`verify:agent`** is the part of `verify` that needs no secrets: unit and component tests with fakes. Agent worktrees get no `.env`, so the build and browser tests run only in CI, which runs the full `npm run verify`. Database tests skip without `TEST_DATABASE_URL` and run in CI's own `database` job. The review agent treats a red CI check as Critical, so CI is still the gate.
 - **`release.versionSource: "tags"`:** semver tags are the only version record, so a release is one pull request.
 - **`approvalGate` stays off** until a ruleset on `dev` makes the check required. Without one it is advisory either way.
 - **`docs.engineering` and `docs.design`** point to `docs/ENGINEERING.md` and `docs/DESIGN.md`, written with `/port:analyze` (#32).
@@ -265,7 +265,7 @@ No conflict: port's branch names (`<issue>-<slug>`), commit format, rebase onto 
 - **Every external service has a fake from day one:**
   - SGAuth is replaced by the sign-in stand-in.
   - Email is replaced by a mailer that captures messages.
-  - The database is a Neon test branch, with each test in its own transaction.
+  - CI uses a Neon test branch and local runs use a local Postgres. Each run gets its own database and each test its own transaction (#104).
 - **Invented test data only.** Never use real student data, and never use files ignored by git. Seed data comes from the prototype's sample ideas.
 - **Read a failure before rerunning.** Rerunning until green hides flaky tests.
 - **Assert on state, not on timing.** Timing-based browser checks were flaky under load in Resume Studio.

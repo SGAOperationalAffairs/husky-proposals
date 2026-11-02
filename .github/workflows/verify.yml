@@ -1,6 +1,10 @@
 # Runs the same `npm run verify` as local development (#26), so local and CI never disagree.
-# Database tests (#43) run against the Neon test branch, through two repository secrets.
-# Without NEON_TEST_DATABASE_URL, vitest.config.ts fails the run so CI can never pass by skipping.
+# The verify job has no database URL, so database tests skip there on purpose (#104).
+# They run in the separate `database` job, the only one that reaches the Neon test branch.
+# Its concurrency group makes those jobs run one at a time, which also caps Neon connections.
+# Each run still works in its own database, so isolation does not depend on the group.
+# A cancelled run (the workflow-level group cancels on every new push) can leave one
+# hp_test_ci_* database behind. The harness never sweeps others: reset the branch now and then.
 name: verify
 
 on:
@@ -28,6 +32,22 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: neon-test-branch
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run test:database
         env:
-          DATABASE_URL: ${{ secrets.NEON_TEST_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.NEON_TEST_DIRECT_URL }}
+          TEST_DATABASE_URL: ${{ secrets.NEON_TEST_DIRECT_URL }}
+          TEST_DATABASE_ALLOWED_HOSTS: ${{ vars.NEON_TEST_HOST }}
+          REQUIRE_TEST_DATABASE: "1"

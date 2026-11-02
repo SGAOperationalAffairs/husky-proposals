@@ -29,8 +29,8 @@ const slow = [
   ["build", "npx", ["next", "build"], PRODUCTION],
   ["browser tests", "npx", ["playwright", "test"]],
 ];
-// Database tests (*.db.test.ts) run inside `vitest run`. They skip without DATABASE_URL
-// (so verify:agent needs no secrets), and CI fails if the secret is missing (#43).
+// Database tests (*.db.test.ts) run inside `vitest run`. They skip without TEST_DATABASE_URL
+// (so verify:agent needs no secrets). CI runs them in their own job instead (#104).
 
 const steps = tier === "agent" ? fast : [...fast, ...slow];
 const env = { ...process.env, VITE_CONFIG_NATIVE_IGNORE_WARNING: "true" };

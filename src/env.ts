@@ -39,12 +39,14 @@ const schema = z
 
 export type Env = z.infer<typeof schema>;
 
+function formatIssues(error: z.ZodError): string {
+  const problems = error.issues.map((issue) => `- ${issue.path.join(".")}: ${issue.message}`);
+  return `Refusing to start. Fix the environment:\n${problems.join("\n")}`;
+}
+
 export function parseEnv(source: Record<string, string | undefined>): Env {
   const result = schema.safeParse(source);
-  if (!result.success) {
-    const problems = result.error.issues.map((issue) => `- ${issue.path.join(".")}: ${issue.message}`);
-    throw new Error(`Refusing to start. Fix the environment:\n${problems.join("\n")}`);
-  }
+  if (!result.success) throw new Error(formatIssues(result.error));
   return result.data;
 }
 
@@ -53,4 +55,45 @@ let cached: Env | undefined;
 export function env(): Env {
   cached ??= parseEnv(process.env);
   return cached;
+}
+
+// The database test harness reads its own variables (issue 104). Separate from env()
+// because the Vitest main process has no APP_ENV, and because tests must never
+// read DATABASE_URL: a shell pointed at Neon dev can then never reach them.
+const testDatabaseSchema = z.object({
+  // Admin connection to the server that hosts one database per run.
+  TEST_DATABASE_URL: postgresUrl("TEST_DATABASE_URL"),
+  // Exact hostnames allowed besides localhost. Unset locally, which keeps local runs off Neon.
+  TEST_DATABASE_ALLOWED_HOSTS: z
+    .string()
+    .optional()
+    .transform((value) =>
+      (value ?? "")
+        .split(",")
+        .map((host) => host.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  // "1" makes a missing URL fail instead of skip. Set only in the CI database job.
+  REQUIRE_TEST_DATABASE: z
+    .enum(["0", "1"], { error: "REQUIRE_TEST_DATABASE must be 1 or 0" })
+    .optional()
+    .transform((value) => value === "1"),
+  // Set by GitHub Actions. Names the run's database in CI.
+  GITHUB_RUN_ID: z.string().optional(),
+  GITHUB_RUN_ATTEMPT: z.string().optional(),
+});
+
+export type TestDatabaseEnv = z.infer<typeof testDatabaseSchema>;
+
+export function parseTestDatabaseEnv(source: Record<string, string | undefined>): TestDatabaseEnv {
+  const result = testDatabaseSchema.safeParse(source);
+  if (!result.success) throw new Error(formatIssues(result.error));
+  return result.data;
+}
+
+let cachedTestDatabase: TestDatabaseEnv | undefined;
+
+export function testDatabaseEnv(): TestDatabaseEnv {
+  cachedTestDatabase ??= parseTestDatabaseEnv(process.env);
+  return cachedTestDatabase;
 }
