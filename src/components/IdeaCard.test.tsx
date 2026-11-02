@@ -57,3 +57,21 @@ describe("idea card as one link", () => {
     expect(link.querySelector("button")).toBeNull();
   });
 });
+
+describe("picked-up stamp (#112)", () => {
+  it("shows for in-progress and delivered ideas", () => {
+    for (const status of ["in_progress", "delivered"] as const) {
+      const { unmount } = render(<IdeaCard {...idea} status={status} />);
+      expect(screen.getByText("Picked up by a board")).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it("does not show for open or waiting ideas", () => {
+    for (const status of ["collecting_support", "under_review", "waiting"] as const) {
+      const { unmount } = render(<IdeaCard {...idea} status={status} />);
+      expect(screen.queryByText("Picked up by a board")).toBeNull();
+      unmount();
+    }
+  });
+});

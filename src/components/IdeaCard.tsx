@@ -41,75 +41,86 @@ export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 // fuse it onto the last one (#84).
 const posterClass = (arrival: number | undefined) =>
   arrival === undefined
-    ? "group poster card-stack @container relative flex flex-col motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1"
-    : "group poster card-stack @container relative flex flex-col poster-arrive motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1";
+    ? "group poster card-stack @container relative flex flex-1 flex-col motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1"
+    : "group poster card-stack @container relative flex flex-1 flex-col poster-arrive motion-safe:transition-transform motion-safe:duration-300 motion-safe:hover:-translate-y-1";
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   const delivered = props.status === "delivered";
+  // The wrapper's top padding leaves room for the stamp above the poster, on
+  // every card, so a row's posters stay level whether or not they have one (#112).
   return (
-    <article
-      data-board={board.color}
-      data-idea={props.number}
-      className={posterClass(props.arrival)}
-      style={props.arrival === undefined ? undefined : ({ "--arrival": props.arrival } as CSSProperties)}
-    >
-      {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
-      <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate">{board.category}</span>
-          <span className="shrink-0">#{props.number}</span>
-        </span>
-        <span className="flex min-w-0 items-center gap-2">
-          {props.fromSga && <FromSgaTag look="poster" />}
-          <span className="truncate">{STATUS_LABELS[props.status]}</span>
-        </span>
-      </div>
-      <h3 className="poster-title poster-title-lines heading text-balance">
-        <Link
-          transitionTypes={PAGE}
-          href={`/ideas/${props.number}`}
-          className="after:absolute after:inset-0 focus-visible:outline-none"
-        >
-          {props.title}
-        </Link>
-      </h3>
-      <p className="poster-desc text-sm">{props.description}</p>
-      {/* The count and buttons sit at the bottom, so they line up across a row. */}
-      <div className="card-stack mt-auto flex flex-col pt-1">
-        <p className="flex flex-wrap items-end gap-x-2.5">
-          <span className="poster-number heading tabular-nums">{props.supportCount}</span>
-          <span className="pb-1 text-sm leading-tight font-semibold">
-            {/* Delivered ideas are done; support is in the past (#63). */}
-            {delivered ? "students supported this" : "students want this"}
-            <br />
-            {props.willingCount} will help
+    <div className="flex flex-col pt-7">
+      <article
+        data-board={board.color}
+        data-idea={props.number}
+        className={posterClass(props.arrival)}
+        style={props.arrival === undefined ? undefined : ({ "--arrival": props.arrival } as CSSProperties)}
+      >
+        {/* Black stamp on the top edge for ideas a board has picked up (#112). It sits
+          above the poster, so it never covers the status line. */}
+        {(props.status === "in_progress" || props.status === "delivered") && (
+          <span className="absolute -top-6 right-0 bg-line px-3 py-1 heading text-lg text-surface">
+            Picked up by a board
           </span>
-        </p>
-        <div className="flex items-center justify-between gap-3">
-          {delivered ? (
-            <span className="text-sm font-bold">Delivered</span>
-          ) : (
-            <div className="relative z-10">
-              <SupportPair
-                ideaNumber={props.number}
-                board={props.board}
-                supported={props.supported ?? false}
-                participating={props.participating ?? false}
-                onSupportChange={props.onSupportChange}
-                onParticipateChange={props.onParticipateChange}
-              />
-            </div>
-          )}
+        )}
+        {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
+        <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate">{board.category}</span>
+            <span className="shrink-0">#{props.number}</span>
+          </span>
+          <span className="flex min-w-0 items-center gap-2">
+            {props.fromSga && <FromSgaTag look="poster" />}
+            <span className="truncate">{STATUS_LABELS[props.status]}</span>
+          </span>
+        </div>
+        <h3 className="poster-title poster-title-lines heading text-balance">
           <Link
             transitionTypes={PAGE}
             href={`/ideas/${props.number}`}
-            className="relative z-10 text-sm font-bold whitespace-nowrap underline underline-offset-4"
+            className="after:absolute after:inset-0 focus-visible:outline-none"
           >
-            Learn more<span className="sr-only"> about proposal {props.number}</span>
+            {props.title}
           </Link>
+        </h3>
+        <p className="poster-desc text-sm">{props.description}</p>
+        {/* The count and buttons sit at the bottom, so they line up across a row. */}
+        <div className="card-stack mt-auto flex flex-col pt-1">
+          <p className="flex flex-wrap items-end gap-x-2.5">
+            <span className="poster-number heading tabular-nums">{props.supportCount}</span>
+            <span className="pb-1 text-sm leading-tight font-semibold">
+              {/* Delivered ideas are done; support is in the past (#63). */}
+              {delivered ? "students supported this" : "students want this"}
+              <br />
+              {props.willingCount} will help
+            </span>
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            {delivered ? (
+              <span className="text-sm font-bold">Delivered</span>
+            ) : (
+              <div className="relative z-10">
+                <SupportPair
+                  ideaNumber={props.number}
+                  board={props.board}
+                  supported={props.supported ?? false}
+                  participating={props.participating ?? false}
+                  onSupportChange={props.onSupportChange}
+                  onParticipateChange={props.onParticipateChange}
+                />
+              </div>
+            )}
+            <Link
+              transitionTypes={PAGE}
+              href={`/ideas/${props.number}`}
+              className="relative z-10 text-sm font-bold whitespace-nowrap underline underline-offset-4"
+            >
+              Learn more<span className="sr-only"> about proposal {props.number}</span>
+            </Link>
+          </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </div>
   );
 }
