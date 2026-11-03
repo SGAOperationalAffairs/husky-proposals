@@ -44,6 +44,7 @@ const OWN_ACTIONS: BoardAction[] = [
   "see_anonymous_author",
   "manage_status",
   "change_cadence",
+  "change_review_due",
   "see_people",
 ];
 
@@ -58,6 +59,7 @@ const ROW_LABELS: Record<string, Action> = {
   "Move an idea through statuses, post updates": "manage_status",
   "Change an idea's board": "change_board",
   "Change a board's update cadence (SGA Options screen)": "change_cadence",
+  "Change a board's review due time (SGA Options screen)": "change_review_due",
   "See the People list (volunteers)": "see_people",
   "Turn promotion on (admin switch, off by default; later)": "promote",
 };

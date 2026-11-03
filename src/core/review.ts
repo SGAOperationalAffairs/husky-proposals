@@ -3,6 +3,9 @@
 // Whether the actor may review this board at all is permissions (#52); this
 // module only enforces the rules about the post itself.
 
+import { z } from "zod";
+import { BOARD_CODES } from "./boards";
+
 // Mirrors the ReviewStatus enum in prisma/schema.prisma, pinned by a test (#50).
 export const REVIEW_STATUSES = ["pending", "approved", "declined", "withdrawn"] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
@@ -16,6 +19,26 @@ export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 
 // At most this many posts waiting for review per student (#50).
 export const PENDING_LIMIT = 3;
+
+// A pending post is due this many days after it was submitted, set per board by the
+// VP or the board's chair or director (#58). The default is pinned to the schema by a
+// test; the bounds are backed by a check constraint on boards.review_due_days.
+export const REVIEW_DUE_DAYS = { default: 3, min: 1, max: 14 } as const;
+
+// Whole days in milliseconds, no clock read: the caller passes the board's setting.
+export function reviewDueAt(submittedAt: Date, dueDays: number): Date {
+  return new Date(submittedAt.getTime() + dueDays * 24 * 60 * 60 * 1000);
+}
+
+const text = (max: number) => z.string().trim().min(1).max(max);
+
+// Input for the review server actions (#58). The reason is shared by decline and take-down.
+export const approveInputSchema = z.object({ ideaId: z.uuid() });
+export const reasonInputSchema = z.object({ ideaId: z.uuid(), reason: text(1000) });
+export const reviewDueDaysInputSchema = z.object({
+  boardId: z.enum(BOARD_CODES),
+  days: z.int().min(REVIEW_DUE_DAYS.min).max(REVIEW_DUE_DAYS.max),
+});
 
 // authorId is null after an account deletion (D14).
 export type ReviewPost = { reviewStatus: ReviewStatus; authorId: string | null };

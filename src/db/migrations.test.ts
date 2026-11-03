@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 // The migrations (#44) are the database's source of truth. Two checks that run
 // without a database: the idea_stats view in the migration matches its source file,
-// and the four check constraints are present. Migrations are never edited once
+// and the five check constraints are present. Migrations are never edited once
 // committed, so a view change is a new migration plus an edit to the source file.
 
 const MIGRATIONS = join(process.cwd(), "prisma/migrations");
@@ -60,9 +60,10 @@ describe("check constraints (#44)", () => {
     "ideas_waiting_needs_reason",
     "reviews_take_down_is_decline",
     "reviews_decline_needs_reason",
+    "boards_review_due_days_range",
   ];
 
-  it("each of the four constraints is added by a migration", () => {
+  it("each of the five constraints is added by a migration", () => {
     const all = migrationFiles()
       .map((file) => readFileSync(file, "utf8"))
       .join("\n");

@@ -167,6 +167,9 @@ model Board {
   memberPositionKey   String       @map("member_position_key")
   inProgressGuideline Int          @default(2) @map("in_progress_guideline") // soft: a heads-up, never a block
   updateCadenceDays   Int          @default(30) @map("update_cadence_days") // an in-progress idea is flagged after this many days without a counting update (#12)
+  // A pending post is due this many days after submittedAt. Set per board by the VP or
+  // the board's chair or director; whole days, 1 to 14 (check constraint) (#58).
+  reviewDueDays       Int          @default(3) @map("review_due_days")
 
   // "How to join this board" on the idea page (S4). Plain text, edited by leaders.
   joinMeets      String? @map("join_meets")
@@ -200,8 +203,9 @@ model Board {
 model Idea {
   id String @id @default(uuid(7)) @db.Uuid
 
-  // Public number ("Proposal 103"). Provisional: assigned at approval from a
-  // Postgres sequence, so pending and declined posts leave no gaps.
+  // Public number ("Proposal 103"). Assigned at approval as the highest number plus
+  // one, under an advisory lock (src/db/sql/lockIdeaNumbers.ts), so pending and
+  // declined posts leave no gaps and the seed's explicit numbers never collide (#58).
   number Int? @unique
 
   title       String
@@ -226,7 +230,7 @@ model Idea {
   waitingReason String?      @map("waiting_reason") // students see this
 
   createdAt       DateTime  @default(now()) @map("created_at")
-  submittedAt     DateTime  @default(now()) @map("submitted_at") // latest submission; review is due 3 days after
+  submittedAt     DateTime  @default(now()) @map("submitted_at") // latest submission; review is due the board's reviewDueDays after
   approvedAt      DateTime? @map("approved_at")
   statusChangedAt DateTime? @map("status_changed_at")
   deliveredAt     DateTime? @map("delivered_at")

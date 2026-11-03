@@ -42,7 +42,13 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/env.ts` | The only reader of `process.env`, validated with zod. Checked at server start by `src/instrumentation.ts` |
 | `src/generated/prisma/` | The generated Prisma client. Not committed; `npm install` rebuilds it |
 | `prisma/schema.prisma` | The data model's source of truth. `prisma/views/` holds the `idea_stats` view SQL |
-| `prisma/migrations/` | The migrations (#44): `*_init` is generated from the schema; `*_idea_stats_view_and_checks` is hand-written for the view and the check constraints. Committed migrations are never edited |
+| `prisma/migrations/` | The migrations (#44): `*_init` is generated from the schema; `*_idea_stats_view_and_checks` is hand-written for the view and the check constraints; `*_board_review_due_days` (#58) adds the per-board review due time and its 1 to 14 check. Committed migrations are never edited |
+| `src/app/_review/` | The review actions (#58): `decidePost.ts` (approve, decline, take down; the rules with the store behind an interface), `changeReviewDueDays.ts` (a board's review due time, `change_review_due`), and `actions.ts`, the four server actions: same origin, then `withSession`, then the rules in one transaction, then the public cache tags |
+| `src/db/reviewStore.ts` | The Prisma `ReviewStore` (#58): finds the target, assigns the next public number (highest plus one under an advisory lock), and writes the idea patch and the Review row together, guarded on the status the rules read |
+| `src/db/boardSettingsStore.ts` | The Prisma `BoardSettingsStore` (#58): writes a board's `reviewDueDays` |
+| `src/db/reviewQueue.ts` | `reviewQueue` and `reviewQueueCount` (#58): pending posts for `boardsFor(viewer, "review")`, oldest first, with each post's `dueAt` from its board's setting. The count is the red number on the tab |
+| `src/core/cacheTags.ts` | The public cache tag names, `ideas` and `idea:<number>` (#58). The public pages (#60) cache under them and the review actions refresh them |
+| `src/db/sql/lockIdeaNumbers.ts` | The transaction-scoped advisory lock that serializes public number assignment (#58) |
 | `prisma/seed.ts` | `npm run db:seed` (`prisma db seed`): invented data for local and test only, through `src/db/seed.ts` |
 | `src/db/testing/seededTransaction.ts` | `withSeed()`: a rolled-back transaction with the seed written in, for database tests (#44) |
 | `prisma.config.ts` | Prisma CLI config: migrations path, the seed command, and the direct URL read through `databaseUrls()` in `src/env.ts`, with a placeholder for offline commands |

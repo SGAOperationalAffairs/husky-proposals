@@ -1,12 +1,18 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   PENDING_LIMIT,
   REVIEW_DECISIONS,
+  REVIEW_DUE_DAYS,
   REVIEW_KINDS,
   REVIEW_STATUSES,
   applyReviewEvent,
+  approveInputSchema,
   checkNewPost,
   isEditable,
+  reasonInputSchema,
+  reviewDueAt,
+  reviewDueDaysInputSchema,
   type ReviewEvent,
   type ReviewStatus,
 } from "./review";
@@ -238,5 +244,53 @@ describe("review state machine (#50)", () => {
         expect(() => applyReviewEvent(post(status), event)).not.toThrow();
       }
     }
+  });
+});
+
+describe("review due time (#58)", () => {
+  const submitted = new Date("2026-11-02T14:00:00.000Z");
+
+  it("adds whole days to the submission time", () => {
+    expect(reviewDueAt(submitted, 3)).toEqual(new Date("2026-11-05T14:00:00.000Z"));
+    expect(reviewDueAt(submitted, 7)).toEqual(new Date("2026-11-09T14:00:00.000Z"));
+  });
+
+  it("has a default of 3 and bounds of 1 to 14", () => {
+    expect(REVIEW_DUE_DAYS).toEqual({ default: 3, min: 1, max: 14 });
+  });
+
+  it("matches the default in prisma/schema.prisma", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const match = /reviewDueDays\s+Int\s+@default\((\d+)\)/.exec(schema);
+    expect(match, "reviewDueDays not found in prisma/schema.prisma").not.toBeNull();
+    expect(Number(match![1])).toBe(REVIEW_DUE_DAYS.default);
+  });
+});
+
+describe("review input schemas (#58)", () => {
+  const id = "00000000-0000-4000-8000-000000000101";
+
+  it("approve takes an idea id and strips extra keys", () => {
+    expect(approveInputSchema.parse({ ideaId: id, extra: "x" })).toEqual({ ideaId: id });
+    expect(approveInputSchema.safeParse({ ideaId: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("a reason is trimmed and required", () => {
+    expect(reasonInputSchema.parse({ ideaId: id, reason: "  Out of scope  " })).toEqual({
+      ideaId: id,
+      reason: "Out of scope",
+    });
+    expect(reasonInputSchema.safeParse({ ideaId: id, reason: "" }).success).toBe(false);
+    expect(reasonInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
+    expect(reasonInputSchema.safeParse({ ideaId: id, reason: "x".repeat(1001) }).success).toBe(false);
+    expect(reasonInputSchema.safeParse({ ideaId: "nope", reason: "Out of scope" }).success).toBe(false);
+  });
+
+  it("the due days are a whole number from 1 to 14 on a known board", () => {
+    expect(reviewDueDaysInputSchema.parse({ boardId: "DAB", days: 2 })).toEqual({ boardId: "DAB", days: 2 });
+    for (const days of [0, 15, 2.5, -1]) {
+      expect(reviewDueDaysInputSchema.safeParse({ boardId: "DAB", days }).success, String(days)).toBe(false);
+    }
+    expect(reviewDueDaysInputSchema.safeParse({ boardId: "XYZ", days: 3 }).success).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import type { BoardCode } from "@/core/boards";
 import type { Prisma } from "@/generated/prisma/client";
 
 // Field lists per viewer shape (#53). Each one is checked against the schema with
@@ -54,6 +55,20 @@ export const leaderIdeaSelect = {
     select: { user: { select: { id: true, displayName: true, email: true } } },
   },
 } as const satisfies Prisma.IdeaSelect;
+
+// The review queue (#58): leader fields without the supporters, since a pending post
+// has none. The board join brings the due time in the same query, one read per queue.
+export const reviewQueueSelect = {
+  ...studentIdeaSelect,
+  authorId: true,
+  author: leaderIdeaSelect.author,
+  board: { select: { reviewDueDays: true } },
+} as const satisfies Prisma.IdeaSelect;
+
+// Posts waiting for a decision on these boards. Pair it with boardsFor(viewer, "review").
+export function awaitingReview(boards: BoardCode[]) {
+  return { reviewStatus: "pending", boardId: { in: boards } } satisfies Prisma.IdeaWhereInput;
+}
 
 // Who may see a post with no sign-in. Approved only: pending, declined, and
 // withdrawn posts are never public (#49, #53).

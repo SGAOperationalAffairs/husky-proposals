@@ -87,6 +87,20 @@ describeWithDatabase("check constraints (#44)", () => {
     ).rejects.toThrow(/reviews_decline_needs_reason/);
   });
 
+  it("boards_review_due_days_range: 0 and 15 days are refused, 1 and 14 are accepted", async () => {
+    for (const days of [0, 15]) {
+      await expect(
+        withSeed((tx) => tx.board.update({ where: { id: "DAB" }, data: { reviewDueDays: days } })),
+      ).rejects.toThrow(/boards_review_due_days_range/);
+    }
+    for (const days of [1, 14]) {
+      await withSeed(async (tx) => {
+        const board = await tx.board.update({ where: { id: "DAB" }, data: { reviewDueDays: days } });
+        expect(board.reviewDueDays).toBe(days);
+      });
+    }
+  });
+
   it("the rolled-back transaction leaves nothing behind", async () => {
     await withRollback(async (tx) => {
       await tx.user.count();
