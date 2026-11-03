@@ -33,7 +33,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 **review**
 `id`, `idea_id`, `revision_id`, `reviewer_id`, `kind` (review, take_down), `decision` (approved, declined), `reason` (required when declined, which covers a decline and a take-down), `decided_at`.
 - One review decision per revision, plus at most one take-down. A take-down always has `decision` declined.
-- `due_by` on the idea or review is `submitted_at + 3 days`. It drives the red number and the 90% target.
+- `due_by` on the idea or review is `submitted_at` plus the board's `review_due_days` (3 by default, set per board). It drives the red number and the 90% target.
 - If declines turn out to be appealable (PRD D9), add an appeal link to the decline message. There is no appeal flow in the app.
 
 **support**
@@ -129,6 +129,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | Move an idea through statuses, post updates | No | No | Own board | All boards | No |
 | Change an idea's board | No | No | No | Yes | No |
 | Change a board's update cadence (SGA Options screen) | No | No | Own board | All boards | No |
+| Change a board's review due time (SGA Options screen) | No | No | Own board | All boards | No |
 | See the People list (volunteers) | No | No | Own board | All boards | Open |
 | Turn promotion on (admin switch, off by default; later) | No | No | No | Yes | No |
 

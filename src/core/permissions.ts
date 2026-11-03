@@ -29,6 +29,7 @@ export const BOARD_ACTIONS = [
   "manage_status", // Move an idea through statuses, post updates
   "change_board", // Change an idea's board
   "change_cadence", // Change a board's update cadence
+  "change_review_due", // Change a board's review due time
   "see_people", // See the People list (volunteers)
 ] as const;
 
@@ -61,6 +62,7 @@ export const PERMISSIONS: Record<Action, Record<Column, Cell>> = {
   manage_status: row("no", "no", "own", "yes", "no"),
   change_board: row("no", "no", "no", "yes", "no"),
   change_cadence: row("no", "no", "own", "yes", "no"),
+  change_review_due: row("no", "no", "own", "yes", "no"),
   see_people: row("no", "no", "own", "yes", "open"),
 };
 

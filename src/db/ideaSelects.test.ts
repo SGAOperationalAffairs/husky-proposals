@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { authorIdeaSelect, isPublic, leaderIdeaSelect, studentIdeaSelect } from "./ideaSelects";
+import {
+  authorIdeaSelect,
+  awaitingReview,
+  isPublic,
+  leaderIdeaSelect,
+  reviewQueueSelect,
+  studentIdeaSelect,
+} from "./ideaSelects";
 
 // The field lists behind the viewer shapes (#53). Each one is checked with
 // `satisfies Prisma.IdeaSelect` in ideaSelects.ts, so a wrong field name fails to
@@ -39,6 +46,28 @@ describe("author and leader selects", () => {
       expect(leaderIdeaSelect).toHaveProperty(key);
       expect(authorIdeaSelect).toHaveProperty(key);
     }
+  });
+});
+
+describe("review queue select and filter (#58)", () => {
+  it("reads no supporters, a pending post has none, and reads the board's due days", () => {
+    expect(reviewQueueSelect).not.toHaveProperty("supports");
+    expect(reviewQueueSelect).toMatchObject({
+      authorId: true,
+      author: leaderIdeaSelect.author,
+      board: { select: { reviewDueDays: true } },
+    });
+  });
+
+  it("still includes the student fields", () => {
+    for (const key of Object.keys(studentIdeaSelect)) expect(reviewQueueSelect).toHaveProperty(key);
+  });
+
+  it("awaitingReview is pending posts on the given boards", () => {
+    expect(awaitingReview(["DAB", "SC"])).toEqual({
+      reviewStatus: "pending",
+      boardId: { in: ["DAB", "SC"] },
+    });
   });
 });
 
