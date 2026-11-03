@@ -48,6 +48,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `prisma.config.ts` | Prisma CLI config: migrations path, the seed command, and the direct URL read through `databaseUrls()` in `src/env.ts`, with a placeholder for offline commands |
 | `scripts/verify.mjs` | `npm run verify` and its tiers |
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
+| `scripts/check-deps.mjs` | The dependency check (#119): high or critical advisories fail, major-version gaps are listed. `npm run deps:check` |
+| `.github/workflows/dependencies.yml` | Runs the dependency check weekly and by hand. Not on pull requests, not in `verify` |
 | `scripts/port-*.mjs` | Port's scripts, copied verbatim from the plugin. Excluded from lint and Prettier; never edit by hand |
 | `tests/browser/` | Playwright tests against the production build (Chromium, iPhone WebKit; Firefox in `verify:all`) |
 | `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row, board filter chips, ideas list filters, site header with the list links (its tab look comes from `tabLook.ts`, a plain module so server components can call it), copy link, the share dialog (`ShareDialog`: link, poster, flyer) with `Flyer` and `QrCode`, the participate confirmation (`ParticipateDialog`, on Base UI), and the loading placeholders. `useOrigin` gives the site address in the browser |
@@ -107,6 +109,13 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 - **The sign-in stand-in runs only when `APP_ENV` is `local` or `test`.** `src/env.ts` refuses to start otherwise, and `src/env.test.ts` checks every other environment. The stand-in page is `.dev.tsx`, and `startStandInSession` also refuses when `AUTH_STAND_IN` is off.
 - **Public, but not searchable.** Every response sends `X-Robots-Tag: noindex` (`next.config.ts`) and the root layout sets `robots: { index: false }`. `tests/browser/site.spec.ts` checks both for every path in `PAGES`.
 - **Viewer shapes and same-origin writes** are in `CLAUDE.md`, "Architecture rules." A test must fail if a private field reaches the student shape.
+
+- **Dependencies (#119):**
+  - High and critical advisories fail the weekly run. Fix each in its own pull request (bump, or an `overrides` entry for a transitive one when no parent release fixes it yet), and file an issue the same day the run fails.
+  - Moderate and low advisories are counted in the report and do not block. Look at them when the package is updated for another reason.
+  - Major-version gaps are information. A major update, or replacing a deprecated package (shown in `npm install` warnings or as out of support upstream), gets its own issue and pull request, one package or one tightly coupled family per pull request (for example, `eslint` with `eslint-config-next`).
+  - Exact pins stay exact: update by changing the pinned version, never by switching to a range. Prisma stays on 7.10.x; never install it unpinned (see `CLAUDE.md`, "Database rules").
+  - Run it locally with `npm run deps:check`. It needs the network, so it is not part of `verify`.
 
 ## 5. Accessibility
 
