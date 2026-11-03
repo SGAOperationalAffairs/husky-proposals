@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { BOARDS } from "@/core/boards";
 import type { QueueItem } from "@/core/queue";
+import { BoardChip } from "@/components/BoardChip";
+import { StatusLabel } from "@/components/StatusLabel";
 import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 
 // One row of the SGA queue (#124), in one of several looks, on a shared column
@@ -66,21 +68,6 @@ const rowStyle = (style: RowStyle): CSSProperties | undefined => {
   }
 };
 
-// The status highlight is a light tint that depends on the status (#124), from the
-// palette tokens, so it never competes with the board color.
-export const STATUS_TINT: Record<QueueItem["status"], CSSProperties> = {
-  pending: { background: "var(--amber)", color: "var(--amber-ink)" },
-  collecting_support: { background: "var(--sky)", color: "var(--sky-ink)" },
-  under_review: { background: "var(--amber)", color: "var(--amber-ink)" },
-  in_progress: { background: "var(--green)", color: "var(--green-ink)" },
-  waiting: { background: "var(--accent-soft)", color: "var(--accent-text)" },
-  delivered: { background: "var(--grey)", color: "var(--grey-ink)" },
-};
-
-// A small label in the board's color. On a band the colors swap, so the chip still shows.
-const chip = (band: boolean): CSSProperties =>
-  band ? { background: "var(--on-b)", color: "var(--b)" } : { background: "var(--b)", color: "var(--on-b)" };
-
 export function QueueRow({
   item,
   style,
@@ -121,13 +108,7 @@ export function QueueRow({
         </Link>
       </div>
       <div className={`${COLUMNS.board} text-sm ${muted}`}>
-        {style === "tag" ? (
-          <span className="px-2 py-0.5 text-xs font-bold" style={chip(band)}>
-            {board.category}
-          </span>
-        ) : (
-          board.category
-        )}
+        {style === "tag" ? <BoardChip board={item.boardId} inverse={band} /> : board.category}
       </div>
       <div
         className={`${COLUMNS.number} text-sm tabular-nums ${muted}`}
@@ -136,16 +117,7 @@ export function QueueRow({
         #{item.number}
       </div>
       <div className={`${COLUMNS.status} text-sm ${muted}`}>
-        {showStatus ? (
-          <span
-            className="px-2 py-0.5 text-xs font-bold"
-            style={STATUS_TINT[item.kind === "post" ? "pending" : item.status]}
-          >
-            {status}
-          </span>
-        ) : (
-          status
-        )}
+        {showStatus ? <StatusLabel status={item.kind === "post" ? "pending" : item.status} /> : status}
       </div>
       <div className={`${COLUMNS.support} text-sm tabular-nums ${muted}`}>{item.supportCount}</div>
     </li>
