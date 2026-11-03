@@ -95,6 +95,12 @@ test.describe("filtering in place (#61)", () => {
   test("a search keeps focus in the search field and the page where it was", async ({ page }) => {
     await page.evaluate(() => window.scrollTo(0, 400));
     const search = page.getByLabel("Search", { exact: true });
+    // Wait until React has hydrated the form. Before that, Enter is not wired to the
+    // search, and the test failed on WebKit iPhone in CI (#149).
+    await page.waitForFunction(() => {
+      const form = document.querySelector('input[name="q"]')?.closest("form");
+      return !!form && Object.keys(form).some((k) => k.startsWith("__reactProps"));
+    });
     await search.fill("dining");
     await search.press("Enter");
     await expect(page).toHaveURL(/q=dining/);
