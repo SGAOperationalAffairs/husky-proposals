@@ -1,0 +1,56 @@
+import type { BoardCode } from "./boards";
+import { can, type Viewer } from "./permissions";
+import type { IdeaStatus } from "./statuses";
+
+// The SGA queue (#124): what a leader sees, what the tabs count, and how the
+// list filters and sorts. Plain functions, so the rules are tested without a page.
+// Who may see a row is decided by `can()` for the board, never by a row's fields
+// alone: a chair sees their board, the VP sees all five.
+
+export type QueueItem = {
+  kind: "post" | "idea";
+  number: number;
+  title: string;
+  boardId: BoardCode;
+  // A pending post is "pending"; an approved idea has its idea status.
+  status: IdeaStatus | "pending";
+  supportCount: number;
+  updatedDaysAgo: number;
+};
+
+export const QUEUE_SORTS = {
+  support: "Most supported",
+  newest: "Newest",
+  updated: "Recently updated",
+} as const;
+export type QueueSort = keyof typeof QUEUE_SORTS;
+
+export type QueueQuery = { board?: BoardCode; status?: QueueItem["status"]; sort: QueueSort };
+
+// A post is reviewed (`review`); an idea is run by its board (`manage_status`).
+export function queueFor(viewer: Viewer, items: QueueItem[]): QueueItem[] {
+  return items.filter((item) =>
+    item.kind === "post" ? can(viewer, "review", item.boardId) : can(viewer, "manage_status", item.boardId),
+  );
+}
+
+// The red count on the "To review" tab: pending posts only. Ideas do not badge,
+// since a board's work on them is not waiting on a decision the same way.
+export function attentionCount(items: QueueItem[]): number {
+  return items.filter((item) => item.kind === "post").length;
+}
+
+const ORDER: Record<QueueSort, (a: QueueItem, b: QueueItem) => number> = {
+  support: (a, b) => b.supportCount - a.supportCount,
+  newest: (a, b) => b.number - a.number,
+  updated: (a, b) => a.updatedDaysAgo - b.updatedDaysAgo,
+};
+
+export function filterQueue(items: QueueItem[], query: QueueQuery): QueueItem[] {
+  return items
+    .filter(
+      (item) =>
+        (!query.board || item.boardId === query.board) && (!query.status || item.status === query.status),
+    )
+    .sort(ORDER[query.sort]);
+}
