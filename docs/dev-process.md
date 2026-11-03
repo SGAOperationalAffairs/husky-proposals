@@ -116,6 +116,37 @@ Agreed October 23, 2026. Port is built for hands-off work: plan, approve, wait f
 - **Commits:** `#N summary`, where `#N` is the issue the change is for. Nothing is pushed straight to `dev` or `main`.
 - **Docs:** docs-only changes use the docs sidecar, umbrella issue #22, on a branch like `22-docs-sidecar`. Batch it into `dev` every day or two, then start the next batch from fresh `dev`.
 
+### UI sidecar workflow
+
+This is the loop for UI work in the sidecar lane. It exists so that one branch can hold several small UI issues without the history getting tangled, and so that problems show up on the day they are introduced.
+
+**1. One umbrella issue per batch.** A batch is one umbrella issue (for example, the UI polish batch) with a checklist of the child issues it will close. Label it `in progress`, and give it a `## Changes` file list that claims the sidecar's folders, as above.
+
+**2. One branch per batch.** Cut it from fresh `origin/dev`, named `<umbrella>-<slug>`. Do not stack a batch on another unmerged branch. If a child issue needs an unmerged change, it waits for that change to reach `dev`, or it moves to the next batch.
+
+**3. Work in small commits, one per child issue.**
+- Read the child issue, and say its catch in two or three lines before building.
+- Write the failing test first when behavior changes. Visual-only changes are checked on the local page or the playground.
+- Stage by path: `git add <the files for this issue>`. Never `git add -A` on a batch branch, and never commit another issue's files in the same commit.
+- Subjects are `#N summary`, where `#N` is the child issue. Subjects start with `#`, so commit with `git commit --cleanup=verbatim`, or git strips the subject as a comment.
+- After each child issue, run `npm run verify:agent`. A failure is read before anything is rerun.
+
+**4. Rebase daily.** Once a day, rebase the batch onto `origin/dev`, then fix conflicts before continuing. If a branch sits for two days without a rebase, it is too old to keep.
+
+**5. Keep the batch small and merge it quickly.** Open the batch pull request within two days of its first commit, and merge it within two days of opening. A batch has at most three child issues. Before opening it, run the full `npm run verify`, and then read the CI result.
+
+**6. Batch merges keep each commit.** A batch pull request is merged with a merge commit, not squashed, so each `#N` commit stays on `dev` and can still be reverted by itself. (Single-issue features still squash, as in "Merging" above.)
+
+**7. No stash across branches.** Do not use `git stash` to carry work between branches. Commit the work, or finish it, before switching. If a switch is unavoidable, commit a `WIP` commit on the branch and remove it before the pull request.
+
+**8. After switching branches, regenerate the route types.** Run `npx next typegen` before `tsc`. Stale generated types from the last branch cause errors that look like code bugs.
+
+**9. Playground changes are their own batch.** Experimental playground pages go on `<umbrella>-playground`, merged separately, so a product batch never carries experiments with it.
+
+**10. Close out.** Each child issue is closed with what shipped and the tests that prove it. The umbrella issue closes when its batch merges.
+
+**11. Flaky tests are issues, not reruns.** A failure that passes on rerun is filed as an issue with the CI run link, and the run's report and trace are read from the saved artifacts (see #143). A rerun is never the fix.
+
 ## Port
 
 Port turns GitHub issues into pull requests. A plan agent writes the plan, and an implement agent builds it. A review agent reviews, and a revise agent fixes. A person approves each plan and merges each pull request.

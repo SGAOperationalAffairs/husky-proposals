@@ -66,7 +66,7 @@ gantt
 | E9 Email | Nov 2 | Nov 20 | Outbox first, decision emails, then digests |
 | E6 Student actions | Nov 9 | Nov 15 | |
 | E7 SGA queue and decisions | Nov 9 | Nov 15 | |
-| E10 Launch readiness | Nov 9 | Dec 13 | Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request |
+| E10 Launch readiness | Nov 9 | Dec 13 | Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request. The soft launch does not depend on #80 (the dev Vercel project): `main` already deploys production through the SGA project's Git integration, so the soft launch can run without it. #80 still helps by giving a deployed dev build without merging to `main`, and by catching production issues earlier |
 | E8 Updates and names | Nov 16 | Nov 20 | |
 | E11 Tabling form | Dec 21 | Jan 11 | Estimated at the freeze. Built over winter break if it fits |
 | E12 Promotion switch | Dec 21 | Dec 27 | Off by default; only if feedback asks for it |
