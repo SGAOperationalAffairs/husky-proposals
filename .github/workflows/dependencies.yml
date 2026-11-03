@@ -1,0 +1,27 @@
+# Weekly dependency check (#119): fails on high or critical npm advisories and lists
+# major-version gaps. It is scheduled, not on pull requests, so a new advisory in an
+# unrelated package never blocks someone's work. It needs the network, so it is not in `npm run verify`.
+# A scheduled workflow runs only from the default branch; use "Run workflow" until this reaches it.
+name: dependencies
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # outdated needs node_modules to know the installed versions.
+      - run: npm ci
+      - run: npm run deps:check

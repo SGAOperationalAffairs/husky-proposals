@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:styles": "node scripts/check-styles.mjs",
+    "deps:check": "node scripts/check-deps.mjs",
     "test": "vitest run",
     "test:database": "vitest run --project database",
     "test:watch": "vitest",
