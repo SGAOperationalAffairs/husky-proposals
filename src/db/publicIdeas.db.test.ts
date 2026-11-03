@@ -2,9 +2,15 @@ import { expect, it } from "vitest";
 import { publicIdeaQueries } from "@/db/publicIdeas";
 import { withCountedSeed } from "@/db/testing/countQueries";
 import { describeWithDatabase } from "@/db/testing/database";
-import { buildApprovedIdea, testUuid } from "@/db/testing/factories";
+import { buildApprovedIdea, buildUpdate, testUuid } from "@/db/testing/factories";
 import { ideas, users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
+
+// byNumber sends 5 queries (#60): Prisma loads each relation separately, so the idea,
+// its author's display name, its stats row, and its updates are four reads, and the
+// "ranked 1 of N" count over idea_stats is the fifth. The constant is per page, so it
+// must not grow with ideas or updates; the tests below check both.
+const BY_NUMBER_QUERIES = 5;
 
 // The public reads behind the ideas wall and the idea page (#60), over the seeded data,
 // inside transactions that are rolled back.
@@ -59,10 +65,12 @@ describeWithDatabase("public ideas (#60)", () => {
     });
   });
 
-  it("has no number for a pending post, and finds nothing for an unknown number", async () => {
+  it("never returns a pending post, and finds nothing for an unknown number", async () => {
     await withSeed(async (tx) => {
       const queries = publicIdeaQueries(tx);
-      expect(ideas.pending.number ?? null).toBeNull();
+      const listed = JSON.stringify(await queries.list());
+      expect(listed).not.toContain(ideas.pending.id);
+      expect(listed).not.toContain(ideas.pending.title);
       expect(await queries.byNumber(9999)).toBeNull();
     });
   });
@@ -98,7 +106,26 @@ describeWithDatabase("public ideas (#60)", () => {
 
       queries.reset();
       await reads.byNumber(103);
-      expect(queries.count).toBeLessThanOrEqual(4);
+      expect(queries.count).toBeLessThanOrEqual(BY_NUMBER_QUERIES);
+    });
+  });
+
+  it("sends the same queries for an idea page however many updates the idea has", async () => {
+    await withCountedSeed(async (tx, queries) => {
+      const reads = publicIdeaQueries(tx);
+      const before = await reads.byNumber(103);
+      const countBefore = queries.count;
+      expect(countBefore).toBeLessThanOrEqual(BY_NUMBER_QUERIES);
+
+      await tx.update.createMany({
+        data: [1, 2, 3, 4, 5].map((n) =>
+          buildUpdate({ ideaId: ideas.foodPantry.id, body: `Extra update ${n}.` }),
+        ),
+      });
+      queries.reset();
+      const after = await reads.byNumber(103);
+      expect(after?.updates).toHaveLength((before?.updates?.length ?? 0) + 5);
+      expect(queries.count).toBe(countBefore);
     });
   });
 });
