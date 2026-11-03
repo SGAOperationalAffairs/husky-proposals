@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Reveal } from "@/components/Reveal";
 import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
-import { getIdea, JOIN, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
+import { getIdea, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
 import { ShareDialog } from "@/components/ShareDialog";
@@ -14,7 +14,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
-import { BOARDS } from "@/core/boards";
+import { BOARDS, JOIN } from "@/core/boards";
 
 // One idea's page (#62): the poster from the playground (#29) beside where the
 // idea stands, then the details and how to join the board (prototype sPage).
@@ -50,7 +50,7 @@ export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
 
 async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"] }) {
   const number = parseIdeasNumber((await params).number);
-  const idea = number === undefined ? undefined : getIdea(number);
+  const idea = number === undefined ? undefined : await getIdea(number);
   if (!idea) notFound();
   const board = BOARDS[idea.board];
 

@@ -468,7 +468,7 @@ view IdeaStats {
   ideaId        String    @unique @map("idea_id") @db.Uuid
   boardId       String    @map("board_id")
   supportCount  Int       @map("support_count") // public
-  willingCount  Int       @map("willing_count") // leaders only
+  willingCount  Int       @map("willing_count") // public count, never names (#60)
   followerCount Int       @map("follower_count") // leaders only
   rankInBoard   Int?      @map("rank_in_board") // null once delivered
   lastUpdateAt  DateTime? @map("last_update_at")

@@ -57,6 +57,18 @@ describe("environment (#26)", () => {
     expect(() => parseEnv({ APP_ENV: "test", DIRECT_URL: "nope" })).toThrow(/DIRECT_URL/);
   });
 
+  it("requires DATABASE_URL unless APP_ENV is local or test (#60)", () => {
+    for (const APP_ENV of ["preview", "dev", "production"]) {
+      expect(() => parseEnv({ APP_ENV }), APP_ENV).toThrow(/DATABASE_URL is required unless APP_ENV/);
+      expect(() => parseEnv({ APP_ENV, DATABASE_URL: "" }), APP_ENV).toThrow(/DATABASE_URL is required/);
+    }
+    for (const APP_ENV of ["local", "test"]) expect(() => parseEnv({ APP_ENV }), APP_ENV).not.toThrow();
+    expect(
+      parseEnv({ APP_ENV: "production", DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db" })
+        .DATABASE_URL,
+    ).toBeDefined();
+  });
+
   it("refuses to start when APP_ENV is missing or unknown", () => {
     expect(() => parseEnv({})).toThrow(/APP_ENV/);
     expect(() => parseEnv({ APP_ENV: "staging" })).toThrow(/APP_ENV/);
@@ -71,12 +83,19 @@ describe("environment (#26)", () => {
 
   it("keeps the sign-in stand-in off by default in every environment (#45)", () => {
     for (const APP_ENV of ["local", "test", "preview", "dev", "production"]) {
-      expect(parseEnv({ APP_ENV }).AUTH_STAND_IN, APP_ENV).toBe(false);
+      const DATABASE_URL = "postgresql://user:pw@host-pooler.example.com/db";
+      expect(parseEnv({ APP_ENV, DATABASE_URL }).AUTH_STAND_IN, APP_ENV).toBe(false);
     }
   });
 
   it("accepts AUTH_STAND_IN=0 in production (#45)", () => {
-    expect(parseEnv({ APP_ENV: "production", AUTH_STAND_IN: "0" }).AUTH_STAND_IN).toBe(false);
+    expect(
+      parseEnv({
+        APP_ENV: "production",
+        AUTH_STAND_IN: "0",
+        DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
+      }).AUTH_STAND_IN,
+    ).toBe(false);
   });
 
   it("names the stand-in in the refusal for preview, dev, and production (#45)", () => {
