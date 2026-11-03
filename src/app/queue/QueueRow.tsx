@@ -68,7 +68,7 @@ const rowStyle = (style: RowStyle): CSSProperties | undefined => {
 
 // The status highlight is a light tint that depends on the status (#124), from the
 // palette tokens, so it never competes with the board color.
-const STATUS_TINT: Record<QueueItem["status"], CSSProperties> = {
+export const STATUS_TINT: Record<QueueItem["status"], CSSProperties> = {
   pending: { background: "var(--amber)", color: "var(--amber-ink)" },
   collecting_support: { background: "var(--sky)", color: "var(--sky-ink)" },
   under_review: { background: "var(--amber)", color: "var(--amber-ink)" },

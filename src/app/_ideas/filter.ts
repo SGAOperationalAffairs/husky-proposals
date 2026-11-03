@@ -12,7 +12,8 @@ import { IDEA_STATUSES, type IdeaStatus } from "@/core/statuses";
 export const SORTS = { support: "Most supported", newest: "Newest", updated: "Recently updated" } as const;
 export type Sort = keyof typeof SORTS;
 
-export type IdeasQuery = { q?: string; board?: BoardCode; status?: IdeaStatus; sort: Sort };
+// view is how the list is shown, not a filter: cards (the default) or the list (#138).
+export type IdeasQuery = { q?: string; board?: BoardCode; status?: IdeaStatus; sort: Sort; view?: "list" };
 
 // Filters come from the URL, so anything can arrive. Unknown values are dropped,
 // never an error: a stale or hand-edited link still shows the list.
@@ -22,6 +23,7 @@ const querySchema = z.object({
   board: lenient(z.enum(BOARD_CODES as [BoardCode, ...BoardCode[]])),
   status: lenient(z.enum(IDEA_STATUSES as [IdeaStatus, ...IdeaStatus[]])),
   sort: z.enum(Object.keys(SORTS) as [Sort, ...Sort[]]).catch("support"),
+  view: lenient(z.enum(["list"])),
 });
 
 export function parseIdeasQuery(params: Record<string, string | string[] | undefined>): IdeasQuery {
@@ -58,6 +60,7 @@ export function ideasHref(path: string, query: IdeasQuery) {
   if (query.board) params.set("board", query.board);
   if (query.status) params.set("status", query.status);
   if (query.sort !== "support") params.set("sort", query.sort);
+  if (query.view) params.set("view", query.view);
   const qs = params.toString();
   return qs ? `${path}?${qs}` : path;
 }
