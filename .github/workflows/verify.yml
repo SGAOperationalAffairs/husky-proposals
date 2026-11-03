@@ -32,6 +32,16 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify
+      # Saved on every run, pass or fail, so a failure can be read after the fact (#143).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
 
   database:
     runs-on: ubuntu-latest
