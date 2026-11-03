@@ -36,3 +36,14 @@ describe("style guard (#26)", () => {
     expect(rulesHit(`// a shadow of doubt, rounded numbers, and 3 pending posts`)).toEqual([]);
   });
 });
+
+describe("comments (#137)", () => {
+  it("ignores issue numbers in comments", () => {
+    const source = "// The rows sit in a panel (#124).\n/* Stamp (#112). */\n{/* (#113) */}";
+    expect(rulesHit(source)).toEqual([]);
+  });
+
+  it("still flags a hex color in code, even beside a comment", () => {
+    expect(rulesHit(`const c = "#C8102E"; // (#124)`)).toEqual(['hex color: "#C8102E']);
+  });
+});
