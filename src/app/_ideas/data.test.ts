@@ -80,3 +80,17 @@ describe("the wall's data and links (#61, #55)", () => {
     expect(ideasHref("/", { board: "CSC", sort: "newest" })).toBe("/?board=CSC&sort=newest");
   });
 });
+
+describe("the ideas view in the URL (#138)", () => {
+  it("reads view=list, and drops any other value back to cards", () => {
+    expect(parseIdeasQuery({ view: "list" })).toEqual({ sort: "support", view: "list" });
+    expect(parseIdeasQuery({ view: "table" })).toEqual({ sort: "support" });
+    expect(parseIdeasQuery({})).toEqual({ sort: "support" });
+  });
+
+  it("keeps view in shared links and leaves cards out", () => {
+    expect(ideasHref("/", { sort: "support", view: "list" })).toBe("/?view=list");
+    expect(ideasHref("/", { sort: "support", view: "list", board: "DAB" })).toBe("/?board=DAB&view=list");
+    expect(ideasHref("/", { sort: "support" })).toBe("/");
+  });
+});

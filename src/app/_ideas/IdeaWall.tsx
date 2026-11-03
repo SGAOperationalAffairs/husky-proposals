@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { LayoutGrid, List } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type AnimationEvent } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard, type IdeaCardData } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
+import { QueueHeader } from "@/app/queue/QueueRow";
+import { IdeaRow } from "./IdeaRow";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { IDEA_STATUSES, STATUS_LABELS } from "@/core/statuses";
 import { filterIdeas, ideasHref, parseIdeasQuery, SORTS, type IdeasQuery } from "./filter";
@@ -20,6 +24,10 @@ type Props = { ideas: IdeaCardData[] };
 
 // The page this wall is on, for chip links and the form without JavaScript.
 const path = "/";
+const VIEWS = [
+  { id: "cards", label: "Cards", icon: LayoutGrid },
+  { id: "list", label: "List", icon: List },
+] as const;
 const SORT_OPTIONS = Object.entries(SORTS).map(([value, label]) => ({ value, label }));
 const STATUS_OPTIONS = IDEA_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
@@ -48,6 +56,8 @@ export function IdeaWall({ ideas }: Props) {
 
   const taps = useLocalTaps();
   const shown = useMemo(() => filterIdeas(ideas, query), [ideas, query]);
+  // Cards are the default; the list is one click away (#138).
+  const view = query.view ?? "cards";
 
   // The posters that rise in when the wall first arrives (#84), with their
   // steps. Taken once, from the URL's filters, so the server and the first
@@ -98,20 +108,58 @@ export function IdeaWall({ ideas }: Props) {
         }
         onChange={apply}
       />
-      <p role="status" className="text-sm text-muted">
-        {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p role="status" className="text-sm text-muted">
+          {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
+        </p>
+        {/* Cards or the list (#138). A link without JavaScript, the same URL with the view set. */}
+        {/* A two-way switch: cards on the left, the list on the right (#138). Links, so
+            it works without JavaScript; the active side is filled. */}
+        <nav aria-label="View" className="inline-flex bordered bg-surface">
+          {VIEWS.map((v) => {
+            const Icon = v.icon;
+            const active = view === v.id;
+            return (
+              <Link
+                key={v.id}
+                href={ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined })}
+                aria-current={active ? "true" : undefined}
+                onClick={(e) => {
+                  e.preventDefault();
+                  apply({ view: v.id === "list" ? "list" : undefined });
+                }}
+                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-bold ${active ? "bg-line text-surface" : "text-line"}`}
+              >
+                <Icon aria-hidden className="size-4" />
+                {v.label}
+                <span className="sr-only">{active ? " (showing)" : ""}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
       {shown.length > 0 ? (
-        <div className="card-grid" onAnimationEnd={onRiseEnd}>
-          {shown.map((idea) => (
-            <IdeaCard
-              key={idea.number}
-              {...idea}
-              {...taps(idea.number, idea.board)}
-              arrival={arriving?.get(idea.number)}
-            />
-          ))}
-        </div>
+        view === "list" ? (
+          <div className="overflow-hidden bordered bg-surface">
+            <QueueHeader />
+            <ul className="flex flex-col divide-y divide-line">
+              {shown.map((idea) => (
+                <IdeaRow key={idea.number} idea={idea} />
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="card-grid" onAnimationEnd={onRiseEnd}>
+            {shown.map((idea) => (
+              <IdeaCard
+                key={idea.number}
+                {...idea}
+                {...taps(idea.number, idea.board)}
+                arrival={arriving?.get(idea.number)}
+              />
+            ))}
+          </div>
+        )
       ) : (
         <p className="p-card surface-float">No ideas match. Try a different search or another board.</p>
       )}
