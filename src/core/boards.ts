@@ -62,3 +62,46 @@ export const BOARDS: Record<BoardCode, Board> = {
 };
 
 export const BOARD_CODES = Object.keys(BOARDS) as BoardCode[];
+
+// How to join each board, from the prototype. A fixed list for now (#60); a follow-up
+// moves these facts into the database, which has no fields for them yet.
+export const JOIN: Record<
+  BoardCode,
+  { does: string; meets: string; time: string; seats: string; apply: string }
+> = {
+  DAB: {
+    does: "It advises campus dining and takes on food access projects.",
+    meets: "Weekly during the semester",
+    time: "About 2 hours a week",
+    seats: "2 open seats",
+    apply: "Applications open about a month before each semester ends.",
+  },
+  CPAB: {
+    does: "It works with campus planning and facilities on how spaces are used and changed.",
+    meets: "Weekly during the semester",
+    time: "About 2 hours a week",
+    seats: "1 open seat",
+    apply: "Applications open about a month before each semester ends.",
+  },
+  CSC: {
+    does: "It works on campus services like recreation, transportation, and housing.",
+    meets: "Weekly during the semester",
+    time: "About 2 hours a week",
+    seats: "2 open seats",
+    apply: "Apply through SGA. The committee chair reviews applications.",
+  },
+  GIB: {
+    does: "It funds and supports student sustainability projects.",
+    meets: "Weekly during the semester",
+    time: "About 2 hours a week",
+    seats: "3 open seats",
+    apply: "Apply through SGA. The board chair reviews applications.",
+  },
+  SC: {
+    does: "It speaks up for sustainability on campus and works with campus offices.",
+    meets: "Weekly during the semester",
+    time: "About 2 hours a week",
+    seats: "1 open seat",
+    apply: "Apply through SGA. The committee chair reviews applications.",
+  },
+};

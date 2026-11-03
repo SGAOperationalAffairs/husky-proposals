@@ -70,6 +70,21 @@ export function awaitingReview(boards: BoardCode[]) {
   return { reviewStatus: "pending", boardId: { in: boards } } satisfies Prisma.IdeaWhereInput;
 }
 
+// The public numbers and updates on an approved idea (#60). Counts only: never the
+// names behind willingCount, never followerCount, never an update's authorId.
+export const publicStatsSelect = {
+  supportCount: true,
+  willingCount: true,
+  rankInBoard: true,
+  lastUpdateAt: true,
+} as const satisfies Prisma.IdeaStatsSelect;
+
+export const publicUpdateSelect = {
+  kind: true,
+  body: true,
+  createdAt: true,
+} as const satisfies Prisma.UpdateSelect;
+
 // Who may see a post with no sign-in. Approved only: pending, declined, and
 // withdrawn posts are never public (#49, #53).
 export const isPublic = { reviewStatus: "approved" } as const satisfies Prisma.IdeaWhereInput;

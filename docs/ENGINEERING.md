@@ -26,7 +26,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 |---|---|
 | `src/app/` | Next.js routes, layouts, and server actions. Thin: they receive requests and call core modules |
 | `src/core/` | Plain TypeScript rules: statuses and transitions, permissions, limits, viewer shapes. Never imports Next.js, React, or the database (lint rule) |
-| `src/db/` | The only place that talks to Prisma. `client.ts` builds a client with the Postgres adapter (#60 adds the runtime singleton). `seed.ts` writes the invented development data (#44) |
+| `src/db/` | The only place that talks to Prisma. `client.ts` builds a client with the Postgres adapter, and `runtime.ts` is the app's one client (`db()`). `publicIdeas.ts` holds the public reads, `publicIdeaQueries(db).list()` and `.byNumber(n)` (#60). `seed.ts` writes the invented development data (#44) |
 | `src/db/sql/` | The only place for raw SQL, as tagged `$queryRaw` parsed with zod (lint rule). `ping.ts` is the first |
 | `src/db/safeTarget.ts` | The host guard, `assertSafeDatabaseTarget`: only localhost or an allowlisted test branch. The seed calls it too (#104) |
 | `src/db/testing/` | Database test helpers (`describeWithDatabase`, `withRollback`), `globalSetup.ts` (creates, migrates, and drops each run's database), `runDatabase.ts` (names and the run registry), factories, and invented fixtures |
@@ -51,6 +51,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/db/sql/lockIdeaNumbers.ts` | The transaction-scoped advisory lock that serializes public number assignment (#58) |
 | `prisma/seed.ts` | `npm run db:seed` (`prisma db seed`): invented data for local and test only, through `src/db/seed.ts` |
 | `src/db/testing/seededTransaction.ts` | `withSeed()`: a rolled-back transaction with the seed written in, for database tests (#44) |
+| `src/db/testing/countQueries.ts` | `withCountedSeed()`: the same, on a client that counts queries, for "a fixed number of queries, not one per idea" tests (#60) |
 | `prisma.config.ts` | Prisma CLI config: migrations path, the seed command, and the direct URL read through `databaseUrls()` in `src/env.ts`, with a placeholder for offline commands |
 | `scripts/verify.mjs` | `npm run verify` and its tiers |
 | `scripts/check-styles.mjs` | The style guard: no arbitrary Tailwind values, no radius or shadow classes outside the tokens, no hex colors |
@@ -59,7 +60,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `scripts/port-*.mjs` | Port's scripts, copied verbatim from the plugin. Excluded from lint and Prettier; never edit by hand |
 | `tests/browser/` | Playwright tests against the production build (Chromium, iPhone WebKit; Firefox in `verify:all`) |
 | `src/components/` | The real UI components, presentational: state comes in as props. Idea card, status label, tags, support pair and squares, button, fields, tabs and badges, queue row, board filter chips, ideas list filters, site header with the list links (its tab look comes from `tabLook.ts`, a plain module so server components can call it), copy link, the share dialog (`ShareDialog`: link, poster, flyer) with `Flyer` and `QrCode`, the participate confirmation (`ParticipateDialog`, on Base UI), and the loading placeholders. `useOrigin` gives the site address in the browser |
-| `src/app/_ideas/` | `useLocalTaps`, which holds Support and I'll participate taps in the page and shows their toasts until E6 saves them. The ideas list's stand-in data (#61): the playground's sample ideas behind `listIdeas()`, `parseIdeasQuery()`, and `getIdea()` (#62), `filter.ts` (the filter and sort rules, plain functions the browser and server share), and `Wall.tsx` with `IdeaWall.tsx`: the server loads a list's public ideas once and the wall filters them in the browser, so search, sort, and chips redraw only the cards with no request (#61, #63). Replaced by the public queries (#60) |
+| `src/app/_ideas/` | `useLocalTaps`, which holds Support and I'll participate taps in the page and shows their toasts until E6 saves them. `data.ts` is the pages' one entry: `listWall()` and `getIdea(n)`, cached with named tags, reading the database through `src/db/publicIdeas.ts` (#60). `sample.ts` is the stand-in (the playground's sample ideas), used only when `APP_ENV` is local or test and `DATABASE_URL` is unset (`source.ts`, `usesSampleIdeas`). `present.ts` turns a record into card and page data, `tags.ts` names the cache tags, and `refresh.ts` has `refreshPublicIdea()` for writers. `filter.ts` has the filter and sort rules, plain functions the browser and server share, and `Wall.tsx` with `IdeaWall.tsx`: the server loads the public ideas once and the wall filters them in the browser, so search, sort, and chips redraw only the cards with no request (#61, #63) |
 | `src/app/_share/` | The share poster image (#64): `posterImage()` draws it with `next/og` from the idea's text, with the vendored fonts in `fonts/` (OFL) and board colors read from `design/tokens.css`. Served by `/ideas/[number]/poster`; the printable flyer is `/ideas/[number]/flyer` |
 | `src/playground/` | The style playground (#29): templates, sample content, and the page itself. Local only |
 | `src/app/playground/*.dev.tsx` | The playground route. `.dev.tsx` files compile only when `APP_ENV` is local or test (`next.config.ts`) |
@@ -135,7 +136,8 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 ## 6. Performance
 
 - **Explicit caching only.** `cacheComponents` is on (`next.config.ts`), so data is dynamic unless cached with `use cache` and a named cache tag. Signed-in and SGA pages are never cached.
-- **Query count is tested per page** once `src/db/` exists: one query per idea fails.
+- **Query count is tested per page:** one query per idea fails. `publicIdeas.db.test.ts` counts the list's queries with `withCountedSeed()` and checks the count does not grow with more ideas (#60).
+- **Caching pattern for public reads (#60):** `use cache` with named tags lives in `src/app/` (`src/app/_ideas/data.ts`), never in `src/db/`. The cached function returns plain data with ISO times. Read `now` outside the cache, after the caller's dynamic access, so "updated N days ago" never freezes. A server action that changes what the public sees calls `refreshPublicIdea(number)` (`src/app/_ideas/refresh.ts`).
 
 ## 7. Quality bar
 

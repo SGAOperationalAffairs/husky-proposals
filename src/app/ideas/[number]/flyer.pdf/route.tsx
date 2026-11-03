@@ -7,7 +7,7 @@ import { pdfFromPng } from "@/app/_share/flyerPdf";
 // nothing is stored. Not indexed, like every page (`noindex`).
 export async function GET(request: Request, { params }: { params: Promise<{ number: string }> }) {
   const number = parseIdeasNumber((await params).number);
-  const idea = number === undefined ? undefined : getIdea(number);
+  const idea = number === undefined ? undefined : await getIdea(number);
   if (!idea) return new Response("No idea with that number.", { status: 404 });
 
   const picture = await flyerImage(idea, new URL(request.url).origin);

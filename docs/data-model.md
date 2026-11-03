@@ -74,7 +74,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 
 - `support_count` per idea (public).
 - `rank` within the board: rank among that board's ideas that are not delivered, by `support_count`. Ties share a rank.
-- `willing_count`: number of participations.
+- `willing_count`: number of participations. Public as a count ("N will help"); who offered is for leaders only.
 - `stale`: an in-progress idea whose latest counting update is older than its board's update cadence (monthly by default, set per board). The "Still working, no news" update counts, and so does any status change (the view uses `status_changed_at`), so an idea that resumes after waiting starts a fresh clock. Moving boards and other system updates do not count. The schema change for per-board cadence is #12.
 - `board_load`: in-progress ideas for a board, where a large idea counts as 2. Compare with the soft guideline (default 2). Starting an idea past the guideline shows a heads-up and a confirm, not a block.
 - `pending_posts` per student: the number of their posts with review status `pending`.
@@ -104,7 +104,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 
 ## Visibility and privacy
 
-- **Public, no sign-in needed:** approved ideas, `support_count`, rank, status, waiting reason, updates, when the idea was last updated ("Updated N days ago"), board, and a "From SGA" tag on ideas posted by SGA leaders. Every page has `noindex` (PRD D18).
+- **Public, no sign-in needed:** approved ideas, `support_count`, the "will help" count (`willing_count`, a count only, never names), rank, status, waiting reason, updates, when the idea was last updated ("Updated N days ago"), board, and a "From SGA" tag on ideas posted by SGA leaders. Every page has `noindex` (PRD D18).
 - **Signed-out visitors and students (not the author):** get the student shape.
   - They never receive `author_id` or supporter identities.
   - If `is_anonymous` is true, they never see the author's name at all. The form labels this "anonymous to students" and says exactly who can see the name.

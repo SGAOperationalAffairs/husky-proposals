@@ -22,7 +22,7 @@ export default function FlyerPage({ params }: PageProps<"/ideas/[number]/flyer">
 
 async function FlyerFor({ params }: { params: PageProps<"/ideas/[number]/flyer">["params"] }) {
   const number = parseIdeasNumber((await params).number);
-  const idea = number === undefined ? undefined : getIdea(number);
+  const idea = number === undefined ? undefined : await getIdea(number);
   if (!idea) notFound();
   return (
     <>

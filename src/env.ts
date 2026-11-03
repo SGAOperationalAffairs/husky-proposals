@@ -15,7 +15,9 @@ function postgresUrl(name: string) {
 }
 
 // Pooled connection for the app at runtime, and direct connection for migrations (#43).
-// Optional, so the server and browser tests start without a database. Empty means
+// Optional in the schema, so the Prisma CLI and offline commands run; the main schema
+// below requires DATABASE_URL outside local and test (#60), so the server and browser
+// tests start without a database but a deployed site does not. Empty means
 // unset: GitHub Actions passes a missing secret as "". One definition, shared by the
 // main schema and databaseUrls() below (#44).
 const databaseUrlFields = z.object({
@@ -40,6 +42,12 @@ const schema = z
     // Otherwise anyone could choose "I'm the VP" on a deployed site (dev-process.md).
     message: "The sign-in stand-in runs only when APP_ENV is local or test",
     path: ["AUTH_STAND_IN"],
+  })
+  .refine((env) => env.DATABASE_URL !== undefined || env.APP_ENV === "local" || env.APP_ENV === "test", {
+    // A deployed site reads its ideas from the database (#60). Local and test fall back to
+    // the sample ideas, so browser tests and agent worktrees need no database.
+    message: "DATABASE_URL is required unless APP_ENV is local or test",
+    path: ["DATABASE_URL"],
   });
 
 export type Env = z.infer<typeof schema>;

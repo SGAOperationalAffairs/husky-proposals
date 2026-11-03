@@ -13,6 +13,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { BOARDS } from "@/core/boards";
+import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
 import { PENDING_LIMIT } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 
@@ -59,14 +60,6 @@ const EMPTY: Values = {
   timeHorizon: NOT_SURE,
   anonymous: false,
 };
-
-const SCALE = { small: "Small", medium: "Medium", large: "Large" } as const;
-const COST = { under_1k: "Under $1k", from_1k_to_5k: "$1k to $5k", over_5k: "$5k or more" } as const;
-const TIME = {
-  this_semester: "This semester",
-  next_semester: "Next semester",
-  within_a_year: "Within a year",
-} as const;
 
 // Field names as the rules module reports them, mapped to the plain message a student sees.
 const MESSAGES: Record<string, string> = {
@@ -280,7 +273,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     onChange={(e) => set("scale", e.target.value)}
                   >
                     <option value={NOT_SURE}>Not sure</option>
-                    {Object.entries(SCALE).map(([v, label]) => (
+                    {Object.entries(SCALE_LABELS).map(([v, label]) => (
                       <option key={v} value={v}>
                         {label}
                       </option>
@@ -293,7 +286,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     onChange={(e) => set("costBand", e.target.value)}
                   >
                     <option value={NOT_SURE}>Not sure</option>
-                    {Object.entries(COST).map(([v, label]) => (
+                    {Object.entries(COST_LABELS).map(([v, label]) => (
                       <option key={v} value={v}>
                         {label}
                       </option>
@@ -306,7 +299,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     onChange={(e) => set("timeHorizon", e.target.value)}
                   >
                     <option value={NOT_SURE}>Not sure</option>
-                    {Object.entries(TIME).map(([v, label]) => (
+                    {Object.entries(TIME_LABELS).map(([v, label]) => (
                       <option key={v} value={v}>
                         {label}
                       </option>

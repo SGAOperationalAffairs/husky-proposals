@@ -7,5 +7,5 @@ import { IdeaWall } from "./IdeaWall";
 // with the URL's filters already applied, even before JavaScript runs.
 export async function Wall() {
   await connection();
-  return <IdeaWall ideas={listWall()} />;
+  return <IdeaWall ideas={await listWall()} />;
 }

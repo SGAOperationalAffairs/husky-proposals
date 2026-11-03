@@ -4,6 +4,8 @@ import {
   awaitingReview,
   isPublic,
   leaderIdeaSelect,
+  publicStatsSelect,
+  publicUpdateSelect,
   reviewQueueSelect,
   studentIdeaSelect,
 } from "./ideaSelects";
@@ -68,6 +70,25 @@ describe("review queue select and filter (#58)", () => {
       reviewStatus: "pending",
       boardId: { in: ["DAB", "SC"] },
     });
+  });
+});
+
+describe("public stats and update selects (#60)", () => {
+  it("read only counts, rank, and times from the stats view", () => {
+    expect(Object.keys(publicStatsSelect).sort()).toEqual(
+      ["lastUpdateAt", "rankInBoard", "supportCount", "willingCount"].sort(),
+    );
+  });
+
+  it("read only the kind, text, and time of an update, never who wrote it", () => {
+    expect(Object.keys(publicUpdateSelect).sort()).toEqual(["body", "createdAt", "kind"]);
+  });
+
+  it("name no identity field", () => {
+    const names = [...Object.keys(publicStatsSelect), ...Object.keys(publicUpdateSelect)];
+    for (const identity of ["authorId", "author", "followerCount", "userId", "email", "supports"]) {
+      expect(names).not.toContain(identity);
+    }
   });
 });
 
