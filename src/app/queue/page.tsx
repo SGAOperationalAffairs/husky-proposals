@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { getSession } from "@/auth/session";
+import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { WallPlaceholder } from "@/components/Placeholder";
 import { BOARDS, BOARD_CODES, type BoardCode } from "@/core/boards";
@@ -29,7 +30,13 @@ const RECENT_DAYS = 14;
 export default function Queue() {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-8 @lg:px-8 @lg:pt-8 @lg:pb-12">
-      <SiteHeader />
+      <SiteHeader
+        nav={
+          <Suspense fallback={null}>
+            <NavTabs current="queue" />
+          </Suspense>
+        }
+      />
       <h1 className="heading text-6xl @3xl:text-8xl">SGA queue</h1>
       <Suspense fallback={<WallPlaceholder />}>
         <QueueContent />
