@@ -35,6 +35,8 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 // Input for the review server actions (#58). The reason is shared by decline and take-down.
 export const approveInputSchema = z.object({ ideaId: z.uuid() });
 export const reasonInputSchema = z.object({ ideaId: z.uuid(), reason: text(1000) });
+// Input for the author's withdraw action (#56).
+export const withdrawInputSchema = z.object({ ideaId: z.uuid() });
 export const reviewDueDaysInputSchema = z.object({
   boardId: z.enum(BOARD_CODES),
   days: z.int().min(REVIEW_DUE_DAYS.min).max(REVIEW_DUE_DAYS.max),
