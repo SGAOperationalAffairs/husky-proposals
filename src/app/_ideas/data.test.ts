@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { IDEAS } from "@/playground/sample";
 import { getIdea, listWall, parseIdeasNumber } from "./data";
-import { ideasHref } from "./filter";
+import { ideasHref, parseIdeasQuery } from "./filter";
 
 // No database: the sample path, as in browser tests and agent worktrees (#60). The
 // environment is read on first use, after these stubs.
