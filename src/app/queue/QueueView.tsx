@@ -5,8 +5,10 @@ import { Tabs } from "@/components/Tabs";
 import { SelectField } from "@/components/Field";
 import { STATUS_LABELS, IDEA_STATUSES, type IdeaStatus } from "@/core/statuses";
 import type { BoardCode } from "@/core/boards";
-import { attentionCount, filterQueue, QUEUE_SORTS, type QueueItem, type QueueSort } from "@/core/queue";
+import { filterQueue, QUEUE_SORTS, type QueueItem, type QueueSort } from "@/core/queue";
+import type { ApprovedRowData, ReviewRowData } from "@/app/_review/present";
 import { QueueHeader, QueueRow, type Highlight, type RowStyle } from "./QueueRow";
+import { ReviewList } from "./ReviewList";
 
 // The queue's two tabs and its filters (#124). The "To review" tab carries the
 // red count of pending posts; the Ideas tab has no count.
@@ -16,13 +18,16 @@ const SORT_OPTIONS = Object.entries(QUEUE_SORTS).map(([value, label]) => ({ valu
 
 export function QueueView({
   items,
+  review,
   boards,
   rowStyle = "tag",
   panel = true,
   highlight = "status",
   titleUnderline = false,
 }: {
+  // The Ideas tab's rows. Post items are ignored: pending posts come from `review` (#59).
   items: QueueItem[];
+  review: { pending: ReviewRowData[]; approved: ApprovedRowData[] };
   boards: { value: BoardCode; label: string }[];
   rowStyle?: RowStyle;
   panel?: boolean;
@@ -34,11 +39,18 @@ export function QueueView({
   const [status, setStatus] = useState<IdeaStatus | undefined>(undefined);
   const [sort, setSort] = useState<QueueSort>("support");
 
-  const counts = attentionCount(items);
-  const shown = useMemo(() => {
-    const ofTab = items.filter((i) => (tab === "review" ? i.kind === "post" : i.kind === "idea"));
-    return filterQueue(ofTab, { board, status: tab === "ideas" ? status : undefined, sort });
-  }, [items, tab, board, status, sort]);
+  // The red number counts every pending post, whatever the board filter says.
+  const counts = review.pending.length;
+  const shown = useMemo(
+    () =>
+      filterQueue(
+        items.filter((i) => i.kind === "idea"),
+        { board, status, sort },
+      ),
+    [items, board, status, sort],
+  );
+  const pending = review.pending.filter((row) => !board || row.boardId === board);
+  const approved = review.approved.filter((row) => !board || row.boardId === board);
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,22 +95,23 @@ export function QueueView({
             </SelectField>
           </div>
         )}
-        <div className="min-w-0 @3xl:w-56">
-          <SelectField label="Sort by" value={sort} onChange={(e) => setSort(e.target.value as QueueSort)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </SelectField>
-        </div>
+        {/* Pending posts are always oldest first, so reviews stay on time. */}
+        {tab === "ideas" && (
+          <div className="min-w-0 @3xl:w-56">
+            <SelectField label="Sort by" value={sort} onChange={(e) => setSort(e.target.value as QueueSort)}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+        )}
       </div>
-      {shown.length === 0 ? (
-        <p className="bordered bg-surface p-card">
-          {tab === "review"
-            ? "Nothing to review right now. New posts appear here."
-            : "No ideas match these filters."}
-        </p>
+      {tab === "review" ? (
+        <ReviewList pending={pending} approved={approved} />
+      ) : shown.length === 0 ? (
+        <p className="bordered bg-surface p-card">No ideas match these filters.</p>
       ) : (
         // The rows sit in a white panel by default, as the old queue table did (#124).
         <div className={panel ? "overflow-hidden bordered bg-surface" : undefined}>

@@ -3,7 +3,7 @@ import { boardsFor, type Viewer } from "@/core/permissions";
 import { reviewDueAt } from "@/core/review";
 import { ideaForViewer, type LeaderIdea } from "@/core/viewerShapes";
 import type { Prisma } from "@/generated/prisma/client";
-import { awaitingReview, reviewQueueSelect } from "./ideaSelects";
+import { awaitingReview, isPublic, reviewQueueSelect } from "./ideaSelects";
 
 // The review queue (#58): pending posts on the boards the viewer may review, oldest
 // first. The scope comes from permissions, never from a row field.
@@ -29,6 +29,30 @@ export async function reviewQueue(db: Db, viewer: Viewer): Promise<ReviewQueueIt
     const view = ideaForViewer(viewer, { ...row, boardId: row.boardId as BoardCode });
     if (view?.shape !== "leader") continue;
     items.push({ idea: view.idea, dueAt: reviewDueAt(row.submittedAt, row.board.reviewDueDays) });
+  }
+  return items;
+}
+
+export type ApprovedItemData = { idea: LeaderIdea };
+
+// Ideas approved on the viewer's boards since `since`, newest first, so a leader can
+// take one down from the queue (#59). Scope is the review boards, never a row field.
+export async function recentlyApproved(db: Db, viewer: Viewer, since: Date): Promise<ApprovedItemData[]> {
+  const boards = boardsFor(viewer, "review");
+  if (boards.length === 0) return [];
+
+  const rows = await db.idea.findMany({
+    where: { ...isPublic, boardId: { in: boards }, approvedAt: { gte: since } },
+    select: reviewQueueSelect,
+    orderBy: [{ approvedAt: "desc" }, { id: "asc" }],
+    take: 50,
+  });
+
+  const items: ApprovedItemData[] = [];
+  for (const row of rows) {
+    const view = ideaForViewer(viewer, { ...row, boardId: row.boardId as BoardCode });
+    if (view?.shape !== "leader") continue;
+    items.push({ idea: view.idea });
   }
   return items;
 }

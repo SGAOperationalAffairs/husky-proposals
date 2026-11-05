@@ -1,8 +1,18 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { FromSgaTag } from "./Tag";
+import { FromSgaTag, ReviewerTag } from "./Tag";
 
 afterEach(cleanup);
+
+describe("Reviewer tag (#59)", () => {
+  it("shows the label, outlined at tag size", () => {
+    render(<ReviewerTag label="You review Dining" />);
+    const tag = screen.getByText("You review Dining");
+    expect(tag.classList.contains("bordered")).toBe(true);
+    expect(tag.classList.contains("text-xs")).toBe(true);
+    expect(tag.classList.contains("font-bold")).toBe(true);
+  });
+});
 
 describe("From SGA tag (#35)", () => {
   it("is outlined in the line color by default, at tag size", () => {

@@ -1,13 +1,13 @@
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "@/core/positions";
 import type { Viewer } from "@/core/permissions";
 import { describeWithDatabase } from "@/db/testing/database";
-import { buildIdea, buildRevision, testUuid } from "@/db/testing/factories";
+import { buildApprovedIdea, buildIdea, buildRevision, testUuid } from "@/db/testing/factories";
 import { ideas, users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 import type { Prisma } from "@/generated/prisma/client";
 import { prismaBoardSettingsStore } from "./boardSettingsStore";
-import { reviewQueue, reviewQueueCount } from "./reviewQueue";
+import { recentlyApproved, reviewQueue, reviewQueueCount } from "./reviewQueue";
 
 // The review queue against Postgres (#58), inside the seed's rolled-back transaction.
 const DAY = 24 * 60 * 60 * 1000;
@@ -94,6 +94,58 @@ describeWithDatabase("the review queue (#58)", () => {
         expect(item?.idea.author?.id).toBe(users.secondStudent.id);
         expect(item?.idea.authorHidden).toBe(false);
       }
+    });
+  });
+
+  describe("recently approved", () => {
+    const daysAgo = (days: number) => new Date(Date.now() - days * DAY);
+
+    it("the DAB chair sees only DAB ideas approved since the cutoff", async () => {
+      await withSeed(async (tx) => {
+        const recent = buildApprovedIdea({ boardId: "DAB", approvedAt: daysAgo(2) });
+        const old = buildApprovedIdea({ boardId: "DAB", approvedAt: daysAgo(30) });
+        const other = buildApprovedIdea({ boardId: "CPAB", approvedAt: daysAgo(2) });
+        for (const idea of [recent, old, other]) {
+          await tx.idea.create({ data: idea });
+          await tx.ideaRevision.create({ data: buildRevision(idea) });
+        }
+        const ids = (await recentlyApproved(tx, dabChair, daysAgo(14))).map((item) => item.idea.id);
+        expect(ids).toContain(recent.id);
+        expect(ids).not.toContain(old.id);
+        expect(ids).not.toContain(other.id);
+      });
+    });
+
+    it("the VP sees every board", async () => {
+      await withSeed(async (tx) => {
+        const cpab = buildApprovedIdea({ boardId: "CPAB", approvedAt: daysAgo(1) });
+        await tx.idea.create({ data: cpab });
+        await tx.ideaRevision.create({ data: buildRevision(cpab) });
+        const ids = (await recentlyApproved(tx, vp, daysAgo(14))).map((item) => item.idea.id);
+        expect(ids).toContain(cpab.id);
+      });
+    });
+
+    it("gives a student and a visitor nothing", async () => {
+      await withSeed(async (tx) => {
+        expect(await recentlyApproved(tx, student, daysAgo(14))).toEqual([]);
+        expect(await recentlyApproved(tx, null, daysAgo(14))).toEqual([]);
+      });
+    });
+
+    it("leaves out an idea that was taken down", async () => {
+      await withSeed(async (tx) => {
+        const down = buildApprovedIdea({
+          boardId: "DAB",
+          approvedAt: daysAgo(1),
+          reviewStatus: "declined",
+          status: null,
+        });
+        await tx.idea.create({ data: down });
+        await tx.ideaRevision.create({ data: buildRevision(down) });
+        const ids = (await recentlyApproved(tx, vp, daysAgo(14))).map((item) => item.idea.id);
+        expect(ids).not.toContain(down.id);
+      });
     });
   });
 

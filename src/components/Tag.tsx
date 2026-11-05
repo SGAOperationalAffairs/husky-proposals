@@ -12,6 +12,12 @@ export function BoardTag({ board }: { board: BoardCode }) {
   );
 }
 
+// The reviewer badge (#59): which boards this leader decides, in the same outlined
+// look as the plain "From SGA" tag.
+export function ReviewerTag({ label }: { label: string }) {
+  return <span className="inline-block self-start bordered px-2 py-0.5 text-xs font-bold">{label}</span>;
+}
+
 // One tag, two looks (#35). "poster" outlines in the poster's text color
 // (`border-current`) and takes the type of its line, so it reads on any board
 // color. `shrink-0` keeps it whole in the card's one-line top row.
