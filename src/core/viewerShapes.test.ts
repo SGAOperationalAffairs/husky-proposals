@@ -159,11 +159,13 @@ describe("leader shape", () => {
     });
   });
 
-  it("hides an anonymous author from a chair of any board", () => {
-    const result = ideaForViewer(cscChair, idea({ isAnonymous: true }));
-    expect(result?.shape).toBe("leader");
-    expect(result?.idea).toMatchObject({ author: null, authorHidden: true });
-    expect(everyKeyAndValue(result)).not.toContain("ada@northeastern.edu");
+  it("gives a chair of another board the student shape, with no author and no supporters (D16 option A)", () => {
+    for (const isAnonymous of [true, false]) {
+      const result = ideaForViewer(cscChair, idea({ isAnonymous }));
+      expect(result?.shape).toBe("student");
+      expect(everyKeyAndValue(result)).not.toContain("ada@northeastern.edu");
+      expect(everyKeyAndValue(result)).not.toContain("sam@northeastern.edu");
+    }
   });
 
   it("shows the anonymous author to the board's own chair", () => {
