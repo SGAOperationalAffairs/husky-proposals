@@ -18,6 +18,15 @@ type Props = { pending: ReviewRowData[]; approved: ApprovedRowData[] };
 
 const PANEL = "overflow-hidden bordered bg-surface";
 
+// The latest non-null value. A drawer or dialog keeps rendering its row while it
+// animates out, after the row is gone from state, so it must not fall back to blanks
+// like "Take down #0?" in the wrong board's color (#59).
+function useLastRow<T>(row: T | null): T | null {
+  const [last, setLast] = useState(row);
+  if (row !== null && row !== last) setLast(row);
+  return row ?? last;
+}
+
 export function ReviewList({ pending, approved }: Props) {
   const actions = useReviewActions();
   const [openId, setOpenId] = useState<string | null>(null);
@@ -29,6 +38,8 @@ export function ReviewList({ pending, approved }: Props) {
 
   const open = pending.find((row) => row.id === openId) ?? null;
   const takeDownRow = approved.find((row) => row.id === takeDownId) ?? null;
+  const shownOpen = useLastRow(open);
+  const shownTakeDown = useLastRow(takeDownRow);
 
   // The element after `id` in `ids` that has the given attribute, else the one before.
   function neighbour(attribute: string, ids: string[], id: string): HTMLElement | null {
@@ -142,7 +153,7 @@ export function ReviewList({ pending, approved }: Props) {
       </section>
 
       <DecisionSheet
-        row={open}
+        row={shownOpen}
         open={open !== null}
         busy={actions.busy === "approve" || actions.busy === "decline" ? actions.busy : null}
         error={actions.error}
@@ -156,8 +167,8 @@ export function ReviewList({ pending, approved }: Props) {
         }}
       />
       <TakeDownDialog
-        number={takeDownRow?.number ?? 0}
-        board={takeDownRow?.boardId ?? "DAB"}
+        number={shownTakeDown?.number ?? 0}
+        board={shownTakeDown?.boardId ?? "DAB"}
         open={takeDownRow !== null}
         busy={actions.busy === "take_down"}
         error={actions.error}

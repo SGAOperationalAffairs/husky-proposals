@@ -24,7 +24,14 @@ test.describe("public, but not searchable (PRD D18)", () => {
     test(`${path} sends noindex as a header and a meta tag`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.headers()["x-robots-tag"]).toBe("noindex");
-      await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+      // A page that calls notFound() inside Suspense (/queue for a visitor) streams a
+      // not-found boundary, and Next adds its own noindex tag beside the layout's.
+      // Duplicates are harmless; every robots tag present must say noindex (#59).
+      const contents = await page
+        .locator('meta[name="robots"]')
+        .evaluateAll((tags) => tags.map((tag) => tag.getAttribute("content") ?? ""));
+      expect(contents.length).toBeGreaterThan(0);
+      for (const content of contents) expect(content).toMatch(/noindex/);
     });
   }
 });
