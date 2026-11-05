@@ -3,7 +3,7 @@ import type { BoardCode } from "@/core/boards";
 import { isAuthor } from "@/core/permissions";
 import { BOARD_FOR_CATEGORY, resubmitPostSchema } from "@/core/postIdea";
 import { applyReviewEvent, withdrawInputSchema, type ReviewError, type ReviewStatus } from "@/core/review";
-import { postFields, type PostFields } from "./submitPost";
+import { invalidFields, postFields, type PostFields } from "./submitPost";
 
 // The author's two actions on their own post (#56): resubmit a declined post, or
 // withdraw a pending or declined one. The rules, with the storage behind an interface.
@@ -59,10 +59,7 @@ export async function resubmitPost(
   now: Date,
 ): Promise<ResubmitResult> {
   const parsed = resubmitPostSchema.safeParse(raw);
-  if (!parsed.success) {
-    const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
-    return fail({ code: "invalid", fields });
-  }
+  if (!parsed.success) return fail({ code: "invalid", fields: invalidFields(parsed.error) });
   const { ideaId, ...input } = parsed.data;
 
   const target = await findOwn(store, session, ideaId);
@@ -99,10 +96,7 @@ export async function withdrawPost(
   raw: unknown,
 ): Promise<WithdrawResult> {
   const parsed = withdrawInputSchema.safeParse(raw);
-  if (!parsed.success) {
-    const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
-    return fail({ code: "invalid", fields });
-  }
+  if (!parsed.success) return fail({ code: "invalid", fields: invalidFields(parsed.error) });
 
   const target = await findOwn(store, session, parsed.data.ideaId);
   if (!target) return fail({ code: "not_found" });

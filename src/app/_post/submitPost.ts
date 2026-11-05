@@ -37,6 +37,13 @@ export function postFields(input: PostIdeaInput): PostFields {
   };
 }
 
+// The form fields a failed zod parse names, once each. Shared with resubmit and withdraw (#56).
+export function invalidFields(error: {
+  issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey> }>;
+}): string[] {
+  return [...new Set(error.issues.map((issue) => String(issue.path[0] ?? "form")))];
+}
+
 export type NewPost = PostFields & {
   boardId: BoardCode;
   authorId: string;
@@ -69,8 +76,7 @@ export async function submitPost(
 
   const parsed = parsePostIdea(raw);
   if (!parsed.success) {
-    const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
-    return { ok: false, error: { code: "invalid", fields } };
+    return { ok: false, error: { code: "invalid", fields: invalidFields(parsed.error) } };
   }
   const input = parsed.data;
 

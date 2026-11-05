@@ -33,14 +33,10 @@ export function prismaOwnPostStore(tx: Tx): OwnPostStore {
       // Guarded on the status the rules read, so a double submit writes nothing twice.
       const moved = await tx.idea.updateMany({ where: { id: ideaId, reviewStatus: from }, data: patch });
       if (moved.count === 0) return false;
-      try {
-        await tx.ideaRevision.create({ data: { ideaId, ...revision }, select: { id: true } });
-        return true;
-      } catch (error) {
-        // The backstop: one revision per version (idea_revisions_idea_id_version_key).
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return false;
-        throw error;
-      }
+      // A duplicate version (idea_revisions_idea_id_version_key) is left to throw: the
+      // guarded update above already ran, so the whole transaction must roll back (#56).
+      await tx.ideaRevision.create({ data: { ideaId, ...revision }, select: { id: true } });
+      return true;
     },
 
     withdraw: async ({ ideaId, from }) => {
