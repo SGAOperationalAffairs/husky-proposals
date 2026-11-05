@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "./positions";
-import { attentionCount, filterQueue, queueFor, type QueueItem } from "./queue";
+import { attentionCount, filterQueue, parseQueueView, queueFor, type QueueItem } from "./queue";
 import type { Viewer } from "./permissions";
 
 // The SGA queue (#124): which posts and ideas a viewer sees, and what the tabs count.
@@ -83,5 +83,16 @@ describe("filterQueue", () => {
     expect(filterQueue(items, { sort: "support" }).map((i) => i.number)).toEqual([103, 96, 201, 202]);
     expect(filterQueue(items, { sort: "newest" }).map((i) => i.number)).toEqual([202, 201, 103, 96]);
     expect(filterQueue(items, { sort: "updated" }).map((i) => i.number)).toEqual([201, 103, 202, 96]);
+  });
+});
+
+// The queue's view in the URL (#139): list by default, cards only when asked.
+describe("parseQueueView", () => {
+  it("returns cards only for view=cards, and the list otherwise", () => {
+    expect(parseQueueView("cards")).toBe("cards");
+    expect(parseQueueView("list")).toBe("list");
+    expect(parseQueueView("table")).toBe("list");
+    expect(parseQueueView(undefined)).toBe("list");
+    expect(parseQueueView(["cards", "list"])).toBe("list");
   });
 });

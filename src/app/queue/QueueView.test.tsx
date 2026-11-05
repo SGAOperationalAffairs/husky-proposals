@@ -52,10 +52,10 @@ const boards = [
   { value: "DAB" as const, label: "Dining" },
 ];
 
-function view(review: { pending: ReviewRowData[]; approved: ApprovedRowData[] }) {
+function view(review: { pending: ReviewRowData[]; approved: ApprovedRowData[] }, queueView?: "list" | "cards") {
   return render(
     <ToastProvider>
-      <QueueView items={ideas} review={review} boards={boards} />
+      <QueueView items={ideas} review={review} boards={boards} view={queueView} />
     </ToastProvider>,
   );
 }
@@ -130,5 +130,26 @@ describe("the queue's lists and filters (#59)", () => {
     view({ pending: [], approved: [] });
     expect(screen.getByText("Nothing to review right now. New posts appear here.")).toBeTruthy();
     expect(screen.getByText("Nothing approved in the last 14 days.")).toBeTruthy();
+  });
+});
+
+describe("the queue's card view (#139)", () => {
+  it("shows posters, not the list, on the Ideas tab when view is cards", () => {
+    const { container } = view({ pending, approved }, "cards");
+    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
+    expect(container.querySelectorAll("article.poster").length).toBe(1);
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("shows the list by default on the Ideas tab", () => {
+    view({ pending, approved });
+    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
+    expect(screen.getByRole("list")).toBeTruthy();
+  });
+
+  it("keeps the review list on the To review tab, whatever the view", () => {
+    const { container } = view({ pending, approved }, "cards");
+    expect(container.querySelectorAll("article.poster").length).toBe(0);
+    expect(screen.getByRole("button", { name: "Review: A study space" })).toBeTruthy();
   });
 });

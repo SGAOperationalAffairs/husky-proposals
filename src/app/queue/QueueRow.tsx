@@ -119,7 +119,9 @@ export function QueueRow({
       <div className={`${COLUMNS.status} text-sm ${muted}`}>
         {showStatus ? <StatusLabel status={item.kind === "post" ? "pending" : item.status} /> : status}
       </div>
-      <div className={`${COLUMNS.support} text-sm tabular-nums ${muted}`}>{item.supportCount}</div>
+      <div className={`${COLUMNS.support} text-sm tabular-nums ${muted}`}>
+        {item.kind === "post" ? "Not approved yet" : item.supportCount}
+      </div>
     </li>
   );
 }

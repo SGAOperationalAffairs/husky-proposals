@@ -1,12 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { LayoutGrid, List } from "lucide-react";
+import { ViewSwitch } from "@/components/ViewSwitch";
 import { Tabs } from "@/components/Tabs";
 import { SelectField } from "@/components/Field";
 import { STATUS_LABELS, IDEA_STATUSES, type IdeaStatus } from "@/core/statuses";
 import type { BoardCode } from "@/core/boards";
-import { filterQueue, QUEUE_SORTS, type QueueItem, type QueueSort } from "@/core/queue";
+import {
+  filterQueue,
+  QUEUE_SORTS,
+  type QueueItem,
+  type QueueSort,
+  type QueueView as ViewName,
+} from "@/core/queue";
 import type { ApprovedRowData, ReviewRowData } from "@/app/_review/present";
+import { QueueCard } from "./QueueCard";
 import { QueueHeader, QueueRow, type Highlight, type RowStyle } from "./QueueRow";
 import { ReviewList } from "./ReviewList";
 
@@ -24,6 +33,7 @@ export function QueueView({
   panel = true,
   highlight = "status",
   titleUnderline = false,
+  view = "list",
 }: {
   // The Ideas tab's rows. Post items are ignored: pending posts come from `review` (#59).
   items: QueueItem[];
@@ -33,6 +43,7 @@ export function QueueView({
   panel?: boolean;
   highlight?: Highlight;
   titleUnderline?: boolean;
+  view?: ViewName;
 }) {
   const [tab, setTab] = useState<Tab>("review");
   const [board, setBoard] = useState<BoardCode | undefined>(undefined);
@@ -108,10 +119,30 @@ export function QueueView({
           </div>
         )}
       </div>
+      {/* The list and the cards switch by URL (?view=cards), so a shared link opens the same view (#139).
+          The review tab is always the review list (#59), so the switch applies to the Ideas tab only. */}
+      {tab === "ideas" && (
+        <div className="flex justify-end">
+          <ViewSwitch
+            label="View"
+            current={view}
+            options={[
+              { id: "list", label: "List", icon: List, href: "/queue" },
+              { id: "cards", label: "Cards", icon: LayoutGrid, href: "/queue?view=cards" },
+            ]}
+          />
+        </div>
+      )}
       {tab === "review" ? (
         <ReviewList pending={pending} approved={approved} />
       ) : shown.length === 0 ? (
         <p className="bordered bg-surface p-card">No ideas match these filters.</p>
+      ) : view === "cards" ? (
+        <div className="card-grid">
+          {shown.map((item) => (
+            <QueueCard key={`${item.kind}-${item.number}`} item={item} />
+          ))}
+        </div>
       ) : (
         // The rows sit in a white panel by default, as the old queue table did (#124).
         <div className={panel ? "overflow-hidden bordered bg-surface" : undefined}>
