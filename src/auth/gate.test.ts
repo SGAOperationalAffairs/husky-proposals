@@ -17,15 +17,20 @@ vi.mock("./session", () => ({
   getSession: async () => current,
   signInUrl: (next: string) => signInUrl(next),
 }));
+class NotFoundError extends Error {}
+
 vi.mock("next/navigation", () => ({
   redirect: (to: string) => {
     throw new RedirectError(to);
+  },
+  notFound: () => {
+    throw new NotFoundError("not-found");
   },
 }));
 
 import { toSession } from "./contract";
 import { standInResponse } from "./standIn";
-import { requireSignedIn, signInDestination, withSession } from "./gate";
+import { requireLeader, requireSignedIn, signInDestination, withSession } from "./gate";
 
 function sessionFor(slug: string): Session {
   const result = toSession(standInResponse(slug, new Date("2026-10-31T12:00:00.000Z")));
@@ -52,6 +57,22 @@ describe("sign-in gate (#93)", () => {
 
     it("falls back to the home page for an unsafe path", async () => {
       await expect(requireSignedIn("//evil.com")).rejects.toMatchObject({ to: "/sign-in?next=%2F" });
+    });
+  });
+
+  describe("requireLeader, the leader page (#156)", () => {
+    it("gives not-found to a signed-out visitor", async () => {
+      await expect(requireLeader()).rejects.toBeInstanceOf(NotFoundError);
+    });
+
+    it.each(["student", "dab-member", "other-position"])("gives not-found to %s", async (slug) => {
+      current = sessionFor(slug);
+      await expect(requireLeader()).rejects.toBeInstanceOf(NotFoundError);
+    });
+
+    it.each(["dab-chair", "csc-director", "vp"])("returns the session for %s", async (slug) => {
+      current = sessionFor(slug);
+      await expect(requireLeader()).resolves.toBe(current);
     });
   });
 
