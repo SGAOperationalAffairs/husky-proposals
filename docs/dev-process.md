@@ -152,6 +152,7 @@ This is the loop for UI work in the sidecar lane. It exists so that one branch c
 Port turns GitHub issues into pull requests. A plan agent writes the plan, and an implement agent builds it. A review agent reviews, and a revise agent fixes. A person approves each plan and merges each pull request.
 
 - **Implement agent rules:** work test-first, and run `verify` before opening a pull request.
+- **Pull request body:** the first line is exactly `Closes #N`, with no trailing period or other text. The budget gate reads that line to find the ticket, and a trailing period makes it refuse the dispatch. #154 and #157 were blocked this way. Write `Closes #139`, not `Closes #139.`.
 - **Review agent rules:** check the Patterns list in `docs/ENGINEERING.md`. Most review churn in Resume Studio came from missed reuse and missing tests, not logic bugs.
 - **Privacy rules and the review flow,** the riskiest parts of this product, get a human review before merge.
 - **Parallel agents** only work when their files do not overlap. Port holds a ticket back on its own when an in-flight plan claims 2 or more of the same files.
