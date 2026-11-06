@@ -7,6 +7,7 @@ import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
 // buttons: those are for students, and the queue is for the people who decide.
 export function QueueCard({ item }: { item: QueueItem }) {
   const board = BOARDS[item.boardId];
+  // The post branches below are deliberate defensive handling: pending posts never reach the Ideas tab (#139).
   const status = item.kind === "post" ? "Pending review" : STATUS_LABELS[item.status as IdeaStatus];
   const href = item.kind === "post" ? `/queue/review/${item.number}` : `/ideas/${item.number}`;
   return (

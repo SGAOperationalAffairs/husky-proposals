@@ -121,7 +121,7 @@ export function QueueView({
           </div>
         )}
       </div>
-      {/* The list and the cards switch by URL (?view=cards), so a shared link opens the same view (#139).
+      {/* The list and the cards switch in local state, and the URL (?view=cards) is kept in step so a shared link opens the same view (#139).
           The review tab is always the review list (#59), so the switch applies to the Ideas tab only. */}
       {tab === "ideas" && (
         <div className="flex justify-end">

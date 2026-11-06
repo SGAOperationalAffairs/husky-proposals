@@ -44,6 +44,7 @@ export function attentionCount(items: QueueItem[]): number {
 
 // A pending post's support count is hidden, so the support order must not reveal it
 // (#139): posts all rank as zero and fall back to newest, which the card shows.
+// The post branch is deliberate defensive handling: pending posts never reach the Ideas tab today.
 const visibleSupport = (item: QueueItem) => (item.kind === "post" ? 0 : item.supportCount);
 
 const ORDER: Record<QueueSort, (a: QueueItem, b: QueueItem) => number> = {

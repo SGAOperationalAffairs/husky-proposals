@@ -81,6 +81,7 @@ export function QueueRow({
 }) {
   const board = BOARDS[item.boardId];
   const band = style === "band";
+  // The post branches below are deliberate defensive handling: pending posts never reach the Ideas tab (#139).
   const status = item.kind === "post" ? "Pending review" : STATUS_LABELS[item.status as IdeaStatus];
   const href = item.kind === "post" ? `/queue/review/${item.number}` : `/ideas/${item.number}`;
   const showNumber = highlight === "number" || highlight === "both";
