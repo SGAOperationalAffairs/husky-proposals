@@ -57,6 +57,13 @@ test.describe("idea page (#62)", () => {
     ).toBeVisible();
   });
 
+  test("a visitor sees no leader panel (#59)", async ({ page }) => {
+    await page.goto("/ideas/103");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "For SGA leaders" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Take down" })).toHaveCount(0);
+  });
+
   // The shell streams first, so the status is 200 (see not-found.tsx); assert what students see.
   test("unknown or malformed numbers say no idea has that number", async ({ page }) => {
     for (const path of ["/ideas/9999", "/ideas/abc"]) {

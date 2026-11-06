@@ -343,6 +343,23 @@
     .sheet-wide {
       width: min(36rem, calc(100vw - 2rem));
     }
+    /* The review drawer (#59) is a .sheet that, from 40rem up, is a panel on the
+       right edge instead of a dialog in the middle. On phones it stays the bottom
+       sheet. Both classes are needed for the specificity to beat .sheet's. */
+    .sheet.drawer {
+      inset: 0 0 0 auto;
+      width: min(32rem, calc(100vw - 2rem));
+      height: 100dvh;
+      max-height: none;
+      translate: none;
+      border-width: 0 0 0 var(--border);
+      border-radius: var(--card-radius);
+      overflow-y: auto;
+    }
+    .sheet.drawer:is([data-starting-style], [data-ending-style]) {
+      transform: translateX(100%);
+      opacity: 1;
+    }
   }
   /* Toasts (#67): a deck at the bottom, centered on phones and at the right
      on wider screens. Base UI gives each toast its place (--toast-index) and

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Reveal } from "@/components/Reveal";
 import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
+import { LeaderIdeaSection } from "@/app/_review/LeaderIdeaSection";
 import { getIdea, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
@@ -92,6 +93,10 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </article>
 
         <aside aria-label="Where it stands" className="flex flex-col gap-6 @3xl:col-span-2 @3xl:row-span-3">
+          {/* Leader extras (#59): nothing for anyone else, and outside the cached read above. */}
+          <Suspense fallback={null}>
+            <LeaderIdeaSection params={params} />
+          </Suspense>
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Where it stands</h2>
             <p>{standing(idea)}</p>
