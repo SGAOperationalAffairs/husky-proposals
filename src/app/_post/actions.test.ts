@@ -2,23 +2,36 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "@/auth/contract";
 import { rolesFromPositions } from "@/core/positions";
 
-// The post action's own checks (#54): the origin is checked before the session or the
-// store is touched. The headers, session, and store are fakes.
+// The post actions' own checks (#54, #56): the origin is checked before the session or a
+// store is touched. The headers, session, and stores are fakes.
+const IDEA = "00000000-0000-4000-8000-000000000101";
 const store = { countPending: vi.fn(async () => 0), create: vi.fn(async () => ({ id: "idea-1" })) };
+const ownStore = {
+  find: vi.fn(),
+  countPending: vi.fn(async () => 0),
+  resubmit: vi.fn(async () => true),
+  withdraw: vi.fn(async () => true),
+};
+const transaction = vi.fn(async (fn: (tx: object) => unknown) => fn({}));
 const session: Session = {
   user: { id: "00000000-0000-4000-8000-0000000000a1", email: "maya@example.com", name: "Maya Test" },
   positions: [],
   roles: rolesFromPositions([]),
 };
 let headerValues: Record<string, string | null> = {};
+let currentSession: Session | null = session;
+const getSession = vi.fn(async () => currentSession);
 
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: (name: string) => headerValues[name] ?? null }),
 }));
-vi.mock("@/auth/session", () => ({ getSession: async () => session }));
-vi.mock("@/db/runtime", () => ({ db: () => ({}) }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("@/auth/session", () => ({ getSession: () => getSession(), signInUrl: vi.fn() }));
+vi.mock("@/db/runtime", () => ({ db: () => ({ $transaction: transaction }) }));
 vi.mock("@/db/postStore", () => ({ prismaPostStore: () => store }));
+vi.mock("@/db/ownPostStore", () => ({ prismaOwnPostStore: () => ownStore }));
 
+const own = { origin: "https://proposals.northeasternsga.com", host: "proposals.northeasternsga.com" };
 const valid = {
   title: "Later dining hours",
   summary: "The dining hall closes early on Sundays.",
@@ -27,6 +40,7 @@ const valid = {
 
 describe("postIdea action (#54)", () => {
   beforeEach(() => {
+    currentSession = session;
     store.countPending.mockClear();
     store.create.mockClear();
   });
@@ -40,9 +54,62 @@ describe("postIdea action (#54)", () => {
   });
 
   it("saves a post from our own origin", async () => {
-    headerValues = { origin: "https://proposals.northeasternsga.com", host: "proposals.northeasternsga.com" };
+    headerValues = own;
     const { postIdea } = await import("./actions");
     expect(await postIdea(valid)).toEqual({ ok: true, id: "idea-1" });
     expect(store.create).toHaveBeenCalledOnce();
+  });
+});
+
+describe("resubmit and withdraw actions (#56)", () => {
+  beforeEach(() => {
+    currentSession = session;
+    getSession.mockClear();
+    transaction.mockClear();
+    for (const fn of Object.values(ownStore)) fn.mockClear();
+    ownStore.find.mockResolvedValue({
+      id: IDEA,
+      authorId: session.user.id,
+      reviewStatus: "declined",
+      latestVersion: 1,
+    });
+  });
+
+  it("refuses a request from another site before the session or a store is touched, for both", async () => {
+    headerValues = { origin: "https://evil.example.com", host: "proposals.northeasternsga.com" };
+    const actions = await import("./actions");
+    const results = await Promise.all([
+      actions.resubmitIdea({ ...valid, ideaId: IDEA }),
+      actions.withdrawIdea({ ideaId: IDEA }),
+    ]);
+    for (const result of results) expect(result).toEqual({ ok: false, error: { code: "cross_origin" } });
+    expect(getSession).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
+    expect(ownStore.find).not.toHaveBeenCalled();
+  });
+
+  it("signed out returns signed_out and touches no store", async () => {
+    headerValues = own;
+    currentSession = null;
+    const actions = await import("./actions");
+    const signedOut = { ok: false, error: { code: "signed_out" } };
+    expect(await actions.resubmitIdea({ ...valid, ideaId: IDEA })).toEqual(signedOut);
+    expect(await actions.withdrawIdea({ ideaId: IDEA })).toEqual(signedOut);
+    expect(transaction).not.toHaveBeenCalled();
+    expect(ownStore.find).not.toHaveBeenCalled();
+  });
+
+  it("a successful call runs the rules inside the transaction", async () => {
+    headerValues = own;
+    const actions = await import("./actions");
+    expect(await actions.resubmitIdea({ ...valid, ideaId: IDEA })).toEqual({
+      ok: true,
+      id: IDEA,
+      version: 2,
+    });
+    expect(await actions.withdrawIdea({ ideaId: IDEA })).toEqual({ ok: true, id: IDEA });
+    expect(transaction).toHaveBeenCalledTimes(2);
+    expect(ownStore.resubmit).toHaveBeenCalledOnce();
+    expect(ownStore.withdraw).toHaveBeenCalledOnce();
   });
 });

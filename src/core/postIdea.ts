@@ -53,6 +53,9 @@ export const postIdeaSchema = z.object({
 
 export type PostIdeaInput = z.infer<typeof postIdeaSchema>;
 
+// Resubmitting a declined post (#56): the same fields as posting, plus which post.
+export const resubmitPostSchema = postIdeaSchema.extend({ ideaId: z.uuid() });
+
 export function parsePostIdea(input: unknown) {
   return postIdeaSchema.safeParse(input);
 }
