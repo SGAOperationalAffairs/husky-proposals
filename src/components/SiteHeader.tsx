@@ -1,9 +1,12 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { PAGE } from "@/components/pageTransition";
 
-// The site's name, at the top of every student page (#61, #62). There is one
-// list now (#55), so the header has no tabs.
-export function SiteHeader() {
+// The site's name at the top of every page (#61, #62). `nav` is the page's tabs
+// (#156). NavTabs reads the session inside its own Suspense boundary; this header
+// itself never reads the session, so it stays cached. It is not built in here
+// because the playground, a client component, also renders this header.
+export function SiteHeader({ nav }: { nav?: ReactNode }) {
   return (
     <header className="site-header flex flex-col gap-3">
       <Link transitionTypes={PAGE} href="/" className="inline-flex items-center gap-3 self-start">
@@ -12,6 +15,7 @@ export function SiteHeader() {
         </span>
         <span className="font-bold">Husky Proposals</span>
       </Link>
+      {nav}
     </header>
   );
 }

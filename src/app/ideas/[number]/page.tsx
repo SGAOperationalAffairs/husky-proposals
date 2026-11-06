@@ -11,6 +11,7 @@ import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
 import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
+import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
 import { FromSgaTag } from "@/components/Tag";
@@ -23,7 +24,7 @@ import { BOARDS, JOIN } from "@/core/boards";
 export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
-      <SiteHeader />
+      <SiteHeader nav={<NavTabs current="ideas" />} />
       <Button
         variant="text"
         href="/"
