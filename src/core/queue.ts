@@ -42,8 +42,12 @@ export function attentionCount(items: QueueItem[]): number {
   return items.filter((item) => item.kind === "post").length;
 }
 
+// A pending post's support count is hidden, so the support order must not reveal it
+// (#139): posts all rank as zero and fall back to newest, which the card shows.
+const visibleSupport = (item: QueueItem) => (item.kind === "post" ? 0 : item.supportCount);
+
 const ORDER: Record<QueueSort, (a: QueueItem, b: QueueItem) => number> = {
-  support: (a, b) => b.supportCount - a.supportCount,
+  support: (a, b) => visibleSupport(b) - visibleSupport(a) || b.number - a.number,
   newest: (a, b) => b.number - a.number,
   updated: (a, b) => a.updatedDaysAgo - b.updatedDaysAgo,
 };

@@ -80,9 +80,20 @@ describe("filterQueue", () => {
   });
 
   it("sorts by support, newest, or recently updated", () => {
-    expect(filterQueue(items, { sort: "support" }).map((i) => i.number)).toEqual([103, 96, 201, 202]);
+    expect(filterQueue(items, { sort: "support" }).map((i) => i.number)).toEqual([103, 96, 202, 201]);
     expect(filterQueue(items, { sort: "newest" }).map((i) => i.number)).toEqual([202, 201, 103, 96]);
     expect(filterQueue(items, { sort: "updated" }).map((i) => i.number)).toEqual([201, 103, 202, 96]);
+  });
+
+  // A pending post's support count is hidden, so its order must not follow it (#139).
+  it("does not order pending posts by their hidden support count", () => {
+    const posts = items.filter((i) => i.kind === "post");
+    const withCounts = (counts: number[]): QueueItem[] =>
+      posts.map((p, i) => ({ ...p, supportCount: counts[i] ?? 0 }));
+    const withHidden = withCounts([50, 9]);
+    const swapped = withCounts([9, 50]);
+    expect(filterQueue(withHidden, { sort: "support" }).map((i) => i.number)).toEqual([202, 201]);
+    expect(filterQueue(swapped, { sort: "support" }).map((i) => i.number)).toEqual([202, 201]);
   });
 });
 

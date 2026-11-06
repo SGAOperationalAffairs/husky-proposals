@@ -52,7 +52,10 @@ const boards = [
   { value: "DAB" as const, label: "Dining" },
 ];
 
-function view(review: { pending: ReviewRowData[]; approved: ApprovedRowData[] }, queueView?: "list" | "cards") {
+function view(
+  review: { pending: ReviewRowData[]; approved: ApprovedRowData[] },
+  queueView?: "list" | "cards",
+) {
   return render(
     <ToastProvider>
       <QueueView items={ideas} review={review} boards={boards} view={queueView} />
@@ -139,6 +142,22 @@ describe("the queue's card view (#139)", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
     expect(container.querySelectorAll("article.poster").length).toBe(1);
     expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("switches view in place, keeping the tab and filters", () => {
+    const { container } = view({ pending, approved });
+    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
+    fireEvent.click(screen.getByRole("link", { name: /Cards/ }));
+    expect(container.querySelectorAll("article.poster").length).toBe(ideas.length);
+    expect(screen.getByRole("tab", { name: "Ideas" }).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("names the active view for screen readers", () => {
+    view({ pending, approved });
+    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
+    const current = screen.getByRole("link", { name: /List/ });
+    expect(current.getAttribute("aria-current")).toBe("true");
+    expect(current.textContent).toContain("(showing)");
   });
 
   it("shows the list by default on the Ideas tab", () => {

@@ -9,6 +9,7 @@ import { STATUS_LABELS, IDEA_STATUSES, type IdeaStatus } from "@/core/statuses";
 import type { BoardCode } from "@/core/boards";
 import {
   filterQueue,
+  parseQueueView,
   QUEUE_SORTS,
   type QueueItem,
   type QueueSort,
@@ -33,7 +34,7 @@ export function QueueView({
   panel = true,
   highlight = "status",
   titleUnderline = false,
-  view = "list",
+  view: initialView = "list",
 }: {
   // The Ideas tab's rows. Post items are ignored: pending posts come from `review` (#59).
   items: QueueItem[];
@@ -45,6 +46,7 @@ export function QueueView({
   titleUnderline?: boolean;
   view?: ViewName;
 }) {
+  const [view, setView] = useState<ViewName>(initialView);
   const [tab, setTab] = useState<Tab>("review");
   const [board, setBoard] = useState<BoardCode | undefined>(undefined);
   const [status, setStatus] = useState<IdeaStatus | undefined>(undefined);
@@ -130,6 +132,12 @@ export function QueueView({
               { id: "list", label: "List", icon: List, href: "/queue" },
               { id: "cards", label: "Cards", icon: LayoutGrid, href: "/queue?view=cards" },
             ]}
+            // Switch in place, so the tab and filters survive; keep the URL in step for sharing.
+            onSelect={(id) => {
+              const next = parseQueueView(id);
+              setView(next);
+              window.history.replaceState(null, "", next === "cards" ? "/queue?view=cards" : "/queue");
+            }}
           />
         </div>
       )}

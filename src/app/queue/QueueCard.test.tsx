@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { QueueItem } from "@/core/queue";
-import { QueueCard } from "@/app/queue/QueueCard";
+import { QueueCard } from "./QueueCard";
 
 afterEach(cleanup);
 

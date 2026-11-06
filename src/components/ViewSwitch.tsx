@@ -39,6 +39,7 @@ export function ViewSwitch({
           >
             <Icon aria-hidden className="size-4" />
             {o.label}
+            {active && <span className="sr-only"> (showing)</span>}
           </Link>
         );
       })}
