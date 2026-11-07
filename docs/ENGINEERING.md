@@ -38,7 +38,12 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/core/nextPath.ts` | `safeNextPath`: only same-site relative paths survive, the open-redirect guard for every `next` |
 | `src/app/sign-in/` | The `/sign-in` route and its "Sign-in isn't open yet." panel. The one place that knows how sign-in starts |
 | `src/app/stand-in/` | The dev-only sign-in stand-in page (`page.dev.tsx`), its actions, and a presentational panel |
-| `src/email/` | The `sendEmail()` contract and the capturing mailer. The Resend mailer, outbox worker, and templates come with E9 |
+| `src/email/` | The `sendEmail()` contract and the capturing mailer. The Resend mailer, the secret-protected drain route, and its schedule still come with E9 |
+| `src/email/ideaEvent.ts` | The follower email (#101), pure: the `IdeaEvent` type, its dedupe key, `IDEA_EVENT_PRIORITY`, the strict payload schema (no author field), and `renderIdeaEventEmail` (plain text) |
+| `src/app/_follow/` | Following (#101): `setFollow.ts` (the rules with `FollowStore` behind an interface; sets the state, never toggles) and `actions.ts`, the `setFollowing` server action: same origin, then `withSession`, then the rules |
+| `src/db/followStore.ts` | The Prisma `FollowStore` (#101): `findPublicIdea` uses `isPublic`, `follow` upserts the user and writes with `skipDuplicates`, `unfollow` uses `deleteMany` |
+| `src/db/outbox.ts` | The outbox (#101): `queueFollowerEmails(tx, event)` writes one `idea_event` row per eligible follower in the caller's transaction, and `drainOutbox(db, mailer, now, { siteUrl })` sends claimed rows, marking each sent or leaving its error for a retry after a backoff |
+| `src/db/sql/claimOutboxBatch.ts` | The outbox claim (#101): one tagged `$queryRaw` with `FOR UPDATE SKIP LOCKED` that sets `locked_until` and counts the attempt, so no lock is held during the send. Rows past `MAX_ATTEMPTS` stay unsent for a human |
 | `src/env.ts` | The only reader of `process.env`, validated with zod. Checked at server start by `src/instrumentation.ts` |
 | `src/generated/prisma/` | The generated Prisma client. Not committed; `npm install` rebuilds it |
 | `prisma/schema.prisma` | The data model's source of truth. `prisma/views/` holds the `idea_stats` view SQL |
@@ -109,6 +114,8 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 - **Leader extras on a public page** sit in their own `<Suspense>` boundary that reads the session and an uncached leader read, rendering nothing for students, so the public part stays cached and identical for everyone (#59).
 
 - **A student action (support, participate, follow) calls `bumpActionCount` and `checkActionCount` in the same transaction as its write** (#94), so every change shares one limit.
+
+- **Notifying followers:** a write that should email followers (a status change, an update) calls `queueFollowerEmails(tx, event)` from `src/db/outbox.ts` inside its own transaction, and passes one event per change. Starting or delivering an idea also writes a system update; pass only the status event so followers get one email, not two (#101).
 
 Still to add, no later than the fifth feature: one hook per feature and the validation helpers.
 
