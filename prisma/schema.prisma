@@ -149,7 +149,7 @@ model User {
   reviews          Review[]
   supports         Support[]
   actionCounts     ActionCount[]
-  participations  Participation[]
+  participations   Participation[]
   follows          Follow[]
   updates          Update[]
   emailPreference  EmailPreference?

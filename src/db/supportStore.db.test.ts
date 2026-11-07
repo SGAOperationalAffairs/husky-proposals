@@ -63,7 +63,11 @@ describeWithDatabase("support store (#94)", () => {
 
   it("a withdrawn post is not found", async () => {
     await withSeed(async (tx) => {
-      await tx.idea.update({ where: { id: ideas.walkSignal.id }, data: { reviewStatus: "withdrawn" } });
+      // status is only allowed on approved posts (ideas_status_only_when_approved), so clear it too (#94).
+      await tx.idea.update({
+        where: { id: ideas.walkSignal.id },
+        data: { reviewStatus: "withdrawn", status: null },
+      });
       const result = await setSupport(
         prismaSupportStore(tx),
         maya,
