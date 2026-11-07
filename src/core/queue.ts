@@ -16,6 +16,8 @@ export type QueueItem = {
   status: IdeaStatus | "pending";
   supportCount: number;
   updatedDaysAgo: number;
+  // Shown on a card (#139). Optional, so a row without one still renders.
+  description?: string;
 };
 
 export const QUEUE_SORTS = {
@@ -40,8 +42,13 @@ export function attentionCount(items: QueueItem[]): number {
   return items.filter((item) => item.kind === "post").length;
 }
 
+// A pending post's support count is hidden, so the support order must not reveal it
+// (#139): posts all rank as zero and fall back to newest, which the card shows.
+// The post branch is deliberate defensive handling: pending posts never reach the Ideas tab today.
+const visibleSupport = (item: QueueItem) => (item.kind === "post" ? 0 : item.supportCount);
+
 const ORDER: Record<QueueSort, (a: QueueItem, b: QueueItem) => number> = {
-  support: (a, b) => b.supportCount - a.supportCount,
+  support: (a, b) => visibleSupport(b) - visibleSupport(a) || b.number - a.number,
   newest: (a, b) => b.number - a.number,
   updated: (a, b) => a.updatedDaysAgo - b.updatedDaysAgo,
 };
@@ -53,4 +60,11 @@ export function filterQueue(items: QueueItem[], query: QueueQuery): QueueItem[] 
         (!query.board || item.boardId === query.board) && (!query.status || item.status === query.status),
     )
     .sort(ORDER[query.sort]);
+}
+
+// The queue's view, from the URL (#139). The list is the default; cards only when
+// asked for. Anything else, including a repeated parameter, falls back to the list.
+export type QueueView = "list" | "cards";
+export function parseQueueView(value: unknown): QueueView {
+  return value === "cards" ? "cards" : "list";
 }
