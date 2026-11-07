@@ -110,6 +110,7 @@ enum EmailType {
   post_decided
   reviewer_reminder
   digest
+  idea_event // a status change or update on a followed idea, priority 3 (#101)
 }
 
 // Provisional: whether to log at all is open (D16).
@@ -410,7 +411,7 @@ model EmailOutbox {
   id                String    @id @default(uuid(7)) @db.Uuid
   userId            String    @map("user_id") @db.Uuid
   type              EmailType
-  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3
+  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3, idea_event 3
   dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<reviewId>, since a take-down is a second decision on one revision (#49)
   payload           Json
   createdAt         DateTime  @default(now()) @map("created_at")

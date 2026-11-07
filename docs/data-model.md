@@ -56,7 +56,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 `user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday` (assigned on creation, used to spread weekly sends), `unsubscribed_at`, `bounced_at`.
 
 **email_outbox**
-`id`, `user_id`, `type` (post_decided, reviewer_reminder, digest), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `last_error`.
+`id`, `user_id`, `type` (post_decided, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `last_error`.
 - A worker sends rows first in, first out within each priority, under a daily budget.
 - When a limit is hit, rows wait for the next run. None are dropped.
 
