@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
 import { setSupport } from "@/app/_support/setSupport";
-import { ACTION_LIMIT } from "@/core/actionLimit";
+import { ACTION_LIMIT, windowStart } from "@/core/actionLimit";
 import { rolesFromPositions } from "@/core/positions";
 import { describeWithDatabase } from "@/db/testing/database";
 import { ideas, users } from "@/db/testing/fixtures";
@@ -94,10 +94,12 @@ describeWithDatabase("support store (#94)", () => {
   it("the 61st change in a minute is rate_limited and writes no support, and the next minute succeeds", async () => {
     await withSeed(async (tx) => {
       const store = prismaSupportStore(tx);
-      for (let i = 0; i < ACTION_LIMIT; i++) {
-        expect((await setSupport(store, maya, input(i % 2 === 0), NOW)).ok).toBe(true);
-      }
-      // The 60th change was an unsupport (i = 59), so a support now would add a row.
+      // One write puts the minute at the limit. A loop of 60 setSupport calls is hundreds of round trips
+      // to the remote branch and times out the seed transaction (#94). The 60 versus 61 boundary is
+      // covered by checkActionCount in src/core/actionLimit.test.ts.
+      await tx.actionCount.create({
+        data: { userId: maya.user.id, windowStart: windowStart(NOW), count: ACTION_LIMIT },
+      });
       const over = await setSupport(store, maya, input(true), NOW);
       expect(over).toEqual({ ok: false, error: { code: "rate_limited" } });
       expect(await tx.support.count({ where: { userId: maya.user.id, ideaId: idea.id } })).toBe(0);
