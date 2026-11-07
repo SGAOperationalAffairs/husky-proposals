@@ -49,6 +49,7 @@ type Taps = Record<number, boolean>;
 type Choices = {
   boardTiles: "grid" | "line";
   iconAlign: "above" | "inline";
+  pendingPosts: "0" | "1" | "2" | "3";
   submitAt: "title" | "end";
   backdrop: "page" | "board";
   edges: "border" | "float";
@@ -61,6 +62,7 @@ type Choices = {
 const INITIAL_CHOICES: Choices = {
   boardTiles: "grid",
   iconAlign: "inline",
+  pendingPosts: "0",
   submitAt: "title",
   backdrop: "board",
   edges: "float",
@@ -113,7 +115,7 @@ const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choice
   share: { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
   post: {
     dials: [...TYPE, ...LOOK],
-    choices: ["boardTiles", "iconAlign"],
+    choices: ["boardTiles", "iconAlign", "pendingPosts"],
     tuner: true,
   },
   queue: { dials: ["boards", "bg", "border", "corners"], choices: [], tuner: true },
@@ -407,6 +409,17 @@ function SectionSettings({
             ]}
             onChange={(v) => set("iconAlign", v)}
           />
+          <ChoiceGroup
+            label="Pending posts"
+            value={choices.pendingPosts}
+            options={[
+              { value: "0", label: "0" },
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3 (the limit)" },
+            ]}
+            onChange={(v) => set("pendingPosts", v)}
+          />
         </>
       )}
       {section === "text" && (
@@ -684,7 +697,11 @@ function PreviewPage({
             <h2 className="heading text-7xl @3xl:text-8xl">Post an idea</h2>
             <p className="text-muted">{POST_INTRO.short}</p>
           </header>
-          <PostForm pendingCount={0} boardTiles={boardTiles} iconAlign={iconAlign} />
+          <PostForm
+            pendingCount={Number(choices.pendingPosts)}
+            boardTiles={boardTiles}
+            iconAlign={iconAlign}
+          />
         </Section>
       )}
 

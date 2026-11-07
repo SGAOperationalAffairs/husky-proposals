@@ -20,6 +20,16 @@ export type ReviewDecision = (typeof REVIEW_DECISIONS)[number];
 // At most this many posts waiting for review per student (#50).
 export const PENDING_LIMIT = 3;
 
+// What a student reads about the limit. The post form shows these now (#132), and the
+// refusal of a fourth post (#96) reuses them so the words match.
+export function pendingPostsText(count: number): string {
+  const noun = count === 1 ? "post" : "posts";
+  return `You have ${count} pending ${noun}. Students can have up to ${PENDING_LIMIT}.`;
+}
+
+export const PENDING_LIMIT_REASON =
+  "You can't post a new idea right now. You can post again once one of your pending posts is reviewed.";
+
 // A pending post is due this many days after it was submitted, set per board by the
 // VP or the board's chair or director (#58). The default is pinned to the schema by a
 // test; the bounds are backed by a check constraint on boards.review_due_days.

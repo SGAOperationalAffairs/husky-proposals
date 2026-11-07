@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   PENDING_LIMIT,
+  PENDING_LIMIT_REASON,
   REVIEW_DECISIONS,
   REVIEW_DUE_DAYS,
   REVIEW_KINDS,
@@ -10,6 +11,7 @@ import {
   approveInputSchema,
   checkNewPost,
   isEditable,
+  pendingPostsText,
   reasonInputSchema,
   reviewDueAt,
   reviewDueDaysInputSchema,
@@ -264,6 +266,26 @@ describe("review due time (#58)", () => {
     const match = /reviewDueDays\s+Int\s+@default\((\d+)\)/.exec(schema);
     expect(match, "reviewDueDays not found in prisma/schema.prisma").not.toBeNull();
     expect(Number(match![1])).toBe(REVIEW_DUE_DAYS.default);
+  });
+});
+
+describe("pending-post copy (#132)", () => {
+  it("says how many posts are pending and the limit", () => {
+    expect(pendingPostsText(0)).toBe("You have 0 pending posts. Students can have up to 3.");
+    expect(pendingPostsText(2)).toBe("You have 2 pending posts. Students can have up to 3.");
+    expect(pendingPostsText(3)).toBe("You have 3 pending posts. Students can have up to 3.");
+  });
+
+  it("uses the singular for one post", () => {
+    expect(pendingPostsText(1)).toBe("You have 1 pending post. Students can have up to 3.");
+  });
+
+  it("builds the limit from PENDING_LIMIT", () => {
+    expect(pendingPostsText(0)).toContain(String(PENDING_LIMIT));
+  });
+
+  it("gives a reason that promises nothing", () => {
+    expect(PENDING_LIMIT_REASON).not.toMatch(/petition|will be approved|we will/i);
   });
 });
 
