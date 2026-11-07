@@ -200,6 +200,42 @@ export function buildParticipation(
   } satisfies Prisma.ParticipationUncheckedCreateInput;
 }
 
+// An unsent idea_event row (#101): priority 3, a unique dedupe key, and the smallest
+// payload that passes ideaEventPayloadSchema. Timestamps are the fixture clock's.
+export function buildOutboxRow(
+  overrides: Pick<Prisma.EmailOutboxUncheckedCreateInput, "userId"> &
+    Partial<Prisma.EmailOutboxUncheckedCreateInput>,
+): Prisma.EmailOutboxUncheckedCreateInput & { id: string } {
+  const n = next();
+  return {
+    id: testUuid(5000 + n),
+    type: "idea_event",
+    priority: 3,
+    dedupeKey: `idea_event:test:${n}`,
+    payload: {
+      ideaNumber: 103,
+      ideaTitle: `Test idea ${n}`,
+      boardId: "DAB",
+      event: { kind: "update", body: `Test update ${n}.` },
+    },
+    createdAt: FIXTURE_TIME,
+    sendAfter: FIXTURE_TIME,
+    ...overrides,
+  } satisfies Prisma.EmailOutboxUncheckedCreateInput & { id: string };
+}
+
+// A weekly preference with nothing stopped, the default a new account gets.
+export function buildEmailPreference(
+  overrides: Pick<Prisma.EmailPreferenceUncheckedCreateInput, "userId"> &
+    Partial<Prisma.EmailPreferenceUncheckedCreateInput>,
+): Prisma.EmailPreferenceUncheckedCreateInput {
+  return {
+    digestFrequency: "weekly",
+    digestWeekday: 1,
+    ...overrides,
+  } satisfies Prisma.EmailPreferenceUncheckedCreateInput;
+}
+
 export function buildFollow(
   overrides: Pick<Prisma.FollowUncheckedCreateInput, "userId" | "ideaId"> &
     Partial<Prisma.FollowUncheckedCreateInput>,
