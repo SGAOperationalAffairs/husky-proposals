@@ -4,6 +4,7 @@ import { buildOutboxRow, buildUser, FIXTURE_TIME, resetFactories } from "@/db/te
 import { claimOutboxBatch, MAX_ATTEMPTS } from "./claimOutboxBatch";
 
 const MINUTE = 60 * 1000;
+const TYPES = ["idea_event"] as const;
 const NOW = new Date(FIXTURE_TIME.getTime() + 60 * MINUTE);
 const at = (minutes: number) => new Date(FIXTURE_TIME.getTime() + minutes * MINUTE);
 
@@ -24,7 +25,7 @@ describeWithDatabase("claimOutboxBatch (#101)", () => {
       const urgent = buildOutboxRow({ userId: user.id, priority: 1, createdAt: at(9) });
       await tx.emailOutbox.createMany({ data: [late, early, urgent] });
 
-      const claimed = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE });
+      const claimed = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE, types: TYPES });
       expect(claimed.map((r) => r.id)).toEqual([urgent.id, early.id, late.id]);
       expect(claimed.every((r) => r.attempts === 1 && r.type === "idea_event")).toBe(true);
 
@@ -39,7 +40,9 @@ describeWithDatabase("claimOutboxBatch (#101)", () => {
       await tx.emailOutbox.createMany({
         data: [1, 2, 3].map((m) => buildOutboxRow({ userId: user.id, createdAt: at(m) })),
       });
-      expect(await claimOutboxBatch(tx, { now: NOW, limit: 2, lockFor: MINUTE })).toHaveLength(2);
+      expect(await claimOutboxBatch(tx, { now: NOW, limit: 2, lockFor: MINUTE, types: TYPES })).toHaveLength(
+        2,
+      );
     });
   });
 
@@ -56,8 +59,24 @@ describeWithDatabase("claimOutboxBatch (#101)", () => {
           buildOutboxRow({ userId: user.id, attempts: MAX_ATTEMPTS, lastError: "provider down" }),
         ],
       });
-      const claimed = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: MINUTE });
+      const claimed = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: MINUTE, types: TYPES });
       expect(claimed.map((r) => r.id)).toEqual([due.id]);
+    });
+  });
+
+  it("claims only the given types, and leaves other rows untouched", async () => {
+    await withRollback(async (tx) => {
+      const user = await setup(tx);
+      const wanted = buildOutboxRow({ userId: user.id });
+      const other = buildOutboxRow({ userId: user.id, type: "digest" });
+      await tx.emailOutbox.createMany({ data: [wanted, other] });
+
+      const claimed = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: MINUTE, types: TYPES });
+      expect(claimed.map((r) => r.id)).toEqual([wanted.id]);
+      expect(await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: MINUTE, types: [] })).toEqual([]);
+
+      const untouched = await tx.emailOutbox.findUniqueOrThrow({ where: { id: other.id } });
+      expect(untouched).toMatchObject({ attempts: 0, lockedUntil: null });
     });
   });
 
@@ -66,9 +85,11 @@ describeWithDatabase("claimOutboxBatch (#101)", () => {
       const user = await setup(tx);
       const expired = buildOutboxRow({ userId: user.id, lockedUntil: at(30), attempts: 1 });
       await tx.emailOutbox.createMany({ data: [expired] });
-      const first = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE });
+      const first = await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE, types: TYPES });
       expect(first.map((r) => [r.id, r.attempts])).toEqual([[expired.id, 2]]);
-      expect(await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE })).toEqual([]);
+      expect(await claimOutboxBatch(tx, { now: NOW, limit: 10, lockFor: 10 * MINUTE, types: TYPES })).toEqual(
+        [],
+      );
     });
   });
 
@@ -77,7 +98,7 @@ describeWithDatabase("claimOutboxBatch (#101)", () => {
       const user = await setup(tx);
       const row = buildOutboxRow({ userId: user.id });
       await tx.emailOutbox.createMany({ data: [row] });
-      const [claimed] = await claimOutboxBatch(tx, { now: NOW, limit: 1, lockFor: MINUTE });
+      const [claimed] = await claimOutboxBatch(tx, { now: NOW, limit: 1, lockFor: MINUTE, types: TYPES });
       expect(claimed?.payload).toEqual(row.payload);
     });
   });

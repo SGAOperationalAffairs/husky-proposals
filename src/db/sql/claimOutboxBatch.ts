@@ -16,17 +16,19 @@ const claimedRow = z.object({
 
 export type ClaimedOutboxRow = z.infer<typeof claimedRow>;
 
-type Args = { now: Date; limit: number; lockFor: number };
+type Args = { now: Date; limit: number; lockFor: number; types: readonly string[] };
 
-// Claims up to `limit` due, unsent, unlocked rows: highest priority first, then oldest.
-// One statement that commits by itself, so no lock is held while the provider is called.
+// Claims up to `limit` due, unsent, unlocked rows of the given `types`: highest priority
+// first, then oldest. The caller names the types it can render, so a row with no renderer
+// is never claimed and never burns an attempt (#101). One statement that commits by itself, so no lock is held while the provider is called.
 // FOR UPDATE SKIP LOCKED lets two workers claim different rows at once, and locked_until
 // is what makes a crashed worker's claim expire. `lockFor` is milliseconds. Times go in
 // as ISO text cast to timestamp: the columns are timestamp(3), written in UTC by Prisma.
 export async function claimOutboxBatch(
   db: Pick<Prisma.TransactionClient, "$queryRaw">,
-  { now, limit, lockFor }: Args,
+  { now, limit, lockFor, types }: Args,
 ): Promise<ClaimedOutboxRow[]> {
+  if (types.length === 0) return [];
   const nowText = now.toISOString();
   const lockedUntil = new Date(now.getTime() + lockFor).toISOString();
   const rows = await db.$queryRaw`
@@ -38,6 +40,7 @@ export async function claimOutboxBatch(
         and send_after <= ${nowText}::timestamp
         and (locked_until is null or locked_until < ${nowText}::timestamp)
         and attempts < ${MAX_ATTEMPTS}::int
+        and type::text = any(${[...types]}::text[])
       order by priority asc, created_at asc
       limit ${limit}::int
       for update skip locked

@@ -7,7 +7,7 @@ import {
 } from "@/email/ideaEvent";
 import { sendEmail, type Mailer } from "@/email/sendEmail";
 import type { Prisma } from "@/generated/prisma/client";
-import { claimOutboxBatch } from "./sql/claimOutboxBatch";
+import { claimOutboxBatch, MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 
 // The email outbox (#101): rows are written in the caller's transaction, and a drain
 // sends them. Nothing calls the drain on a schedule yet (a later E9 ticket).
@@ -17,6 +17,9 @@ const MINUTE = 60 * 1000;
 const CLAIM_MS = 10 * MINUTE;
 const BACKOFF_MS = 5 * MINUTE;
 const MAX_ERROR_LENGTH = 500;
+// The types this drain can render. Only idea_event has a renderer in this ticket; each
+// later type adds itself here with its renderer, so its rows wait unclaimed until then.
+const RENDERABLE_TYPES = ["idea_event"] as const;
 
 type QueueDb = Pick<Prisma.TransactionClient, "idea" | "emailOutbox">;
 
@@ -91,7 +94,7 @@ export async function drainOutbox(
   now: Date,
   { siteUrl, limit = 50 }: { siteUrl: string; limit?: number },
 ): Promise<{ sent: number; failed: number }> {
-  const claimed = await claimOutboxBatch(db, { now, limit, lockFor: CLAIM_MS });
+  const claimed = await claimOutboxBatch(db, { now, limit, lockFor: CLAIM_MS, types: RENDERABLE_TYPES });
   if (claimed.length === 0) return { sent: 0, failed: 0 };
 
   const users = await db.user.findMany({
@@ -103,26 +106,23 @@ export async function drainOutbox(
   let sent = 0;
   let failed = 0;
   for (const row of claimed) {
-    const fail = async (message: string, retryAfterMs: number | null) => {
+    const fail = async (message: string, retryAfterMs: number | null, permanent = false) => {
       failed += 1;
       await db.emailOutbox.update({
         where: { id: row.id },
         data: {
           lastError: message.slice(0, MAX_ERROR_LENGTH),
           lockedUntil: retryAfterMs === null ? null : new Date(now.getTime() + retryAfterMs),
+          ...(permanent ? { attempts: MAX_ATTEMPTS } : {}),
         },
       });
     };
 
-    // Only idea_event has a renderer in this ticket. Another type is left for its own ticket.
-    if (row.type !== "idea_event") {
-      await fail("no renderer", null);
-      continue;
-    }
     const to = emails.get(row.userId);
     const payload = ideaEventPayloadSchema.safeParse(row.payload);
+    // Permanent failures: a retry cannot fix them, so the row stops at once for a human.
     if (!to || !payload.success) {
-      await fail(to ? "invalid payload" : "no recipient", BACKOFF_MS * row.attempts);
+      await fail(to ? "invalid payload" : "no recipient", null, true);
       continue;
     }
 

@@ -3,9 +3,17 @@ import { createCapturingMailer } from "@/email/capturingMailer";
 import type { IdeaEvent } from "@/email/ideaEvent";
 import type { Prisma } from "@/generated/prisma/client";
 import { drainOutbox, queueFollowerEmails } from "./outbox";
+import { MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 import { describeWithDatabase } from "./testing/database";
 import { withCountedSeed } from "./testing/countQueries";
-import { buildEmailPreference, buildFollow, buildUser, FIXTURE_TIME, testUuid } from "./testing/factories";
+import {
+  buildEmailPreference,
+  buildFollow,
+  buildOutboxRow,
+  buildUser,
+  FIXTURE_TIME,
+  testUuid,
+} from "./testing/factories";
 import { ideas } from "./testing/fixtures";
 import { withSeed } from "./testing/seededTransaction";
 
@@ -160,7 +168,24 @@ describeWithDatabase("follower email outbox (#101)", () => {
     });
   });
 
-  it("does not send a type with no renderer, and records why", async () => {
+  it("stops at once on an invalid payload, without retries", async () => {
+    await withSeed(async (tx) => {
+      const [user] = await addFollowers(tx, 1);
+      await tx.emailOutbox.create({
+        data: buildOutboxRow({ userId: user!.id, payload: { nope: true }, sendAfter: NOW }),
+      });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { userId: user!.id, type: "idea_event" } });
+      expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "invalid payload" });
+
+      const later = new Date(NOW.getTime() + 60 * MINUTE);
+      expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
+      expect(mailer.sent).toHaveLength(0);
+    });
+  });
+
+  it("does not claim a type with no renderer, so it burns no attempt", async () => {
     await withSeed(async (tx) => {
       const [user] = await addFollowers(tx, 1);
       await tx.emailOutbox.create({
@@ -174,10 +199,10 @@ describeWithDatabase("follower email outbox (#101)", () => {
         },
       });
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
       expect(mailer.sent).toHaveLength(0);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
-      expect(row).toMatchObject({ sentAt: null, lockedUntil: null, lastError: "no renderer" });
+      expect(row).toMatchObject({ sentAt: null, lockedUntil: null, attempts: 0, lastError: null });
     });
   });
 });
