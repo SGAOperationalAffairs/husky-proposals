@@ -32,7 +32,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/db/testing/` | Database test helpers (`describeWithDatabase`, `withRollback`), `globalSetup.ts` (creates, migrates, and drops each run's database), `runDatabase.ts` (names and the run registry), factories, and invented fixtures |
 | `src/testing/` | Framework-free test fakes, such as the fake clock |
 | `src/core/permissions.ts` | Who may do what (`can`, `boardsFor`, `canSeeWhoPosted`, `isAuthor`), built from the table in `docs/data-model.md`, which a test pins. "Open" cells go through `otherLeaderMay` (D16) |
-| `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), and `session.ts`, the one module the app calls (`getSession()`) |
+| `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), `sgauthClient.ts` (the SGAuth session client: forwards only the SGAuth cookie, 60-second cache for students, live and fail-closed for leaders; wired in by #177), and `session.ts`, the one module the app calls (`getSession()`) |
 | `src/core/positions.ts` | SGAuth position keys to boards and roles (`rolesFromPositions`, `boardsRun`), and `isSgaLeader`, the one function for PRD D16. A test pins its keys to `docs/sgauth-integration.md` |
 | `src/auth/gate.ts` | The sign-in gate (#93): `requireSignedIn` for pages, `withSession` for server actions, `signInDestination` for `/sign-in` |
 | `src/core/nextPath.ts` | `safeNextPath`: only same-site relative paths survive, the open-redirect guard for every `next` |
