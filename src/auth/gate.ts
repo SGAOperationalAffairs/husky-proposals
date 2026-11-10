@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { safeNextPath } from "@/core/nextPath";
+import { isSgaLeader } from "@/core/positions";
 import type { Session } from "./contract";
 import { getSession, signInUrl } from "./session";
 
@@ -16,6 +17,16 @@ export async function requireSignedIn(path: string): Promise<Session> {
   const session = await getSession();
   if (session) return session;
   redirect(`/sign-in?next=${encodeURIComponent(safeNextPath(path) ?? "/")}`);
+}
+
+// For an SGA leader page (#156), inside <Suspense>. A student, a board member who
+// is not a lead, and a signed-out visitor all get not-found, never a sign-in
+// prompt, so the page does not show that it exists. Call it before the page
+// renders anything of its own.
+export async function requireLeader(): Promise<Session> {
+  const session = await getSession();
+  if (session && isSgaLeader(session.roles)) return session;
+  notFound();
 }
 
 // For a signed-in server action. Signed out is an expected result the form can

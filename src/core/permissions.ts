@@ -55,9 +55,9 @@ export const PERMISSIONS: Record<Action, Record<Column, Cell>> = {
   support: row("no", "yes", "yes", "yes", "yes"),
   promote: row("no", "no", "no", "yes", "no"),
   review: row("no", "no", "own", "yes", "open"),
-  // Operator decision (#52): a chair or director sees who posted and who supported
-  // on every board. The anonymous author is a separate row, own board only.
-  see_names: row("no", "no", "yes", "yes", "open"),
+  // D16 option A (chosen Nov 2, 2026): a chair or director sees names only for their
+  // own board. This narrows the earlier "every board" decision from #52 (#59).
+  see_names: row("no", "no", "own", "yes", "open"),
   see_anonymous_author: row("no", "no", "own", "yes", "no"),
   manage_status: row("no", "no", "own", "yes", "no"),
   change_board: row("no", "no", "no", "yes", "no"),

@@ -23,7 +23,7 @@ export default function PostPage() {
         <h1 className="heading text-6xl @3xl:text-8xl">Post an idea</h1>
         <p className="text-muted">{POST_INTRO.short}</p>
       </header>
-      {/* TODO(#57): the signed-in student's pending count comes from the viewer shape (#53). */}
+      {/* TODO(#96): the signed-in student's pending count comes from the viewer shape (#53). */}
       <PostForm pendingCount={0} />
     </main>
   );

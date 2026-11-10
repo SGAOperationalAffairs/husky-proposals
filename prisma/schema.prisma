@@ -110,6 +110,7 @@ enum EmailType {
   post_decided
   reviewer_reminder
   digest
+  idea_event // a status change or update on a followed idea, priority 3 (#101)
 }
 
 // Provisional: whether to log at all is open (D16).
@@ -148,6 +149,7 @@ model User {
   ideas            Idea[]
   reviews          Review[]
   supports         Support[]
+  actionCounts     ActionCount[]
   participations   Participation[]
   follows          Follow[]
   updates          Update[]
@@ -312,8 +314,21 @@ model Review {
 // Writes set the state ("supported: yes or no") and never toggle, so retries
 // and double taps do no harm. The composite primary key is the one-per-student
 // rule. Changing any of these never creates an email.
-// Rule: an abuse limit of about 60 changes a minute per student.
+// Rule: an abuse limit of about 60 changes a minute per student (src/core/actionLimit.ts).
 // ---------------------------------------------------------------------------
+
+// The abuse limit's shared store (#94): one row per student per minute, bumped by every
+// support, participate, or follow change. Rows older than the current minute are trimmed.
+model ActionCount {
+  userId      String   @map("user_id") @db.Uuid
+  windowStart DateTime @map("window_start") // the minute, truncated
+  count       Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, windowStart])
+  @@map("action_counts")
+}
 
 model Support {
   userId    String   @map("user_id") @db.Uuid
@@ -410,7 +425,7 @@ model EmailOutbox {
   id                String    @id @default(uuid(7)) @db.Uuid
   userId            String    @map("user_id") @db.Uuid
   type              EmailType
-  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3
+  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3, idea_event 3
   dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<reviewId>, since a take-down is a second decision on one revision (#49)
   payload           Json
   createdAt         DateTime  @default(now()) @map("created_at")

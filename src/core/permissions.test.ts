@@ -41,6 +41,7 @@ const twoBoardLead = viewer("two", [BOARD_POSITIONS.DAB.lead, BOARD_POSITIONS.SC
 
 const OWN_ACTIONS: BoardAction[] = [
   "review",
+  "see_names",
   "see_anonymous_author",
   "manage_status",
   "change_cadence",
@@ -125,10 +126,8 @@ describe("permissions (#52)", () => {
       }
     });
 
-    it("lets a chair see names on every board but the People list only on their own (operator decision)", () => {
-      expect(PERMISSIONS.see_names.boardLead, "see_names, chair column, must be Yes (every board)").toBe(
-        "yes",
-      );
+    it("lets a chair see names and the People list only on their own board (D16 option A)", () => {
+      expect(PERMISSIONS.see_names.boardLead, "see_names, chair column, must be Own board").toBe("own");
       expect(PERMISSIONS.see_people.boardLead, "see_people, chair column, must be Own board").toBe("own");
     });
   });
@@ -173,18 +172,16 @@ describe("permissions (#52)", () => {
       }
     });
 
-    it("sees names on another board but changes nothing there (DAB chair on CSC)", () => {
-      expect(can(dabChair, "see_names", "CSC")).toBe(true);
+    it("sees no names and changes nothing on another board (DAB chair on CSC, D16 option A)", () => {
       for (const action of [...OWN_ACTIONS, "change_board" as const]) {
         expect(can(dabChair, action, "CSC"), action).toBe(false);
       }
     });
 
-    it("gets exactly their own board from boardsFor, or all five for see_names", () => {
+    it("gets exactly their own board from boardsFor, including for see_names", () => {
       for (const board of BOARD_CODES) {
         for (const action of OWN_ACTIONS) expect(boardsFor(leads[board], action), action).toEqual([board]);
         expect(boardsFor(leads[board], "change_board")).toEqual([]);
-        expect(boardsFor(leads[board], "see_names")).toEqual(BOARD_CODES);
       }
     });
 
@@ -237,15 +234,15 @@ describe("permissions (#52)", () => {
       expect(canSeeWhoPosted(author, anonymousDab)).toBe(false);
     });
 
-    it("shows a named author to any chair and the VP", () => {
-      for (const v of [dabChair, cscChair, vp]) expect(canSeeWhoPosted(v, openDab)).toBe(true);
-      for (const v of [student, dabMember, unmapped, visitor]) {
+    it("shows a named author only to the board's chair and the VP (D16 option A)", () => {
+      for (const v of [dabChair, vp, vpWhoChairsDab]) expect(canSeeWhoPosted(v, openDab)).toBe(true);
+      for (const v of [cscChair, student, dabMember, unmapped, visitor]) {
         expect(canSeeWhoPosted(v, openDab)).toBe(false);
       }
     });
 
-    it("keeps supporter access from leaking an anonymous author", () => {
-      expect(can(cscChair, "see_names", "DAB")).toBe(true);
+    it("gives a chair of another board neither names nor the anonymous author", () => {
+      expect(can(cscChair, "see_names", "DAB")).toBe(false);
       expect(canSeeWhoPosted(cscChair, anonymousDab)).toBe(false);
     });
   });

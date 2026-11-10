@@ -9,7 +9,7 @@ import { checkNewPost, PENDING_LIMIT } from "@/core/review";
 // supply a fake one. A post is always pending: the review step decides what shows.
 
 // The words of a post, as students wrote them.
-type PostFields = {
+export type PostFields = {
   title: string;
   description: string;
   fullText: string | null;
@@ -20,6 +20,29 @@ type PostFields = {
   timeHorizon: PostIdeaInput["timeHorizon"];
   isAnonymous: boolean;
 };
+
+// Maps the form's names to the stored ones. Shared with resubmit (#56), so a
+// resubmitted post is read the same way as a new one.
+export function postFields(input: PostIdeaInput): PostFields {
+  return {
+    title: input.title,
+    description: input.summary,
+    fullText: input.details,
+    category: input.category,
+    location: input.location,
+    scale: input.scale,
+    costBand: input.costBand,
+    timeHorizon: input.timeHorizon,
+    isAnonymous: input.anonymous,
+  };
+}
+
+// The form fields a failed zod parse names, once each. Shared with resubmit and withdraw (#56).
+export function invalidFields(error: {
+  issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey> }>;
+}): string[] {
+  return [...new Set(error.issues.map((issue) => String(issue.path[0] ?? "form")))];
+}
 
 export type NewPost = PostFields & {
   boardId: BoardCode;
@@ -53,8 +76,7 @@ export async function submitPost(
 
   const parsed = parsePostIdea(raw);
   if (!parsed.success) {
-    const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
-    return { ok: false, error: { code: "invalid", fields } };
+    return { ok: false, error: { code: "invalid", fields: invalidFields(parsed.error) } };
   }
   const input = parsed.data;
 
@@ -62,17 +84,7 @@ export async function submitPost(
   if (!limit.ok) return { ok: false, error: { code: "pending_limit", limit: PENDING_LIMIT } };
 
   const boardId = BOARD_FOR_CATEGORY[input.category];
-  const shared = {
-    title: input.title,
-    description: input.summary,
-    fullText: input.details,
-    category: input.category,
-    location: input.location,
-    scale: input.scale,
-    costBand: input.costBand,
-    timeHorizon: input.timeHorizon,
-    isAnonymous: input.anonymous,
-  };
+  const shared = postFields(input);
   const { id } = await store.create(
     { id: session.user.id, email: session.user.email, displayName: session.user.name },
     {

@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Reveal } from "@/components/Reveal";
 import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
+import { LeaderIdeaSection } from "@/app/_review/LeaderIdeaSection";
 import { getIdea, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
 import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
+import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
 import { FromSgaTag } from "@/components/Tag";
@@ -22,7 +24,7 @@ import { BOARDS, JOIN } from "@/core/boards";
 export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
-      <SiteHeader />
+      <SiteHeader nav={<NavTabs current="ideas" />} />
       <Button
         variant="text"
         href="/"
@@ -92,6 +94,10 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
         </article>
 
         <aside aria-label="Where it stands" className="flex flex-col gap-6 @3xl:col-span-2 @3xl:row-span-3">
+          {/* Leader extras (#59): nothing for anyone else, and outside the cached read above. */}
+          <Suspense fallback={null}>
+            <LeaderIdeaSection params={params} />
+          </Suspense>
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Where it stands</h2>
             <p>{standing(idea)}</p>

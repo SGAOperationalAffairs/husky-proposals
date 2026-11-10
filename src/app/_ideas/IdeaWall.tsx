@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { LayoutGrid, List } from "lucide-react";
+import { ViewSwitch } from "@/components/ViewSwitch";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type AnimationEvent } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
@@ -27,7 +27,7 @@ const path = "/";
 const VIEWS = [
   { id: "cards", label: "Cards", icon: LayoutGrid },
   { id: "list", label: "List", icon: List },
-] as const;
+];
 const SORT_OPTIONS = Object.entries(SORTS).map(([value, label]) => ({ value, label }));
 const STATUS_OPTIONS = IDEA_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
@@ -113,30 +113,15 @@ export function IdeaWall({ ideas }: Props) {
           {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
         </p>
         {/* Cards or the list (#138). A link without JavaScript, the same URL with the view set. */}
-        {/* A two-way switch: cards on the left, the list on the right (#138). Links, so
-            it works without JavaScript; the active side is filled. */}
-        <nav aria-label="View" className="inline-flex bordered bg-surface">
-          {VIEWS.map((v) => {
-            const Icon = v.icon;
-            const active = view === v.id;
-            return (
-              <Link
-                key={v.id}
-                href={ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined })}
-                aria-current={active ? "true" : undefined}
-                onClick={(e) => {
-                  e.preventDefault();
-                  apply({ view: v.id === "list" ? "list" : undefined });
-                }}
-                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-bold ${active ? "bg-line text-surface" : "text-line"}`}
-              >
-                <Icon aria-hidden className="size-4" />
-                {v.label}
-                <span className="sr-only">{active ? " (showing)" : ""}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <ViewSwitch
+          label="View"
+          current={view}
+          options={VIEWS.map((v) => ({
+            ...v,
+            href: ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined }),
+          }))}
+          onSelect={(id) => apply({ view: id === "list" ? "list" : undefined })}
+        />
       </div>
       {shown.length > 0 ? (
         view === "list" ? (

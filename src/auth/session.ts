@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { env } from "@/env";
 import { toSession, type Session } from "./contract";
 import { STAND_IN_COOKIE, standInResponse } from "./standIn";
@@ -12,7 +13,9 @@ import { STAND_IN_COOKIE, standInResponse } from "./standIn";
 // component that calls getSession() must sit inside <Suspense>, and its page
 // is never cached (CLAUDE.md, "Explicit caching only").
 
-export async function getSession(): Promise<Session | null> {
+// Memoized per request (#156): the tabs and a leader page both ask, and the cookie
+// is read once. Server actions and later requests get a fresh read.
+export const getSession = cache(async (): Promise<Session | null> => {
   if (!env().AUTH_STAND_IN) {
     // T2.5 forwards the SGAuth cookie here. Leader actions must fail closed on
     // a stale answer (docs/sgauth-integration.md, "Stale data").
@@ -25,7 +28,7 @@ export async function getSession(): Promise<Session | null> {
   // signed out. Log only the code, never the body.
   if (jar.get(STAND_IN_COOKIE)) console.error(`getSession: ${result.error.code}`);
   return null;
-}
+});
 
 export async function startStandInSession(
   slug: string,

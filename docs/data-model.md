@@ -56,7 +56,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 `user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday` (assigned on creation, used to spread weekly sends), `unsubscribed_at`, `bounced_at`.
 
 **email_outbox**
-`id`, `user_id`, `type` (post_decided, reviewer_reminder, digest), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `last_error`.
+`id`, `user_id`, `type` (post_decided, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `last_error`.
 - A worker sends rows first in, first out within each priority, under a daily budget.
 - When a limit is hit, rows wait for the next run. None are dropped.
 
@@ -124,7 +124,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | Post an idea (anonymous optional) | No | Yes | Yes | Yes | Yes |
 | Support, follow, offer to help | No (the tap is remembered until they sign in) | Yes | Yes | Yes | Yes |
 | See pending posts and decide them | No | No | Own board | All boards | Open |
-| See who posted and who supported | No | No | Yes | Yes | Open (D16) |
+| See who posted and who supported | No | No | Own board | All boards | Open (D16) |
 | See who posted an anonymous idea | No | No | Own board (as reviewer) | All boards | No |
 | Move an idea through statuses, post updates | No | No | Own board | All boards | No |
 | Change an idea's board | No | No | No | Yes | No |
@@ -133,7 +133,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | See the People list (volunteers) | No | No | Own board | All boards | Open |
 | Turn promotion on (admin switch, off by default; later) | No | No | No | Yes | No |
 
-"Open" means not decided yet. In the chair or director column, "Yes" means every board and "Own board" means only the board they lead. A chair or director sees who posted and who supported on every board, but the People list only for their own board (#52).
+"Open" means not decided yet. In the chair or director column, "Own board" means only the board they lead. A chair or director sees who posted and who supported, and the People list, only for their own board (D16 option A, #59).
 
 ## Screens (from the prototype)
 

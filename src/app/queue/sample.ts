@@ -1,53 +1,10 @@
 import type { QueueItem } from "@/core/queue";
 
-// Invented queue rows until the review and status queries (#58, #98) land. The
-// page reads them through queueFor(), the same as the real rows will be read.
+// Invented rows for the Ideas tab until its status query (#98) lands. The page reads
+// them through queueFor(), the same as the real rows will be read. Pending posts are
+// real now (#59): they come from the review queue, not from here.
+// Descriptions are here so the card's description line renders (#139).
 export const QUEUE_SAMPLE: QueueItem[] = [
-  {
-    kind: "post",
-    number: 201,
-    title: "Late-night study space in the library",
-    boardId: "CPAB",
-    status: "pending",
-    supportCount: 0,
-    updatedDaysAgo: 1,
-  },
-  {
-    kind: "post",
-    number: 202,
-    title: "Free bike repair stand on the quad",
-    boardId: "GIB",
-    status: "pending",
-    supportCount: 0,
-    updatedDaysAgo: 3,
-  },
-  {
-    kind: "post",
-    number: 203,
-    title: "Reusable containers at dining halls",
-    boardId: "DAB",
-    status: "pending",
-    supportCount: 0,
-    updatedDaysAgo: 4,
-  },
-  {
-    kind: "post",
-    number: 204,
-    title: "Later campus shuttle on weekends",
-    boardId: "CSC",
-    status: "pending",
-    supportCount: 0,
-    updatedDaysAgo: 5,
-  },
-  {
-    kind: "post",
-    number: 205,
-    title: "Solar canopy study for the commuter lot",
-    boardId: "SC",
-    status: "pending",
-    supportCount: 0,
-    updatedDaysAgo: 6,
-  },
   {
     kind: "idea",
     number: 103,
@@ -56,6 +13,7 @@ export const QUEUE_SAMPLE: QueueItem[] = [
     status: "in_progress",
     supportCount: 412,
     updatedDaysAgo: 2,
+    description: "A pantry run by students, stocked with shelf-stable food and open on weekdays.",
   },
   {
     kind: "idea",
@@ -65,5 +23,6 @@ export const QUEUE_SAMPLE: QueueItem[] = [
     status: "waiting",
     supportCount: 305,
     updatedDaysAgo: 20,
+    description: "Add a shuttle after 11pm on Fridays between the library and the residence halls.",
   },
 ];

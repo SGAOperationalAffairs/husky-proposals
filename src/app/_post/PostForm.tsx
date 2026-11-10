@@ -14,7 +14,7 @@ import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
-import { PENDING_LIMIT } from "@/core/review";
+import { PENDING_LIMIT, PENDING_LIMIT_REASON, pendingPostsText } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 
 // The post form (#55). A student picks the board first; the rest of the form
@@ -100,6 +100,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   const ids = useId();
   const blocked = pendingCount >= PENDING_LIMIT;
   const formRef = useRef<HTMLFormElement>(null);
+  const limitRef = useRef<HTMLParagraphElement>(null);
   const focusFirstError = useRef(false);
 
   const boardCode = isCategory(values.category) ? BOARD_FOR_CATEGORY[values.category] : undefined;
@@ -115,11 +116,15 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   }, [errors]);
 
   // Once a board is picked, the title gets focus, so the rest of the form is one tab away.
+  // At the limit the fields are disabled, so the reason gets focus instead (#132).
   const picked = !!board;
   useEffect(() => {
     if (!picked) return;
-    formRef.current?.querySelector<HTMLElement>("input:not([type='checkbox'])")?.focus();
-  }, [picked]);
+    const target = blocked
+      ? limitRef.current
+      : formRef.current?.querySelector<HTMLElement>("input:not([type='checkbox'])");
+    target?.focus();
+  }, [picked, blocked]);
 
   const set = <K extends keyof Values>(key: K, value: Values[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -218,8 +223,14 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
           {board && (
             <div key="fields" className="poster-arrive flex flex-col gap-6 p-card">
               {blocked && (
-                <p role="status" className="bordered p-card font-semibold">
-                  You have {pendingCount} posts waiting for review. You can post again once one is reviewed.
+                <p
+                  id={`${ids}-limit`}
+                  role="status"
+                  tabIndex={-1}
+                  ref={limitRef}
+                  className="bordered p-card font-semibold"
+                >
+                  {PENDING_LIMIT_REASON}
                 </p>
               )}
 
@@ -328,13 +339,24 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   Campus Affairs, reviews it, usually within 2 to 3 days. If it is declined, you will see why,
                   and you can edit it and send it again.
                 </p>
-
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="primary" type="submit" className="board-shift">
-                    Post idea
-                  </Button>
-                </div>
               </fieldset>
+
+              {/* Outside the fieldset so the button stays focusable at the limit and a keyboard
+                  user can hear why it does nothing (#132). */}
+              <div className="flex flex-col items-end gap-2">
+                <p id={`${ids}-pending`} className={blocked ? "font-semibold" : "text-muted"}>
+                  {pendingPostsText(pendingCount)}
+                </p>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  className="board-shift"
+                  aria-disabled={blocked || undefined}
+                  aria-describedby={blocked ? `${ids}-pending ${ids}-limit` : `${ids}-pending`}
+                >
+                  Post idea
+                </Button>
+              </div>
             </div>
           )}
         </div>
