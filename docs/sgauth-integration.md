@@ -35,11 +35,11 @@ SGAuth only says which positions a user holds. Husky Proposals decides what each
 | Our environment | Our address | SGAuth address (`SGAUTH_URL`) | Cookie name (`SGAUTH_COOKIE_NAME`) |
 |---|---|---|---|
 | Production | `proposals.northeasternsga.com` | `https://auth.northeasternsga.com` | `__Secure-sgauth.session_token` |
-| Dev and previews | `proposals-dev.northeasternsga.com` (a branch domain) | `https://auth-dev.northeasternsga.com` | `__Secure-sgauth-dev.session_token` |
+| Dev and previews | `dev.proposals.northeasternsga.com` (a branch domain) | `https://dev.auth.northeasternsga.com` | `__Secure-sgauth-dev.session_token` |
 | Local | `proposals.sga.localhost:3001` | `http://auth.sga.localhost:3000` | `sgauth-local.session_token` |
 
 - **Ad hoc `*.vercel.app` previews cannot use sign-in.** The browser never sends a `northeasternsga.com` cookie there.
-- **auth-dev is invite-only:** sign-up there needs an allowlist entry (SGAuth #134), and browser pages are behind a password gate.
+- **dev.auth is invite-only:** sign-up there needs an allowlist entry (SGAuth #134), and browser pages are behind a password gate.
 - **Local development:**
   - Run SGAuth locally at `auth.sga.localhost:3000`, using a personal Neon branch.
   - Never use bare `localhost`. The cookie will not be set there.
@@ -53,7 +53,7 @@ Status as of October 15, 2026.
 | Milestone | SGAuth tickets | What it changes for us | Status |
 |---|---|---|---|
 | **1. Cookie verdict** | #115 | Proves the shared cookie works across browsers. A failure changes our sign-in plan. | Open |
-| **2. Ready to connect** | #40 session endpoint, #68 product registry, #43 safe redirects | Real sign-in on `proposals-dev`. The SDK (#69 to #71) is nice to have. Without it, we write a small client against #40's documented response. | Open |
+| **2. Ready to connect** | #40 session endpoint, #68 product registry, #43 safe redirects | Real sign-in on `dev.proposals`. The SDK (#69 to #71) is nice to have. Without it, we write a small client against #40's documented response. | Open |
 | **3. Students can sign up** | #30 verification, #31 reset, #32 email, #114 scanner-safe links, #37 login pages, #103 production launch | The launch gate. Students cannot sign in until verification email works and SGAuth is live in production. | Open |
 
 Already done in SGAuth:
@@ -63,7 +63,7 @@ Already done in SGAuth:
 - #22 and #56: the positions schema and seed.
 - #26: the product registry schema.
 - #46: the dev, preview, and local setup.
-- #134: the auth-dev gate.
+- #134: the dev.auth gate.
 - Rate limiting, audit logging, structured logs, and security headers.
 
 ## Email limits
@@ -89,8 +89,8 @@ As of October 15, 2026:
 | Move to Resend Pro (about $20 a month) before student volume. Consider one shared SGA account with separate sending domains. | 100 a day is a throughput ceiling, even with a queue. | Proposed |
 | Is SGAuth sized for student traffic on the session endpoint? | Every signed-in student action is a live read of SGAuth's database. | To ask |
 | Could products verify SGAuth's signed tokens themselves? | Would cut session calls, if SGAuth's design allows it. | To ask |
-| Register Husky Proposals in the product registry, and add the `proposals` and `proposals-dev` subdomains. | Needed for redirects, origin checks, and the cookie. | To ask |
-| Add our test accounts to the auth-dev sign-up allowlist. | Needed to test on `proposals-dev`. | To ask |
+| Register Husky Proposals in the product registry, and add the `proposals` and `dev.proposals` subdomains. | Needed for redirects, origin checks, and the cookie. | To ask |
+| Add our test accounts to the dev.auth sign-up allowlist. | Needed to test on `dev.proposals`. | To ask |
 | A deactivation feed, or a batch "are these user ids active" lookup, for registered products. | So we stop emailing deleted or deactivated accounts (see "Stale data"). | To ask (#8) |
 | A read-only "current holders of these position keys" lookup for registered products. | So reviewer reminders reach the current chair, not the last one who signed in. | To ask (#8) |
 | Can the SDK skip its cache for one call? | For leader actions, which should never run on a stale answer. | To ask (#8) |

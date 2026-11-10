@@ -20,11 +20,11 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 | 0 | Oct 23 to 25 | Planning: port runbook, this plan, the schema draft and FigJam diagrams (T0.10, steps 1 to 3) | |
 | 1 | Oct 26 to Nov 1 | E1 scaffold, test harness, CI, port (T0.3, T0.4, T0.11). E2 schema and rules module (T0.5). E3 sign-in stand-in (T0.6). Specs and `/port:scope` for E4, E5, and E9 | D9 (appeals) answered, for the decline message in E4 |
 | 2 | Nov 2 to 8 | E4 posting and review (T0.7, T0.8). E5 public browsing. E9 outbox and worker | Checkpoint, Sunday Nov 8 |
-| 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1). SGAuth connection spike (T2.5a) as soon as the session endpoint is on auth-dev | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
-| 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `proposals-dev` to SGAuth (T2.5) | **Feature freeze, Friday Nov 20** |
+| 3 | Nov 9 to 15 | E6 student actions. E7 SGA queue and decisions. E9 decision emails. E10 monitoring and backups (T3.1). SGAuth connection spike (T2.5a) as soon as the session endpoint is on dev.auth | D16 (who sees names) decided, for E8. SGAuth milestone 2 expected. Checkpoint, Sunday Nov 15 |
+| 4 | Nov 16 to 20 | E8 updates and names. E9 digests, preferences, and bounces. Switch `dev.proposals` to SGAuth (T2.5) | **Feature freeze, Friday Nov 20** |
 | 5 | Nov 23 to 24 | Load test (T3.2), restore test (T3.1), reviewer training (T3.4). Release `v0.9.0` to `main` | |
 | Break | Nov 25 to 29 | Fall break. No planned work. Buffer only | |
-| 6 to 7 | Nov 30 to Dec 13 | **SGA soft launch** (T3.3) on `proposals-dev`: SGA members and the five boards, signed in through auth-dev. Chairs try reviewing and posting updates. Fix what breaks | |
+| 6 to 7 | Nov 30 to Dec 13 | **SGA soft launch** (T3.3) on `dev.proposals`: SGA members and the five boards, signed in through dev.auth. Chairs try reviewing and posting updates. Fix what breaks | |
 | Finals | Dec 14 to 20 | Change freeze except production breakage | |
 | Winter break | Dec 21 to Jan 12 | E11 tabling form (if the estimate fits), E12 promotion switch (if feedback asks), E13 spring launch prep | |
 | Spring | Wed Jan 20, 2027 | **Student launch, `v1.0.0`** (T3.5, T3.6), proposed | SGAuth milestone 3 live in production. Data policy (D14) in place |
@@ -38,7 +38,7 @@ From the registrar's 2026-2027 academic calendar: fall break is November 25 to 2
 - If more than 5 pull requests are approved and waiting, start no new tickets in port until the queue clears.
 - Budget about 30% of UI time for visual review rounds, and try new layouts on the playground page (T0.3) before a real screen.
 
-**Sign-in setup is slow and fails hard.** Environment variables, secrets, product registration, the auth-dev allowlist, and test accounts all have to line up. That is why the connection spike (T2.5a) comes a week before the switch, and why the soft launch can fall back to the stand-in.
+**Sign-in setup is slow and fails hard.** Environment variables, secrets, product registration, the dev.auth allowlist, and test accounts all have to line up. That is why the connection spike (T2.5a) comes a week before the switch, and why the soft launch can fall back to the stand-in.
 
 ## Checkpoints and cuts
 
@@ -55,7 +55,7 @@ The similar-idea check is not on the list. It is a simple word match and stays i
 **When to cut:**
 - **Sunday Nov 8:** if E4 and E5 are not merged into `dev`, cut 1 and 2.
 - **Sunday Nov 15:** if E6 and E7 are not merged, also cut 3 and 4.
-- **Friday Nov 20 (freeze):** anything not merged moves after the soft launch. If follower email does not work end to end on `proposals-dev`, cut 5.
+- **Friday Nov 20 (freeze):** anything not merged moves after the soft launch. If follower email does not work end to end on `dev.proposals`, cut 5.
 
 **Never cut:** the review step, anonymous posting and the privacy tests, `noindex`, backups with a tested restore, and the switch to turn off posting (see `feature-map.md`).
 
@@ -63,9 +63,9 @@ The similar-idea check is not on the list. It is a simple word match and stays i
 
 ## The SGAuth gate
 
-The soft launch runs on `proposals-dev` against auth-dev, with SGA members on its sign-up allowlist, so it needs only milestone 2. Students cannot sign in until milestone 3 is live in production (`sgauth-integration.md`), which gates the student launch. As of October 23, SGAuth has pull requests open for #40, #68, #32, and #115. There are none yet for #30, #31, #114, #37, or #103.
+The soft launch runs on `dev.proposals` against dev.auth, with SGA members on its sign-up allowlist, so it needs only milestone 2. Students cannot sign in until milestone 3 is live in production (`sgauth-integration.md`), which gates the student launch. As of October 23, SGAuth has pull requests open for #40, #68, #32, and #115. There are none yet for #30, #31, #114, #37, or #103.
 
-- **If milestone 2 is not done by Monday Nov 16,** `proposals-dev` stays on the stand-in, and the switch (T2.5) moves to Nov 23 and 24.
+- **If milestone 2 is not done by Monday Nov 16,** `dev.proposals` stays on the stand-in, and the switch (T2.5) moves to Nov 23 and 24.
 - **If milestone 2 is not done by Monday Nov 30,** the soft launch runs on the stand-in for SGA members only, with invented test accounts. Real sign-in waits.
 - **If milestone 3 is not live by early January,** the student launch moves later than January 20.
 - **If SGAuth is still on 100 emails a day at the student launch,** announce to students in stages (D17, D19).
@@ -85,7 +85,7 @@ T0.3 to T0.6 and T0.11 are week 1. T0.7 and T0.8 are week 2.
 - See `scalability.md`.
 
 **T0.3 Scaffold.** Repository setup, formatting and lint, environment config validated at startup, a deploy skeleton, and port setup.
-- A "hello" page deploys: `dev` to `proposals-dev`, and `main` to production. Previews deploy from feature branches.
+- A "hello" page deploys: `dev` to `dev.proposals`, and `main` to production. Previews deploy from feature branches.
 - It creates `docs/ENGINEERING.md` with empty "Patterns" and "Where things live" sections, so every later pull request has a place to record them.
 - `npm run verify` exists, and CI runs it on every pull request.
 - Every page sends `noindex`.
@@ -183,12 +183,12 @@ Across T1.1 to T1.9, the student view and the SGA view match the prototype's beh
 
 Add the access log if it was decided.
 
-**T2.5a SGAuth connection spike** (week 3, as soon as SGAuth's session endpoint is on auth-dev). Prove one real sign-in end to end before the switch.
-- Write the environment checklist: every variable and secret per environment (local, preview, `proposals-dev`, production), where each comes from, and who can issue it.
-- Register the product and the `proposals` and `proposals-dev` subdomains. Get Luis's account and test accounts on the auth-dev allowlist.
-- One signed-in request on `proposals-dev` returns the session shape the stand-in fakes. Note every difference.
+**T2.5a SGAuth connection spike** (week 3, as soon as SGAuth's session endpoint is on dev.auth). Prove one real sign-in end to end before the switch.
+- Write the environment checklist: every variable and secret per environment (local, preview, `dev.proposals`, production), where each comes from, and who can issue it.
+- Register the product and the `proposals` and `dev.proposals` subdomains. Get Luis's account and test accounts on the dev.auth allowlist.
+- One signed-in request on `dev.proposals` returns the session shape the stand-in fakes. Note every difference.
 
-**T2.5 Switch to SGAuth.** When SGAuth milestone 2 lands, replace the stand-in on `proposals-dev`.
+**T2.5 Switch to SGAuth.** When SGAuth milestone 2 lands, replace the stand-in on `dev.proposals`.
 - Swapping in SGAuth changes one module, as planned in T0.6.
 - If it is not working by Friday Nov 27, the soft launch runs on the stand-in for SGA members, and the switch moves to winter break.
 
@@ -203,17 +203,17 @@ Add the access log if it was decided.
 - An uptime monitor and error tracking.
 - A nightly encrypted database backup, with one restore tested.
 
-**T3.2 Load test.** k6 against `proposals-dev`:
+**T3.2 Load test.** k6 against `dev.proposals`:
 - 2,000 visits in an hour;
 - 200 supports on one idea within a minute;
 - a weekly digest to 1,500 students.
 
 Record response times, compute hours used, and SGAuth calls.
 
-**T3.3 SGA soft launch** (PRD D17), November 30 to December 13, on `proposals-dev`.
-- SGA members and the five boards sign in through auth-dev, on its allowlist.
+**T3.3 SGA soft launch** (PRD D17), November 30 to December 13, on `dev.proposals`.
+- SGA members and the five boards sign in through dev.auth, on its allowlist.
 - Chairs and directors review real test posts and post updates. Then fix problems.
-- Release `v0.9.0` to `main` before it starts. That release is a checkpoint: testers use `proposals-dev`, which deploys from `dev`.
+- Release `v0.9.0` to `main` before it starts. That release is a checkpoint: testers use `dev.proposals`, which deploys from `dev`.
 - From November 30 to December 13, `dev` takes fixes only, so testers see a stable build. Winter-break work waits on its branches until the soft launch ends.
 
 **T3.4 Train chairs and directors.** A one-page guide for reviewers and for posting updates. Include the confidentiality rules for advisory boards and for names.
