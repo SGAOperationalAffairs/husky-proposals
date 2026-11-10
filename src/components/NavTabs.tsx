@@ -28,7 +28,8 @@ async function Tabs({ current }: { current?: NavTab["id"] }) {
   const origin = `https://${requestHeaders.get("host") ?? ""}`;
   return (
     <div className="flex items-end justify-between gap-4 border-b border-line">
-      <nav aria-label="Pages" className="flex gap-0.5 overflow-x-auto">
+      {/* Only the sideways scroll is wanted. Setting overflow-x makes overflow-y scroll too, by a pixel (#186). */}
+      <nav aria-label="Pages" className="flex gap-0.5 overflow-x-auto overflow-y-hidden">
         {navTabsFor(viewer).map((t) => (
           <Link
             key={t.id}
