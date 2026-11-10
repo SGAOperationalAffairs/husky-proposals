@@ -30,7 +30,7 @@ export default function Queue({ searchParams }: { searchParams: SearchParams }) 
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-8 @lg:px-8 @lg:pt-8 @lg:pb-12">
       <SiteHeader nav={<NavTabs current="queue" />} />
-      {/* The title and the loading look sit inside the check, so a non-leader sees nothing of the page. */}
+      {/* The shell streams before notFound() can run, so only the header sits outside. Everything that names the page renders after the leader check (#158). */}
       <Suspense fallback={null}>
         <QueueContent searchParams={searchParams} />
       </Suspense>
