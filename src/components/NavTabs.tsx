@@ -1,7 +1,9 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { getSession } from "@/auth/session";
+import { canSignIn, getSession, signOutUrl } from "@/auth/session";
+import { AccountLinks } from "@/components/AccountLinks";
 import { PAGE } from "@/components/pageTransition";
 import { tabLook } from "@/components/tabLook";
 import { navTabsFor, type NavTab } from "@/core/navigation";
@@ -21,19 +23,31 @@ async function Tabs({ current }: { current?: NavTab["id"] }) {
   await connection();
   const session = await getSession();
   const viewer = session ? { user: { id: session.user.id }, roles: session.roles } : null;
+  // signOutUrl refuses an origin it does not know, so a spoofed host only gives null (#177).
+  const requestHeaders = await headers();
+  const origin = `https://${requestHeaders.get("host") ?? ""}`;
   return (
-    <nav aria-label="Pages" className="flex gap-0.5 overflow-x-auto border-b border-line">
-      {navTabsFor(viewer).map((t) => (
-        <Link
-          key={t.id}
-          transitionTypes={PAGE}
-          href={t.href}
-          aria-current={t.id === current ? "page" : undefined}
-          className={tabLook(t.id === current)}
-        >
-          {t.label}
-        </Link>
-      ))}
-    </nav>
+    <div className="flex items-end justify-between gap-4 border-b border-line">
+      <nav aria-label="Pages" className="flex gap-0.5 overflow-x-auto">
+        {navTabsFor(viewer).map((t) => (
+          <Link
+            key={t.id}
+            transitionTypes={PAGE}
+            href={t.href}
+            aria-current={t.id === current ? "page" : undefined}
+            className={tabLook(t.id === current)}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="shrink-0 pb-1">
+        <AccountLinks
+          canSignIn={canSignIn()}
+          name={session?.user.name ?? null}
+          signOutHref={signOutUrl(origin)}
+        />
+      </div>
+    </div>
   );
 }

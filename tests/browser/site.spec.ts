@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Pages to scan. Add each new route here as it lands.
-const PAGES = ["/", "/ideas/103", "/post", "/sign-in", "/queue"];
+const PAGES = ["/", "/ideas/103", "/post", "/sign-in/closed", "/queue"];
 
 test("the style playground is not in a production build (#29)", async ({ page }) => {
   const response = await page.goto("/playground");
@@ -13,10 +13,17 @@ test("the sign-in stand-in is not in a production build (#45)", async ({ page })
   expect(response?.status()).toBe(404);
 });
 
-test("sign-in says it is not open yet in a production build (#93)", async ({ page }) => {
+test("sign-in says it is not open yet in a production build (#93, #177)", async ({ page }) => {
   await page.goto("/sign-in?next=/post");
+  await expect(page).toHaveURL(/\/sign-in\/closed$/);
   await expect(page.getByRole("heading", { name: "Sign-in isn't open yet." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Browse ideas" })).toHaveAttribute("href", "/");
+});
+
+test("the tab row has no account control when nothing can sign you in (#177)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Pages" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
 });
 
 test.describe("public, but not searchable (PRD D18)", () => {

@@ -32,11 +32,13 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 | `src/db/testing/` | Database test helpers (`describeWithDatabase`, `withRollback`), `globalSetup.ts` (creates, migrates, and drops each run's database), `runDatabase.ts` (names and the run registry), factories, and invented fixtures |
 | `src/testing/` | Framework-free test fakes, such as the fake clock |
 | `src/core/permissions.ts` | Who may do what (`can`, `boardsFor`, `canSeeWhoPosted`, `isAuthor`), built from the table in `docs/data-model.md`, which a test pins. "Open" cells go through `otherLeaderMay` (D16) |
-| `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), `sgauthClient.ts` (the SGAuth session client: forwards only the SGAuth cookie, 60-second cache for students, live and fail-closed for leaders; wired in by #177), and `session.ts`, the one module the app calls (`getSession()`) |
+| `src/auth/` | The sign-in module (#45): `contract.ts` (zod schema for SGAuth's session body, `Session`, `toSession`), `standIn.ts` (invented test users in SGAuth's shape), `sgauthClient.ts` (the SGAuth session client: forwards only the SGAuth cookie, 60-second cache for students, live and fail-closed for leaders), and `session.ts`, the one module the app calls and the only importer of the client: `getSession()` (the SGAuth branch when `AUTH_SGAUTH` is on, else the stand-in), `signInUrl(next, origin)`, `signOutUrl(origin)`, and `canSignIn()`. Return addresses are checked against `SGAUTH_RETURN_ORIGINS` before anything is sent to SGAuth (#177) |
 | `src/core/positions.ts` | SGAuth position keys to boards and roles (`rolesFromPositions`, `boardsRun`), and `isSgaLeader`, the one function for PRD D16. A test pins its keys to `docs/sgauth-integration.md` |
 | `src/auth/gate.ts` | The sign-in gate (#93): `requireSignedIn` for pages, `withSession` for server actions, `signInDestination` for `/sign-in` |
 | `src/core/nextPath.ts` | `safeNextPath`: only same-site relative paths survive, the open-redirect guard for every `next` |
-| `src/app/sign-in/` | The `/sign-in` route and its "Sign-in isn't open yet." panel. The one place that knows how sign-in starts |
+| `src/app/sign-in/` | `route.ts`, the `/sign-in` route handler: it decides and redirects before anything streams (a `redirect()` inside `<Suspense>` left the page stuck, #177). `closed/` is the "Sign-in isn't open yet." page it lands on when nothing can sign you in. The one place that knows how sign-in starts |
+| `src/app/_account/` | `signOut`, the stand-in sign-out server action: same origin only, then `endSession()` and home (#177). SGAuth sign-out is a link, not this action |
+| `src/components/AccountLinks.tsx` | The Sign in link, or the name and Sign out, at the end of the tab row (#177). Shown only when `canSignIn()`. Plain anchors, never `next/link` (`SignInLink.tsx` is its client part) |
 | `src/app/stand-in/` | The dev-only sign-in stand-in page (`page.dev.tsx`), its actions, and a presentational panel |
 | `src/email/` | The `sendEmail()` contract and the capturing mailer. The Resend mailer, the secret-protected drain route, and its schedule still come with E9 |
 | `src/email/ideaEvent.ts` | The follower email (#101), pure: the `IdeaEvent` type, its dedupe key, `IDEA_EVENT_PRIORITY`, the strict payload schema (no author field), and `renderIdeaEventEmail` (plain text) |
@@ -134,6 +136,7 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 ## 4. Security
 
 - **The sign-in stand-in runs only when `APP_ENV` is `local` or `test`.** `src/env.ts` refuses to start otherwise, and `src/env.test.ts` checks every other environment. The stand-in page is `.dev.tsx`, and `startStandInSession` also refuses when `AUTH_STAND_IN` is off.
+- **SGAuth sign-in (`AUTH_SGAUTH`) runs only when `APP_ENV` is `dev` until T2.5.** `src/env.ts` refuses it elsewhere, and requires `SGAUTH_URL` (https) and `SGAUTH_COOKIE_NAME`. SGAuth sign-in and sign-out links are plain anchors: sign-out works only as a top-level navigation, and SGAuth clears its own cookie (#177).
 - **Public, but not searchable.** Every response sends `X-Robots-Tag: noindex` (`next.config.ts`) and the root layout sets `robots: { index: false }`. `tests/browser/site.spec.ts` checks both for every path in `PAGES`.
 - **Viewer shapes and same-origin writes** are in `CLAUDE.md`, "Architecture rules." A test must fail if a private field reaches the student shape.
 

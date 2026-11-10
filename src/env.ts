@@ -25,6 +25,13 @@ const databaseUrlFields = z.object({
   DIRECT_URL: postgresUrl("DIRECT_URL"),
 });
 
+function optional<T extends z.ZodType>(inner: T) {
+  return z.preprocess((value) => (value === "" ? undefined : value), inner.optional());
+}
+
+// RFC 6265 token characters: a cookie name with ; = , or a space cannot be forwarded as a header.
+const COOKIE_NAME = /^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/;
+
 const schema = z
   .object({
     // Which deployment this is. Vercel sets it per environment.
@@ -37,12 +44,45 @@ const schema = z
       .enum(["0", "1"], { error: "AUTH_STAND_IN must be 1 or 0" })
       .optional()
       .transform((value) => value === "1"),
+    // SGAuth sign-in (#177). Only on dev.proposals until T2.5 is merged and deployed.
+    AUTH_SGAUTH: z
+      .enum(["0", "1"], { error: "AUTH_SGAUTH must be 1 or 0" })
+      .optional()
+      .transform((value) => value === "1"),
+    // Empty means unset, as for the database URLs. Required only when AUTH_SGAUTH is on.
+    SGAUTH_URL: optional(z.url({ error: "SGAUTH_URL must be a URL" })),
+    SGAUTH_COOKIE_NAME: optional(
+      z.string().regex(COOKIE_NAME, {
+        error: "SGAUTH_COOKIE_NAME may hold only letters, digits, and !#$%&'*+-.^_`|~",
+      }),
+    ),
   })
   .refine((env) => !env.AUTH_STAND_IN || env.APP_ENV === "local" || env.APP_ENV === "test", {
     // Otherwise anyone could choose "I'm the VP" on a deployed site (dev-process.md).
     message: "The sign-in stand-in runs only when APP_ENV is local or test",
     path: ["AUTH_STAND_IN"],
   })
+  .refine((env) => !env.AUTH_SGAUTH || env.APP_ENV === "dev", {
+    // Production must not use the SGAuth client until T2.5 is merged and deployed (#177),
+    // and a *.vercel.app preview cannot use sign-in (its origin is not registered).
+    message: "SGAuth sign-in runs only when APP_ENV is dev until T2.5",
+    path: ["AUTH_SGAUTH"],
+  })
+  .refine((env) => !env.AUTH_SGAUTH || env.SGAUTH_URL !== undefined, {
+    message: "SGAUTH_URL is required when AUTH_SGAUTH is 1",
+    path: ["SGAUTH_URL"],
+  })
+  .refine((env) => !env.AUTH_SGAUTH || env.SGAUTH_COOKIE_NAME !== undefined, {
+    message: "SGAUTH_COOKIE_NAME is required when AUTH_SGAUTH is 1",
+    path: ["SGAUTH_COOKIE_NAME"],
+  })
+  .refine(
+    (env) => !env.AUTH_SGAUTH || env.SGAUTH_URL === undefined || env.SGAUTH_URL.startsWith("https://"),
+    {
+      message: "SGAUTH_URL must be an https:// URL when AUTH_SGAUTH is 1",
+      path: ["SGAUTH_URL"],
+    },
+  )
   .refine((env) => env.DATABASE_URL !== undefined || env.APP_ENV === "local" || env.APP_ENV === "test", {
     // A deployed site reads its ideas from the database (#60). Local and test fall back to
     // the sample ideas, so browser tests and agent worktrees need no database.

@@ -43,9 +43,10 @@ export function withSession<A extends unknown[], R>(
 }
 
 // What /sign-in does with a request: where to send it, or null when nothing
-// can sign you in. `rawNext` is untrusted.
-export async function signInDestination(rawNext: string | undefined): Promise<string | null> {
+// can sign you in. `rawNext` is untrusted; `origin` is the request's own origin,
+// which SGAuth sign-in returns to (#177).
+export async function signInDestination(rawNext: string | undefined, origin: string): Promise<string | null> {
   const next = safeNextPath(rawNext) ?? "/";
   if (await getSession()) return next;
-  return signInUrl(next);
+  return signInUrl(next, origin);
 }
