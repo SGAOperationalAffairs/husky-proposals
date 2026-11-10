@@ -3,8 +3,10 @@ import { BOARDS } from "@/core/boards";
 import {
   buildApprovedIdea,
   buildBoard,
+  buildEmailPreference,
   buildFollow,
   buildIdea,
+  buildOutboxRow,
   buildParticipation,
   buildReview,
   buildRevision,
@@ -14,6 +16,7 @@ import {
   resetFactories,
   testUuid,
 } from "./factories";
+import { ideaEventPayloadSchema } from "@/email/ideaEvent";
 import { boards, ideas, users } from "./fixtures";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -100,5 +103,32 @@ describe("revision, review, participation, and follow builders (#44)", () => {
     expect(participation.createdAt).toEqual(FIXTURE_TIME);
     expect(participation.updatedAt).toEqual(FIXTURE_TIME);
     expect(buildFollow({ userId: testUuid(1), ideaId: testUuid(300) }).createdAt).toEqual(FIXTURE_TIME);
+  });
+});
+
+describe("outbox and email preference builders (#101)", () => {
+  beforeEach(resetFactories);
+
+  it("an outbox row is an unsent idea_event at priority 3 with a unique key and a valid payload", () => {
+    const a = buildOutboxRow({ userId: testUuid(1) });
+    const b = buildOutboxRow({ userId: testUuid(1) });
+    expect(a).toMatchObject({
+      type: "idea_event",
+      priority: 3,
+      createdAt: FIXTURE_TIME,
+      sendAfter: FIXTURE_TIME,
+    });
+    expect(a.dedupeKey).not.toBe(b.dedupeKey);
+    expect(a.id).toMatch(UUID);
+    expect(ideaEventPayloadSchema.safeParse(a.payload).success).toBe(true);
+  });
+
+  it("an email preference is weekly with nothing stopped, and takes overrides", () => {
+    expect(buildEmailPreference({ userId: testUuid(1) })).toEqual({
+      userId: testUuid(1),
+      digestFrequency: "weekly",
+      digestWeekday: 1,
+    });
+    expect(buildEmailPreference({ userId: testUuid(1), digestFrequency: "off" }).digestFrequency).toBe("off");
   });
 });
