@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { PENDING_LIMIT_REASON, pendingPostsText } from "@/core/review";
 import { PostForm } from "./PostForm";
 
 // The post form (#55): a board is picked first, then the rest of the form opens.
@@ -77,18 +78,40 @@ describe("PostForm", () => {
     ).toBeTruthy();
   });
 
-  it("refuses a fourth pending post and says why", () => {
+  it("refuses a fourth pending post and says why (#132)", () => {
     render(<PostForm pendingCount={3} />);
     pickBoard();
-    expect(screen.getByRole("status").textContent).toMatch(/3 posts waiting for review/);
-    expect(submit().closest("fieldset")?.disabled).toBe(true);
+    const banner = screen.getByRole("status");
+    expect(banner.textContent).toBe(PENDING_LIMIT_REASON);
+    expect(submit().getAttribute("aria-disabled")).toBe("true");
+    // The fieldset disables the field, so check the :disabled state, not the property.
+    expect(screen.getByLabelText("Title").matches(":disabled")).toBe(true);
+    const described = submit().getAttribute("aria-describedby")!.split(" ");
+    const text = described.map((id) => document.getElementById(id)?.textContent).join(" ");
+    expect(text).toContain(pendingPostsText(3));
+    expect(text).toContain(PENDING_LIMIT_REASON);
   });
 
-  it("allows posting with fewer than three pending", () => {
-    render(<PostForm pendingCount={2} />);
+  it("does not show field errors when the disabled button is pressed at the limit (#132)", () => {
+    render(<PostForm pendingCount={3} />);
     pickBoard();
+    fireEvent.click(submit());
+    expect(screen.queryByText("Add a title, up to 120 characters.")).toBeNull();
+  });
+
+  it("moves focus to the limit message at the limit (#132)", () => {
+    render(<PostForm pendingCount={3} />);
+    pickBoard();
+    expect(document.activeElement).toBe(screen.getByRole("status"));
+  });
+
+  it.each([0, 1, 2])("shows the count and allows posting at %i pending (#132)", (n) => {
+    render(<PostForm pendingCount={n} />);
+    pickBoard();
+    const line = screen.getByText(pendingPostsText(n));
     expect(screen.queryByRole("status")).toBeNull();
-    expect(submit().closest("fieldset")?.disabled).toBe(false);
+    expect(submit().getAttribute("aria-disabled")).toBeNull();
+    expect(submit().getAttribute("aria-describedby")).toBe(line.id);
   });
 
   it("marks the fields that need fixing, with a message that says what to do", () => {
