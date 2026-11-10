@@ -79,12 +79,12 @@ gantt
 | Nov 1 | D9 (appeals) answered | The decline message ships without an appeal line |
 | Sun Nov 1 | **Done.** Creative direction picked in the playground (T0.3b): the Poster direction (#29) | E5 builds on the Civic look and restyles later through the tokens |
 | Sun Nov 8 | E4 and E5 merged into `dev`. **E5 is merged. E4 is waiting on #56 and #59 to merge** | Cut list items 1 to 2 (`build-plan.md`) |
-| Nov 9 to 15 | SGAuth connection spike: one real sign-in on `proposals-dev`, and the environment checklist written | The switch starts late; watch the Nov 27 fallback |
+| Nov 9 to 15 | SGAuth connection spike: one real sign-in on `dev.proposals`, and the environment checklist written | The switch starts late; watch the Nov 27 fallback |
 | Sun Nov 15 | E6 and E7 merged. **D16 (who sees names) decided Nov 2, option A.** Executive Board names still to be implemented | Cut list items 3 to 4 |
 | Mon Nov 16 | SGAuth milestone 2 done | Stay on the stand-in; the switch moves to Nov 23 to 24 |
 | Fri Nov 20 | Feature freeze. Estimate the tabling form (E11) | Anything unmerged moves after the soft launch |
-| Fri Nov 27 | Real sign-in working on `proposals-dev` | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
-| Mon Nov 30 | Soft launch starts on `proposals-dev` (deployed from `dev`), SGA members on the auth-dev allowlist. `dev` takes fixes only until Dec 13 | |
+| Fri Nov 27 | Real sign-in working on `dev.proposals` | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
+| Mon Nov 30 | Soft launch starts on `dev.proposals` (deployed from `dev`), SGA members on the dev.auth allowlist. `dev` takes fixes only until Dec 13 | |
 | Dec 14 to 20 | Finals: production breakage only | |
 | Before Jan 20 | SGAuth milestone 3 live in production. D14 data policy in place | The student launch waits |
 | Wed Jan 20 | Student launch, `v1.0.0` (proposed) | |

@@ -19,7 +19,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 | Branch | Role | Deploys to | Database |
 |---|---|---|---|
 | `main` | Production | `proposals.northeasternsga.com` | Neon `main` |
-| `dev` | Integration, and the default branch. Every feature lands here first | `proposals-dev.northeasternsga.com`, signing in against SGAuth dev | Neon `dev` |
+| `dev` | Integration, and the default branch. Every feature lands here first | `dev.proposals.northeasternsga.com`, signing in against SGAuth dev | Neon `dev` |
 | `<issue>-<slug>`, for example `12-review-queue` | One branch per issue, cut from `dev` | A Vercel preview on `vercel.app`, behind password protection, browse-only (sign-in cannot work there) | Neon `dev` |
 | `hotfix-<issue>-<slug>` | Urgent production fixes only, cut from `main` | A Vercel preview | Neon `dev` |
 | CI | | | A Neon test branch |
@@ -47,8 +47,8 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 ### Releases
 
 - **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
-- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`. The soft launch runs on `proposals-dev`, which deploys from `dev`, so `v0.9.0` on `main` is a checkpoint, not the build testers use.
-- **Cadence:** release when a milestone's work is verified on `proposals-dev`. Weekly during launch.
+- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`. The soft launch runs on `dev.proposals`, which deploys from `dev`, so `v0.9.0` on `main` is a checkpoint, not the build testers use.
+- **Cadence:** release when a milestone's work is verified on `dev.proposals`. Weekly during launch.
 
 ### Hotfixes
 
@@ -59,7 +59,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 ### Migrations
 
 - Pull requests may only add to the schema (expand). Removals come in a later release (contract).
-- Previews share the `dev` database, so a destructive migration in an open pull request would break every preview and `proposals-dev`.
+- Previews share the `dev` database, so a destructive migration in an open pull request would break every preview and `dev.proposals`.
 
 ### The sign-in stand-in
 

@@ -118,7 +118,7 @@ These work the way social apps handle likes. Students act freely, and nothing vi
 - an external uptime monitor on a health route that queries the database;
 - error tracking.
 
-**Load test before launch,** with k6 against `proposals-dev` and the sign-in stand-in:
+**Load test before launch,** with k6 against `dev.proposals` and the sign-in stand-in:
 
 1. **The spike:** 2,000 visits in an hour.
 2. **Support burst:** 200 students supporting the same idea within a minute.
