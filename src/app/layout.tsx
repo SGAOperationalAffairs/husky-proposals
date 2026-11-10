@@ -7,7 +7,13 @@ import "./globals.css";
 // The Poster direction's faces (#29). design/tokens.css reads these variables.
 // Big Shoulders' optical-size axis gives the condensed display cut at large sizes.
 const publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-public-sans" });
-const bigShoulders = Big_Shoulders({ subsets: ["latin"], axes: ["opsz"], variable: "--font-big-shoulders" });
+// No fallback metrics exist for Big Shoulders, so Next warns on every load (#178).
+const bigShoulders = Big_Shoulders({
+  subsets: ["latin"],
+  axes: ["opsz"],
+  variable: "--font-big-shoulders",
+  adjustFontFallback: false,
+});
 
 export const metadata: Metadata = {
   title: "Husky Proposals",
