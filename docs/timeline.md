@@ -2,7 +2,7 @@
 
 When each epic is planned, mapped to `feature-map.md`. Read this to find what is due. The task detail is in `build-plan.md`. The issues are the live backlog.
 
-Updated November 5, 2026. Dates are inclusive. The chart renders on GitHub. Status reflects work merged into `dev` as of that date; "Done" marks finished epics and checkpoints, and "Active" marks work in progress.
+Updated November 9, 2026. Dates are inclusive. The chart renders on GitHub. Status reflects work merged into `dev` as of that date; "Done" marks finished epics and checkpoints, and "Active" marks work in progress.
 
 ## Today, in short
 
@@ -60,13 +60,13 @@ gantt
 |---|---|---|---|
 | E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, port (#26, #43, #32). Playground and Poster direction (#29) |
 | E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules module, viewer shapes (#44, #49, #50, #51, #53). Issue #46 is still open as a tracker |
-| E3 Sign-in and roles | Oct 26 | Nov 20 | **Stand-in done** (#45, #93). Connection spike Nov 9 to 15 and switch Nov 16 to 20 not started. Fallback to the stand-in if not working by Nov 27 |
-| E4 Posting and review | Nov 2 | Nov 8 | **Active.** Post form and server action merged (#54, #55). Review actions and queue query merged (#58). Resubmit (#56) and the review screen (#59) are approved and waiting on merge |
+| E3 Sign-in and roles | Oct 26 | Nov 20 | **Stand-in done** (#45, #93). Connection spike Nov 9 to 15 (not started as of Nov 9) and switch Nov 16 to 20 not started. Fallback to the stand-in if not working by Nov 27 |
+| E4 Posting and review | Nov 2 | Nov 8 | **Active.** Post form and server action merged (#54, #55). Review actions and queue query merged (#58). Resubmit (#56, PR #153) and the review screen (#59, PR #155) are merged. Past its Nov 8 end date and not marked done, so late |
 | E5 Public browsing | Nov 2 | Nov 8 | **Done.** Public queries and caching (#60), ideas list and idea page (#61), share dialog with copy link, poster, and flyer (#81), list view (#138). Issue #48 is still open as a tracker |
-| E9 Email | Nov 2 | Nov 20 | Outbox first, decision emails, then digests |
-| E6 Student actions | Nov 9 | Nov 15 | |
-| E7 SGA queue and decisions | Nov 9 | Nov 15 | **Active.** Queue page with row styles (#124) and review actions (#58) merged. Start, hold, and deliver controls (#98, #126) not started |
-| E10 Launch readiness | Nov 9 | Dec 13 | Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request. The soft launch does not depend on #80 (the dev Vercel project): `main` already deploys production through the SGA project's Git integration, so the soft launch can run without it. #80 still helps by giving a deployed dev build without merging to `main`, and by catching production issues earlier |
+| E9 Email | Nov 2 | Nov 20 | Outbox first, decision emails, then digests. Follow action and follower email outbox (#101, PR #174) are in review, not approved |
+| E6 Student actions | Nov 9 | Nov 15 | **Active.** Support (#94, PR #173) merged. Follow (#101, PR #174) in review. "I'll participate" (#95) and remembered taps (#102) open and not yet in the pipeline. No epic tracking issue |
+| E7 SGA queue and decisions | Nov 9 | Nov 15 | **Active.** Queue page with row styles (#124) and review actions (#58) merged. Start, hold, and deliver controls (#98, #126) still open |
+| E10 Launch readiness | Nov 9 | Dec 13 | **Not started.** No issues filed yet for monitoring and backups, load test, accessibility pass, training, or launch tasks. Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request. The soft launch does not depend on #80 (the dev Vercel project): `main` already deploys production through the SGA project's Git integration, so the soft launch can run without it. #80 still helps by giving a deployed dev build without merging to `main`, and by catching production issues earlier |
 | E8 Updates and names | Nov 16 | Nov 20 | |
 | E11 Tabling form | Dec 21 | Jan 11 | Estimated at the freeze. Built over winter break if it fits |
 | E12 Promotion switch | Dec 21 | Dec 27 | Off by default; only if feedback asks for it |
@@ -78,9 +78,9 @@ gantt
 |---|---|---|
 | Nov 1 | D9 (appeals) answered | The decline message ships without an appeal line |
 | Sun Nov 1 | **Done.** Creative direction picked in the playground (T0.3b): the Poster direction (#29) | E5 builds on the Civic look and restyles later through the tokens |
-| Sun Nov 8 | E4 and E5 merged into `dev`. **E5 is merged. E4 is waiting on #56 and #59 to merge** | Cut list items 1 to 2 (`build-plan.md`) |
-| Nov 9 to 15 | SGAuth connection spike: one real sign-in on `dev.proposals`, and the environment checklist written | The switch starts late; watch the Nov 27 fallback |
-| Sun Nov 15 | E6 and E7 merged. **D16 (who sees names) decided Nov 2, option A.** Executive Board names still to be implemented | Cut list items 3 to 4 |
+| Sun Nov 8 | E4 and E5 merged into `dev`. **E5 is merged. E4 is late: #56 and #59 are merged into dev (PRs #153, #155), but the epic is not marked done** | Cut list items 1 to 2 (`build-plan.md`) |
+| Nov 9 to 15 | SGAuth connection spike: one real sign-in on `dev.proposals`, and the environment checklist written. **Not started as of Nov 9** | The switch starts late; watch the Nov 27 fallback |
+| Sun Nov 15 | E6 and E7 merged. E7 and E6 are in progress; E10 monitoring and backups have no issue yet. **D16 (who sees names) decided Nov 2, option A.** Executive Board names still to be implemented | Cut list items 3 to 4 |
 | Mon Nov 16 | SGAuth milestone 2 done | Stay on the stand-in; the switch moves to Nov 23 to 24 |
 | Fri Nov 20 | Feature freeze. Estimate the tabling form (E11) | Anything unmerged moves after the soft launch |
 | Fri Nov 27 | Real sign-in working on `dev.proposals` | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
