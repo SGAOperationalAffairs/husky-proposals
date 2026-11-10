@@ -9,11 +9,12 @@ import { PAGE } from "@/components/pageTransition";
 export function SiteHeader({ nav }: { nav?: ReactNode }) {
   return (
     <header className="site-header flex flex-col gap-3">
-      <Link transitionTypes={PAGE} href="/" className="inline-flex items-center gap-3 self-start">
-        <span aria-hidden className="bordered px-1.5 heading text-lg leading-tight">
-          SGA
-        </span>
-        <span className="font-bold">Husky Proposals</span>
+      {/* The long logo (#183). A <picture> picks the dark variant by color scheme, so no script runs. */}
+      <Link transitionTypes={PAGE} href="/" className="inline-flex self-start">
+        <picture>
+          <source srcSet="/brand/husky-prop-long-dark.svg" media="(prefers-color-scheme: dark)" />
+          <img src="/brand/husky-prop-long.svg" alt="Husky Proposals" className="h-9 w-auto" />
+        </picture>
       </Link>
       {nav}
     </header>
