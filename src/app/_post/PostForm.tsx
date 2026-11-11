@@ -155,7 +155,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
       return;
     }
     // The server checks again and is the authority; the client check only saves a trip (#181).
-    const serverErrors = await postIt(result.data);
+    const serverErrors = await postIt(result.data, () => saveDraft(values));
     if (serverErrors && Object.keys(serverErrors).length > 0) {
       setErrors(serverErrors);
       focusFirstError.current = true;
@@ -163,6 +163,8 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   }
 
   // Keep what the student wrote for after sign-in (#181, the post form's share of #102).
+  // The first save happens in onSubmit, before the Sign in link renders; this keeps the
+  // draft current if the student edits the form while the prompt is showing.
   useEffect(() => {
     if (phase === "signed_out") saveDraft(values);
   }, [phase, values]);

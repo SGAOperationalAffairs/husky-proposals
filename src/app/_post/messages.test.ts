@@ -7,7 +7,13 @@ describe("post messages (#181)", () => {
   });
 
   it("covers every code the action can return", () => {
-    expect([...POST_CODES].sort()).toEqual(["cross_origin", "invalid", "pending_limit", "signed_out"]);
+    expect([...POST_CODES].sort()).toEqual([
+      "cross_origin",
+      "invalid",
+      "pending_limit",
+      "signed_out",
+      "unexpected",
+    ]);
   });
 
   it("does not say anything promises action", () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Big_Shoulders, Public_Sans } from "next/font/google";
 import { ViewTransition } from "react";
 import { ToastProvider } from "@/components/Toast";
+import { ErrorFloaterSlot } from "./_errors/ErrorFloaterSlot";
 import "./globals.css";
 
 // The Poster direction's faces (#29). design/tokens.css reads these variables.
@@ -25,6 +26,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             and nothing else animates. The look is in globals.css. */}
         <ToastProvider>
           <ViewTransition default={{ page: "auto", default: "none" }}>{children}</ViewTransition>
+          {/* On dev and preview only (#191). Outside the ViewTransition, so it survives error.tsx. */}
+          <ErrorFloaterSlot />
         </ToastProvider>
       </body>
     </html>

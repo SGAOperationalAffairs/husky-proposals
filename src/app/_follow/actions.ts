@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import type { Session } from "@/auth/contract";
+import { reportThrows } from "@/app/_errors/reportThrows";
 import { withSession } from "@/auth/gate";
 import { isSameOrigin } from "@/core/sameOrigin";
 import { prismaFollowStore } from "@/db/followStore";
@@ -24,6 +25,11 @@ const setFollowingAsSession = withSession((session: Session, raw: unknown) =>
   setFollow(prismaFollowStore(db()), session, raw),
 );
 
+// Every exported action goes through reportThrows, so a throw shows on dev and preview (#191).
+const setFollowingReporting = reportThrows("setFollowing", async (raw: unknown) =>
+  (await isOwnOrigin()) ? setFollowingAsSession(raw) : crossOrigin,
+);
+
 export async function setFollowing(raw: unknown) {
-  return (await isOwnOrigin()) ? setFollowingAsSession(raw) : crossOrigin;
+  return setFollowingReporting(raw);
 }

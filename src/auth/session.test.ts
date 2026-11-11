@@ -33,7 +33,15 @@ vi.mock("./sgauthClient", () => ({ createSgauthClient: createClient }));
 
 import { toSession } from "./contract";
 import { STAND_IN_COOKIE, standInResponse } from "./standIn";
-import { canSignIn, endSession, getSession, signInUrl, signOutUrl, startStandInSession } from "./session";
+import {
+  canSignIn,
+  endSession,
+  getSession,
+  sessionProblem,
+  signInUrl,
+  signOutUrl,
+  startStandInSession,
+} from "./session";
 
 function sessionFor(slug: string): Session {
   const result = toSession(standInResponse(slug, new Date("2026-10-31T12:00:00.000Z")));
@@ -133,6 +141,22 @@ describe("SGAuth session (#177)", () => {
       expect(await getSession()).toBeNull();
     },
   );
+
+  it.each([
+    ["sgauth_unavailable", "sgauth_unavailable"],
+    ["invalid_session_response", "invalid_session_response"],
+    ["signed_out", null],
+  ])("sessionProblem for a client failure of %s is %s (#191)", async (code, expected) => {
+    clientGetSession.mockResolvedValue({ ok: false, error: { code } });
+    jar.set(SGAUTH_COOKIE_NAME, "token-value");
+    expect(await sessionProblem()).toBe(expected);
+  });
+
+  it("sessionProblem is null for a good session (#191)", async () => {
+    clientGetSession.mockResolvedValue({ ok: true, session: sessionFor("dab-chair") });
+    jar.set(SGAUTH_COOKIE_NAME, "token-value");
+    expect(await sessionProblem()).toBeNull();
+  });
 
   it("ignores the stand-in cookie", async () => {
     clientGetSession.mockResolvedValue({ ok: false, error: { code: "signed_out" } });
