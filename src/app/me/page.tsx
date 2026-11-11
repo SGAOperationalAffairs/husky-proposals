@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireSignedIn } from "@/auth/gate";
 import { BoardChip } from "@/components/BoardChip";
+import { PendingPoster } from "@/components/PendingPoster";
 import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { STATUS_LABELS } from "@/core/statuses";
@@ -38,33 +39,39 @@ function Rows({ rows, empty }: { rows: MyRow[]; empty: string }) {
   if (rows.length === 0) return <p className="text-muted">{empty}</p>;
   return (
     <ul className="flex flex-col divide-y divide-line">
-      {rows.map((row) => (
-        <li key={row.number} className="flex flex-col gap-2 py-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <BoardChip board={row.board} />
-            <span className="text-sm">#{row.number}</span>
-          </div>
-          {row.review === "approved" && row.status ? (
+      {rows.map((row) =>
+        row.review === "approved" && row.status ? (
+          <li key={row.number} className="flex flex-col gap-2 py-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <BoardChip board={row.board} />
+              <span className="text-sm">#{row.number}</span>
+            </div>
             <Link href={`/ideas/${row.number}`} className="heading text-3xl underline underline-offset-4">
               {row.title}
             </Link>
-          ) : (
-            <p className="heading text-3xl">{row.title}</p>
-          )}
-          <p className="text-sm text-muted">
-            {row.review === "approved" && row.status
-              ? STATUS_LABELS[row.status]
-              : row.review === "pending"
-                ? "Waiting for review"
-                : "Not approved"}
-          </p>
-        </li>
-      ))}
+            <p className="text-sm text-muted">{STATUS_LABELS[row.status]}</p>
+          </li>
+        ) : (
+          <li key={row.number} className="py-4">
+            <PendingPoster
+              number={row.number}
+              title={row.title}
+              board={row.board}
+              review={row.review === "declined" ? "declined" : "pending"}
+              declineReason={row.declineReason}
+            />
+          </li>
+        ),
+      )}
     </ul>
   );
 }
 
-async function MyIdeas({ tab }: { tab: Tab }) {
+// The query and the session are per request, so they are read inside the boundary,
+// as the sign-in page does, so the page can still be prerendered (#193).
+async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
+  const { tab: tabParam } = await searchParams;
+  const tab = tabFrom(tabParam);
   await requireSignedIn("/me");
   const groups = groupMyIdeas(sampleMyRows());
   const empty = TABS.find((t) => t.id === tab)?.empty ?? "";
@@ -88,13 +95,12 @@ async function MyIdeas({ tab }: { tab: Tab }) {
   );
 }
 
-export default async function Me({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
-  const { tab } = await searchParams;
+export default function Me({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-8 @lg:px-8 @lg:pt-8 @lg:pb-12">
       <SiteHeader nav={<NavTabs current="me" />} />
       <Suspense fallback={null}>
-        <MyIdeas tab={tabFrom(tab)} />
+        <MyIdeas searchParams={searchParams} />
       </Suspense>
     </main>
   );
