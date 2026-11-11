@@ -12,16 +12,20 @@ import {
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
+import { PAGE } from "@/components/pageTransition";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
 import { PENDING_LIMIT, PENDING_LIMIT_REASON, pendingPostsText } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
+import { clearDraft, loadDraft, saveDraft, type PostDraft } from "./draft";
+import { FIELD_MESSAGES, postMessage } from "./messages";
+import { usePostIdea } from "./usePostIdea";
 
 // The post form (#55). A student picks the board first; the rest of the form
 // rises in after that, and the panel takes the board's color with a short
 // transition (board-shift in globals.css). Validation is the shared rules in
 // src/core/postIdea.ts, so the form and the post action (#54) check the same
-// thing. The action is not wired yet: submitting only checks the fields.
+// thing. A valid submit runs the action through usePostIdea (#181).
 
 const NOT_SURE = "";
 
@@ -37,17 +41,7 @@ const CATEGORY_ICON: Record<(typeof CATEGORIES)[number], LucideIcon> = {
 const isCategory = (v: string): v is (typeof CATEGORIES)[number] =>
   (CATEGORIES as readonly string[]).includes(v);
 
-type Values = {
-  title: string;
-  summary: string;
-  details: string;
-  category: string;
-  location: string;
-  scale: string;
-  costBand: string;
-  timeHorizon: string;
-  anonymous: boolean;
-};
+type Values = PostDraft;
 
 const EMPTY: Values = {
   title: "",
@@ -59,15 +53,6 @@ const EMPTY: Values = {
   costBand: NOT_SURE,
   timeHorizon: NOT_SURE,
   anonymous: false,
-};
-
-// Field names as the rules module reports them, mapped to the plain message a student sees.
-const MESSAGES: Record<string, string> = {
-  title: "Add a title, up to 120 characters.",
-  summary: "Add a summary, up to 140 characters.",
-  details: "Keep the details under 4,000 characters.",
-  category: "Choose the board this idea is for.",
-  location: "Keep the location under 120 characters.",
 };
 
 function toInput(values: Values) {
@@ -102,6 +87,10 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   const formRef = useRef<HTMLFormElement>(null);
   const limitRef = useRef<HTMLParagraphElement>(null);
   const focusFirstError = useRef(false);
+  const confirmationRef = useRef<HTMLHeadingElement>(null);
+  const { phase, message, submit: postIt, reset } = usePostIdea();
+  const posting = phase === "posting";
+  const saved = phase === "saved";
 
   const boardCode = isCategory(values.category) ? BOARD_FOR_CATEGORY[values.category] : undefined;
   const board = boardCode ? BOARDS[boardCode] : undefined;
@@ -126,6 +115,21 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
     target?.focus();
   }, [picked, blocked]);
 
+  // A post made while signed out comes back here after sign-in (#181). It is filled in
+  // after the first render, so the server and the client draw the same first frame.
+  useEffect(() => {
+    const draft = loadDraft();
+    if (!draft) return;
+    clearDraft();
+    // Storage is an outside system: its value arrives in a callback, not in the effect body.
+    queueMicrotask(() => setValues(draft));
+  }, []);
+
+  // The fields are gone once a post is saved, so focus moves to what replaced them.
+  useEffect(() => {
+    if (saved) confirmationRef.current?.focus();
+  }, [saved]);
+
   const set = <K extends keyof Values>(key: K, value: Values[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => {
@@ -136,7 +140,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
     });
   };
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (blocked) return;
     const result = parsePostIdea(toInput(values));
@@ -144,13 +148,29 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
       const next: Record<string, string> = {};
       for (const issue of result.error.issues) {
         const field = String(issue.path[0]);
-        next[field] ??= MESSAGES[field] ?? "Check this field.";
+        next[field] ??= FIELD_MESSAGES[field] ?? "Check this field.";
       }
       setErrors(next);
       focusFirstError.current = true;
       return;
     }
-    // TODO(#54): call the post action with result.data here.
+    // The server checks again and is the authority; the client check only saves a trip (#181).
+    const serverErrors = await postIt(result.data);
+    if (serverErrors && Object.keys(serverErrors).length > 0) {
+      setErrors(serverErrors);
+      focusFirstError.current = true;
+    }
+  }
+
+  // Keep what the student wrote for after sign-in (#181, the post form's share of #102).
+  useEffect(() => {
+    if (phase === "signed_out") saveDraft(values);
+  }, [phase, values]);
+
+  function postAnother() {
+    setValues(EMPTY);
+    setErrors({});
+    reset();
   }
 
   return (
@@ -163,6 +183,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
         // The panel takes the color of the board once one is picked (#55). The color
         // changes in place, so board-shift can animate it.
         data-board={board?.color}
+        aria-busy={posting || undefined}
         className={`flex flex-col ${board ? "board-accent" : ""}`}
       >
         <div className="board-shift flex flex-wrap items-center justify-between gap-4 bg-accent p-card text-on-accent">
@@ -170,7 +191,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
             {BandIcon && <BandIcon aria-hidden className="size-8 shrink-0" />}
             {board ? board.category : "What is this for?"}
           </p>
-          {board && (
+          {board && !saved && (
             <button
               type="button"
               className="inline-flex items-center gap-1 font-semibold underline underline-offset-4"
@@ -220,7 +241,28 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
             </div>
           )}
 
-          {board && (
+          {board && saved && (
+            <div role="status" className="flex flex-col gap-4 p-card">
+              <h2 ref={confirmationRef} tabIndex={-1} className="heading text-4xl">
+                Sent for review
+              </h2>
+              <p>
+                Your idea is not public yet. The board&apos;s chair or director, or the VP of Campus Affairs,
+                usually reviews it within 2 to 3 days. If it is declined, you will see why, and you can edit
+                it and send it again.
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Button variant="primary" href="/" transitionTypes={PAGE}>
+                  Back to ideas
+                </Button>
+                <Button variant="text" onClick={postAnother}>
+                  Post another idea
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {board && !saved && (
             <div key="fields" className="poster-arrive flex flex-col gap-6 p-card">
               {blocked && (
                 <p
@@ -343,7 +385,22 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
 
               {/* Outside the fieldset so the button stays focusable at the limit and a keyboard
                   user can hear why it does nothing (#132). */}
+              {phase === "signed_out" && (
+                <div role="status" className="flex flex-col items-start gap-3 bordered p-card">
+                  <p>{postMessage("signed_out")}</p>
+                  {/* No prefetch: on dev /sign-in redirects off site (#177). */}
+                  <Button variant="primary" href="/sign-in?next=%2Fpost" prefetch={false}>
+                    Sign in
+                  </Button>
+                </div>
+              )}
+
               <div className="flex flex-col items-end gap-2">
+                {message && (
+                  <p role="alert" className="font-semibold text-accent-text">
+                    {message}
+                  </p>
+                )}
                 <p id={`${ids}-pending`} className={blocked ? "font-semibold" : "text-muted"}>
                   {pendingPostsText(pendingCount)}
                 </p>
@@ -351,10 +408,12 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   variant="primary"
                   type="submit"
                   className="board-shift"
-                  aria-disabled={blocked || undefined}
+                  // aria-disabled, not disabled, so the button keeps focus; the in-flight guard in
+                  // usePostIdea is what stops a second post (#181).
+                  aria-disabled={blocked || posting || undefined}
                   aria-describedby={blocked ? `${ids}-pending ${ids}-limit` : `${ids}-pending`}
                 >
-                  Post idea
+                  {posting ? "Posting" : "Post idea"}
                 </Button>
               </div>
             </div>
