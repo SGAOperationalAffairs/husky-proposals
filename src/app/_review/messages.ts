@@ -2,7 +2,7 @@ import type { DecideError } from "./decidePost";
 
 // The words for a decision that did not go through (#59). Every code the actions can
 // return is an expected result, so it gets plain copy, not a thrown error.
-export type DecisionCode = DecideError["code"] | "cross_origin" | "signed_out";
+export type DecisionCode = DecideError["code"] | "cross_origin" | "signed_out" | "unexpected";
 export type DecisionContext = "decide" | "take_down";
 export type DecisionMessage = { text: string; field?: "reason"; refresh: boolean };
 
@@ -23,7 +23,11 @@ const TEXT: Record<DecisionCode, string> = {
   not_author: TRY_AGAIN,
   pending_limit: TRY_AGAIN,
   cross_origin: TRY_AGAIN,
+  // A throw on dev or preview (#191); the floater shows the detail.
+  unexpected: TRY_AGAIN,
 };
+
+export const TRY_AGAIN_TEXT = TRY_AGAIN;
 
 export const DECISION_CODES = Object.keys(TEXT) as DecisionCode[];
 

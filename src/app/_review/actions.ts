@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { updateTag } from "next/cache";
+import { reportThrows } from "@/app/_errors/reportThrows";
 import type { Session } from "@/auth/contract";
 import { withSession } from "@/auth/gate";
 import { isSameOrigin } from "@/core/sameOrigin";
@@ -42,18 +43,32 @@ const setDueDaysAsSession = withSession((session, raw: unknown) =>
   changeReviewDueDays(prismaBoardSettingsStore(db()), session, raw),
 );
 
+// Every exported action goes through reportThrows, so a throw shows on dev and preview (#191).
+const approveReporting = reportThrows("approvePost", async (raw: unknown) =>
+  (await isOwnOrigin()) ? approveAsSession(raw) : crossOrigin,
+);
+const declineReporting = reportThrows("declinePost", async (raw: unknown) =>
+  (await isOwnOrigin()) ? declineAsSession(raw) : crossOrigin,
+);
+const takeDownReporting = reportThrows("takeDownPost", async (raw: unknown) =>
+  (await isOwnOrigin()) ? takeDownAsSession(raw) : crossOrigin,
+);
+const setDueDaysReporting = reportThrows("setReviewDueDays", async (raw: unknown) =>
+  (await isOwnOrigin()) ? setDueDaysAsSession(raw) : crossOrigin,
+);
+
 export async function approvePost(raw: unknown) {
-  return (await isOwnOrigin()) ? approveAsSession(raw) : crossOrigin;
+  return approveReporting(raw);
 }
 
 export async function declinePost(raw: unknown) {
-  return (await isOwnOrigin()) ? declineAsSession(raw) : crossOrigin;
+  return declineReporting(raw);
 }
 
 export async function takeDownPost(raw: unknown) {
-  return (await isOwnOrigin()) ? takeDownAsSession(raw) : crossOrigin;
+  return takeDownReporting(raw);
 }
 
 export async function setReviewDueDays(raw: unknown) {
-  return (await isOwnOrigin()) ? setDueDaysAsSession(raw) : crossOrigin;
+  return setDueDaysReporting(raw);
 }

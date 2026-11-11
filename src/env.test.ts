@@ -32,7 +32,11 @@ describe("test database environment (#104)", () => {
 
 describe("environment (#26)", () => {
   it("accepts a valid local environment", () => {
-    expect(parseEnv({ APP_ENV: "local" })).toEqual({ APP_ENV: "local", AUTH_STAND_IN: false });
+    expect(parseEnv({ APP_ENV: "local" })).toEqual({
+      APP_ENV: "local",
+      AUTH_STAND_IN: false,
+      AUTH_SGAUTH: false,
+    });
   });
 
   it("accepts the two database URLs, and neither is required (#43)", () => {
@@ -108,6 +112,66 @@ describe("environment (#26)", () => {
 
   it("only accepts 1 or 0 for AUTH_STAND_IN", () => {
     expect(() => parseEnv({ APP_ENV: "local", AUTH_STAND_IN: "yes" })).toThrow(/AUTH_STAND_IN/);
+  });
+});
+
+describe("SGAuth sign-in environment (#177)", () => {
+  const DATABASE_URL = "postgresql://user:pw@host-pooler.example.com/db";
+  const sgauth = {
+    APP_ENV: "dev",
+    AUTH_SGAUTH: "1",
+    SGAUTH_URL: "https://dev.auth.northeasternsga.com",
+    SGAUTH_COOKIE_NAME: "__Secure-sgauth-dev.session_token",
+    DATABASE_URL,
+  };
+
+  it("accepts the dev settings", () => {
+    const parsed = parseEnv(sgauth);
+    expect(parsed.AUTH_SGAUTH).toBe(true);
+    expect(parsed.SGAUTH_URL).toBe("https://dev.auth.northeasternsga.com");
+    expect(parsed.SGAUTH_COOKIE_NAME).toBe("__Secure-sgauth-dev.session_token");
+  });
+
+  it("is off by default and needs no SGAuth variables then", () => {
+    expect(parseEnv({ APP_ENV: "dev", DATABASE_URL }).AUTH_SGAUTH).toBe(false);
+  });
+
+  it("is refused outside dev, naming SGAuth", () => {
+    for (const APP_ENV of ["local", "test", "preview", "production"]) {
+      expect(() => parseEnv({ ...sgauth, APP_ENV }), APP_ENV).toThrow(
+        /SGAuth sign-in runs only when APP_ENV is dev/,
+      );
+    }
+  });
+
+  it("requires SGAUTH_URL and SGAUTH_COOKIE_NAME when on, naming the variable", () => {
+    for (const name of ["SGAUTH_URL", "SGAUTH_COOKIE_NAME"]) {
+      expect(() => parseEnv({ ...sgauth, [name]: undefined }), name).toThrow(new RegExp(name));
+      expect(() => parseEnv({ ...sgauth, [name]: "" }), name).toThrow(new RegExp(name));
+    }
+  });
+
+  it("requires an https SGAUTH_URL when on", () => {
+    expect(() => parseEnv({ ...sgauth, SGAUTH_URL: "http://dev.auth.northeasternsga.com" })).toThrow(
+      /SGAUTH_URL must be an https/,
+    );
+    expect(() => parseEnv({ ...sgauth, SGAUTH_URL: "not a url" })).toThrow(/SGAUTH_URL/);
+  });
+
+  it("refuses a cookie name with a character a cookie name cannot hold", () => {
+    for (const SGAUTH_COOKIE_NAME of ["a;b", "a=b", "a b", "a,b"]) {
+      expect(() => parseEnv({ ...sgauth, SGAUTH_COOKIE_NAME }), SGAUTH_COOKIE_NAME).toThrow(
+        /SGAUTH_COOKIE_NAME/,
+      );
+    }
+  });
+
+  it("only accepts 1 or 0 for AUTH_SGAUTH", () => {
+    expect(() => parseEnv({ ...sgauth, AUTH_SGAUTH: "yes" })).toThrow(/AUTH_SGAUTH/);
+  });
+
+  it("keeps the stand-in refusal outside local and test", () => {
+    expect(() => parseEnv({ ...sgauth, AUTH_STAND_IN: "1" })).toThrow(/The sign-in stand-in runs only/);
   });
 });
 

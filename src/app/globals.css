@@ -562,12 +562,15 @@ label:has(> input[type="checkbox"]:not(:disabled)) {
   }
 }
 
-/* The post form's panel changes to its board's color in place (#55). Only the
-   color moves; reduced motion gets the change at once. */
+/* The post form's panel changes to its board's color in place (#55). Color moves
+   over 700 ms. Translate is listed too, so a board tile's hover lift animates
+   instead of jumping. Tailwind's -translate utilities set the translate property,
+   not transform, so that is the one to list. Otherwise this shorthand would
+   replace the lift's own transition (#187). Reduced motion gets the change at once. */
 .board-shift {
-  transition:
-    background-color 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
-    color 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-property: background-color, color, translate;
+  transition-duration: 700ms, 700ms, 300ms;
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   .board-shift {

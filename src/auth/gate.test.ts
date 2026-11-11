@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "./contract";
 
+const ORIGIN = "https://dev.proposals.northeasternsga.com";
 let current: Session | null = null;
 let pickerUrl: string | null = "/stand-in?next=%2F";
-const signInUrl = vi.fn((next: string) =>
+const signInUrl = vi.fn<(next: string, origin: string) => string | null>((next) =>
   pickerUrl === null ? null : `/stand-in?next=${encodeURIComponent(next)}`,
 );
 
@@ -15,7 +16,7 @@ class RedirectError extends Error {
 
 vi.mock("./session", () => ({
   getSession: async () => current,
-  signInUrl: (next: string) => signInUrl(next),
+  signInUrl: (next: string, origin: string) => signInUrl(next, origin),
 }));
 class NotFoundError extends Error {}
 
@@ -111,27 +112,35 @@ describe("sign-in gate (#93)", () => {
   describe("signInDestination, what /sign-in does", () => {
     it("sends a signed-in visitor straight to next", async () => {
       current = sessionFor("student");
-      expect(await signInDestination("/in-progress")).toBe("/in-progress");
+      expect(await signInDestination("/in-progress", ORIGIN)).toBe("/in-progress");
     });
 
     it("sends a signed-in visitor home when next is missing or hostile", async () => {
       current = sessionFor("student");
-      expect(await signInDestination(undefined)).toBe("/");
-      expect(await signInDestination("//evil.com")).toBe("/");
+      expect(await signInDestination(undefined, ORIGIN)).toBe("/");
+      expect(await signInDestination("//evil.com", ORIGIN)).toBe("/");
     });
 
     it("sends a signed-out visitor to the picker when the stand-in is on", async () => {
-      expect(await signInDestination("/post")).toBe("/stand-in?next=%2Fpost");
+      expect(await signInDestination("/post", ORIGIN)).toBe("/stand-in?next=%2Fpost");
     });
 
     it("gives null when nothing can sign you in", async () => {
       pickerUrl = null;
-      expect(await signInDestination("/post")).toBeNull();
+      expect(await signInDestination("/post", ORIGIN)).toBeNull();
     });
 
     it("falls back to / for a hostile next when signed out", async () => {
-      expect(await signInDestination("https://evil.com")).toBe("/stand-in?next=%2F");
-      expect(signInUrl).toHaveBeenCalledWith("/");
+      expect(await signInDestination("https://evil.com", ORIGIN)).toBe("/stand-in?next=%2F");
+      expect(signInUrl).toHaveBeenCalledWith("/", ORIGIN);
+    });
+
+    it("passes the request origin on and returns an absolute SGAuth URL unchanged (#177)", async () => {
+      const sgauthUrl =
+        "https://dev.auth.northeasternsga.com/login?redirect=https%3A%2F%2Fexample.test%2Fpost";
+      signInUrl.mockReturnValueOnce(sgauthUrl);
+      expect(await signInDestination("/post", ORIGIN)).toBe(sgauthUrl);
+      expect(signInUrl).toHaveBeenCalledWith("/post", ORIGIN);
     });
   });
 });

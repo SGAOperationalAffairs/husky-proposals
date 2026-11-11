@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
 import { approvePost, declinePost, takeDownPost } from "./actions";
-import { decisionMessage, type DecisionCode, type DecisionContext } from "./messages";
+import { reportActionOutcome, reportError } from "@/app/_errors/reports";
+import { decisionMessage, TRY_AGAIN_TEXT, type DecisionCode, type DecisionContext } from "./messages";
 
 // The one hook for the review screens (#59): runs the #58 actions, shows the toast
 // for what happened, refreshes the page's data, and holds the busy and error state.
@@ -15,7 +16,8 @@ export type ReviewBusy = "approve" | "decline" | "take_down" | null;
 export type ReviewError = { text: string; field?: "reason" } | null;
 
 type Outcome =
-  { ok: true; number?: number | null } | { ok: false; error: { code: DecisionCode; fields?: string[] } };
+  | { ok: true; number?: number | null }
+  | { ok: false; error: { code: DecisionCode; fields?: string[]; report?: { message: string } } };
 
 type Target = { id: string; boardId: BoardCode };
 
@@ -34,12 +36,22 @@ export function useReviewActions() {
     setBusy(kind);
     setError(null);
     try {
-      const outcome = await call();
+      let outcome: Outcome;
+      try {
+        outcome = await call();
+      } catch (thrown) {
+        // Production rethrows a failed action (#191). Report it and show Try again, instead
+        // of leaving an unhandled rejection and a button that seems to do nothing.
+        reportError("action", thrown);
+        setError({ text: TRY_AGAIN_TEXT });
+        return false;
+      }
       if (outcome.ok) {
         onOk(outcome);
         router.refresh();
         return true;
       }
+      reportActionOutcome(outcome);
       const message = decisionMessage(outcome.error.code, context, outcome.error.fields);
       setError({ text: message.text, field: message.field });
       if (message.refresh) router.refresh();
