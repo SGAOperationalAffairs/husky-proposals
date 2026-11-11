@@ -36,7 +36,10 @@ function client() {
 
 // Memoized per request (#156): the tabs and a leader page both ask, and the cookie
 // is read once. Server actions and later requests get a fresh read.
-export const getSession = cache(async (): Promise<Session | null> => {
+// The SGAuth failures worth showing on dev and preview (#191). Codes only, never a body.
+export type SessionProblem = "sgauth_unavailable" | "invalid_session_response";
+
+const readSession = cache(async (): Promise<{ session: Session | null; problem: SessionProblem | null }> => {
   if (env().AUTH_SGAUTH) {
     const jar = await cookies();
     // Every call is live (purpose "leader") for the spike, so no leader check can run
@@ -44,17 +47,29 @@ export const getSession = cache(async (): Promise<Session | null> => {
     // Any failure is signed out, so leader access fails closed. The client logs its
     // own codes, so nothing is logged here.
     const result = await client().getSession(jar.get(env().SGAUTH_COOKIE_NAME!)?.value, "leader");
-    return result.ok ? result.session : null;
+    if (result.ok) return { session: result.session, problem: null };
+    const code = result.error.code;
+    return { session: null, problem: code === "signed_out" ? null : code };
   }
-  if (!env().AUTH_STAND_IN) return null;
+  if (!env().AUTH_STAND_IN) return { session: null, problem: null };
   const jar = await cookies();
   const result = toSession(standInResponse(jar.get(STAND_IN_COOKIE)?.value, new Date()));
-  if (result.ok) return result.session;
+  if (result.ok) return { session: result.session, problem: null };
   // standInResponse gives null for no cookie or an unknown one, which is
   // signed out. Log only the code, never the body.
   if (jar.get(STAND_IN_COOKIE)) console.error(`getSession: ${result.error.code}`);
-  return null;
+  return { session: null, problem: null };
 });
+
+export async function getSession(): Promise<Session | null> {
+  return (await readSession()).session;
+}
+
+// Why SGAuth could not answer, or null: success, signed out, and the stand-in are all null.
+// The root layout's error floater reports it, so every page shows it (#191).
+export async function sessionProblem(): Promise<SessionProblem | null> {
+  return (await readSession()).problem;
+}
 
 export async function startStandInSession(
   slug: string,

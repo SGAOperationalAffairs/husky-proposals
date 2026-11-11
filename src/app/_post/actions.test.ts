@@ -25,7 +25,9 @@ const getSession = vi.fn(async () => currentSession);
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: (name: string) => headerValues[name] ?? null }),
 }));
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), unstable_rethrow: vi.fn() }));
+let appEnv = "test";
+vi.mock("@/env", () => ({ env: () => ({ APP_ENV: appEnv }) }));
 vi.mock("@/auth/session", () => ({ getSession: () => getSession(), signInUrl: vi.fn() }));
 vi.mock("@/db/runtime", () => ({ db: () => ({ $transaction: transaction }) }));
 vi.mock("@/db/postStore", () => ({ prismaPostStore: () => store }));
@@ -58,6 +60,30 @@ describe("postIdea action (#54)", () => {
     const { postIdea } = await import("./actions");
     expect(await postIdea(valid)).toEqual({ ok: true, id: "idea-1" });
     expect(store.create).toHaveBeenCalledOnce();
+  });
+});
+
+describe("a store that throws (#191)", () => {
+  beforeEach(() => {
+    currentSession = session;
+    headerValues = own;
+    store.countPending.mockRejectedValueOnce(new Error("database is down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("gives an unexpected result with the message when errors are shown", async () => {
+    appEnv = "test";
+    const { postIdea } = await import("./actions");
+    expect(await postIdea(valid)).toEqual({
+      ok: false,
+      error: { code: "unexpected", report: { message: "postIdea: database is down" } },
+    });
+  });
+
+  it("rethrows in production", async () => {
+    appEnv = "production";
+    const { postIdea } = await import("./actions");
+    await expect(postIdea(valid)).rejects.toThrow("database is down");
   });
 });
 

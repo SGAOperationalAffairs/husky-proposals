@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { reportThrows } from "@/app/_errors/reportThrows";
 import { withSession } from "@/auth/gate";
 import { isSameOrigin } from "@/core/sameOrigin";
 import { db } from "@/db/runtime";
@@ -30,6 +31,11 @@ const setSupportAsSession = withSession(async (session, raw: unknown) => {
   return result;
 });
 
+// Every exported action goes through reportThrows, so a throw shows on dev and preview (#191).
+const setSupportReporting = reportThrows("setSupport", async (raw: unknown) =>
+  (await isOwnOrigin()) ? setSupportAsSession(raw) : crossOrigin,
+);
+
 export async function setSupport(raw: unknown) {
-  return (await isOwnOrigin()) ? setSupportAsSession(raw) : crossOrigin;
+  return setSupportReporting(raw);
 }

@@ -91,6 +91,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - While a page loads, placeholders shaped like the content hold its place (`WallPlaceholder`, `IdeaPlaceholder`). Flat, no shimmer.
 - Pressed state is shown by fill (icons fill, buttons invert), not motion.
 - Small confirmations are toasts (#67): bottom center on phones, bottom right on wider screens, on the surface color with a rule in the idea's board color. They rise in, close after 5 seconds, and never take focus. Support and I'll participate offer Undo. A toast about the same thing replaces the last one (`id`), and more than one collapse into a deck of at most three that fans out on hover or focus.
+- The error floater (#191) is a tool for dev and preview, not content: a full-width panel fixed to the bottom, `bg-ink text-bg` (not a white box on the off-white page) with the Husky red `accent-rule` on top, content in `max-w-2xl`, the list scrolling inside `max-h-80`. Each entry is a hairline-divided row with the time, a square source chip, a count when repeated, the message, and a Dismiss icon button. Only `text-bg` on it, since `text-muted` does not pass on ink. No motion, and it never takes focus. A hidden panel renders nothing.
 - All motion respects `prefers-reduced-motion`: `globals.css` makes every animation, transition, and view transition instant under it.
 
 ## 6. Copy and tone
