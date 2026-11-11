@@ -18,7 +18,12 @@ export function usePostIdea() {
   const inFlight = useRef(false);
 
   // Returns the field errors a server `invalid` result names, for the form to show.
-  async function submit(input: PostIdeaInput): Promise<Record<string, string> | null> {
+  // `onSignedOut` runs before the phase changes, so the caller can keep the draft before
+  // the Sign in link renders (a passive effect could lose that race, R3-C1).
+  async function submit(
+    input: PostIdeaInput,
+    onSignedOut?: () => void,
+  ): Promise<Record<string, string> | null> {
     if (inFlight.current) return null;
     inFlight.current = true;
     setPhase("posting");
@@ -32,6 +37,7 @@ export function usePostIdea() {
       }
       const { error } = result;
       if (error.code === "signed_out") {
+        onSignedOut?.();
         setPhase("signed_out");
         return null;
       }
