@@ -8,12 +8,23 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   // The floater mounts after the page, once its request-time gate has run.
   await page.waitForLoadState("networkidle");
+  // Wait for the floater's own readiness marker: on a slow phone profile (WebKit) the throw
+  // would otherwise land before its listeners are attached, and be dropped.
+  await page.waitForSelector("html[data-error-reports='on']");
 });
 
 const throwLater = (page: import("@playwright/test").Page, message: string) =>
   page.evaluate((text) => {
     setTimeout(() => {
       throw new Error(text);
+    });
+  }, message);
+
+// Started from a timer, like throwLater, so no engine ties it to the evaluate call.
+const rejectLater = (page: import("@playwright/test").Page, message: string) =>
+  page.evaluate((text) => {
+    setTimeout(() => {
+      void Promise.reject(new Error(text));
     });
   }, message);
 
@@ -37,9 +48,7 @@ test("an uncaught exception shows in the panel, and a repeat collapses (#191)", 
 test("a rejected promise adds a second entry (#191)", async ({ page }) => {
   page.on("pageerror", () => {});
   await throwLater(page, "check one");
-  await page.evaluate(() => {
-    void Promise.reject(new Error("check two"));
-  });
+  await rejectLater(page, "check two");
   const panel = page.getByRole("region", { name: "Errors on this page" });
   await expect(text(panel, "check one")).toBeVisible();
   await expect(text(panel, "check two")).toBeVisible();
@@ -48,9 +57,7 @@ test("a rejected promise adds a second entry (#191)", async ({ page }) => {
 test("dismiss and Clear all work by keyboard (#191)", async ({ page }) => {
   page.on("pageerror", () => {});
   await throwLater(page, "check one");
-  await page.evaluate(() => {
-    void Promise.reject(new Error("check two"));
-  });
+  await rejectLater(page, "check two");
   const panel = page.getByRole("region", { name: "Errors on this page" });
   await expect(text(panel, "check two")).toBeVisible();
 

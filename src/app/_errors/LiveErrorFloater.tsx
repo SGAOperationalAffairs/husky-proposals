@@ -17,9 +17,13 @@ export function LiveErrorFloater({ sgauthProblem }: { sgauthProblem: string | nu
     const onRejection = (event: PromiseRejectionEvent) => reportError("client", event.reason);
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
+    // A readiness marker for the browser tests: `networkidle` can return before this deferred
+    // mount has hydrated, and a throw that lands first is dropped (#191).
+    document.documentElement.dataset.errorReports = "on";
     // Reported once per mount, after the store is on.
     if (sgauthProblem) reportError("sgauth", `SGAuth session: ${sgauthProblem}`);
     return () => {
+      delete document.documentElement.dataset.errorReports;
       window.removeEventListener("error", onError);
       window.removeEventListener("unhandledrejection", onRejection);
       disable();
