@@ -7,18 +7,18 @@ afterEach(cleanup);
 
 describe("root error screen (#191)", () => {
   it("shows plain copy with no detail, and Try again retries", () => {
-    const retry = vi.fn();
+    const reset = vi.fn();
     const error = Object.assign(new Error("secret detail"), { digest: "d1" });
-    render(<RootError error={error} retry={retry} />);
+    render(<RootError error={error} reset={reset} />);
     expect(screen.getByRole("heading", { name: "Something went wrong on this page." })).toBeTruthy();
     expect(screen.queryByText(/secret detail|d1/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(retry).toHaveBeenCalledOnce();
+    expect(reset).toHaveBeenCalledOnce();
   });
 
   it("reports the message and digest as a Page error when the floater is on", () => {
     const disable = enableReports();
-    render(<RootError error={Object.assign(new Error("render failed"), { digest: "d2" })} retry={vi.fn()} />);
+    render(<RootError error={Object.assign(new Error("render failed"), { digest: "d2" })} reset={vi.fn()} />);
     expect(getSnapshot().entries[0]).toMatchObject({
       source: "route",
       message: "render failed (digest d2)",
@@ -27,7 +27,7 @@ describe("root error screen (#191)", () => {
   });
 
   it("reports nothing when the floater is off, as in production", () => {
-    render(<RootError error={new Error("x")} retry={vi.fn()} />);
+    render(<RootError error={new Error("x")} reset={vi.fn()} />);
     expect(getSnapshot().entries).toEqual([]);
   });
 });

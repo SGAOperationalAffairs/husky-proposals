@@ -41,7 +41,7 @@ export function reportError(source: ErrorSource, value: unknown): void {
   sequence += 1;
   // A zero-width space on every other report keeps a repeat's text different, so the
   // live region announces it again.
-  const repeatMark = sequence % 2 === 0 ? "​" : "";
+  const repeatMark = sequence % 2 === 0 ? "\u{200b}" : "";
   set({
     entries: addReport(snapshot.entries, { source, message }, new Date()),
     latest: `Error from ${ERROR_SOURCE_LABELS[source]}: ${message}${repeatMark}`,

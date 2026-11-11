@@ -23,6 +23,8 @@ const TEXT: Record<PostCode, string> = {
   invalid: TRY_AGAIN,
   pending_limit: `You have ${PENDING_LIMIT} posts waiting for review. You can post again once one is reviewed.`,
   cross_origin: TRY_AGAIN,
+  // A throw on dev or preview (#191); the floater shows the detail.
+  unexpected: TRY_AGAIN,
 };
 
 export const POST_CODES = Object.keys(TEXT) as PostCode[];
