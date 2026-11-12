@@ -14,6 +14,10 @@ export function sampleMyRows(): MyRow[] {
       supported: false,
       participated: false,
       submittedAt: 5,
+      description: "The Sunday hours end at 2 p.m. Students who study on weekends want dinner until 8.",
+      supportCount: 0,
+      willingCount: 0,
+      updatedDaysAgo: 0,
     },
     {
       number: 202,
@@ -26,6 +30,10 @@ export function sampleMyRows(): MyRow[] {
       participated: false,
       submittedAt: 4,
       declineReason: "This is already in progress with Campus Services. Support the existing idea instead.",
+      description: "A stand with a pump and basic tools, so a flat tire does not end the ride.",
+      supportCount: 0,
+      willingCount: 0,
+      updatedDaysAgo: 0,
     },
     {
       number: 203,
@@ -37,6 +45,10 @@ export function sampleMyRows(): MyRow[] {
       supported: true,
       participated: false,
       submittedAt: 3,
+      description: "Return them at any hall instead of taking a new plastic box each time.",
+      supportCount: 143,
+      willingCount: 17,
+      updatedDaysAgo: 2,
     },
     {
       number: 204,
@@ -48,6 +60,10 @@ export function sampleMyRows(): MyRow[] {
       supported: true,
       participated: true,
       submittedAt: 2,
+      description: "Run the campus shuttle until 2 a.m. on Fridays, so students get home safely.",
+      supportCount: 305,
+      willingCount: 27,
+      updatedDaysAgo: 5,
     },
     {
       number: 205,
@@ -59,6 +75,10 @@ export function sampleMyRows(): MyRow[] {
       supported: false,
       participated: true,
       submittedAt: 1,
+      description: "Food scraps go in the trash today. Bins by each hall, emptied weekly, would change that.",
+      supportCount: 120,
+      willingCount: 10,
+      updatedDaysAgo: 9,
     },
   ];
 }

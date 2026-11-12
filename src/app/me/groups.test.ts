@@ -11,6 +11,10 @@ const row = (overrides: Partial<MyRow> & Pick<MyRow, "number">): MyRow => ({
   supported: false,
   participated: false,
   submittedAt: 0,
+  description: "",
+  supportCount: 0,
+  willingCount: 0,
+  updatedDaysAgo: 0,
   ...overrides,
 });
 

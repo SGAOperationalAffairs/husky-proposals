@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireSignedIn } from "@/auth/gate";
-import { BoardChip } from "@/components/BoardChip";
-import { PendingPoster } from "@/components/PendingPoster";
+import { IdeaCard } from "@/components/IdeaCard";
 import { NavTabs } from "@/components/NavTabs";
+import { PendingIdeaCard } from "@/components/PendingIdeaCard";
 import { SiteHeader } from "@/components/SiteHeader";
-import { STATUS_LABELS } from "@/core/statuses";
 import { groupMyIdeas, type MyRow } from "./groups";
 import { sampleMyRows } from "./sample";
 
@@ -35,34 +34,38 @@ const TABS: { id: Tab; label: string; empty: string }[] = [
 const tabFrom = (value: string | string[] | undefined): Tab =>
   TABS.find((t) => t.id === value)?.id ?? "written";
 
-function Rows({ rows, empty }: { rows: MyRow[]; empty: string }) {
-  if (rows.length === 0) return <p className="text-muted">{empty}</p>;
+// The ideas as posters in a grid (#193): one column on a phone, two or three wider.
+// Each cell is a grid so its card stretches to the row's height, and every card in a
+// row is the same height. Approved ideas are the real idea card. Pending and declined
+// posts are the muted card with no count and no public link (#194).
+function IdeaGrid({ rows }: { rows: MyRow[] }) {
   return (
-    <ul className="flex flex-col divide-y divide-line">
-      {rows.map((row) =>
-        row.review === "approved" && row.status ? (
-          <li key={row.number} className="flex flex-col gap-2 py-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <BoardChip board={row.board} />
-              <span className="text-sm">#{row.number}</span>
-            </div>
-            <Link href={`/ideas/${row.number}`} className="heading text-3xl underline underline-offset-4">
-              {row.title}
-            </Link>
-            <p className="text-sm text-muted">{STATUS_LABELS[row.status]}</p>
-          </li>
-        ) : (
-          <li key={row.number} className="py-4">
-            <PendingPoster
+    <ul className="grid auto-rows-fr grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3">
+      {rows.map((row) => (
+        <li key={row.number} className="grid min-w-0">
+          {row.review === "approved" && row.status ? (
+            <IdeaCard
               number={row.number}
               title={row.title}
+              description={row.description}
+              board={row.board}
+              status={row.status}
+              updatedDaysAgo={row.updatedDaysAgo}
+              supportCount={row.supportCount}
+              willingCount={row.willingCount}
+            />
+          ) : (
+            <PendingIdeaCard
+              number={row.number}
+              title={row.title}
+              description={row.description}
               board={row.board}
               review={row.review === "declined" ? "declined" : "pending"}
               declineReason={row.declineReason}
             />
-          </li>
-        ),
-      )}
+          )}
+        </li>
+      ))}
     </ul>
   );
 }
@@ -75,22 +78,24 @@ async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string 
   await requireSignedIn("/me");
   const groups = groupMyIdeas(sampleMyRows());
   const empty = TABS.find((t) => t.id === tab)?.empty ?? "";
+  const rows = groups[tab];
   return (
     <>
       <h1 className="heading text-6xl @3xl:text-8xl">My ideas</h1>
-      <nav aria-label="My ideas" className="flex gap-6 border-b border-line">
+      {/* The tabs are chips, the same look as the board filter (#193). Each is a link. */}
+      <nav aria-label="My ideas" className="flex flex-wrap gap-2">
         {TABS.map((t) => (
           <Link
             key={t.id}
             href={`/me?tab=${t.id}`}
-            aria-current={t.id === tab ? "page" : undefined}
-            className={t.id === tab ? "border-b-4 border-accent-text pb-2 font-bold" : "pb-2 text-muted"}
+            aria-current={t.id === tab ? "true" : undefined}
+            className="poster-btn inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold"
           >
             {t.label}
           </Link>
         ))}
       </nav>
-      <Rows rows={groups[tab]} empty={empty} />
+      {rows.length === 0 ? <p className="text-muted">{empty}</p> : <IdeaGrid rows={rows} />}
     </>
   );
 }

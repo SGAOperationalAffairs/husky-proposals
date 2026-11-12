@@ -16,6 +16,12 @@ export type MyRow = {
   participated: boolean;
   submittedAt: number;
   declineReason?: string;
+  // What the idea card shows (#193). Pending and declined posts show only the
+  // description; the counts are for approved ideas.
+  description: string;
+  supportCount: number;
+  willingCount: number;
+  updatedDaysAgo: number;
 };
 
 export type MyGroups = {
