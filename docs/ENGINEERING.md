@@ -167,7 +167,7 @@ Still to add, no later than the fifth feature: one hook per feature and the vali
 
 - **Explicit caching only.** `cacheComponents` is on (`next.config.ts`), so data is dynamic unless cached with `use cache` and a named cache tag. Signed-in and SGA pages are never cached.
 - **Query count is tested per page:** one query per idea fails. `publicIdeas.db.test.ts` counts the list's queries with `withCountedSeed()` and checks the count does not grow with more ideas (#60).
-- **Caching pattern for public reads (#60):** `use cache` with named tags lives in `src/app/` (`src/app/_ideas/data.ts`), never in `src/db/`. The cached function returns plain data with ISO times. Read `now` outside the cache, after the caller's dynamic access, so "updated N days ago" never freezes. A server action that changes what the public sees calls `refreshPublicIdea(number)` (`src/app/_ideas/refresh.ts`).
+- **Caching pattern for public reads (#60):** `use cache` with named tags lives in `src/app/` (`src/app/_ideas/data.ts`), never in `src/db/`. The cached function returns plain data with ISO times. Read `now` outside the cache, so "updated N days ago" never freezes; `listWall()` and `getIdea()` await `connection()` first, so callers need not mark themselves dynamic (#223). A server action that changes what the public sees calls `refreshPublicIdea(number)` (`src/app/_ideas/refresh.ts`).
 
 ## 7. Quality bar
 
