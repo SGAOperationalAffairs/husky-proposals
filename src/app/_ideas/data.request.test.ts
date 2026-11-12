@@ -23,6 +23,9 @@ import { getIdea, listWall } from "./data";
 
 const prerenderAbort = new Error("prerender abort");
 
+// When a spy first ran, on vitest's global call counter. -1 means never, so the order check fails.
+const firstCall = (spy: { mock: { invocationCallOrder: number[] } }) => spy.mock.invocationCallOrder[0] ?? -1;
+
 beforeEach(() => {
   vi.clearAllMocks();
   envState.DATABASE_URL = "postgres://fake";
@@ -44,12 +47,12 @@ describe("the clock waits for the request (#223)", () => {
 
   it("reads the clock for an idea page only after connection()", async () => {
     expect(await getIdea(131)).toBe("page");
-    expect(connection.mock.invocationCallOrder[0]).toBeLessThan(toPage.mock.invocationCallOrder[0]);
+    expect(firstCall(connection)).toBeLessThan(firstCall(toPage));
   });
 
   it("reads the clock for the wall only after connection()", async () => {
     expect(await listWall()).toEqual(["card"]);
-    expect(connection.mock.invocationCallOrder[0]).toBeLessThan(toCard.mock.invocationCallOrder[0]);
+    expect(firstCall(connection)).toBeLessThan(firstCall(toCard));
   });
 
   it("waits on connection() for the sample ideas too", async () => {
