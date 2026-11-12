@@ -36,10 +36,12 @@ function migrationFiles(): string[] {
 }
 
 describe("idea_stats migration (#44)", () => {
-  it("creates the view in exactly one migration, matching the source file", () => {
+  // The view is created once, then rebuilt by a later migration when a column type changes
+  // (#202). The latest one must match the source file.
+  it("the latest migration that creates the view matches the source file", () => {
     const withView = migrationFiles().filter((file) => viewBody(readFileSync(file, "utf8")) !== undefined);
-    expect(withView).toHaveLength(1);
-    const latest = withView[0]!;
+    expect(withView.length).toBeGreaterThanOrEqual(1);
+    const latest = withView[withView.length - 1]!;
     expect(viewBody(readFileSync(latest, "utf8"))).toBe(viewBody(readFileSync(VIEW_SOURCE, "utf8")));
   });
 
