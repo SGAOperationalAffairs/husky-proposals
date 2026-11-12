@@ -1,6 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { BOARDS, BOARD_CODES } from "@/core/boards";
+import { BOARD_POSITIONS } from "@/core/positions";
+import { categoryForBoard } from "@/core/postIdea";
 
 // The migrations (#44) are the database's source of truth. Two checks that run
 // without a database: the idea_stats view in the migration matches its source file,
@@ -53,6 +56,28 @@ describe("idea_stats migration (#44)", () => {
 
   it("the view source file says it is a source, not a draft", () => {
     expect(readFileSync(VIEW_SOURCE, "utf8")).not.toMatch(/Draft/);
+  });
+});
+
+// The migration holds its own copy of the five boards, so a change to the core constants
+// without a matching migration (or the reverse) fails here, with no database needed (#219).
+describe("board reference rows (#219)", () => {
+  const file = migrationFiles().find((path) => path.includes("_board_reference_rows/"));
+
+  it("the migration exists and inserts the boards once, without overwriting", () => {
+    expect(file).toBeDefined();
+    const sql = normalize(readFileSync(file!, "utf8"));
+    expect(sql.match(/INSERT INTO boards/g)).toHaveLength(1);
+    expect(sql).toContain("ON CONFLICT DO NOTHING");
+  });
+
+  it("its five rows agree with BOARDS, BOARD_POSITIONS, and categoryForBoard", () => {
+    expect(file).toBeDefined();
+    const sql = normalize(readFileSync(file!, "utf8"));
+    for (const code of BOARD_CODES) {
+      const tuple = `('${code}', '${BOARDS[code].name}', '${categoryForBoard(code)}', '${BOARD_POSITIONS[code].lead}', '${BOARD_POSITIONS[code].member}')`;
+      expect(sql, code).toContain(tuple);
+    }
   });
 });
 
