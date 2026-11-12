@@ -6,6 +6,7 @@ import { can } from "@/core/permissions";
 import {
   applyReviewEvent,
   approveInputSchema,
+  declineReasonSchema,
   reasonInputSchema,
   type ReviewDecision,
   type ReviewError,
@@ -160,7 +161,10 @@ function parseInput(
   type: DecisionType,
   raw: unknown,
 ): { ok: true; ideaId: string; reason: string } | { ok: false; fields: string[] } {
-  const parsed = type === "approve" ? approveInputSchema.safeParse(raw) : reasonInputSchema.safeParse(raw);
+  // A decline needs a longer reason than a take down, so each has its own rule (#58).
+  const schema =
+    type === "approve" ? approveInputSchema : type === "decline" ? declineReasonSchema : reasonInputSchema;
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
     return { ok: false, fields };

@@ -67,7 +67,7 @@ describe("idea event emails (#101)", () => {
     expect(message.subject).toBe("Proposal #103: In progress");
     expect(message.text).toContain("More vegan options");
     expect(message.text).toContain('The Dining Advisory Board moved this idea to "In progress".');
-    expect(message.text).not.toContain("Why it is waiting");
+    expect(message.text).not.toContain("Why it is on hold");
     expect(message.text).toContain(`See where it stands: ${siteUrl}/ideas/103`);
     expect(message.text).toContain("You get this email because you follow this idea.");
   });
@@ -81,8 +81,8 @@ describe("idea event emails (#101)", () => {
       "a@example.com",
       siteUrl,
     );
-    expect(message.subject).toBe("Proposal #103: Waiting");
-    expect(message.text).toContain("Why it is waiting: Waiting on the dining contract.");
+    expect(message.subject).toBe("Proposal #103: On hold");
+    expect(message.text).toContain("Why it is on hold: Waiting on the dining contract.");
   });
 
   it("renders an update", () => {

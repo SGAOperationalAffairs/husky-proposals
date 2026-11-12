@@ -66,7 +66,7 @@ export function renderIdeaEventEmail(payload: IdeaEventPayload, to: string, site
   const label = STATUS_LABELS[event.status];
   const lines = [payload.ideaTitle, "", `The ${board} moved this idea to "${label}".`];
   if (event.status === "waiting" && event.waitingReason)
-    lines.push(`Why it is waiting: ${event.waitingReason}`);
+    lines.push(`Why it is on hold: ${event.waitingReason}`);
   lines.push("", link, "", footer);
   return { to, subject: `Proposal #${payload.ideaNumber}: ${label}`, text: lines.join("\n") };
 }

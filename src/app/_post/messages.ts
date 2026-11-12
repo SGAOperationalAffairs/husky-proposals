@@ -12,9 +12,9 @@ export const TRY_AGAIN = "That didn't go through. Try again.";
 export const FIELD_MESSAGES: Record<string, string> = {
   title: "Add a title, up to 120 characters.",
   summary: "Add a summary, up to 140 characters.",
-  details: "Keep the details under 4,000 characters.",
+  details: "Write 80 to 1,000 characters of detail.",
   category: "Choose the board this idea is for.",
-  location: "Keep the location under 120 characters.",
+  location: "Keep the location up to 120 characters.",
 };
 
 // A Record, so a new code fails to compile until it has copy.

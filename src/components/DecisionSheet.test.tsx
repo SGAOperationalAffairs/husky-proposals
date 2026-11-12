@@ -91,7 +91,7 @@ describe("decision drawer (#59)", () => {
   it("refuses an empty reason and calls nothing", () => {
     const props = setup();
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
-    fireEvent.change(screen.getByLabelText("Reason the student will see"), { target: { value: "   " } });
+    fireEvent.change(screen.getByLabelText(/^Reason the student will see/), { target: { value: "   " } });
     fireEvent.click(screen.getByRole("button", { name: "Send decline" }));
     expect(props.onDecline).not.toHaveBeenCalled();
     expect(screen.getByText("Write a reason so the student knows what to change.")).toBeTruthy();
@@ -100,17 +100,19 @@ describe("decision drawer (#59)", () => {
   it("declines with the reason", () => {
     const props = setup();
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
-    fireEvent.change(screen.getByLabelText("Reason the student will see"), {
-      target: { value: "Please say which hall." },
+    fireEvent.change(screen.getByLabelText(/^Reason the student will see/), {
+      target: { value: "Please say which hall the event will be held in, so the student can add it." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Send decline" }));
-    expect(props.onDecline).toHaveBeenCalledWith("Please say which hall.");
+    expect(props.onDecline).toHaveBeenCalledWith(
+      "Please say which hall the event will be held in, so the student can add it.",
+    );
   });
 
   it("moves focus into the reason field", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
-    expect(document.activeElement).toBe(screen.getByLabelText("Reason the student will see"));
+    expect(document.activeElement).toBe(screen.getByLabelText(/^Reason the student will see/));
   });
 
   it("cancels the decline without closing", () => {
@@ -136,7 +138,7 @@ describe("decision drawer (#59)", () => {
     setup({ error: { text: "Write a reason so the student knows what to change.", field: "reason" } });
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
     expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByLabelText("Reason the student will see").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText(/^Reason the student will see/).getAttribute("aria-invalid")).toBe("true");
   });
 
   it("disables the buttons and says what is happening while busy", () => {

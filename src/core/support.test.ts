@@ -25,7 +25,7 @@ describe("support rules (#94)", () => {
 
   describe("checkSupportable", () => {
     it("an approved idea that is not delivered takes support", () => {
-      for (const status of ["collecting_support", "under_review", "in_progress", "waiting"] as const) {
+      for (const status of ["collecting_support", "in_progress", "waiting"] as const) {
         expect(checkSupportable({ reviewStatus: "approved", status })).toEqual({ ok: true });
       }
     });

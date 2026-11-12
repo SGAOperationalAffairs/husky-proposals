@@ -20,16 +20,17 @@ export type BoardError = { code: "same_board"; boardId: BoardCode };
 // final (data-model gap 4). in_progress to waiting is not allowed yet: it is
 // proposed for E7 and undecided (gap 3), so adding it is one entry here.
 export const TRANSITIONS: Record<IdeaStatus, readonly IdeaStatus[]> = {
-  collecting_support: ["under_review", "waiting", "in_progress"],
-  under_review: ["collecting_support", "waiting", "in_progress"],
-  waiting: ["collecting_support", "under_review", "in_progress"],
+  collecting_support: ["waiting", "in_progress"],
+  waiting: ["collecting_support", "in_progress"],
   in_progress: ["delivered"],
   delivered: [],
 };
 
+const rowFor = (from: IdeaStatus): readonly IdeaStatus[] => TRANSITIONS[from];
+
 // Lets the leader panel show only the buttons that work.
 export function nextStatuses(from: IdeaStatus): readonly IdeaStatus[] {
-  return TRANSITIONS[from];
+  return rowFor(from);
 }
 
 export type StatusPatch = {
@@ -83,7 +84,7 @@ export function changeStatus(
     }
     return { ok: false, error: { code: "same_status", status: from } };
   }
-  if (!TRANSITIONS[from].includes(to)) {
+  if (!rowFor(from).includes(to)) {
     return { ok: false, error: { code: "invalid_transition", from, to } };
   }
   if (to === "waiting" && reason === "") {

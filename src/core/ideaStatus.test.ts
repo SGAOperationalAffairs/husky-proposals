@@ -17,7 +17,7 @@ function idea(status: IdeaStatus, waitingReason: string | null = null) {
 
 describe("idea status rules (#51)", () => {
   describe("transition table", () => {
-    it("is pinned to the status words from #34", () => {
+    it("covers the live statuses, and no retired one", () => {
       expect(Object.keys(TRANSITIONS).sort()).toEqual([...IDEA_STATUSES].sort());
       for (const targets of Object.values(TRANSITIONS)) {
         for (const target of targets) expect(IDEA_STATUSES).toContain(target);
@@ -59,7 +59,7 @@ describe("idea status rules (#51)", () => {
 
     it("requires a reason for waiting: missing, empty, and whitespace-only", () => {
       for (const waitingReason of [undefined, "", "   "]) {
-        expect(changeStatus(idea("under_review"), "waiting", { waitingReason, now })).toEqual({
+        expect(changeStatus(idea("collecting_support"), "waiting", { waitingReason, now })).toEqual({
           ok: false,
           error: { code: "waiting_reason_required" },
         });
@@ -67,7 +67,7 @@ describe("idea status rules (#51)", () => {
     });
 
     it("stores a padded reason trimmed", () => {
-      const result = changeStatus(idea("under_review"), "waiting", {
+      const result = changeStatus(idea("collecting_support"), "waiting", {
         waitingReason: "  Needs funding  ",
         now,
       });
@@ -78,10 +78,10 @@ describe("idea status rules (#51)", () => {
     });
 
     it("clears the reason when leaving waiting", () => {
-      const result = changeStatus(idea("waiting", "Needs funding"), "under_review", { now });
+      const result = changeStatus(idea("waiting", "Needs funding"), "collecting_support", { now });
       expect(result).toMatchObject({
         ok: true,
-        value: { patch: { status: "under_review", waitingReason: null } },
+        value: { patch: { status: "collecting_support", waitingReason: null } },
       });
     });
 
@@ -108,7 +108,7 @@ describe("idea status rules (#51)", () => {
     });
 
     it("returns a system update naming the board for start and deliver only", () => {
-      const start = changeStatus(idea("under_review"), "in_progress", { now });
+      const start = changeStatus(idea("collecting_support"), "in_progress", { now });
       expect(start).toMatchObject({
         ok: true,
         value: { update: { kind: "system", body: "The Dining Advisory Board started work on this idea." } },
@@ -118,7 +118,10 @@ describe("idea status rules (#51)", () => {
         ok: true,
         value: { update: { kind: "system", body: "The Dining Advisory Board marked this idea delivered." } },
       });
-      const other = changeStatus(idea("collecting_support"), "under_review", { now });
+      const other = changeStatus(idea("collecting_support"), "waiting", {
+        waitingReason: "Needs a budget answer",
+        now,
+      });
       expect(other).toMatchObject({ ok: true, value: { update: null } });
     });
   });

@@ -26,6 +26,8 @@ const edit = {
   ideaId: ideas.declined.id,
   title: "Free parking after 6 pm",
   summary: "Open the campus lots to students at no cost in the evening.",
+  details:
+    "The lots behind the library are full by 6 pm, so students who work late drive or walk farther. Open them to students in the evening.",
   category: "campus_planning",
 };
 

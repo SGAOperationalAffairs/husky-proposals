@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { IDEA_STATUSES, STATUS_LABELS } from "@/core/statuses";
 import { IdeaCard } from "./IdeaCard";
 
 afterEach(cleanup);
@@ -58,20 +59,19 @@ describe("idea card as one link", () => {
   });
 });
 
-describe("picked-up stamp (#112)", () => {
-  it("shows for in-progress and delivered ideas", () => {
-    for (const status of ["in_progress", "delivered"] as const) {
+// The status is the tag in the corner, for every live status (Nov 11). The old stamp is gone.
+describe("status tag", () => {
+  it("shows the status as the tag, for every live status", () => {
+    for (const status of IDEA_STATUSES) {
       const { unmount } = render(<IdeaCard {...idea} status={status} />);
-      expect(screen.getByText("Picked up by a board")).toBeTruthy();
+      // A delivered card also says "Delivered" on its action line, so look for at least one.
+      expect(screen.getAllByText(STATUS_LABELS[status]).length).toBeGreaterThan(0);
       unmount();
     }
   });
 
-  it("does not show for open or waiting ideas", () => {
-    for (const status of ["collecting_support", "under_review", "waiting"] as const) {
-      const { unmount } = render(<IdeaCard {...idea} status={status} />);
-      expect(screen.queryByText("Picked up by a board")).toBeNull();
-      unmount();
-    }
+  it("has no picked-up stamp", () => {
+    render(<IdeaCard {...idea} status="in_progress" />);
+    expect(screen.queryByText("Picked up by a board")).toBeNull();
   });
 });

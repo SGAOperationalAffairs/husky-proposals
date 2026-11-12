@@ -283,8 +283,10 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextField
                       label="Title"
-                      hint="Short and specific. Up to 120 characters."
+                      required
+                      hint="Short and specific."
                       error={errors.title}
+                      max={120}
                       maxLength={120}
                       value={values.title}
                       onChange={(e) => set("title", e.target.value)}
@@ -294,9 +296,11 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Short description"
-                      hint="One or two sentences. Students see this on the poster. Up to 140 characters."
+                      required
+                      hint="One or two sentences. Students see this on the poster."
                       error={errors.summary}
                       rows={2}
+                      max={140}
                       maxLength={140}
                       value={values.summary}
                       onChange={(e) => set("summary", e.target.value)}
@@ -306,9 +310,12 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Detailed description"
-                      hint="Optional. Background, who it helps, and what has already been tried."
+                      required
+                      hint="Background, who it helps, and what has been tried. At least 80 characters."
                       error={errors.details}
                       rows={5}
+                      min={80}
+                      max={1000}
                       value={values.details}
                       onChange={(e) => set("details", e.target.value)}
                     />
@@ -318,6 +325,8 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     label="Where on campus"
                     hint="Optional. A building or an area is enough."
                     error={errors.location}
+                    max={120}
+                    maxLength={120}
                     value={values.location}
                     onChange={(e) => set("location", e.target.value)}
                   />

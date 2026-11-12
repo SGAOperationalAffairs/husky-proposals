@@ -29,10 +29,23 @@ type Props = {
   // The board chips, shown right under the search bar (#61): the list passes
   // them in, so the form's layout and the chips' own links stay in their files.
   boards?: ReactNode;
+  // The view switch (cards or list), on the same row as the board chips, to their right.
+  viewSwitch?: ReactNode;
   onChange: (change: Change) => void;
 };
 
-export function IdeaFilters({ action, q, board, status, sort, statuses, sorts, boards, onChange }: Props) {
+export function IdeaFilters({
+  action,
+  q,
+  board,
+  status,
+  sort,
+  statuses,
+  sorts,
+  boards,
+  viewSwitch,
+  onChange,
+}: Props) {
   // The search box holds what the student is typing until they search, and
   // follows the URL when it changes some other way, such as Back.
   const [text, setText] = useState(q ?? "");
@@ -105,7 +118,12 @@ export function IdeaFilters({ action, q, board, status, sort, statuses, sorts, b
           ))}
         </SelectField>
       </div>
-      {boards && <div className="col-span-2 @3xl:basis-full">{boards}</div>}
+      {(boards || viewSwitch) && (
+        <div className="col-span-2 flex flex-wrap items-center justify-between gap-3 @3xl:basis-full">
+          {boards}
+          {viewSwitch}
+        </div>
+      )}
     </form>
   );
 }

@@ -13,7 +13,6 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
-import { STATUS_LABELS } from "@/core/statuses";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS, JOIN } from "@/core/boards";
@@ -62,12 +61,11 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
       {/* One order for every reader: poster, where it stands, about, join. On wide
           screens the right column runs beside the other three (idea-rows). */}
       <div className="grid items-start gap-6 @3xl:grid-cols-5 @3xl:idea-rows">
-        <article data-board={board.color} className="poster flex flex-col gap-4 @3xl:col-span-3">
+        <article data-board={board.color} className="poster relative flex flex-col gap-4 @3xl:col-span-3">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold">
             <span>{board.name}</span>
             <span>#{idea.number}</span>
             {idea.fromSga && <FromSgaTag look="poster" />}
-            <span className="ml-auto">{STATUS_LABELS[idea.status]}</span>
           </p>
           <h1 className="heading text-5xl text-balance @3xl:text-7xl">{idea.title}</h1>
           <p className="max-w-prose">{idea.description}</p>
@@ -161,8 +159,6 @@ function standing(idea: IdeaPageData) {
   switch (idea.status) {
     case "collecting_support":
       return `This idea is collecting support. The ${board} looks at its ideas regularly and usually works on 1 to 2 at a time.`;
-    case "under_review":
-      return `The ${board} is looking at this idea now. An update will show here when they decide.`;
     case "in_progress":
       return `The ${board} is working on this now.`;
     case "delivered":
