@@ -19,12 +19,16 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+const DETAILS =
+  "The dining hall closes at 7 on Sundays, so students who finish class late have no hot meal on campus.";
+
 function fillValid() {
   fireEvent.click(screen.getByRole("button", { name: /^Dining/ }));
   fireEvent.change(screen.getByLabelText(/^Title/), { target: { value: "Later dining hours" } });
   fireEvent.change(screen.getByLabelText(/^Short description/), {
     target: { value: "Open until midnight." },
   });
+  fireEvent.change(screen.getByLabelText(/^Detailed description/), { target: { value: DETAILS } });
 }
 
 function pickBoard(name: RegExp | string = /^Dining/) {
@@ -142,6 +146,21 @@ describe("PostForm", () => {
     expect(screen.getByText("Add a summary, up to 140 characters.")).toBeTruthy();
   });
 
+  // The location field had no limit on the page, so a long location only failed on submit,
+  // with a message that said "under 120" while the rule allows 120 (#197).
+  it("limits the location to 120 characters, on the field and in the message", () => {
+    post.mockResolvedValue({ ok: true, id: "abc" });
+    render(<PostForm pendingCount={0} />);
+    fillValid();
+    const location = screen.getByLabelText(/^Where on campus/) as HTMLInputElement;
+    expect(location.maxLength).toBe(120);
+    fireEvent.change(location, { target: { value: "x".repeat(121) } });
+    fireEvent.click(submit());
+    expect(post).not.toHaveBeenCalled();
+    expect(location.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("Keep the location up to 120 characters.")).toBeTruthy();
+  });
+
   it("moves focus to the first field with an error", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
@@ -166,7 +185,7 @@ describe("PostForm, sending the post (#181)", () => {
     const expected = parsePostIdea({
       title: "Later dining hours",
       summary: "Open until midnight.",
-      details: "",
+      details: DETAILS,
       category: "dining",
       location: "",
       scale: undefined,

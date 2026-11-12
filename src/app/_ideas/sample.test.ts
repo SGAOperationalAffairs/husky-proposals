@@ -34,7 +34,7 @@ describe("ideas list stand-in (#61)", () => {
   it("shows every public idea, open and picked up, most supported first", () => {
     const ideas = listIdeas(parseIdeasQuery({}));
     expect(new Set(ideas.map((i) => i.status))).toEqual(
-      new Set(["collecting_support", "under_review", "in_progress", "waiting", "delivered"]),
+      new Set(["collecting_support", "in_progress", "waiting", "delivered"]),
     );
     const counts = ideas.map((i) => i.supportCount);
     expect(counts).toEqual([...counts].sort((a, b) => b - a));

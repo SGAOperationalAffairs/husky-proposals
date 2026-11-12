@@ -29,6 +29,23 @@ describe("ideas filters (#61)", () => {
     expect(after(sort, boards)).toBe(true);
   });
 
+  it("puts the view switch on the board row, to the right of the chips", () => {
+    render(
+      <IdeaFilters
+        action="/"
+        sort="newest"
+        sorts={SORTS}
+        boards={<nav aria-label="Boards">chips</nav>}
+        viewSwitch={<nav aria-label="View">switch</nav>}
+        onChange={() => {}}
+      />,
+    );
+    const boards = screen.getByRole("navigation", { name: "Boards" });
+    const view = screen.getByRole("navigation", { name: "View" });
+    expect(boards.compareDocumentPosition(view) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(boards.parentElement).toBe(view.parentElement);
+  });
+
   it("draws its dropdowns on the page color, not a white surface (#61)", () => {
     render(<IdeaFilters action="/" sort="newest" statuses={STATUSES} sorts={SORTS} onChange={() => {}} />);
     for (const label of ["Status", "Sort by"]) {

@@ -7,7 +7,6 @@ export type ChipStatus = IdeaStatus | "pending";
 
 const STYLES: Record<ChipStatus, string> = {
   collecting_support: "bg-grey text-grey-ink",
-  under_review: "bg-sky text-sky-ink",
   in_progress: "bg-amber text-amber-ink",
   delivered: "bg-green text-green-ink",
   waiting: "bordered bg-transparent text-grey-ink",

@@ -47,32 +47,39 @@ const posterClass = (arrival: number | undefined) =>
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
   const delivered = props.status === "delivered";
-  // The wrapper's top padding leaves room for the stamp above the poster, on
-  // every card, so a row's posters stay level whether or not they have one (issue 112).
+  // The status is a tag in the poster's top-right corner (Nov 11), in the top row, so it
+  // never covers the board line and works on a narrow card too. The picked-up stamp is gone.
   return (
-    <div className="flex flex-col pt-7">
+    <div className="flex flex-col">
       <article
         data-board={board.color}
         data-idea={props.number}
         className={posterClass(props.arrival)}
         style={props.arrival === undefined ? undefined : ({ "--arrival": props.arrival } as CSSProperties)}
       >
-        {/* Black stamp on the top edge for ideas a board has picked up (issue 112). It sits
-          above the poster, so it never covers the status line. */}
-        {(props.status === "in_progress" || props.status === "delivered") && (
-          <span className="absolute -top-6 right-0 bg-line px-3 py-1 heading text-lg text-surface">
-            Picked up by a board
-          </span>
-        )}
-        {/* One line, always: long labels end in an ellipsis instead of wrapping. */}
-        <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate">{board.category}</span>
-            <span className="shrink-0">#{props.number}</span>
-          </span>
-          <span className="flex min-w-0 items-center gap-2">
+        {/* The top row: board and number, then the status tag flush in the corner. The tag's
+            negative margins cancel the card's padding, so it touches the top and right edges. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-3 text-xs font-bold">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 py-1">
+            <span>{board.category}</span>
+            <span>#{props.number}</span>
             {props.fromSga && <FromSgaTag look="poster" />}
-            <span className="truncate">{STATUS_LABELS[props.status]}</span>
+          </span>
+          {/* Orange and yellow: a black box with the board's poster color as text. Both use fixed
+              tokens (paper-ink, and the poster colors, which dark mode does not change), so the tag
+              looks the same in light and dark mode (Nov 11). */}
+          <span
+            className={`-mt-(--card-pad-y) -mr-(--card-pad) shrink-0 px-3 py-1 heading text-lg whitespace-nowrap ${
+              board.color === "planning" || board.color === "services" ? "bg-paper-ink" : "bg-paper"
+            }`}
+            style={{
+              color:
+                board.color === "planning" || board.color === "services"
+                  ? `var(--board-${board.color})`
+                  : `var(--board-${board.color}-on-paper)`,
+            }}
+          >
+            {STATUS_LABELS[props.status]}
           </span>
         </div>
         <h3 className="poster-title poster-title-lines heading text-balance">

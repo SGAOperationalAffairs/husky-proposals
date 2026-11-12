@@ -4,10 +4,12 @@ import { BOARD_FOR_CATEGORY, CATEGORIES, categoryForBoard, parsePostIdea, simila
 // The post form's rules (#55), shared with the post action (#54) so the form and
 // the server check the same thing. Only title, summary, and board are
 // required; the rest default to "Not sure" (docs/data-model.md, post form).
+// Detailed description is required too (Luis, Nov 11): it keeps ideas developed.
 
 const valid = {
   title: "Later dining hours on Sundays",
   summary: "The dining hall closes at 7 on Sundays, after most people finish class.",
+  details: "x".repeat(80),
   category: "dining",
 };
 
@@ -25,6 +27,11 @@ describe("parsePostIdea", () => {
       timeHorizon: null,
       anonymous: false,
     });
+  });
+
+  it("requires a title, a summary, a detailed description, and a board", () => {
+    expect(parsePostIdea({ ...valid, details: undefined }).success).toBe(false);
+    expect(parsePostIdea({ ...valid, details: "   " }).success).toBe(false);
   });
 
   it("requires a title, a summary, and a board", () => {
@@ -60,28 +67,34 @@ describe("parsePostIdea", () => {
     expect(result.success).toBe(false);
   });
 
+  // The client sends what it parsed to the server, which parses it again (#181). An empty
+  // location comes out as null, so the second parse must accept null too.
+  it("accepts its own output, so the server accepts what the form sent", () => {
+    const first = parsePostIdea({ ...valid, location: "" });
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+    expect(parsePostIdea(first.data).success).toBe(true);
+  });
+
   it("limits the summary to 140 characters, the length of a poster line", () => {
     expect(parsePostIdea({ ...valid, summary: "x".repeat(141) }).success).toBe(false);
     expect(parsePostIdea({ ...valid, summary: "x".repeat(140) }).success).toBe(true);
   });
 
-  it("keeps the details optional, and stores them apart from the summary", () => {
-    const without = parsePostIdea(valid);
-    expect(without.success && without.data.details).toBeNull();
-    const withDetails = parsePostIdea({ ...valid, details: "x".repeat(80) });
-    expect(withDetails.success && withDetails.data.details).toBe("x".repeat(80));
+  it("stores the details apart from the summary", () => {
+    const result = parsePostIdea({ ...valid, details: "x".repeat(80) });
+    expect(result.success && result.data.details).toBe("x".repeat(80));
   });
 
-  // When details are written, they need enough to be useful (#55). Empty is allowed.
-  it("asks for at least 80 characters of details when any are written", () => {
+  // The details need enough to be useful (#55). Required, so at least 80 characters.
+  it("asks for at least 80 characters of details", () => {
     expect(parsePostIdea({ ...valid, details: "x".repeat(79) }).success).toBe(false);
     expect(parsePostIdea({ ...valid, details: "x".repeat(80) }).success).toBe(true);
-    expect(parsePostIdea({ ...valid, details: "   " }).success).toBe(true);
   });
 
-  it("limits the details to 4,000 characters", () => {
-    expect(parsePostIdea({ ...valid, details: "x".repeat(4001) }).success).toBe(false);
-    expect(parsePostIdea({ ...valid, details: "x".repeat(4000) }).success).toBe(true);
+  it("limits the details to 1,000 characters", () => {
+    expect(parsePostIdea({ ...valid, details: "x".repeat(1001) }).success).toBe(false);
+    expect(parsePostIdea({ ...valid, details: "x".repeat(1000) }).success).toBe(true);
   });
 
   it("limits the title so a headline stays within three lines on the poster", () => {

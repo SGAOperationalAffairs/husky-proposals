@@ -28,12 +28,13 @@ export function RequiredMark({ onColor = false }: { onColor?: boolean }) {
   );
 }
 
+// Remaining, not used: "135 left" is the common pattern (GOV.UK, USWDS). Under a minimum
+// the count flips to what is still needed.
 function CharCount({ length, max, min }: Count) {
   const short = min !== undefined && length > 0 && length < min;
   return (
     <small className={short ? "font-semibold text-accent-text" : "text-muted"}>
-      {length} of {max} characters
-      {short && `, ${min - length} more needed`}
+      {short ? `${min - length} more needed` : `${(max - length).toLocaleString("en-US")} left`}
     </small>
   );
 }

@@ -84,6 +84,18 @@ export function IdeaWall({ ideas }: Props) {
   return (
     <section aria-label="Ideas" className="flex flex-col gap-5">
       <IdeaFilters
+        // Cards or the list (#138), on the board row. A link without JavaScript, the same URL with the view set.
+        viewSwitch={
+          <ViewSwitch
+            label="View"
+            current={view}
+            options={VIEWS.map((v) => ({
+              ...v,
+              href: ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined }),
+            }))}
+            onSelect={(id) => apply({ view: id === "list" ? "list" : undefined })}
+          />
+        }
         action={path}
         q={query.q}
         board={query.board}
@@ -108,21 +120,10 @@ export function IdeaWall({ ideas }: Props) {
         }
         onChange={apply}
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-sm text-muted">
-          {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
-        </p>
-        {/* Cards or the list (#138). A link without JavaScript, the same URL with the view set. */}
-        <ViewSwitch
-          label="View"
-          current={view}
-          options={VIEWS.map((v) => ({
-            ...v,
-            href: ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined }),
-          }))}
-          onSelect={(id) => apply({ view: id === "list" ? "list" : undefined })}
-        />
-      </div>
+      {/* -my-2 pulls the count closer to the chips and the cards: the section gap is 20px each side. */}
+      <p role="status" className="-my-2 text-sm text-muted">
+        {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
+      </p>
       {shown.length > 0 ? (
         view === "list" ? (
           <div className="overflow-hidden bordered bg-surface">

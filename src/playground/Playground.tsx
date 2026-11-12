@@ -15,6 +15,7 @@ import { PostForm } from "@/app/_post/PostForm";
 import { ButtonsSection } from "./sections/ButtonsSection";
 import { FiltersSection } from "./sections/FiltersSection";
 import { InProgressCardsSection } from "./sections/InProgressCardsSection";
+import { CORNER_TAG_STYLES, CornerCardSection, type CornerTagStyle } from "./sections/CornerCardSection";
 import { SurfacesSection } from "./sections/SurfacesSection";
 import { TextSection } from "./sections/TextSection";
 import { TOP_BAR_STYLES, TopBarSection, type TopBarStyle } from "./sections/TopBarSection";
@@ -56,6 +57,9 @@ type Choices = {
   posterShadow: "on" | "off";
   textWidth: "prose" | "full";
   topBarStyle: TopBarStyle;
+  cornerTag: CornerTagStyle;
+  cornerX: number;
+  cornerY: number;
   logoInline: boolean;
   fullWidth: boolean;
 };
@@ -69,6 +73,9 @@ const INITIAL_CHOICES: Choices = {
   posterShadow: "off",
   textWidth: "full",
   topBarStyle: "underline",
+  cornerTag: "white-board",
+  cornerX: 0,
+  cornerY: 0,
   logoInline: false,
   fullWidth: true,
 };
@@ -84,6 +91,7 @@ const SECTIONS = [
   { id: "one", label: "One idea", title: "One idea" },
   { id: "idea-page", label: "Idea page", title: "Idea page in its color" },
   { id: "in-progress-cards", label: "In progress cards", title: "In progress cards" },
+  { id: "corner-card", label: "Corner tag card", title: "Corner tag card" },
   { id: "loading", label: "Loading", title: "Loading" },
   { id: "share", label: "Share", title: "Share" },
   { id: "post", label: "Post an idea", title: "Post an idea" },
@@ -111,6 +119,11 @@ const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choice
     tuner: true,
   },
   "in-progress-cards": { dials: [...TYPE, "titleLines", "desc", ...LOOK], choices: [], tuner: true },
+  "corner-card": {
+    dials: [...LAYOUT, ...TYPE, "titleLines", "desc", ...LOOK],
+    choices: ["cornerTag", "cornerX", "cornerY"],
+    tuner: true,
+  },
   loading: { dials: [...LAYOUT, "bg", "border", "corners"], choices: [], tuner: false },
   share: { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
   post: {
@@ -339,6 +352,34 @@ function ChoiceGroup<T extends string>(props: {
   );
 }
 
+// A slider with its label and the value in pixels.
+function SliderRow(props: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="flex items-center justify-between gap-3 text-sm font-semibold">
+        {props.label}
+        <span className="text-muted tabular-nums">{props.value}px</span>
+      </label>
+      <input
+        id={id}
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={1}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      />
+    </div>
+  );
+}
+
 // A switch with its label. The label is the button's name; the On or Off word
 // repeats the state for anyone who cannot see the track.
 function ToggleRow(props: { label: string; on: boolean; onChange: (on: boolean) => void; note?: string }) {
@@ -432,6 +473,30 @@ function SectionSettings({
           ]}
           onChange={(v) => set("textWidth", v)}
         />
+      )}
+      {section === "corner-card" && (
+        <>
+          <ChoiceGroup
+            label="Tag color"
+            value={choices.cornerTag}
+            options={CORNER_TAG_STYLES.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(v) => set("cornerTag", v)}
+          />
+          <SliderRow
+            label="Tag across"
+            value={choices.cornerX}
+            min={-40}
+            max={40}
+            onChange={(v) => set("cornerX", v)}
+          />
+          <SliderRow
+            label="Tag down"
+            value={choices.cornerY}
+            min={-40}
+            max={40}
+            onChange={(v) => set("cornerY", v)}
+          />
+        </>
       )}
       {section === "topbar" && (
         <>
@@ -660,6 +725,15 @@ function PreviewPage({
       {section === "in-progress-cards" && (
         <Section title="In progress cards">
           <InProgressCardsSection />
+        </Section>
+      )}
+
+      {section === "corner-card" && (
+        <Section title="Corner tag card">
+          <CornerCardSection
+            tagStyle={choices.cornerTag}
+            offset={{ x: choices.cornerX, y: choices.cornerY }}
+          />
         </Section>
       )}
 

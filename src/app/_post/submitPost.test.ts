@@ -22,6 +22,8 @@ const DAB_CHAIR: Session = {
 const valid = {
   title: "Later dining hours on Sundays",
   summary: "The dining hall closes at 7 on Sundays, after most people finish class.",
+  details:
+    "The dining hall closes at 7 on Sundays, so students who finish class late have no hot meal on campus.",
   category: "dining",
   anonymous: false,
 };

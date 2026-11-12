@@ -36,6 +36,8 @@ const edit = {
   ideaId: IDEA,
   title: "Later dining hours",
   summary: "The dining hall closes early on Sundays.",
+  details:
+    "The dining hall closes early on Sundays, so students who finish class late have no hot meal on campus.",
   category: "green_initiatives",
 };
 

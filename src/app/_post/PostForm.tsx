@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
-import { RequiredMark, SelectField, TextArea, TextField } from "@/components/Field";
+import { SelectField, TextArea, TextField } from "@/components/Field";
 import { PAGE } from "@/components/pageTransition";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
@@ -192,7 +192,6 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
           <p id={`${ids}-band`} className="flex items-center gap-3 heading text-4xl">
             {BandIcon && <BandIcon aria-hidden className="size-8 shrink-0" />}
             {board ? board.category : "What is this for?"}
-            {!board && <RequiredMark onColor />}
           </p>
           {board && !saved && (
             <button
@@ -311,11 +310,12 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Detailed description"
-                      hint="Optional. If you write it, at least 80 characters: background, who it helps, and what has already been tried."
+                      required
+                      hint="Background, who it helps, and what has been tried. At least 80 characters."
                       error={errors.details}
                       rows={5}
                       min={80}
-                      max={4000}
+                      max={1000}
                       value={values.details}
                       onChange={(e) => set("details", e.target.value)}
                     />
@@ -325,6 +325,8 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     label="Where on campus"
                     hint="Optional. A building or an area is enough."
                     error={errors.location}
+                    max={120}
+                    maxLength={120}
                     value={values.location}
                     onChange={(e) => set("location", e.target.value)}
                   />

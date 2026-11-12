@@ -18,18 +18,18 @@ describe("required fields and character counts (#55)", () => {
     expect(container.querySelector("label")?.textContent).not.toContain("*");
   });
 
-  it("shows how many characters are used against the limit", () => {
+  it("shows how many characters are left", () => {
     render(<TextArea label="Summary" max={140} value="Hello" onChange={() => {}} />);
-    expect(screen.getByText("5 of 140 characters")).toBeTruthy();
+    expect(screen.getByText("135 left")).toBeTruthy();
   });
 
   it("says how many more a minimum needs once something is written", () => {
-    render(<TextArea label="Details" min={80} max={4000} value={"x".repeat(30)} onChange={() => {}} />);
-    expect(screen.getByText("30 of 4000 characters, 50 more needed")).toBeTruthy();
+    render(<TextArea label="Details" min={80} max={1000} value={"x".repeat(30)} onChange={() => {}} />);
+    expect(screen.getByText("50 more needed")).toBeTruthy();
   });
 
   it("shows no count on a field without a limit", () => {
     render(<TextField label="Where" value="Marino" onChange={() => {}} />);
-    expect(screen.queryByText(/characters/)).toBeNull();
+    expect(screen.queryByText(/left|needed/)).toBeNull();
   });
 });
