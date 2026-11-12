@@ -17,7 +17,8 @@ test("a visitor sees only the Ideas tab (#156)", async ({ page }) => {
 // (requireSignedIn), so the check is that no part of the page shows, not not-found (#193).
 test("/me sends a visitor to sign-in and shows nothing of the page (#193)", async ({ page }) => {
   await page.goto("/me");
-  await expect(page).toHaveURL(/\/sign-in\?next=%2Fme/);
+  // Where sign-in leads depends on the environment: /sign-in with a stand-in or SGAuth, /sign-in/closed without either (CI).
+  await expect(page).toHaveURL(/\/sign-in/);
   await expect(page.getByRole("heading", { name: "My ideas", exact: true })).toHaveCount(0);
   const pages = page.getByRole("navigation", { name: "Pages" });
   await expect(pages.getByRole("link", { name: "My ideas", exact: true })).toHaveCount(0);
