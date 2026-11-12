@@ -35,7 +35,6 @@ enum ReviewStatus {
 // Only set once an idea is approved.
 enum IdeaStatus {
   collecting_support
-  under_review
   in_progress
   delivered
   waiting

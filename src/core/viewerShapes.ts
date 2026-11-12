@@ -1,6 +1,6 @@
 import type { BoardCode } from "./boards";
 import { can, canSeeWhoPosted, isAuthor, type Viewer } from "./permissions";
-import { appStatus, type IdeaStatus, type StoredIdeaStatus } from "./statuses";
+import type { IdeaStatus } from "./statuses";
 import type { ReviewDecision, ReviewStatus } from "./review";
 
 // Viewer shapes (#53). One function decides what a viewer may see of an idea, and
@@ -23,7 +23,7 @@ export type IdeaRow = {
   scale: string | null;
   costBand: string | null;
   timeHorizon: string | null;
-  status: StoredIdeaStatus | null;
+  status: IdeaStatus | null;
   waitingReason: string | null;
   fromSga: boolean;
   isAnonymous: boolean;
@@ -120,7 +120,7 @@ function studentShape(row: IdeaRow): StudentIdea {
     scale: row.scale,
     costBand: row.costBand,
     timeHorizon: row.timeHorizon,
-    status: row.status === null ? null : appStatus(row.status),
+    status: row.status,
     waitingReason: row.waitingReason,
     fromSga: row.fromSga,
     authorName: publicAuthorName(row),
