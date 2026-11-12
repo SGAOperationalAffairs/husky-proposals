@@ -175,6 +175,15 @@
     --press-bg: var(--on-b);
     --press-fg: var(--b);
   }
+  /* A post that is not public yet (#194): the poster's outline in its board's
+     color, on the page color, so it reads as not on the wall yet. */
+  .poster-outline {
+    background: transparent;
+    color: var(--b-text);
+    border: var(--border) solid var(--b);
+    border-radius: var(--card-radius);
+    padding: var(--card-pad-y) var(--card-pad);
+  }
   /* Support and I'll participate: one button style, matched (PRD decision log). */
   .poster-btn {
     border: var(--border) solid currentColor;

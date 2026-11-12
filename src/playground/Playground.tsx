@@ -14,8 +14,20 @@ import { SubmitYours } from "@/components/SubmitYours";
 import { PostForm } from "@/app/_post/PostForm";
 import { ButtonsSection } from "./sections/ButtonsSection";
 import { FiltersSection } from "./sections/FiltersSection";
+import { HoldSection } from "./sections/HoldSection";
 import { InProgressCardsSection } from "./sections/InProgressCardsSection";
 import { CORNER_TAG_STYLES, CornerCardSection, type CornerTagStyle } from "./sections/CornerCardSection";
+import type { PosterFill } from "@/components/PendingPoster";
+import {
+  MyIdeasFinalSection,
+  type Columns,
+  type GridPending,
+  type LabelStyle,
+  type ListStyle,
+  MyIdeasPageSection,
+  type SwitchStyle,
+  type WordStyle,
+} from "./sections/MyIdeasPageSection";
 import { SurfacesSection } from "./sections/SurfacesSection";
 import { TextSection } from "./sections/TextSection";
 import { TOP_BAR_STYLES, TopBarSection, type TopBarStyle } from "./sections/TopBarSection";
@@ -62,6 +74,14 @@ type Choices = {
   cornerY: number;
   logoInline: boolean;
   fullWidth: boolean;
+  myIdeasList: ListStyle;
+  myIdeasSwitch: SwitchStyle;
+  myIdeasColumns: Columns;
+  myIdeasPending: number;
+  myIdeasWords: WordStyle;
+  myIdeasStatusLabel: LabelStyle;
+  myIdeasGridPending: GridPending;
+  myIdeasGridFill: PosterFill;
 };
 const INITIAL_CHOICES: Choices = {
   boardTiles: "grid",
@@ -78,6 +98,14 @@ const INITIAL_CHOICES: Choices = {
   cornerY: 0,
   logoInline: false,
   fullWidth: true,
+  myIdeasList: "rows",
+  myIdeasSwitch: "underline",
+  myIdeasColumns: "2",
+  myIdeasPending: 1,
+  myIdeasWords: "plain",
+  myIdeasStatusLabel: "board",
+  myIdeasGridPending: "muted",
+  myIdeasGridFill: "blank",
 };
 
 // The preview shows one section at a time, as Resume Studio's playground does.
@@ -96,6 +124,9 @@ const SECTIONS = [
   { id: "share", label: "Share", title: "Share" },
   { id: "post", label: "Post an idea", title: "Post an idea" },
   { id: "queue", label: "SGA queue", title: "SGA queue" },
+  { id: "my-ideas-page", label: "My ideas page", title: "My ideas page" },
+  { id: "hold", label: "Hold to take down", title: "Hold to take down" },
+  { id: "my-ideas-final", label: "My ideas, final", title: "My ideas, final" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -132,6 +163,22 @@ const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choice
     tuner: true,
   },
   queue: { dials: ["boards", "bg", "border", "corners"], choices: [], tuner: true },
+  hold: { dials: LOOK, choices: [], tuner: true },
+  "my-ideas-final": { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
+  "my-ideas-page": {
+    dials: [...TYPE, ...LOOK],
+    choices: [
+      "myIdeasList",
+      "myIdeasSwitch",
+      "myIdeasColumns",
+      "myIdeasPending",
+      "myIdeasWords",
+      "myIdeasStatusLabel",
+      "myIdeasGridPending",
+      "myIdeasGridFill",
+    ],
+    tuner: true,
+  },
 };
 
 export function Playground() {
@@ -460,6 +507,96 @@ function SectionSettings({
               { value: "3", label: "3 (the limit)" },
             ]}
             onChange={(v) => set("pendingPosts", v)}
+          />
+        </>
+      )}
+      {section === "my-ideas-page" && (
+        <ChoiceGroup
+          label="My ideas list"
+          value={choices.myIdeasList}
+          options={[
+            { value: "rows", label: "Rows" },
+            { value: "grid", label: "Poster grid" },
+            { value: "ledger", label: "Ledger" },
+            { value: "compact", label: "Compact cards" },
+            { value: "solid", label: "Solid and outline rows" },
+            { value: "stages", label: "Stages" },
+          ]}
+          onChange={(v) => set("myIdeasList", v)}
+        />
+      )}
+      {section === "my-ideas-page" && (
+        <>
+          <ChoiceGroup
+            label="Switch"
+            value={choices.myIdeasSwitch}
+            options={[
+              { value: "underline", label: "Underline" },
+              { value: "chips", label: "Chips" },
+              { value: "segmented", label: "Segmented" },
+            ]}
+            onChange={(v) => set("myIdeasSwitch", v)}
+          />
+          <ChoiceGroup
+            label="Poster grid columns"
+            value={choices.myIdeasColumns}
+            options={[
+              { value: "1", label: "One" },
+              { value: "2", label: "Two" },
+              { value: "3", label: "Three" },
+            ]}
+            onChange={(v) => set("myIdeasColumns", v)}
+          />
+          <ChoiceGroup
+            label="Pending posts shown"
+            value={String(choices.myIdeasPending) as "0" | "1" | "2" | "3"}
+            options={[
+              { value: "0", label: "0" },
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+            ]}
+            onChange={(v) => set("myIdeasPending", Number(v))}
+          />
+          <ChoiceGroup
+            label="Status words"
+            value={choices.myIdeasWords}
+            options={[
+              { value: "plain", label: "Plain" },
+              { value: "short", label: "Short" },
+            ]}
+            onChange={(v) => set("myIdeasWords", v)}
+          />
+          <ChoiceGroup
+            label="Status label (solid rows)"
+            value={choices.myIdeasStatusLabel}
+            options={[
+              { value: "board", label: "Board outline" },
+              { value: "neutral", label: "Neutral" },
+              { value: "solid", label: "Solid block" },
+              { value: "status", label: "Status colors" },
+            ]}
+            onChange={(v) => set("myIdeasStatusLabel", v)}
+          />
+          <ChoiceGroup
+            label="Pending posts in the grid"
+            value={choices.myIdeasGridPending}
+            options={[
+              { value: "muted", label: "Muted" },
+              { value: "outline", label: "Outline" },
+              { value: "hatched", label: "Hatched" },
+            ]}
+            onChange={(v) => set("myIdeasGridPending", v)}
+          />
+          <ChoiceGroup
+            label="Empty space on grid posters"
+            value={choices.myIdeasGridFill}
+            options={[
+              { value: "blank", label: "Blank" },
+              { value: "zero", label: "Big 0 (see note)" },
+              { value: "word", label: "PENDING" },
+            ]}
+            onChange={(v) => set("myIdeasGridFill", v)}
           />
         </>
       )}
@@ -803,6 +940,33 @@ function PreviewPage({
             <Button variant="line">Put on hold</Button>
             <Button size="sm">Change board</Button>
           </div>
+        </Section>
+      )}
+
+      {section === "my-ideas-final" && (
+        <Section title="My ideas, final">
+          <MyIdeasFinalSection />
+        </Section>
+      )}
+
+      {section === "hold" && (
+        <Section title="Hold to take down">
+          <HoldSection />
+        </Section>
+      )}
+
+      {section === "my-ideas-page" && (
+        <Section title="My ideas page">
+          <MyIdeasPageSection
+            list={choices.myIdeasList}
+            switchStyle={choices.myIdeasSwitch}
+            columns={choices.myIdeasColumns}
+            pendingCount={choices.myIdeasPending}
+            words={choices.myIdeasWords}
+            statusLabel={choices.myIdeasStatusLabel}
+            gridPending={choices.myIdeasGridPending}
+            gridFill={choices.myIdeasGridFill}
+          />
         </Section>
       )}
     </div>
