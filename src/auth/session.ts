@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { cache } from "react";
 import { env } from "@/env";
 import { toSession, type Session } from "./contract";
@@ -10,9 +11,9 @@ import { STAND_IN_COOKIE, standInResponse } from "./standIn";
 // outside src/auth/ reads the stand-in cookie or standIn.ts, except the
 // stand-in page and its actions.
 //
-// Calling cookies() makes the caller dynamic. Under cacheComponents, a
-// component that calls getSession() must sit inside <Suspense>, and its page
-// is never cached (CLAUDE.md, "Explicit caching only").
+// getSession() awaits connection() itself, so its caller renders at request time.
+// Under cacheComponents, a component that calls it must still sit inside
+// <Suspense>, and its page is never cached (CLAUDE.md, "Explicit caching only").
 
 // SGAuth's answers on #177: sign-in is GET /login?redirect=<absolute URL on an active
 // registry origin>, sign-out is GET /logout?redirect=<same>, and the value is capped at
@@ -40,6 +41,9 @@ function client() {
 export type SessionProblem = "sgauth_unavailable" | "invalid_session_response";
 
 const readSession = cache(async (): Promise<{ session: Session | null; problem: SessionProblem | null }> => {
+  // Next.js rejects a clock read while prerendering, and cookies() alone does not stop
+  // it from prerendering the page. Waiting for the request first covers every caller (#206).
+  await connection();
   if (env().AUTH_SGAUTH) {
     const jar = await cookies();
     // Every call is live (purpose "leader") for the spike, so no leader check can run

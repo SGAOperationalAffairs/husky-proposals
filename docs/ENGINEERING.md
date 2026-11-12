@@ -106,7 +106,7 @@ Created with the scaffold (#26). Merged with `/port:analyze` (#32).
 
 - **Core rules return a result and the rows to write.** A rule in `src/core/` takes plain input and `now`, returns `{ ok, value | error }` with the patch and any rows to write, and never throws, writes, or reads the clock (`src/core/ideaStatus.ts`).
 
-- **Who is signed in:** call `getSession()` from `src/auth/session.ts` inside `<Suspense>` (it reads cookies, so the page is never cached). Never read the cookie, positions, or SGAuth directly. Roles come from `session.roles`; who counts as a leader comes only from `isSgaLeader` (#45).
+- **Who is signed in:** call `getSession()` from `src/auth/session.ts` inside `<Suspense>` (it reads cookies, so the page is never cached, and it awaits `connection()` itself, so a caller does not need to, #206). Never read the cookie, positions, or SGAuth directly. Roles come from `session.roles`; who counts as a leader comes only from `isSgaLeader` (#45).
 - **A leader-only page names itself only inside the boundary.** Outside `<Suspense>`, keep only `<SiteHeader />` and layout. The heading, copy, and fallback text that say what the page is render after the role check, because the static shell streams with a 200 before `notFound()` runs (`/queue`, #158).
 
 - **Signed-in pages and actions:** a signed-in page calls `requireSignedIn("<its path>")` from `src/auth/gate.ts` inside `<Suspense>` (a server component cannot read its own URL, so it passes the path). A signed-in server action is exported as `withSession(async (session, ...args) => ...)`, and its caller switches on the `signed_out` code. Only `/sign-in` and `src/auth/` know how sign-in starts. Any `next` value is untrusted and goes through `safeNextPath` (#93).
