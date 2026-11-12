@@ -1,5 +1,6 @@
 import type { SupportStore } from "@/app/_support/setSupport";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { appStatus } from "@/core/statuses";
 import { bumpActionCount } from "./actionLimit";
 import { isPublic } from "./ideaSelects";
 
@@ -16,7 +17,7 @@ export function prismaSupportStore(db: Db): SupportStore {
       });
       // An approved idea has both; the checks narrow the nullable columns' types.
       return idea && idea.number !== null && idea.status !== null
-        ? { ...idea, number: idea.number, status: idea.status }
+        ? { ...idea, number: idea.number, status: appStatus(idea.status) }
         : null;
     },
     ensureUser: async (user) => {
