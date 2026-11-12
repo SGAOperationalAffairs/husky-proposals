@@ -94,7 +94,7 @@ const ROWS: Row[] = [
     title: "Compost bins outside residence halls",
     description: "Food scraps go in the trash today. Bins by each hall, emptied weekly, would change that.",
     board: "SC",
-    state: "under_review",
+    state: "collecting_support",
     supportCount: 120,
     willingCount: 10,
     updatedDaysAgo: 9,
@@ -144,7 +144,6 @@ const SHORT: Record<Row["state"], string> = {
   pending: "Review",
   declined: "Declined",
   collecting_support: "Gathering",
-  under_review: "Reviewing",
   in_progress: "Underway",
   delivered: "Done",
   waiting: "Waiting",
@@ -458,7 +457,6 @@ const STATUS_LABEL: Record<Row["state"], CSSProperties> = {
     border: "var(--border) solid var(--accent-text)",
   },
   collecting_support: { background: "var(--green)", color: "var(--green-ink)" },
-  under_review: { background: "var(--sky)", color: "var(--sky-ink)" },
   in_progress: { background: "var(--amber)", color: "var(--amber-ink)" },
   delivered: { background: "var(--grey)", color: "var(--grey-ink)" },
   waiting: { background: "var(--grey)", color: "var(--grey-ink)" },
@@ -569,7 +567,7 @@ function Ledger({ rows, words }: { rows: Row[]; words: WordStyle }) {
 // Columns by where the idea is.
 const COLUMNS: { title: string; states: Row["state"][] }[] = [
   { title: "Waiting", states: ["pending", "declined"] },
-  { title: "Collecting support", states: ["collecting_support", "under_review"] },
+  { title: "Collecting support", states: ["collecting_support"] },
   { title: "In progress", states: ["in_progress"] },
   { title: "Delivered", states: ["delivered"] },
 ];

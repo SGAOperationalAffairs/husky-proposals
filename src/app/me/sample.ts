@@ -69,7 +69,7 @@ export function sampleMyRows(): MyRow[] {
       number: 205,
       title: "Compost bins outside residence halls",
       board: "SC",
-      status: "under_review",
+      status: "collecting_support",
       review: "approved",
       posted: false,
       supported: false,
