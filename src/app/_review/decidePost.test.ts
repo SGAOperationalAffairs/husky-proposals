@@ -111,7 +111,7 @@ describe("decidePost (#58)", () => {
         store,
         dabChair,
         "decline",
-        { ideaId: IDEA, reason: "  Already planned for spring  " },
+        { ideaId: IDEA, reason: "  Already planned for spring, so it cannot take a new slot this year  " },
         NOW,
       );
       expect(result).toEqual({ ok: true, reviewStatus: "declined", number: null, refresh: [] });
@@ -121,7 +121,7 @@ describe("decidePost (#58)", () => {
           review: expect.objectContaining({
             kind: "review",
             decision: "declined",
-            reason: "Already planned for spring",
+            reason: "Already planned for spring, so it cannot take a new slot this year",
           }),
         }),
       );
@@ -131,6 +131,14 @@ describe("decidePost (#58)", () => {
     it("a whitespace-only reason is invalid and nothing is read or written", async () => {
       const store = fakeStore(target());
       const result = await decidePost(store, dabChair, "decline", { ideaId: IDEA, reason: "   " }, NOW);
+      expect(result).toEqual({ ok: false, error: { code: "invalid", fields: ["reason"] } });
+      expect(store.find).not.toHaveBeenCalled();
+      expect(store.record).not.toHaveBeenCalled();
+    });
+
+    it("a decline reason under 40 characters is invalid and nothing is read or written", async () => {
+      const store = fakeStore(target());
+      const result = await decidePost(store, dabChair, "decline", { ideaId: IDEA, reason: "Too short" }, NOW);
       expect(result).toEqual({ ok: false, error: { code: "invalid", fields: ["reason"] } });
       expect(store.find).not.toHaveBeenCalled();
       expect(store.record).not.toHaveBeenCalled();

@@ -68,8 +68,20 @@ describe("parsePostIdea", () => {
   it("keeps the details optional, and stores them apart from the summary", () => {
     const without = parsePostIdea(valid);
     expect(without.success && without.data.details).toBeNull();
-    const withDetails = parsePostIdea({ ...valid, details: "Background and what has been tried." });
-    expect(withDetails.success && withDetails.data.details).toBe("Background and what has been tried.");
+    const withDetails = parsePostIdea({ ...valid, details: "x".repeat(80) });
+    expect(withDetails.success && withDetails.data.details).toBe("x".repeat(80));
+  });
+
+  // When details are written, they need enough to be useful (#55). Empty is allowed.
+  it("asks for at least 80 characters of details when any are written", () => {
+    expect(parsePostIdea({ ...valid, details: "x".repeat(79) }).success).toBe(false);
+    expect(parsePostIdea({ ...valid, details: "x".repeat(80) }).success).toBe(true);
+    expect(parsePostIdea({ ...valid, details: "   " }).success).toBe(true);
+  });
+
+  it("limits the details to 4,000 characters", () => {
+    expect(parsePostIdea({ ...valid, details: "x".repeat(4001) }).success).toBe(false);
+    expect(parsePostIdea({ ...valid, details: "x".repeat(4000) }).success).toBe(true);
   });
 
   it("limits the title so a headline stays within three lines on the poster", () => {

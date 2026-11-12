@@ -12,7 +12,7 @@ export const TRY_AGAIN = "That didn't go through. Try again.";
 export const FIELD_MESSAGES: Record<string, string> = {
   title: "Add a title, up to 120 characters.",
   summary: "Add a summary, up to 140 characters.",
-  details: "Keep the details under 4,000 characters.",
+  details: "Keep the details to 4,000 characters, and at least 80 if you write them.",
   category: "Choose the board this idea is for.",
   location: "Keep the location under 120 characters.",
 };

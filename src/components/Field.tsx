@@ -10,13 +10,48 @@ import {
 // and an error that says what to fix.
 const control = "rounded-field bordered bg-surface w-full px-3 py-2";
 
-type Shared = { label: string; hint?: string; error?: string };
+type Shared = { label: string; hint?: string; error?: string; required?: boolean };
+// The character count under a limited field: how many are used, against the limit,
+// and how many more a minimum needs once something is written (#55).
+type Count = { length: number; max: number; min?: number };
 
-function Wrap({ id, label, hint, error, children }: Shared & { id: string; children: ReactNode }) {
+// The red asterisk for a required field. The screen reader hears "required", so the
+// mark is not read as a symbol. Use it on the label of every required field.
+export function RequiredMark({ onColor = false }: { onColor?: boolean }) {
+  return (
+    <>
+      <span aria-hidden className={`ml-1 font-bold ${onColor ? "text-on-accent" : "text-accent-text"}`}>
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
+function CharCount({ length, max, min }: Count) {
+  const short = min !== undefined && length > 0 && length < min;
+  return (
+    <small className={short ? "font-semibold text-accent-text" : "text-muted"}>
+      {length} of {max} characters
+      {short && `, ${min - length} more needed`}
+    </small>
+  );
+}
+
+function Wrap({
+  id,
+  label,
+  hint,
+  error,
+  required,
+  count,
+  children,
+}: Shared & { id: string; count?: Count; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-sm font-semibold">
         {label}
+        {required && <RequiredMark />}
       </label>
       {children}
       {hint && !error && (
@@ -29,6 +64,7 @@ function Wrap({ id, label, hint, error, children }: Shared & { id: string; child
           {error}
         </small>
       )}
+      {count && <CharCount {...count} />}
     </div>
   );
 }
@@ -44,15 +80,26 @@ export function TextField({
   label,
   hint,
   error,
+  required = false,
+  min,
+  max,
   onPage = false,
   joinedEnd = false,
   ...rest
-}: Shared & { onPage?: boolean; joinedEnd?: boolean } & InputHTMLAttributes<HTMLInputElement>) {
+}: Shared & {
+  onPage?: boolean;
+  joinedEnd?: boolean;
+  min?: number;
+  max?: number;
+} & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
+  const count =
+    max !== undefined && typeof rest.value === "string" ? { length: rest.value.length, max, min } : undefined;
   return (
-    <Wrap id={id} label={label} hint={hint} error={error}>
+    <Wrap id={id} label={label} hint={hint} error={error} required={required} count={count}>
       <input
         id={id}
+        aria-required={required || undefined}
         aria-invalid={!!error}
         aria-describedby={describedBy(id, { label, hint, error })}
         // Joined with a space here, not inside the strings: Prettier's class sorter trims them.
@@ -69,13 +116,19 @@ export function TextArea({
   label,
   hint,
   error,
+  required = false,
+  min,
+  max,
   ...rest
-}: Shared & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: Shared & { min?: number; max?: number } & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const id = useId();
+  const count =
+    max !== undefined && typeof rest.value === "string" ? { length: rest.value.length, max, min } : undefined;
   return (
-    <Wrap id={id} label={label} hint={hint} error={error}>
+    <Wrap id={id} label={label} hint={hint} error={error} required={required} count={count}>
       <textarea
         id={id}
+        aria-required={required || undefined}
         aria-invalid={!!error}
         aria-describedby={describedBy(id, { label, hint, error })}
         className={`${control} min-h-24 resize-y`}

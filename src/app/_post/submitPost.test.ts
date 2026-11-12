@@ -80,8 +80,22 @@ describe("submitPost (#54)", () => {
 
   it("keeps the long text, and leaves the Not sure fields null", async () => {
     const { store, created } = fakeStore();
-    await submitPost(store, STUDENT, { ...valid, details: "More about the idea." }, NOW);
-    expect(created[0]!.post).toMatchObject({ fullText: "More about the idea.", location: null, scale: null });
+    await submitPost(
+      store,
+      STUDENT,
+      {
+        ...valid,
+        details:
+          "More about the idea. It would help commuters on the late shift, and the dining team has tried a short menu before.",
+      },
+      NOW,
+    );
+    expect(created[0]!.post).toMatchObject({
+      fullText:
+        "More about the idea. It would help commuters on the late shift, and the dining team has tried a short menu before.",
+      location: null,
+      scale: null,
+    });
   });
 
   it("refuses a fourth pending post with a clear reason", async () => {

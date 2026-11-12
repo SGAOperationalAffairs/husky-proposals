@@ -21,8 +21,10 @@ afterEach(cleanup);
 
 function fillValid() {
   fireEvent.click(screen.getByRole("button", { name: /^Dining/ }));
-  fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Later dining hours" } });
-  fireEvent.change(screen.getByLabelText("Short description"), { target: { value: "Open until midnight." } });
+  fireEvent.change(screen.getByLabelText(/^Title/), { target: { value: "Later dining hours" } });
+  fireEvent.change(screen.getByLabelText(/^Short description/), {
+    target: { value: "Open until midnight." },
+  });
 }
 
 function pickBoard(name: RegExp | string = /^Dining/) {
@@ -59,9 +61,9 @@ describe("PostForm, board first", () => {
   it("opens the rest of the form, with the board's color, once a board is picked", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
-    expect(screen.getByLabelText("Title")).toBeTruthy();
-    expect(screen.getByLabelText("Short description")).toBeTruthy();
-    expect(screen.getByLabelText("Detailed description")).toBeTruthy();
+    expect(screen.getByLabelText(/^Title/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Short description/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Detailed description/)).toBeTruthy();
     expect(screen.getByRole("form", { name: "Post an idea" }).getAttribute("data-board")).toBe("dining");
     expect(screen.getByText("Dining", { selector: "p" })).toBeTruthy();
   });
@@ -69,17 +71,17 @@ describe("PostForm, board first", () => {
   it("puts focus on the title once a board is picked", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
-    expect(document.activeElement).toBe(screen.getByLabelText("Title"));
+    expect(document.activeElement).toBe(screen.getByLabelText(/^Title/));
   });
 
   it("lets a student change the board, and keeps what they typed", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
-    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Later dining hours" } });
+    fireEvent.change(screen.getByLabelText(/^Title/), { target: { value: "Later dining hours" } });
     fireEvent.click(screen.getByRole("button", { name: "Change board" }));
     expect(screen.queryByLabelText("Title")).toBeNull();
     pickBoard(/^Green Initiatives/);
-    expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Later dining hours");
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
     expect(screen.getByRole("form", { name: "Post an idea" }).getAttribute("data-board")).toBe("green");
   });
 });
@@ -101,7 +103,7 @@ describe("PostForm", () => {
     expect(banner.textContent).toBe(PENDING_LIMIT_REASON);
     expect(submit().getAttribute("aria-disabled")).toBe("true");
     // The fieldset disables the field, so check the :disabled state, not the property.
-    expect(screen.getByLabelText("Title").matches(":disabled")).toBe(true);
+    expect(screen.getByLabelText(/^Title/).matches(":disabled")).toBe(true);
     const described = submit().getAttribute("aria-describedby")!.split(" ");
     const text = described.map((id) => document.getElementById(id)?.textContent).join(" ");
     expect(text).toContain(pendingPostsText(3));
@@ -134,8 +136,8 @@ describe("PostForm", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
     fireEvent.click(submit());
-    expect(screen.getByLabelText("Title").getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByLabelText("Short description").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText(/^Title/).getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText(/^Short description/).getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByText("Add a title, up to 120 characters.")).toBeTruthy();
     expect(screen.getByText("Add a summary, up to 140 characters.")).toBeTruthy();
   });
@@ -144,7 +146,7 @@ describe("PostForm", () => {
     render(<PostForm pendingCount={0} />);
     pickBoard();
     fireEvent.click(submit());
-    expect(document.activeElement).toBe(screen.getByLabelText("Title"));
+    expect(document.activeElement).toBe(screen.getByLabelText(/^Title/));
   });
 
   it("does not say anything promises action", () => {
@@ -206,7 +208,7 @@ describe("PostForm, sending the post (#181)", () => {
     fireEvent.click(submit());
     const link = await screen.findByRole("link", { name: "Sign in" });
     expect(link.getAttribute("href")).toBe("/sign-in?next=%2Fpost");
-    expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Later dining hours");
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
     expect(loadDraft()?.title).toBe("Later dining hours");
   });
 
@@ -220,7 +222,7 @@ describe("PostForm, sending the post (#181)", () => {
 
     render(<PostForm pendingCount={0} />);
     await waitFor(() =>
-      expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Later dining hours"),
+      expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours"),
     );
     expect(screen.getByRole("form", { name: "Post an idea" }).getAttribute("data-board")).toBe("dining");
     expect(loadDraft()).toBeNull();
@@ -248,9 +250,9 @@ describe("PostForm, sending the post (#181)", () => {
     render(<PostForm pendingCount={0} />);
     fillValid();
     fireEvent.click(submit());
-    await waitFor(() => expect(screen.getByLabelText("Title").getAttribute("aria-invalid")).toBe("true"));
+    await waitFor(() => expect(screen.getByLabelText(/^Title/).getAttribute("aria-invalid")).toBe("true"));
     expect(screen.getByText("Add a title, up to 120 characters.")).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByLabelText("Title"));
+    expect(document.activeElement).toBe(screen.getByLabelText(/^Title/));
   });
 
   it.each([
@@ -262,7 +264,7 @@ describe("PostForm, sending the post (#181)", () => {
     fillValid();
     fireEvent.click(submit());
     expect((await screen.findByRole("alert")).textContent?.length).toBeGreaterThan(0);
-    expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Later dining hours");
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
   });
 
   it("shows the general line and keeps the input when the request fails", async () => {
@@ -271,6 +273,6 @@ describe("PostForm, sending the post (#181)", () => {
     fillValid();
     fireEvent.click(submit());
     expect((await screen.findByRole("alert")).textContent).toBe("That didn't go through. Try again.");
-    expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Later dining hours");
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
   });
 });

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
-import { SelectField, TextArea, TextField } from "@/components/Field";
+import { RequiredMark, SelectField, TextArea, TextField } from "@/components/Field";
 import { PAGE } from "@/components/pageTransition";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
@@ -192,6 +192,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
           <p id={`${ids}-band`} className="flex items-center gap-3 heading text-4xl">
             {BandIcon && <BandIcon aria-hidden className="size-8 shrink-0" />}
             {board ? board.category : "What is this for?"}
+            {!board && <RequiredMark onColor />}
           </p>
           {board && !saved && (
             <button
@@ -283,8 +284,10 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextField
                       label="Title"
-                      hint="Short and specific. Up to 120 characters."
+                      required
+                      hint="Short and specific."
                       error={errors.title}
+                      max={120}
                       maxLength={120}
                       value={values.title}
                       onChange={(e) => set("title", e.target.value)}
@@ -294,9 +297,11 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Short description"
-                      hint="One or two sentences. Students see this on the poster. Up to 140 characters."
+                      required
+                      hint="One or two sentences. Students see this on the poster."
                       error={errors.summary}
                       rows={2}
+                      max={140}
                       maxLength={140}
                       value={values.summary}
                       onChange={(e) => set("summary", e.target.value)}
@@ -306,9 +311,11 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Detailed description"
-                      hint="Optional. Background, who it helps, and what has already been tried."
+                      hint="Optional. If you write it, at least 80 characters: background, who it helps, and what has already been tried."
                       error={errors.details}
                       rows={5}
+                      min={80}
+                      max={4000}
                       value={values.details}
                       onChange={(e) => set("details", e.target.value)}
                     />

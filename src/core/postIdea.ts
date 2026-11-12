@@ -13,6 +13,8 @@ export const CATEGORIES = [
 // The rules for posting an idea (#55 form, #54 action). Plain functions with no
 // server code, so the form and the action check the same thing.
 
+export const DETAILS_MIN = 80;
+export const DETAILS_MAX = 4000;
 const TITLE_MAX = 120; // three lines of headline on the poster (#29)
 
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -22,11 +24,13 @@ export const postIdeaSchema = z.object({
   // The short text students see on the poster (data-model `description`).
   summary: text(140),
   // The long text, shown on the idea page (data-model `full_text`). Optional.
+  // Optional, but if written it needs enough to be useful: at least DETAILS_MIN characters (#55).
   details: z
     .string()
     .trim()
-    .max(4000)
+    .max(DETAILS_MAX)
     .optional()
+    .refine((v) => !v || v.length >= DETAILS_MIN, { message: "details too short" })
     .transform((v) => v || null),
   category: z.enum(CATEGORIES),
   location: z
