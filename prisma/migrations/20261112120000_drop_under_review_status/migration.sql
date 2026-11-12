@@ -1,15 +1,23 @@
 -- Drops the retired under_review status (#202). A removal, so it ships in its own release,
 -- after the read path that maps it (#197) is on dev. Rows still holding it move to
--- collecting_support first. The idea_stats view reads status, so it is dropped and rebuilt
--- around the type change (Postgres will not alter a column a view uses).
+-- collecting_support first.
+--
+-- Two things reference the status column and must come out around the type change:
+-- the idea_stats view (Postgres will not alter a column a view uses), and the waiting-reason
+-- check, which compares status to a literal of the old type and is re-checked during the change.
+
 UPDATE ideas SET status = 'collecting_support' WHERE status = 'under_review';
 
 DROP VIEW idea_stats;
+ALTER TABLE ideas DROP CONSTRAINT ideas_waiting_needs_reason;
 
 ALTER TYPE "IdeaStatus" RENAME TO "IdeaStatus_old";
 CREATE TYPE "IdeaStatus" AS ENUM ('collecting_support', 'in_progress', 'delivered', 'waiting');
 ALTER TABLE ideas ALTER COLUMN status TYPE "IdeaStatus" USING status::text::"IdeaStatus";
 DROP TYPE "IdeaStatus_old";
+
+ALTER TABLE ideas ADD CONSTRAINT ideas_waiting_needs_reason
+  CHECK (status IS DISTINCT FROM 'waiting' OR btrim(coalesce(waiting_reason, '')) <> '');
 
 -- The same view body as migration 20261102120100 (a unit test checks it against prisma/views).
 CREATE VIEW idea_stats AS
