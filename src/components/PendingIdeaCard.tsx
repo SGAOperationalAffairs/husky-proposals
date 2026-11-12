@@ -40,9 +40,9 @@ export function PendingIdeaCard({
   const b = BOARDS[board];
   const declined = review === "declined";
   return (
-    // The top padding leaves room for the stamp that approved cards may show, so a row's
-    // cards line up whatever their state (as IdeaCard does, #112).
-    <div className="flex flex-1 flex-col pt-7">
+    // No top padding, and the top row has the same padding as IdeaCard's, so a row's cards are
+    // the same height whatever their state (#204).
+    <div className="flex flex-1 flex-col">
       <article
         data-board={b.color}
         className="card-stack flex flex-1 flex-col"
@@ -52,9 +52,16 @@ export function PendingIdeaCard({
           padding: "var(--card-pad-y) var(--card-pad)",
         }}
       >
-        <div className="flex items-center justify-between gap-3 text-xs font-bold whitespace-nowrap">
-          <span className="truncate">{b.category}</span>
-          <span className="truncate">{declined ? "Not approved" : "Waiting for review"}</span>
+        {/* The status is the corner tag, as on approved cards: white, flush with the top and right
+            edges, with the board's darker text color as its text, as on approved cards (#204). */}
+        <div className="flex flex-wrap items-start justify-between gap-x-3 text-xs font-bold">
+          <span className="py-1">{b.category}</span>
+          <span
+            className="-mt-(--card-pad-y) -mr-(--card-pad) shrink-0 bg-paper-ink px-3 py-1 heading text-lg whitespace-nowrap"
+            style={{ color: "color-mix(in srgb, var(--b) 22%, var(--grey))" }}
+          >
+            {declined ? "Not approved" : "Waiting for review"}
+          </span>
         </div>
         <h3 className="poster-title poster-title-lines heading text-balance">{title}</h3>
         <p className="poster-desc text-sm">{description}</p>
