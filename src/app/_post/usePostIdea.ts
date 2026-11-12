@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import type { PostIdeaInput } from "@/core/postIdea";
 import { postIdea } from "./actions";
 import { clearDraft } from "./draft";
@@ -35,6 +36,7 @@ export function usePostIdea() {
         setPhase("saved");
         return null;
       }
+      reportActionOutcome(result);
       const { error } = result;
       if (error.code === "signed_out") {
         onSignedOut?.();
@@ -49,8 +51,10 @@ export function usePostIdea() {
       }
       setMessage(postMessage(error.code));
       return null;
-    } catch {
+    } catch (thrown) {
       // The server logs it. The student gets the general line and keeps their input.
+      // Production rethrows the action's error; dev and preview show it in the floater (#191, #207).
+      reportError("action", thrown);
       setPhase("idle");
       setMessage(TRY_AGAIN);
       return null;
