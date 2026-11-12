@@ -48,6 +48,14 @@ describe("pending idea card, waiting for review (#194)", () => {
     expect(screen.queryByRole("link", { name: /Learn more/ })).toBeNull();
   });
 
+  it("shows the student's own support and participation on their pending post", () => {
+    render(<PendingIdeaCard {...pending} supported participating />);
+    expect(screen.getByRole("button", { name: "Support" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "I'll participate" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+  });
+
   it("keeps the support and participate buttons, and offers no edit or withdraw", () => {
     render(<PendingIdeaCard {...pending} />);
     expect(screen.getByRole("button", { name: "Support" })).toBeTruthy();

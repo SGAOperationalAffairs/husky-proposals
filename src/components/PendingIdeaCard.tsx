@@ -15,6 +15,9 @@ export type PendingIdeaCardData = {
   review: "pending" | "declined";
   // The reviewer's written reason, shown on a declined post (#58).
   declineReason?: string;
+  // The student's own support and participation, so the buttons show their real state (#193).
+  supported?: boolean;
+  participating?: boolean;
 };
 
 // The student's own post is not public, so Edit and Withdraw go to My ideas until the
@@ -31,6 +34,8 @@ export function PendingIdeaCard({
   board,
   review,
   declineReason,
+  supported = false,
+  participating = false,
 }: PendingIdeaCardData) {
   const b = BOARDS[board];
   const declined = review === "declined";
@@ -71,12 +76,15 @@ export function PendingIdeaCard({
           </div>
           <div className="flex items-center justify-between gap-3">
             <div className="relative z-10">
-              <SupportPair ideaNumber={number} board={board} supported={false} participating={false} />
+              <SupportPair
+                ideaNumber={number}
+                board={board}
+                supported={supported}
+                participating={participating}
+              />
             </div>
-            {/* Not a link: a pending or declined post has no public page to open (#194). */}
-            <span className="relative z-10 text-sm font-bold whitespace-nowrap underline underline-offset-4">
-              Learn more
-            </span>
+            {/* Not a link: a pending or declined post has no public page to open (#194). Not underlined either, so it does not look like one. */}
+            <span className="relative z-10 text-sm font-bold whitespace-nowrap">Learn more</span>
           </div>
         </div>
       </article>

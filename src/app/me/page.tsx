@@ -53,6 +53,8 @@ function IdeaGrid({ rows }: { rows: MyRow[] }) {
               updatedDaysAgo={row.updatedDaysAgo}
               supportCount={row.supportCount}
               willingCount={row.willingCount}
+              supported={row.supported}
+              participating={row.participated}
             />
           ) : (
             <PendingIdeaCard
@@ -62,6 +64,8 @@ function IdeaGrid({ rows }: { rows: MyRow[] }) {
               board={row.board}
               review={row.review === "declined" ? "declined" : "pending"}
               declineReason={row.declineReason}
+              supported={row.supported}
+              participating={row.participated}
             />
           )}
         </li>
