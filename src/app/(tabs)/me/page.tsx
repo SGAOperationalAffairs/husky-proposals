@@ -2,9 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireSignedIn } from "@/auth/gate";
 import { IdeaCard } from "@/components/IdeaCard";
-import { NavTabs } from "@/components/NavTabs";
 import { PendingIdeaCard } from "@/components/PendingIdeaCard";
-import { SiteHeader } from "@/components/SiteHeader";
 import { groupMyIdeas, type MyRow } from "./groups";
 import { sampleMyRows } from "./sample";
 
@@ -106,11 +104,8 @@ async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string 
 
 export default function Me({ searchParams }: { searchParams: Promise<{ tab?: string | string[] }> }) {
   return (
-    <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-8 @lg:px-8 @lg:pt-8 @lg:pb-12">
-      <SiteHeader nav={<NavTabs current="me" />} />
-      <Suspense fallback={null}>
-        <MyIdeas searchParams={searchParams} />
-      </Suspense>
-    </main>
+    <Suspense fallback={null}>
+      <MyIdeas searchParams={searchParams} />
+    </Suspense>
   );
 }

@@ -1,10 +1,8 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { requireLeader } from "@/auth/gate";
-import { NavTabs } from "@/components/NavTabs";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BOARDS, BOARD_CODES, type BoardCode } from "@/core/boards";
-import { parseQueueView, queueFor } from "@/core/queue";
+import { queueFor } from "@/core/queue";
 import { ReviewerTag } from "@/components/Tag";
 import { boardsFor } from "@/core/permissions";
 import { reviewerLabel } from "@/core/reviewText";
@@ -24,24 +22,20 @@ const RECENT_DAYS = 14;
 // student or a signed-out visitor gets the not-found page, not a sign-in prompt,
 // so the page does not show that it exists. The page depends on who is signed
 // in, so the check runs per request inside a boundary, as the ideas wall does.
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-export default function Queue({ searchParams }: { searchParams: SearchParams }) {
+export default function Queue() {
   return (
-    <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pt-6 pb-8 @lg:px-8 @lg:pt-8 @lg:pb-12">
-      <SiteHeader nav={<NavTabs current="queue" />} />
+    <>
       {/* The shell streams before notFound() can run, so only the header sits outside. Everything that names the page renders after the leader check (#158). */}
       <Suspense fallback={null}>
-        <QueueContent searchParams={searchParams} />
+        <QueueContent />
       </Suspense>
-    </main>
+    </>
   );
 }
 
-async function QueueContent({ searchParams }: { searchParams: SearchParams }) {
+async function QueueContent() {
   await connection();
   const session = await requireLeader();
-  const params = await searchParams;
   const viewer = { user: { id: session.user.id }, roles: session.roles };
   const items = queueFor(viewer, QUEUE_SAMPLE);
 
@@ -73,7 +67,7 @@ async function QueueContent({ searchParams }: { searchParams: SearchParams }) {
     <>
       <h1 className="heading text-6xl @3xl:text-8xl">SGA queue</h1>
       {label && <ReviewerTag label={label} />}
-      <QueueView items={items} review={review} boards={boards} view={parseQueueView(params.view)} />
+      <QueueView review={review} boards={boards} />
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { tabLook } from "./tabLook";
+import { Badge } from "./Badge";
 
 // Tabs with small red numbers for what needs attention (CLAUDE.md: no
 // dashboards; leaders open straight onto the list).
@@ -33,18 +34,5 @@ export function Tabs({ label, tabs, selected, onSelect }: Props) {
         );
       })}
     </div>
-  );
-}
-
-export function Badge({ count }: { count: number }) {
-  return (
-    <span
-      aria-label={`${count} need attention`}
-      className={`inline-grid h-5 min-w-5 place-items-center rounded-chip px-1.5 text-xs font-bold ${
-        count > 0 ? "bg-accent text-on-accent" : "bg-grey text-grey-ink"
-      }`}
-    >
-      {count}
-    </span>
   );
 }

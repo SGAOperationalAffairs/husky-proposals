@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { PAGE } from "@/components/pageTransition";
-import { COLUMNS } from "@/app/queue/QueueRow";
+import { COLUMNS } from "@/app/(tabs)/queue/QueueRow";
 import { BoardChip } from "@/components/BoardChip";
 import { StatusLabel } from "@/components/StatusLabel";
 import { BOARDS } from "@/core/boards";
