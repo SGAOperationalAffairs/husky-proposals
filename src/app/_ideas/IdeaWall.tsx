@@ -7,7 +7,7 @@ import { useMemo, useState, type AnimationEvent } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard, type IdeaCardData } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
-import { QueueHeader } from "@/app/queue/QueueRow";
+import { QueueHeader } from "@/app/(tabs)/queue/QueueRow";
 import { IdeaRow } from "./IdeaRow";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
 import { IDEA_STATUSES, STATUS_LABELS } from "@/core/statuses";
