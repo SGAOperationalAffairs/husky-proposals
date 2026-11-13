@@ -7,6 +7,8 @@ import { ideasHref, parseIdeasQuery } from "./filter";
 // environment is read on first use, after these stubs.
 vi.stubEnv("APP_ENV", "test");
 vi.stubEnv("DATABASE_URL", "");
+// connection() throws outside a request scope; data.request.test.ts covers its order (#223).
+vi.mock("next/server", () => ({ connection: async () => {} }));
 
 describe("the ideas pages' entry (#60)", () => {
   it("lists the sample ideas when there is no database", async () => {
