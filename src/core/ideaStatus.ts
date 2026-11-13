@@ -1,7 +1,8 @@
 // Status and board rules for an approved idea (#51, "State rules" in
-// docs/data-model.md). Pure: no database, no clock (the caller passes `now`, so
+// docs/data-model.md; hold also writes a system update, #98). Pure: no database, no clock (the caller passes `now`, so
 // tests can pin it), and no throws. A rule failure is a returned error code.
 // Who may call these is #52, and the review state machine is #50.
+import { z } from "zod";
 import { BOARDS, type BoardCode } from "./boards";
 import type { IdeaStatus } from "./statuses";
 
@@ -46,9 +47,37 @@ export function statusOnApproval(now: Date) {
   return { status: "collecting_support" as const, waitingReason: null, statusChangedAt: now };
 }
 
+// The reasons the hold dialog offers (#98). Students read them, so none names a
+// confidential talk with administration and none promises action. "Something else"
+// is the dialog's free-text path and is not listed here.
+export const HOLD_REASONS = [
+  "The board is busy with other ideas right now",
+  "It needs more information first",
+  "It needs administration approval first",
+  "It is waiting on university partners",
+  "It overlaps with another idea",
+] as const;
+
+export const HOLD_REASON_MAX = 200;
+
+// One shape for a reason, preset or typed: the page reads it as "<reason>." so a
+// trailing period would double up (#98).
+export function normalizeHoldReason(reason: string): string {
+  return reason.trim().replace(/\.+$/, "").trim().slice(0, HOLD_REASON_MAX);
+}
+
+// Input for the status server actions (#98). Same shape as the review inputs in review.ts.
+export const startInputSchema = z.object({ ideaId: z.uuid(), confirmed: z.boolean().default(false) });
+export const holdInputSchema = z.object({
+  ideaId: z.uuid(),
+  reason: z.string().trim().min(1).max(HOLD_REASON_MAX),
+});
+export const deliverInputSchema = z.object({ ideaId: z.uuid() });
+
 type SystemEvent =
   | { type: "started"; boardId: BoardCode }
   | { type: "delivered"; boardId: BoardCode }
+  | { type: "held"; boardId: BoardCode; reason: string }
   | { type: "moved"; from: BoardCode; to: BoardCode };
 
 // One place for the copy, so a wording change is one edit and the seed and the
@@ -59,6 +88,8 @@ export function systemUpdateBody(event: SystemEvent): string {
       return `The ${BOARDS[event.boardId].name} started work on this idea.`;
     case "delivered":
       return `The ${BOARDS[event.boardId].name} marked this idea delivered.`;
+    case "held":
+      return `The ${BOARDS[event.boardId].name} put this idea on hold: ${event.reason}.`;
     case "moved":
       return `Moved from the ${BOARDS[event.from].name} to the ${BOARDS[event.to].name}.`;
   }
@@ -102,6 +133,7 @@ export function changeStatus(
   let update: SystemUpdate | null = null;
   if (to === "in_progress") update = systemUpdate({ type: "started", boardId: idea.boardId });
   if (to === "delivered") update = systemUpdate({ type: "delivered", boardId: idea.boardId });
+  if (to === "waiting") update = systemUpdate({ type: "held", boardId: idea.boardId, reason });
 
   return { ok: true, value: { patch, update } };
 }

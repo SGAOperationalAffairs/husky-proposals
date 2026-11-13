@@ -90,7 +90,7 @@ enum ContactStatus {
 enum UpdateKind {
   board // written by a leader
   check_in // the one-tap "Still working, no news" update (#12)
-  system // written by the app: started, delivered, moved board
+  system // written by the app: started, put on hold, delivered, moved board
 }
 
 // Optional basic demographics (#12). Year is left out: it would need yearly edits.
@@ -374,8 +374,8 @@ model Follow {
 
 // ---------------------------------------------------------------------------
 // Updates
-// Rule: system updates are written when an idea starts, is delivered, or
-//   moves board.
+// Rule: system updates are written when an idea starts, is put on hold (with
+//   the reason), is delivered, or moves board (#98).
 // Rule: an in-progress idea is flagged when it misses its board's cadence
 //   (Board.updateCadenceDays, monthly by default). Board and check-in updates
 //   count, and so does starting work; other system updates do not (IdeaStats).
