@@ -53,8 +53,10 @@ describe("header tabs (#221)", () => {
   it("shows the red count on the Queue tab only when something waits", () => {
     path = "/queue";
     const { rerender } = render(<NavLinks tabs={TABS} waiting={2} />);
-    expect(screen.getByLabelText("2 need attention")).toBeTruthy();
+    // The words are text, not an aria-label on a plain span, so every screen reader reads them (#134).
+    expect(screen.getByText("need attention")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Queue\s*2\s*need attention/ })).toBeTruthy();
     rerender(<NavLinks tabs={TABS} waiting={0} />);
-    expect(screen.queryByLabelText(/need attention/)).toBeNull();
+    expect(screen.queryByText("need attention")).toBeNull();
   });
 });
