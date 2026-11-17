@@ -206,12 +206,21 @@ export function PeopleView({
       {shown.length > 0 && (
         <div className="flex items-center justify-between gap-3">
           <Button size="sm" variant={allShown ? "primary" : "plain"} onClick={toggleAll}>
-            {allShown ? (
-              <ListX aria-hidden className="size-4" />
-            ) : (
-              <ListChecks aria-hidden className="size-4" />
-            )}
-            {allShown ? "Deselect all" : "Select all"}
+            {/* Both labels share one cell, so the button is as wide as "Deselect all" and never changes size. */}
+            <span className="inline-grid">
+              <span aria-hidden className="invisible col-start-1 row-start-1 inline-flex items-center gap-2">
+                <ListX className="size-4" />
+                Deselect all
+              </span>
+              <span className="col-start-1 row-start-1 inline-flex items-center gap-2">
+                {allShown ? (
+                  <ListX aria-hidden className="size-4" />
+                ) : (
+                  <ListChecks aria-hidden className="size-4" />
+                )}
+                {allShown ? "Deselect all" : "Select all"}
+              </span>
+            </span>
           </Button>
           <span className="text-sm text-muted">{shown.length} shown</span>
         </div>
