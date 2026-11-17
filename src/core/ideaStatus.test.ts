@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { IDEA_STATUSES, type IdeaStatus } from "./statuses";
 import {
+  HOLD_REASONS,
+  HOLD_REASON_MAX,
   TRANSITIONS,
   changeStatus,
+  deliverInputSchema,
+  holdInputSchema,
   moveBoard,
   nextStatuses,
+  normalizeHoldReason,
+  startInputSchema,
   statusOnApproval,
   systemUpdateBody,
 } from "./ideaStatus";
@@ -107,7 +113,7 @@ describe("idea status rules (#51)", () => {
       expect(result).toEqual({ ok: false, error: { code: "same_status", status: "waiting" } });
     });
 
-    it("returns a system update naming the board for start and deliver only", () => {
+    it("returns a system update naming the board for start, deliver, and hold (#98)", () => {
       const start = changeStatus(idea("collecting_support"), "in_progress", { now });
       expect(start).toMatchObject({
         ok: true,
@@ -118,11 +124,24 @@ describe("idea status rules (#51)", () => {
         ok: true,
         value: { update: { kind: "system", body: "The Dining Advisory Board marked this idea delivered." } },
       });
-      const other = changeStatus(idea("collecting_support"), "waiting", {
+      const held = changeStatus(idea("collecting_support"), "waiting", {
         waitingReason: "Needs a budget answer",
         now,
       });
-      expect(other).toMatchObject({ ok: true, value: { update: null } });
+      expect(held).toMatchObject({
+        ok: true,
+        value: {
+          update: {
+            kind: "system",
+            body: "The Dining Advisory Board put this idea on hold: Needs a budget answer.",
+          },
+        },
+      });
+    });
+
+    it("writes no update for leaving waiting or for fixing the reason", () => {
+      const back = changeStatus(idea("waiting", "Old"), "collecting_support", { now });
+      expect(back).toMatchObject({ ok: true, value: { update: null } });
     });
   });
 
@@ -164,8 +183,52 @@ describe("idea status rules (#51)", () => {
         systemUpdateBody({ type: "started", boardId: "GIB" }),
         systemUpdateBody({ type: "delivered", boardId: "SC" }),
         systemUpdateBody({ type: "moved", from: "CPAB", to: "CSC" }),
+        systemUpdateBody({ type: "held", boardId: "CSC", reason: HOLD_REASONS[0] }),
       ];
       for (const body of bodies) expect(body).not.toMatch(/petition|slot|\bwill\b/i);
+    });
+  });
+
+  describe("hold reasons (#98)", () => {
+    it("every preset reads as a plain reason with no trailing period and no promise", () => {
+      expect(HOLD_REASONS.length).toBeGreaterThan(0);
+      for (const reason of HOLD_REASONS) {
+        expect(reason).toBe(normalizeHoldReason(reason));
+        expect(reason).not.toMatch(/petition|slot|\bwill\b|—/i);
+      }
+    });
+
+    it("normalizeHoldReason trims, strips trailing periods, and caps at 200 characters", () => {
+      expect(normalizeHoldReason("  Needs funding. ")).toBe("Needs funding");
+      expect(normalizeHoldReason("Needs funding...")).toBe("Needs funding");
+      expect(normalizeHoldReason("...")).toBe("");
+      expect(normalizeHoldReason("a".repeat(250))).toHaveLength(HOLD_REASON_MAX);
+    });
+  });
+
+  describe("input schemas (#98)", () => {
+    const id = "00000000-0000-4000-8000-000000000101";
+
+    it("start takes an idea and defaults confirmed to false", () => {
+      expect(startInputSchema.parse({ ideaId: id })).toEqual({ ideaId: id, confirmed: false });
+      expect(startInputSchema.parse({ ideaId: id, confirmed: true })).toEqual({
+        ideaId: id,
+        confirmed: true,
+      });
+      expect(startInputSchema.safeParse({ ideaId: "nope" }).success).toBe(false);
+    });
+
+    it("hold needs a reason of 1 to 200 characters after trimming", () => {
+      expect(holdInputSchema.parse({ ideaId: id, reason: "  Needs more information  " }).reason).toBe(
+        "Needs more information",
+      );
+      expect(holdInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
+      expect(holdInputSchema.safeParse({ ideaId: id, reason: "a".repeat(201) }).success).toBe(false);
+    });
+
+    it("deliver takes only an idea", () => {
+      expect(deliverInputSchema.parse({ ideaId: id })).toEqual({ ideaId: id });
+      expect(deliverInputSchema.safeParse({}).success).toBe(false);
     });
   });
 });

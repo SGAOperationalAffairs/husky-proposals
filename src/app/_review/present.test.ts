@@ -114,8 +114,8 @@ describe("toApprovedRow (#59)", () => {
 
 describe("toLeaderPanel (#59)", () => {
   it("shows the reviewer tag and take-down only to a reviewer of the idea's board", () => {
-    const idea = leaderIdea({ number: 157 });
-    expect(toLeaderPanel({ idea, mayTakeDown: true }, ["DAB"])).toMatchObject({
+    const idea = leaderIdea({ number: 157, status: "in_progress" });
+    expect(toLeaderPanel({ idea, mayTakeDown: true, mayManageStatus: true }, ["DAB"])).toMatchObject({
       ideaId: idea.id,
       number: 157,
       boardId: "DAB",
@@ -126,7 +126,35 @@ describe("toLeaderPanel (#59)", () => {
   });
 
   it("has no reviewer label when the viewer cannot take it down", () => {
-    const panel = toLeaderPanel({ idea: leaderIdea({ number: 157 }), mayTakeDown: false }, ["DAB"]);
+    const panel = toLeaderPanel(
+      {
+        idea: leaderIdea({ number: 157, status: "in_progress" }),
+        mayTakeDown: false,
+        mayManageStatus: false,
+      },
+      ["DAB"],
+    );
     expect(panel.reviewerLabel).toBeNull();
+  });
+
+  it("carries the status, the hold reason, and whether the viewer may change it (#98)", () => {
+    const idea = leaderIdea({
+      number: 157,
+      status: "waiting",
+      waitingReason: "It overlaps with another idea",
+    });
+    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toMatchObject({
+      status: "waiting",
+      waitingReason: "It overlaps with another idea",
+      mayManageStatus: true,
+    });
+    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: false }, [])).toMatchObject({
+      mayManageStatus: false,
+    });
+  });
+
+  it("treats an approved idea with no status as a bad row", () => {
+    const idea = leaderIdea({ number: 157, status: null });
+    expect(() => toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toThrow(/no status/);
   });
 });
