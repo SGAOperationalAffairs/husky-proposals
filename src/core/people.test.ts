@@ -4,6 +4,7 @@ import {
   contactBy,
   countByStatus,
   filterPeople,
+  ideaChoicesFor,
   peopleForViewer,
   toListStatus,
   type PersonRow,
@@ -100,5 +101,26 @@ describe("filterPeople and countByStatus", () => {
       all: 3,
     });
     expect(countByStatus(rows, { idea: "all", board: "DAB" }).all).toBe(2);
+  });
+});
+
+describe("ideaChoicesFor", () => {
+  const rows = [
+    row({ board: "DAB", ideaNumber: 118, ideaTitle: "Bike racks", userId: "a" }),
+    row({ board: "DAB", ideaNumber: 103, ideaTitle: "Later dining hours", userId: "b" }),
+    row({ board: "CPAB", ideaNumber: 130, ideaTitle: "Study rooms", userId: "c" }),
+    row({ board: "DAB", ideaNumber: 103, ideaTitle: "Later dining hours", userId: "d" }),
+  ];
+
+  it("lists each idea once, in number order, for every board when none is chosen", () => {
+    expect(ideaChoicesFor(rows, "all").map((i) => i.number)).toEqual([103, 118, 130]);
+  });
+
+  it("lists only the chosen board's ideas", () => {
+    expect(ideaChoicesFor(rows, "DAB")).toEqual([
+      { number: 103, title: "Later dining hours", board: "DAB" },
+      { number: 118, title: "Bike racks", board: "DAB" },
+    ]);
+    expect(ideaChoicesFor(rows, "CPAB").map((i) => i.number)).toEqual([130]);
   });
 });

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
-import { SelectField } from "@/components/Field";
+import { BoardSelect } from "@/components/BoardSelect";
 import { IdeaSearch } from "@/components/IdeaSearch";
 import type { BoardCode } from "@/core/boards";
 import {
@@ -25,6 +25,7 @@ import {
   countByStatus,
   daysUntil,
   filterPeople,
+  ideaChoicesFor,
   toListStatus,
   type ListStatus,
   type PersonRow,
@@ -75,20 +76,23 @@ export function PeopleView({
   const router = useRouter();
   const nowDate = useMemo(() => new Date(now), [now]);
 
-  const ideaOptions = useMemo(() => {
-    const seen = new Map<number, string>();
-    for (const r of rows) if (!seen.has(r.ideaNumber)) seen.set(r.ideaNumber, r.ideaTitle);
-    return [
+  const [board, setBoard] = useState<BoardCode | "all">("all");
+
+  // The idea list follows the chosen board, and each idea shows its board's colour square.
+  const ideaOptions = useMemo(
+    () => [
       { value: "all", label: "All ideas" },
-      ...[...seen.entries()]
-        .sort(([a], [b]) => a - b)
-        .map(([number, title]) => ({ value: String(number), label: `#${number} ${title}` })),
-    ];
-  }, [rows]);
+      ...ideaChoicesFor(rows, board).map((i) => ({
+        value: String(i.number),
+        label: `#${i.number} ${i.title}`,
+        board: i.board,
+      })),
+    ],
+    [rows, board],
+  );
 
   const [status, setStatus] = useState<ListStatus | "all">("to_contact");
   const [idea, setIdea] = useState(ideaOptions.some((o) => o.value === initialIdea) ? initialIdea : "all");
-  const [board, setBoard] = useState<BoardCode | "all">("all");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -108,7 +112,10 @@ export function PeopleView({
     };
   const narrowStatus = narrow(setStatus);
   const narrowIdea = narrow(setIdea);
-  const narrowBoard = narrow(setBoard);
+  const narrowBoard = (next: BoardCode | "all") => {
+    narrow(setBoard)(next);
+    if (!ideaChoicesFor(rows, next).some((i) => String(i.number) === idea)) narrowIdea("all");
+  };
 
   const scope = { idea, board };
   const counts = countByStatus(rows, scope);
@@ -189,21 +196,7 @@ export function PeopleView({
           </div>
 
           <IdeaSearch options={ideaOptions} value={idea} onChange={narrowIdea} />
-
-          <SelectField
-            label="Board"
-            hideLabel
-            compact
-            value={board}
-            onChange={(e) => narrowBoard(e.target.value as BoardCode | "all")}
-          >
-            <option value="all">All boards</option>
-            {boards.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
-              </option>
-            ))}
-          </SelectField>
+          <BoardSelect boards={boards} value={board} onChange={narrowBoard} />
         </div>
 
         {shown.length > 0 && (

@@ -97,3 +97,16 @@ export function countByStatus(
   }
   return counts;
 }
+
+// The ideas the idea search offers. Each idea once, in number order. With a board chosen, only
+// that board's ideas, so the idea list follows the board list.
+export type IdeaChoice = { number: number; title: string; board: BoardCode };
+export function ideaChoicesFor(rows: PersonRow[], board: BoardCode | "all"): IdeaChoice[] {
+  const seen = new Map<number, IdeaChoice>();
+  for (const r of rows) {
+    if (board !== "all" && r.board !== board) continue;
+    if (!seen.has(r.ideaNumber))
+      seen.set(r.ideaNumber, { number: r.ideaNumber, title: r.ideaTitle, board: r.board });
+  }
+  return [...seen.values()].sort((a, b) => a.number - b.number);
+}
