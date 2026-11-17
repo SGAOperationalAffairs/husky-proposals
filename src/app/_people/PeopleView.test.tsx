@@ -68,11 +68,11 @@ function renderView(initialIdea = "all", list = rows) {
 }
 
 describe("PeopleView", () => {
-  it("opens on To contact, with the overdue row first and a text count on each filter", () => {
+  it("opens on To contact, with the overdue row first and the list line says what it shows", () => {
     renderView();
     const items = screen.getAllByRole("checkbox");
     expect(items.map((c) => c.getAttribute("aria-label"))).toEqual(["Select Ava Chen", "Select Priya Nair"]);
-    expect(screen.getByRole("button", { name: /To contact\s*2/ })).toBeTruthy();
+    expect(screen.getByText("2 to contact")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Joined" })).toBeTruthy();
     expect(screen.getByText("3 days overdue")).toBeTruthy();
     expect(screen.getByText("Contact in 2 days")).toBeTruthy();

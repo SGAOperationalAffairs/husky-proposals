@@ -18,12 +18,10 @@ import {
 import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { BoardSelect } from "@/components/BoardSelect";
-import { Badge } from "@/components/Badge";
 import { IdeaSearch } from "@/components/IdeaSearch";
 import type { BoardCode } from "@/core/boards";
 import {
   contactBy,
-  countByStatus,
   daysUntil,
   filterPeople,
   ideaChoicesFor,
@@ -46,6 +44,15 @@ const STATUS_ORDER: { id: ListStatus | "all"; label: string; icon: LucideIcon }[
   { id: "not_now", label: "Not now", icon: PauseCircle },
   { id: "all", label: "All", icon: Users },
 ];
+
+// The line above the rows says which list it is showing, in the same words as the filter.
+const SHOWN_WORDS: Record<ListStatus | "all", string> = {
+  to_contact: "to contact",
+  contacted: "contacted",
+  joined: "joined",
+  not_now: "not now",
+  all: "people",
+};
 
 const STATUS_LABEL: Record<ListStatus, string> = {
   to_contact: "To contact",
@@ -119,7 +126,6 @@ export function PeopleView({
   };
 
   const scope = { idea, board };
-  const counts = countByStatus(rows, scope);
   const shown = filterPeople(rows, { status, ...scope }, nowDate);
   const shownKeys = shown.map(keyOf);
 
@@ -192,7 +198,6 @@ export function PeopleView({
               >
                 <s.icon aria-hidden className="size-4" />
                 {s.label}
-                {s.id === "to_contact" && <Badge count={counts.to_contact} />}
               </Button>
             ))}
           </div>
@@ -223,7 +228,9 @@ export function PeopleView({
                 </span>
               </span>
             </Button>
-            <span className="text-sm text-muted">{shown.length} shown</span>
+            <span className="text-sm text-muted">
+              {shown.length} {SHOWN_WORDS[status]}
+            </span>
           </div>
         )}
 
