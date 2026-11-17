@@ -300,8 +300,8 @@ export function PeopleView({
           moves anything. */}
       {picked.size > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-20 flex justify-center px-4">
-          <div className="pointer-events-auto flex max-w-2xl flex-wrap items-center justify-center gap-3 bordered bg-surface p-3 surface-float">
-            <span className="basis-full text-sm font-bold" aria-live="polite">
+          <div className="pointer-events-auto flex max-w-5xl flex-wrap items-center justify-center gap-3 bordered bg-surface p-3 surface-float">
+            <span className="text-sm font-bold whitespace-nowrap" aria-live="polite">
               {picked.size} selected
             </span>
             <Button size="sm" variant="primary" disabled title="Email is coming soon.">
@@ -324,7 +324,6 @@ export function PeopleView({
               <X aria-hidden className="size-4" />
               Clear
             </Button>
-            <p className="basis-full text-xs text-muted">Messages are coming soon.</p>
             {failed && (
               <span className="basis-full text-sm text-muted">Some changes did not save. Try again.</span>
             )}
