@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { PeopleView } from "@/app/_people/PeopleView";
 import { requireLeader } from "@/auth/gate";
@@ -19,7 +18,6 @@ export default function People({ searchParams }: { searchParams: Promise<{ idea?
 }
 
 async function PeopleContent({ searchParams }: { searchParams: Promise<{ idea?: string | string[] }> }) {
-  await connection();
   const session = await requireLeader();
   const viewer = { user: { id: session.user.id }, roles: session.roles };
 
@@ -31,7 +29,7 @@ async function PeopleContent({ searchParams }: { searchParams: Promise<{ idea?: 
     label: BOARDS[code].name,
   }));
 
-  // Each idea's page links here with ?idea=103, so the list opens on that idea.
+  // A link with ?idea=103 opens the list on that idea.
   const { idea } = await searchParams;
   const initialIdea = typeof idea === "string" ? idea : "all";
 
