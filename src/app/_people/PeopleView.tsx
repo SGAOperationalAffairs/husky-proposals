@@ -2,7 +2,19 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ListChecks, ListX, Mail } from "lucide-react";
+import {
+  Check,
+  CircleDashed,
+  ListChecks,
+  ListX,
+  Mail,
+  PauseCircle,
+  Send,
+  UserCheck,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/Field";
@@ -18,17 +30,19 @@ import {
   type PersonRow,
 } from "@/core/people";
 import { setContactStatusAction } from "./actions";
+import { ConfirmMarkDialog, type MarkTo } from "./ConfirmMarkDialog";
 
 // The People leader tab (#129), in the look the playground settled on: one list with checkboxes,
 // status chips, an idea search, a board dropdown, and a bar at the bottom for the picked rows.
 // Rows come from the server already limited to the viewer's boards.
 
-const STATUS_ORDER: { id: ListStatus | "all"; label: string }[] = [
-  { id: "to_contact", label: "To contact" },
-  { id: "contacted", label: "Contacted" },
-  { id: "joined", label: "Joined" },
-  { id: "not_now", label: "Not now" },
-  { id: "all", label: "All" },
+// Each status has one icon, used on its filter chip and on the bar's action for it.
+const STATUS_ORDER: { id: ListStatus | "all"; label: string; icon: LucideIcon }[] = [
+  { id: "to_contact", label: "To contact", icon: CircleDashed },
+  { id: "contacted", label: "Contacted", icon: Send },
+  { id: "joined", label: "Joined", icon: UserCheck },
+  { id: "not_now", label: "Not now", icon: PauseCircle },
+  { id: "all", label: "All", icon: Users },
 ];
 
 const STATUS_LABEL: Record<ListStatus, string> = {
@@ -80,6 +94,8 @@ export function PeopleView({
   const [anchor, setAnchor] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
+  // The bulk action waiting for the leader's confirmation. Nothing is saved until they confirm.
+  const [confirming, setConfirming] = useState<MarkTo | null>(null);
 
   // Changing a filter drops the picks. A row picked under one filter must not be saved under
   // another, where the leader can no longer see it (#129 review).
@@ -130,9 +146,10 @@ export function PeopleView({
 
   // Back to To contact, Joined, and Not now. Each row is saved on its own; rows that save leave the selection, and a
   // failure keeps the rest picked and says so.
-  const mark = (to: "new" | "joined" | "later") => {
+  const mark = (to: MarkTo) => {
     const targets = rows.filter((r) => picked.has(keyOf(r)));
     setFailed(false);
+    setConfirming(null);
     startTransition(async () => {
       const results = await Promise.all(
         targets.map((r) => setContactStatusAction({ userId: r.userId, ideaId: r.ideaId, status: to })),
@@ -162,6 +179,7 @@ export function PeopleView({
               aria-pressed={status === s.id}
               onClick={() => narrowStatus(s.id)}
             >
+              <s.icon aria-hidden className="size-4" />
               {s.label} <span className="tabular-nums">{counts[s.id]}</span>
             </Button>
           ))}
@@ -282,37 +300,44 @@ export function PeopleView({
           moves anything. */}
       {picked.size > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-20 flex justify-center px-4">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-3 bordered bg-surface p-3 surface-float">
-            <span className="text-sm font-bold" aria-live="polite">
+          <div className="pointer-events-auto flex max-w-2xl flex-wrap items-center justify-center gap-3 bordered bg-surface p-3 surface-float">
+            <span className="basis-full text-sm font-bold" aria-live="polite">
               {picked.size} selected
             </span>
             <Button size="sm" variant="primary" disabled title="Email is coming soon.">
               <Mail aria-hidden className="size-4" />
               Message selected
             </Button>
-            <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("new")}>
+            <Button size="sm" variant="plain" disabled={pending} onClick={() => setConfirming("new")}>
+              <CircleDashed aria-hidden className="size-4" />
               Mark to contact
             </Button>
-            <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("joined")}>
+            <Button size="sm" variant="plain" disabled={pending} onClick={() => setConfirming("joined")}>
+              <UserCheck aria-hidden className="size-4" />
               Mark joined
             </Button>
-            <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("later")}>
+            <Button size="sm" variant="plain" disabled={pending} onClick={() => setConfirming("later")}>
+              <PauseCircle aria-hidden className="size-4" />
               Mark not now
             </Button>
             <Button size="sm" variant="plain" onClick={() => setPicked(new Set())}>
+              <X aria-hidden className="size-4" />
               Clear
             </Button>
-            {/* What each action does to the picked people, in plain words. */}
-            <p className="basis-full text-xs text-muted">
-              Mark to contact puts them back on the To contact list. Mark joined means they have joined the
-              idea. Mark not now means they have stepped back for now. Messages are coming soon.
-            </p>
+            <p className="basis-full text-xs text-muted">Messages are coming soon.</p>
             {failed && (
               <span className="basis-full text-sm text-muted">Some changes did not save. Try again.</span>
             )}
           </div>
         </div>
       )}
+      <ConfirmMarkDialog
+        to={confirming}
+        count={picked.size}
+        busy={pending}
+        onConfirm={() => confirming && mark(confirming)}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   );
 }

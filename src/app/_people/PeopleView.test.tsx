@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PersonRow } from "@/core/people";
 
@@ -94,18 +94,43 @@ describe("PeopleView", () => {
     ]);
   });
 
-  it("shows a bar for the picked rows, and Mark joined saves them", async () => {
+  it("shows a bar for the picked rows", () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
     expect(screen.getByText("1 selected")).toBeTruthy();
+  });
+
+  it("asks before marking, and says what the change does", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
     fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Mark 1 person as joined?")).toBeTruthy();
+    expect(within(dialog).getByText(/They move to the Joined list/)).toBeTruthy();
+    expect(calls).toEqual([]);
+  });
+
+  it("Cancel saves nothing", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    expect(calls).toEqual([]);
+  });
+
+  it("confirming Mark joined saves the picked volunteer", async () => {
+    renderView();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mark joined" }));
     await waitFor(() => expect(calls).toContainEqual({ userId: "u1", ideaId: "i1", status: "joined" }));
   });
 
-  it("Mark to contact moves the picked volunteer back to the list", async () => {
+  it("confirming Mark to contact moves the picked volunteer back", async () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
     fireEvent.click(screen.getByRole("button", { name: "Mark to contact" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mark to contact" }));
     await waitFor(() => expect(calls).toContainEqual({ userId: "u1", ideaId: "i1", status: "new" }));
   });
 
