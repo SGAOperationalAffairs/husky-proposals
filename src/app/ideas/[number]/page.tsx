@@ -23,7 +23,7 @@ import { BOARDS, JOIN } from "@/core/boards";
 export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
-      <SiteHeader nav={<NavTabs current="ideas" />} />
+      <SiteHeader nav={<NavTabs />} />
       <Button
         variant="text"
         href="/"

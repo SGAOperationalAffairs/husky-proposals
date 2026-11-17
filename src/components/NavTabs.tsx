@@ -1,47 +1,41 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { canSignIn, getSession, signOutUrl } from "@/auth/session";
+import { usesSampleIdeas } from "@/app/_ideas/source";
 import { AccountLinks } from "@/components/AccountLinks";
-import { PAGE } from "@/components/pageTransition";
-import { tabLook } from "@/components/tabLook";
-import { navTabsFor, type NavTab } from "@/core/navigation";
+import { NavLinks } from "@/components/NavLinks";
+import { navTabsFor } from "@/core/navigation";
+import { reviewQueueCount } from "@/db/reviewQueue";
+import { db } from "@/db/runtime";
+import { env } from "@/env";
 
 // The site's tabs for this viewer (#156). Read per request, so they carry their own
-// Suspense boundary and the page around them stays cached. Students and visitors
-// never get a leader tab.
-export function NavTabs({ current }: { current?: NavTab["id"] }) {
+// Suspense boundary. Students and visitors never get a leader tab. The tab that is
+// open is worked out in the browser from the URL (NavLinks), so the tabs do not need
+// to know which page they sit on (#221).
+export function NavTabs() {
   return (
     <Suspense fallback={null}>
-      <Tabs current={current} />
+      <Tabs />
     </Suspense>
   );
 }
 
-async function Tabs({ current }: { current?: NavTab["id"] }) {
+async function Tabs() {
   await connection();
   const session = await getSession();
   const viewer = session ? { user: { id: session.user.id }, roles: session.roles } : null;
+  // The red count on the Queue tab: posts waiting for review on the viewer's boards (#221).
+  // Zero for students and visitors, and no badge when nothing is waiting. Local runs without
+  // a database never reach db(), as on the queue page.
+  const waiting = viewer && !usesSampleIdeas(env()) ? await reviewQueueCount(db(), viewer) : 0;
   // signOutUrl refuses an origin it does not know, so a spoofed host only gives null (#177).
   const requestHeaders = await headers();
   const origin = `https://${requestHeaders.get("host") ?? ""}`;
   return (
     <div className="flex items-end justify-between gap-4 border-b border-line">
-      {/* Only the sideways scroll is wanted. Setting overflow-x makes overflow-y scroll too, by a pixel (#186). */}
-      <nav aria-label="Pages" className="flex gap-0.5 overflow-x-auto overflow-y-hidden">
-        {navTabsFor(viewer).map((t) => (
-          <Link
-            key={t.id}
-            transitionTypes={PAGE}
-            href={t.href}
-            aria-current={t.id === current ? "page" : undefined}
-            className={tabLook(t.id === current)}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      <NavLinks tabs={navTabsFor(viewer)} waiting={waiting} />
       <div className="shrink-0 pb-1">
         <AccountLinks
           canSignIn={canSignIn()}

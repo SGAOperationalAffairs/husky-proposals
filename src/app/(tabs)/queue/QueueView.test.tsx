@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApprovedRowData, ReviewRowData } from "@/app/_review/present";
 import { ToastProvider } from "@/components/Toast";
-import type { QueueItem } from "@/core/queue";
 import { QueueView } from "./QueueView";
 
 // The review list runs server actions and refreshes the router; neither is under test here.
@@ -35,51 +34,41 @@ const pending = [pendingRow("a", "A study space", "CPAB"), pendingRow("b", "A bi
 const approved: ApprovedRowData[] = [
   { id: "c", number: 157, title: "A food pantry", boardId: "DAB", approvedText: "Approved 3 days ago" },
 ];
-const ideas: QueueItem[] = [
-  {
-    kind: "idea",
-    number: 103,
-    title: "A food pantry",
-    boardId: "DAB",
-    status: "in_progress",
-    supportCount: 412,
-    updatedDaysAgo: 2,
-  },
-];
 const boards = [
   { value: "CPAB" as const, label: "Campus Planning" },
   { value: "GIB" as const, label: "Green Initiatives" },
   { value: "DAB" as const, label: "Dining" },
 ];
 
-function view(
-  review: { pending: ReviewRowData[]; approved: ApprovedRowData[] },
-  queueView?: "list" | "cards",
-) {
+function view(review: { pending: ReviewRowData[]; approved: ApprovedRowData[] }) {
   return render(
     <ToastProvider>
-      <QueueView items={ideas} review={review} boards={boards} view={queueView} />
+      <QueueView review={review} boards={boards} />
     </ToastProvider>,
   );
 }
 
-describe("the queue's red count (#59)", () => {
-  it("shows the number of pending posts on the To review tab", () => {
+// The chips switch between the two lists (#221): one is on screen at a time.
+const showApproved = () => fireEvent.click(screen.getByRole("button", { name: "Recently approved" }));
+
+describe("the queue's chips (#221)", () => {
+  it("shows To review first, and only that list", () => {
     view({ pending, approved });
-    expect(
-      within(screen.getByRole("tab", { name: /To review/ })).getByLabelText("2 need attention"),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "To review" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Review: A study space" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Recently approved" })).toBeNull();
   });
 
-  it("shows no badge when nothing is pending", () => {
-    view({ pending: [], approved });
-    expect(screen.queryByLabelText(/need attention/)).toBeNull();
-  });
-
-  it("never shows a badge on the Ideas tab", () => {
+  it("switches to Recently approved, and back, with the chips", () => {
     view({ pending, approved });
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    expect(within(screen.getByRole("tab", { name: "Ideas" })).queryByLabelText(/need attention/)).toBeNull();
+    showApproved();
+    expect(screen.getByRole("button", { name: "Recently approved" }).getAttribute("aria-pressed")).toBe(
+      "true",
+    );
+    expect(screen.queryByRole("button", { name: "Review: A study space" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Recently approved" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "To review" }));
+    expect(screen.getByRole("button", { name: "Review: A study space" })).toBeTruthy();
   });
 });
 
@@ -95,11 +84,13 @@ describe("the queue's lists and filters (#59)", () => {
     fireEvent.change(screen.getByLabelText("Board"), { target: { value: "GIB" } });
     expect(screen.queryByRole("button", { name: "Review: A study space" })).toBeNull();
     expect(screen.getByRole("button", { name: "Review: A bike stand" })).toBeTruthy();
+    showApproved();
     expect(screen.getByText("Nothing approved in the last 14 days.")).toBeTruthy();
   });
 
   it("lists recently approved ideas with a take down button", () => {
     view({ pending, approved });
+    showApproved();
     expect(screen.getByRole("heading", { name: "Recently approved" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "A food pantry" }).getAttribute("href")).toBe("/ideas/157");
     expect(screen.getByRole("button", { name: "Take down #157" })).toBeTruthy();
@@ -116,59 +107,23 @@ describe("the queue's lists and filters (#59)", () => {
 
   it("opens the take-down dialog", async () => {
     view({ pending, approved });
+    showApproved();
     fireEvent.click(screen.getByRole("button", { name: "Take down #157" }));
     expect(await screen.findByRole("dialog", { name: "Take down #157?" })).toBeTruthy();
   });
 
-  it("filters ideas by status on the Ideas tab and hides the sort on To review", () => {
+  it("has no tab selector and no Ideas controls (#221)", () => {
     view({ pending, approved });
+    expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByLabelText("Status")).toBeNull();
     expect(screen.queryByLabelText("Sort by")).toBeNull();
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    expect(screen.getByRole("link", { name: "A food pantry" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "waiting" } });
-    expect(screen.getByText("No ideas match these filters.")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "View" })).toBeNull();
   });
 
-  it("says what to do when nothing is pending", () => {
+  it("says what to do when nothing is pending or approved", () => {
     view({ pending: [], approved: [] });
     expect(screen.getByText("Nothing to review right now. New posts appear here.")).toBeTruthy();
+    showApproved();
     expect(screen.getByText("Nothing approved in the last 14 days.")).toBeTruthy();
-  });
-});
-
-describe("the queue's card view (#139)", () => {
-  it("shows posters, not the list, on the Ideas tab when view is cards", () => {
-    const { container } = view({ pending, approved }, "cards");
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    expect(container.querySelectorAll("article.poster").length).toBe(1);
-    expect(screen.queryByRole("list")).toBeNull();
-  });
-
-  it("switches view in place, keeping the tab and filters", () => {
-    const { container } = view({ pending, approved });
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    fireEvent.click(screen.getByRole("link", { name: /Cards/ }));
-    expect(container.querySelectorAll("article.poster").length).toBe(ideas.length);
-    expect(screen.getByRole("tab", { name: "Ideas" }).getAttribute("aria-selected")).toBe("true");
-  });
-
-  it("names the active view for screen readers", () => {
-    view({ pending, approved });
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    const current = screen.getByRole("link", { name: /List/ });
-    expect(current.getAttribute("aria-current")).toBe("true");
-    expect(current.textContent).toContain("(showing)");
-  });
-
-  it("shows the list by default on the Ideas tab", () => {
-    view({ pending, approved });
-    fireEvent.click(screen.getByRole("tab", { name: "Ideas" }));
-    expect(screen.getByRole("list")).toBeTruthy();
-  });
-
-  it("keeps the review list on the To review tab, whatever the view", () => {
-    const { container } = view({ pending, approved }, "cards");
-    expect(container.querySelectorAll("article.poster").length).toBe(0);
-    expect(screen.getByRole("button", { name: "Review: A study space" })).toBeTruthy();
   });
 });

@@ -10,7 +10,7 @@ import {
 // and an error that says what to fix.
 const control = "rounded-field bordered bg-surface w-full px-3 py-2";
 
-type Shared = { label: string; hint?: string; error?: string; required?: boolean };
+type Shared = { label: string; hint?: string; error?: string; required?: boolean; hideLabel?: boolean };
 // The character count under a limited field: how many are used, against the limit,
 // and how many more a minimum needs once something is written (#55).
 type Count = { length: number; max: number; min?: number };
@@ -45,12 +45,14 @@ function Wrap({
   hint,
   error,
   required,
+  hideLabel,
   count,
   children,
 }: Shared & { id: string; count?: Count; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-semibold">
+      {/* hideLabel keeps the name for screen readers and drops the visible words (#221). */}
+      <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm font-semibold"}>
         {label}
         {required && <RequiredMark />}
       </label>
@@ -141,25 +143,31 @@ export function TextArea({
 
 // onPage: as on TextField, the page color instead of a white surface (#61). The
 // ideas list's dropdowns use it, so they sit on the page like the search field.
+// compact: the height of a chip beside it, for a dropdown in a row of chips (#221).
 export function SelectField({
   label,
   hint,
   error,
+  hideLabel,
   onPage = false,
+  compact = false,
   children,
   ...rest
-}: Shared & { onPage?: boolean } & SelectHTMLAttributes<HTMLSelectElement>) {
+}: Shared & { onPage?: boolean; compact?: boolean } & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
+  // A compact select swaps the vertical padding for a fixed height, the chip's (#221).
+  const shape = onPage ? control.replace("bg-surface", "bg-bg") : control;
+  const sized = compact ? shape.replace("py-2", "h-9 py-0 text-sm") : shape;
   // appearance-none: Safari draws its own rounded select over rounded-field, so
   // the arrow is ours (#61).
   return (
-    <Wrap id={id} label={label} hint={hint} error={error}>
+    <Wrap id={id} label={label} hint={hint} error={error} hideLabel={hideLabel}>
       <span className="relative block">
         <select
           id={id}
           aria-invalid={!!error}
           aria-describedby={describedBy(id, { label, hint, error })}
-          className={`${onPage ? control.replace("bg-surface", "bg-bg") : control} appearance-none pr-9`}
+          className={`${sized} appearance-none pr-9`}
           {...rest}
         >
           {children}
