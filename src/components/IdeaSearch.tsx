@@ -23,7 +23,7 @@ export function IdeaSearch({
       <Combobox.Input
         aria-label="Idea"
         placeholder="Search ideas"
-        className="h-9 w-72 max-w-full bordered bg-surface px-3 text-sm"
+        className="h-9 w-60 max-w-full bordered bg-surface px-3 text-sm"
       />
       <Combobox.Portal>
         <Combobox.Positioner sideOffset={4} className="z-20">

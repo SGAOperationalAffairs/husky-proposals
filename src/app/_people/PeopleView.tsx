@@ -177,6 +177,7 @@ export function PeopleView({
               <Button
                 key={s.id}
                 size="sm"
+                className="h-9"
                 variant={status === s.id ? "primary" : "plain"}
                 aria-pressed={status === s.id}
                 onClick={() => narrowStatus(s.id)}
@@ -207,7 +208,7 @@ export function PeopleView({
 
         {shown.length > 0 && (
           <div className="flex items-center justify-between gap-3">
-            <Button size="sm" variant={allShown ? "primary" : "plain"} onClick={toggleAll}>
+            <Button size="sm" variant={allShown ? "primary" : "plain"} className="h-9" onClick={toggleAll}>
               {/* Both labels share one cell, so the button is as wide as "Deselect all" and never changes size. */}
               <span className="inline-grid">
                 <span
@@ -281,9 +282,9 @@ export function PeopleView({
                     )}
                   </div>
 
-                  <div className="w-60 shrink-0">
-                    <p className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="tabular-nums">#{r.ideaNumber}</span>
+                  <div className="w-80 min-w-0 shrink-0">
+                    <p className="flex min-w-0 items-center gap-2 text-sm whitespace-nowrap">
+                      <span className="shrink-0 tabular-nums">#{r.ideaNumber}</span>
                       <span className="min-w-0 truncate" title={r.ideaTitle}>
                         {r.ideaTitle}
                       </span>
