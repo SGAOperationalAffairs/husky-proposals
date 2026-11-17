@@ -44,6 +44,17 @@ describe("setContactStatus", () => {
     expect(writes).toEqual([{ userId: USER, ideaId: IDEA, status: "later" }]);
   });
 
+  it("a chair moves a volunteer back to To contact, so the list shows them again", async () => {
+    const { store, writes } = fakeStore("DAB");
+    const result = await setContactStatus(store, chairOf("DAB"), {
+      userId: USER,
+      ideaId: IDEA,
+      status: "new",
+    });
+    expect(result).toEqual({ ok: true });
+    expect(writes).toEqual([{ userId: USER, ideaId: IDEA, status: "new" }]);
+  });
+
   it("refuses a leader from another board, as if the row did not exist", async () => {
     const { store, writes } = fakeStore("DAB");
     const result = await setContactStatus(store, chairOf("CPAB"), {
@@ -73,7 +84,7 @@ describe("setContactStatus", () => {
     expect(a.writes).toEqual([]);
   });
 
-  it("rejects a status other than joined or later, and a malformed id", async () => {
+  it("rejects a status other than new, joined, or later, and a malformed id", async () => {
     const { store, writes } = fakeStore("DAB");
     const bad = await setContactStatus(store, chairOf("DAB"), {
       userId: USER,

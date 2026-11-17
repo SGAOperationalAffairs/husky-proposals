@@ -3,7 +3,7 @@ import type { BoardCode } from "@/core/boards";
 import { can, type Viewer } from "@/core/permissions";
 import type { ContactStatus } from "@/core/people";
 
-// Joined and Not now from the People list (#129). The rules live here, away from Next.js, so the
+// Joined, Not now, and Back to To contact from the People list (#129). The rules live here, away from Next.js, so the
 // tests run without a server. The store is passed in; the Prisma one is src/db/peopleStore.ts.
 
 export type ContactStore = {
@@ -11,11 +11,11 @@ export type ContactStore = {
   setStatus(userId: string, ideaId: string, status: ContactStatus): Promise<void>;
 };
 
-// Only these two come from the list's buttons. Contacted is set by Message, which waits on #101.
+// Only these three come from the list's buttons. Contacted is set by Message, which waits on #101.
 const inputSchema = z.object({
   userId: z.uuid(),
   ideaId: z.uuid(),
-  status: z.enum(["joined", "later"]),
+  status: z.enum(["new", "joined", "later"]),
 });
 
 export type SetContactResult = { ok: true } | { ok: false; error: { code: "invalid" | "not_found" } };

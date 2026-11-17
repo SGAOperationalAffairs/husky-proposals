@@ -59,9 +59,10 @@ export function prismaContactStore(db: Db): ContactStore {
       return row ? { boardId: row.idea.boardId as BoardCode } : null;
     },
     setStatus: async (userId, ideaId, status) => {
+      // Back to To contact clears the contact date, so the row reads as never contacted.
       await db.participation.update({
         where: { userId_ideaId: { userId, ideaId } },
-        data: { contactStatus: status },
+        data: { contactStatus: status, ...(status === "new" ? { contactedAt: null } : {}) },
       });
     },
   };

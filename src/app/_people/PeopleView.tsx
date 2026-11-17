@@ -81,6 +81,19 @@ export function PeopleView({
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
 
+  // Changing a filter drops the picks. A row picked under one filter must not be saved under
+  // another, where the leader can no longer see it (#129 review).
+  const narrow =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPicked(new Set());
+      setAnchor(null);
+    };
+  const narrowStatus = narrow(setStatus);
+  const narrowIdea = narrow(setIdea);
+  const narrowBoard = narrow(setBoard);
+
   const scope = { idea, board };
   const counts = countByStatus(rows, scope);
   const shown = filterPeople(rows, { status, ...scope }, nowDate);
@@ -115,9 +128,9 @@ export function PeopleView({
       return next;
     });
 
-  // Joined and Not now. Each row is saved on its own; rows that save leave the selection, and a
+  // Back to To contact, Joined, and Not now. Each row is saved on its own; rows that save leave the selection, and a
   // failure keeps the rest picked and says so.
-  const mark = (to: "joined" | "later") => {
+  const mark = (to: "new" | "joined" | "later") => {
     const targets = rows.filter((r) => picked.has(keyOf(r)));
     setFailed(false);
     startTransition(async () => {
@@ -147,21 +160,21 @@ export function PeopleView({
               size="sm"
               variant={status === s.id ? "primary" : "plain"}
               aria-pressed={status === s.id}
-              onClick={() => setStatus(s.id)}
+              onClick={() => narrowStatus(s.id)}
             >
               {s.label} <span className="tabular-nums">{counts[s.id]}</span>
             </Button>
           ))}
         </div>
 
-        <IdeaSearch options={ideaOptions} value={idea} onChange={setIdea} />
+        <IdeaSearch options={ideaOptions} value={idea} onChange={narrowIdea} />
 
         <SelectField
           label="Board"
           hideLabel
           compact
           value={board}
-          onChange={(e) => setBoard(e.target.value as BoardCode | "all")}
+          onChange={(e) => narrowBoard(e.target.value as BoardCode | "all")}
         >
           <option value="all">All boards</option>
           {boards.map((b) => (
@@ -277,16 +290,26 @@ export function PeopleView({
               <Mail aria-hidden className="size-4" />
               Message selected
             </Button>
+            <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("new")}>
+              Mark to contact
+            </Button>
             <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("joined")}>
-              Joined
+              Mark joined
             </Button>
             <Button size="sm" variant="plain" disabled={pending} onClick={() => mark("later")}>
-              Not now
+              Mark not now
             </Button>
             <Button size="sm" variant="plain" onClick={() => setPicked(new Set())}>
               Clear
             </Button>
-            {failed && <span className="text-sm text-muted">Some changes did not save. Try again.</span>}
+            {/* What each action does to the picked people, in plain words. */}
+            <p className="basis-full text-xs text-muted">
+              Mark to contact puts them back on the To contact list. Mark joined means they have joined the
+              idea. Mark not now means they have stepped back for now. Messages are coming soon.
+            </p>
+            {failed && (
+              <span className="basis-full text-sm text-muted">Some changes did not save. Try again.</span>
+            )}
           </div>
         </div>
       )}

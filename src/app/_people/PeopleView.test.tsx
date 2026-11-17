@@ -94,12 +94,27 @@ describe("PeopleView", () => {
     ]);
   });
 
-  it("shows a bar for the picked rows, and Joined saves them", async () => {
+  it("shows a bar for the picked rows, and Mark joined saves them", async () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
     expect(screen.getByText("1 selected")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Joined" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
     await waitFor(() => expect(calls).toContainEqual({ userId: "u1", ideaId: "i1", status: "joined" }));
+  });
+
+  it("Mark to contact moves the picked volunteer back to the list", async () => {
+    renderView();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark to contact" }));
+    await waitFor(() => expect(calls).toContainEqual({ userId: "u1", ideaId: "i1", status: "new" }));
+  });
+
+  it("changing a filter drops the picks, so they cannot be saved out of sight", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
+    expect(screen.getByText("1 selected")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Joined/ }));
+    expect(screen.queryByText("1 selected")).toBeNull();
   });
 
   it("Message stays disabled until email is built", () => {
