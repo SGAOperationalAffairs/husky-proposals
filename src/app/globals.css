@@ -586,3 +586,64 @@ label:has(> input[type="checkbox"]:not(:disabled)) {
     transition: none;
   }
 }
+
+/* The Updates tab's two columns (#130). The list has the whole width until a row opens its
+   panel; then the panel's column grows in from the right and the list shrinks to make room.
+   Reduced motion takes the change at once. */
+.updates-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 48rem) {
+  .updates-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+    transition: grid-template-columns var(--motion-fast) ease-out;
+  }
+  .updates-grid[data-open="true"] {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .updates-grid {
+    transition: none;
+  }
+}
+
+/* The update panel's content fades in once the panel has opened, so its text does not
+   reflow while the column is still growing (#130). Reduced motion shows it at once. */
+@keyframes updates-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.updates-fade {
+  animation: updates-fade var(--motion-fast) ease-out var(--motion-fast) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .updates-fade {
+    animation: none;
+  }
+}
+
+/* The past updates under a row ease open and shut by their height (#130). The grid row
+   goes from 0 to 1 fr; the inner box hides the overflow. Reduced motion jumps. */
+.updates-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--motion-fast) ease-out;
+}
+.updates-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.updates-collapse > div {
+  min-height: 0;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .updates-collapse {
+    transition: none;
+  }
+}
