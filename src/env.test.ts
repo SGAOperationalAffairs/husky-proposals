@@ -175,6 +175,46 @@ describe("SGAuth sign-in environment (#177)", () => {
   });
 });
 
+describe("email environment (#209)", () => {
+  const base = { APP_ENV: "local" };
+  const email = { RESEND_API_KEY: "re_test_key", EMAIL_FROM: "Husky Proposals <updates@example.com>" };
+
+  it("is all optional, so nothing is needed to start", () => {
+    const parsed = parseEnv(base);
+    expect(parsed.RESEND_API_KEY).toBeUndefined();
+    expect(parsed.EMAIL_FROM).toBeUndefined();
+    expect(parsed.RESEND_WEBHOOK_SECRET).toBeUndefined();
+  });
+
+  it("accepts a named or a bare sender and the three values", () => {
+    const parsed = parseEnv({ ...base, ...email, RESEND_WEBHOOK_SECRET: "whsec_abc" });
+    expect(parsed.RESEND_API_KEY).toBe("re_test_key");
+    expect(parsed.EMAIL_FROM).toBe("Husky Proposals <updates@example.com>");
+    expect(parsed.RESEND_WEBHOOK_SECRET).toBe("whsec_abc");
+    expect(parseEnv({ ...base, ...email, EMAIL_FROM: "onboarding@resend.dev" }).EMAIL_FROM).toBe(
+      "onboarding@resend.dev",
+    );
+  });
+
+  it("names the variable when a value has the wrong shape", () => {
+    expect(() => parseEnv({ ...base, ...email, RESEND_API_KEY: "sk_nope" })).toThrow(/RESEND_API_KEY/);
+    expect(() => parseEnv({ ...base, ...email, EMAIL_FROM: "not an address" })).toThrow(/EMAIL_FROM/);
+    expect(() => parseEnv({ ...base, RESEND_WEBHOOK_SECRET: "abc" })).toThrow(/RESEND_WEBHOOK_SECRET/);
+  });
+
+  it("needs the API key and the sender together, either way round", () => {
+    expect(() => parseEnv({ ...base, RESEND_API_KEY: "re_test_key" })).toThrow(/EMAIL_FROM/);
+    expect(() => parseEnv({ ...base, EMAIL_FROM: "onboarding@resend.dev" })).toThrow(/RESEND_API_KEY/);
+  });
+
+  it("treats an empty string as unset", () => {
+    const parsed = parseEnv({ ...base, RESEND_API_KEY: "", EMAIL_FROM: "", RESEND_WEBHOOK_SECRET: "" });
+    expect(parsed.RESEND_API_KEY).toBeUndefined();
+    expect(parsed.EMAIL_FROM).toBeUndefined();
+    expect(parsed.RESEND_WEBHOOK_SECRET).toBeUndefined();
+  });
+});
+
 describe("database URLs for the Prisma CLI (#44)", () => {
   it("is missing for both, with no APP_ENV needed, so offline commands run", () => {
     expect(databaseUrls({})).toEqual({ pooled: undefined, direct: undefined });
