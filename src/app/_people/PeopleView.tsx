@@ -18,6 +18,7 @@ import {
 import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { BoardSelect } from "@/components/BoardSelect";
+import { Badge } from "@/components/Badge";
 import { IdeaSearch } from "@/components/IdeaSearch";
 import type { BoardCode } from "@/core/boards";
 import {
@@ -190,7 +191,8 @@ export function PeopleView({
                 onClick={() => narrowStatus(s.id)}
               >
                 <s.icon aria-hidden className="size-4" />
-                {s.label} <span className="tabular-nums">{counts[s.id]}</span>
+                {s.label}
+                {s.id === "to_contact" && <Badge count={counts.to_contact} />}
               </Button>
             ))}
           </div>

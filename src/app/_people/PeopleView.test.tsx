@@ -73,7 +73,7 @@ describe("PeopleView", () => {
     const items = screen.getAllByRole("checkbox");
     expect(items.map((c) => c.getAttribute("aria-label"))).toEqual(["Select Ava Chen", "Select Priya Nair"]);
     expect(screen.getByRole("button", { name: /To contact\s*2/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Joined\s*1/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Joined" })).toBeTruthy();
     expect(screen.getByText("3 days overdue")).toBeTruthy();
     expect(screen.getByText("Contact in 2 days")).toBeTruthy();
   });
