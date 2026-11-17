@@ -3,9 +3,6 @@ import { db } from "@/db/runtime";
 import { env } from "@/env";
 import { handleResendWebhook } from "@/email/resendWebhook";
 
-// Needs node:crypto for the signature check.
-export const runtime = "nodejs";
-
 // Resend's bounce and complaint events (#209). This is the one write that does not come
 // from our own origin, so there is no same-origin check: the Svix signature over the raw
 // body is its guard. The body is read as text first, because the signature covers its bytes.
