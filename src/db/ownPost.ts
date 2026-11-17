@@ -21,7 +21,10 @@ export async function ownPostById(db: Db, viewer: Viewer, id: string): Promise<A
   // A malformed id would make Prisma throw on the uuid column, so it is checked first.
   if (!ideaId.safeParse(id).success) return null;
 
+  // Prisma loads each selected relation (author, reviews) with its own query by default,
+  // which made this read three. "join" folds them into one statement (#128).
   const row = await db.idea.findFirst({
+    relationLoadStrategy: "join",
     where: { id, authorId: viewer.user.id },
     select: authorIdeaSelect,
   });

@@ -14,7 +14,7 @@
 generator client {
   provider        = "prisma-client"
   output          = "../src/generated/prisma"
-  previewFeatures = ["views"]
+  previewFeatures = ["views", "relationJoins"]
 }
 
 datasource db {
