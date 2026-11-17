@@ -347,6 +347,8 @@ model Participation {
   userId        String        @map("user_id") @db.Uuid
   ideaId        String        @map("idea_id") @db.Uuid
   contactStatus ContactStatus @default(new) @map("contact_status")
+  // Set when a leader marks the volunteer contacted (#229). Null until then.
+  contactedAt   DateTime?     @map("contacted_at")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
