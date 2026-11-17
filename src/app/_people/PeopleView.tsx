@@ -169,141 +169,152 @@ export function PeopleView({
         date a few days after signing up.
       </p>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
-          {STATUS_ORDER.map((s) => (
-            <Button
-              key={s.id}
-              size="sm"
-              variant={status === s.id ? "primary" : "plain"}
-              aria-pressed={status === s.id}
-              onClick={() => narrowStatus(s.id)}
-            >
-              <s.icon aria-hidden className="size-4" />
-              {s.label} <span className="tabular-nums">{counts[s.id]}</span>
-            </Button>
-          ))}
+      {/* Filters, Select all, and the rows sit close together. */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
+            {STATUS_ORDER.map((s) => (
+              <Button
+                key={s.id}
+                size="sm"
+                variant={status === s.id ? "primary" : "plain"}
+                aria-pressed={status === s.id}
+                onClick={() => narrowStatus(s.id)}
+              >
+                <s.icon aria-hidden className="size-4" />
+                {s.label} <span className="tabular-nums">{counts[s.id]}</span>
+              </Button>
+            ))}
+          </div>
+
+          <IdeaSearch options={ideaOptions} value={idea} onChange={narrowIdea} />
+
+          <SelectField
+            label="Board"
+            hideLabel
+            compact
+            value={board}
+            onChange={(e) => narrowBoard(e.target.value as BoardCode | "all")}
+          >
+            <option value="all">All boards</option>
+            {boards.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </SelectField>
         </div>
 
-        <IdeaSearch options={ideaOptions} value={idea} onChange={narrowIdea} />
-
-        <SelectField
-          label="Board"
-          hideLabel
-          compact
-          value={board}
-          onChange={(e) => narrowBoard(e.target.value as BoardCode | "all")}
-        >
-          <option value="all">All boards</option>
-          {boards.map((b) => (
-            <option key={b.value} value={b.value}>
-              {b.label}
-            </option>
-          ))}
-        </SelectField>
-      </div>
-
-      {shown.length > 0 && (
-        <div className="flex items-center justify-between gap-3">
-          <Button size="sm" variant={allShown ? "primary" : "plain"} onClick={toggleAll}>
-            {/* Both labels share one cell, so the button is as wide as "Deselect all" and never changes size. */}
-            <span className="inline-grid">
-              <span aria-hidden className="invisible col-start-1 row-start-1 inline-flex items-center gap-2">
-                <ListX className="size-4" />
-                Deselect all
-              </span>
-              <span className="col-start-1 row-start-1 inline-flex items-center gap-2">
-                {allShown ? (
-                  <ListX aria-hidden className="size-4" />
-                ) : (
-                  <ListChecks aria-hidden className="size-4" />
-                )}
-                {allShown ? "Deselect all" : "Select all"}
-              </span>
-            </span>
-          </Button>
-          <span className="text-sm text-muted">{shown.length} shown</span>
-        </div>
-      )}
-
-      {shown.length === 0 ? (
-        <p className="bordered bg-surface p-card text-muted">
-          Nobody here. Nice work, or nobody has offered yet.
-        </p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-line bordered bg-surface">
-          {shown.map((r) => {
-            const key = keyOf(r);
-            const listStatus = toListStatus(r.contactStatus);
-            const days = daysUntil(contactBy(r.signedUpAt), nowDate);
-            const overdue = r.contactStatus === "new" && days < 0;
-            const checked = picked.has(key);
-            const expanded = openKey === key;
-            return (
-              <li key={key} className="flex flex-wrap items-start gap-3 p-3">
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={checked}
-                  aria-label={`Select ${r.name}`}
-                  onClick={(e) => togglePick(key, e.shiftKey)}
-                  className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center select-none"
+        {shown.length > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <Button size="sm" variant={allShown ? "primary" : "plain"} onClick={toggleAll}>
+              {/* Both labels share one cell, so the button is as wide as "Deselect all" and never changes size. */}
+              <span className="inline-grid">
+                <span
+                  aria-hidden
+                  className="invisible col-start-1 row-start-1 inline-flex items-center gap-2"
                 >
-                  <span
-                    aria-hidden
-                    className={`grid size-5 place-items-center bordered ${checked ? "bg-accent text-on-accent" : "bg-surface"}`}
-                  >
-                    {checked && <Check className="size-3.5" strokeWidth={3} />}
-                  </span>
-                </button>
+                  <ListX className="size-4" />
+                  Deselect all
+                </span>
+                <span className="col-start-1 row-start-1 inline-flex items-center gap-2">
+                  {allShown ? (
+                    <ListX aria-hidden className="size-4" />
+                  ) : (
+                    <ListChecks aria-hidden className="size-4" />
+                  )}
+                  {allShown ? "Deselect all" : "Select all"}
+                </span>
+              </span>
+            </Button>
+            <span className="text-sm text-muted">{shown.length} shown</span>
+          </div>
+        )}
 
-                <div className="flex w-44 shrink-0 flex-col">
+        {shown.length === 0 ? (
+          <p className="bordered bg-surface p-card text-muted">
+            Nobody here. Nice work, or nobody has offered yet.
+          </p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line bordered bg-surface">
+            {shown.map((r) => {
+              const key = keyOf(r);
+              const listStatus = toListStatus(r.contactStatus);
+              const days = daysUntil(contactBy(r.signedUpAt), nowDate);
+              const overdue = r.contactStatus === "new" && days < 0;
+              const checked = picked.has(key);
+              const expanded = openKey === key;
+              return (
+                <li key={key} className="flex flex-wrap items-start gap-3 p-3">
                   <button
                     type="button"
-                    aria-expanded={expanded}
-                    onClick={() => setOpenKey(expanded ? null : key)}
-                    className="self-start text-left font-bold underline-offset-4 hover:underline"
+                    role="checkbox"
+                    aria-checked={checked}
+                    aria-label={`Select ${r.name}`}
+                    onClick={(e) => togglePick(key, e.shiftKey)}
+                    className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center select-none"
                   >
-                    {r.name}
-                  </button>
-                  {expanded && (
-                    <a className="text-sm text-muted underline underline-offset-4" href={`mailto:${r.email}`}>
-                      {r.email}
-                    </a>
-                  )}
-                </div>
-
-                <div className="w-60 shrink-0">
-                  <p className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="tabular-nums">#{r.ideaNumber}</span>
-                    <span className="min-w-0 truncate" title={r.ideaTitle}>
-                      {r.ideaTitle}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="w-32 shrink-0">
-                  <BoardChip board={r.board} />
-                </div>
-
-                <div className="ml-auto flex shrink-0 items-start justify-end gap-3 whitespace-nowrap">
-                  {listStatus === "to_contact" && (
                     <span
-                      className="px-2 py-0.5 text-xs font-bold whitespace-nowrap"
-                      style={overdue ? { background: "var(--accent)", color: "var(--on-accent)" } : undefined}
+                      aria-hidden
+                      className={`grid size-5 place-items-center bordered ${checked ? "bg-accent text-on-accent" : "bg-surface"}`}
                     >
-                      {contactText(days)}
+                      {checked && <Check className="size-3.5" strokeWidth={3} />}
                     </span>
-                  )}
-                  <span className="bordered px-2 py-0.5 text-xs font-bold whitespace-nowrap">
-                    {overdue ? "Overdue" : STATUS_LABEL[listStatus]}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  </button>
+
+                  <div className="flex w-44 shrink-0 flex-col">
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      onClick={() => setOpenKey(expanded ? null : key)}
+                      className="self-start text-left font-bold underline-offset-4 hover:underline"
+                    >
+                      {r.name}
+                    </button>
+                    {expanded && (
+                      <a
+                        className="text-sm text-muted underline underline-offset-4"
+                        href={`mailto:${r.email}`}
+                      >
+                        {r.email}
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="w-60 shrink-0">
+                    <p className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="tabular-nums">#{r.ideaNumber}</span>
+                      <span className="min-w-0 truncate" title={r.ideaTitle}>
+                        {r.ideaTitle}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="w-32 shrink-0">
+                    <BoardChip board={r.board} />
+                  </div>
+
+                  <div className="ml-auto flex shrink-0 items-start justify-end gap-3 whitespace-nowrap">
+                    {listStatus === "to_contact" && (
+                      <span
+                        className="px-2 py-0.5 text-xs font-bold whitespace-nowrap"
+                        style={
+                          overdue ? { background: "var(--accent)", color: "var(--on-accent)" } : undefined
+                        }
+                      >
+                        {contactText(days)}
+                      </span>
+                    )}
+                    <span className="bordered px-2 py-0.5 text-xs font-bold whitespace-nowrap">
+                      {overdue ? "Overdue" : STATUS_LABEL[listStatus]}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
       {/* A bar at the bottom of the screen. It takes no room in the list, so ticking a row never
           moves anything. */}
