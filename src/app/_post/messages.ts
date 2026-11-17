@@ -1,11 +1,16 @@
 import { PENDING_LIMIT } from "@/core/review";
-import type { postIdea } from "./actions";
+import type { postIdea, resubmitIdea, withdrawIdea } from "./actions";
 
-// The words for a post that did not go through (#181). Every code the post action can
-// return is an expected result, so it gets plain copy, not a thrown error.
-export type PostCode = Exclude<Awaited<ReturnType<typeof postIdea>>, { ok: true }>["error"]["code"];
+// The words for a post that did not go through (#181, #128). Every code the post,
+// resubmit, and withdraw actions can return is an expected result, so it gets plain
+// copy, not a thrown error.
+type ErrorCode<A extends (raw: unknown) => Promise<unknown>> =
+  Exclude<Awaited<ReturnType<A>>, { ok: true }> extends { error: { code: infer C } } ? C : never;
+export type PostCode =
+  ErrorCode<typeof postIdea> | ErrorCode<typeof resubmitIdea> | ErrorCode<typeof withdrawIdea>;
 
 export const TRY_AGAIN = "That didn't go through. Try again.";
+const CHANGED = "This post changed while you were editing. Reload the page to see where it stands.";
 
 // Field names as the rules module reports them, mapped to the plain message a student sees.
 // The client check and a server `invalid` result use the same words.
@@ -25,7 +30,23 @@ const TEXT: Record<PostCode, string> = {
   cross_origin: TRY_AGAIN,
   // A throw on dev or preview (#191); the floater shows the detail.
   unexpected: TRY_AGAIN,
+  // The edit page and the withdraw dialog (#128).
+  not_found: "We could not find this post. It may have been withdrawn.",
+  not_editable: "This idea was approved, so it can no longer be edited.",
+  invalid_transition: CHANGED,
+  already_changed: CHANGED,
+  // Unreachable for an author: they own the post, and a reason is a reviewer's field.
+  own_post: TRY_AGAIN,
+  not_author: TRY_AGAIN,
+  reason_required: TRY_AGAIN,
 };
+
+// Shown in the withdraw dialog when the session ended (#128).
+export const WITHDRAW_SIGNED_OUT = "Sign in again to withdraw this post.";
+
+// The edit form's sign-in prompt (#128).
+export const RESUBMIT_SIGNED_OUT =
+  "Sign in again to send your changes. We kept them, so you can send them once you are back.";
 
 export const POST_CODES = Object.keys(TEXT) as PostCode[];
 

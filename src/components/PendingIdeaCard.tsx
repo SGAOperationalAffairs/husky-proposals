@@ -18,11 +18,10 @@ export type PendingIdeaCardData = {
   // The student's own support and participation, so the buttons show their real state (#193).
   supported?: boolean;
   participating?: boolean;
+  // The edit page of a declined post (#128). Edit goes there and Withdraw to its withdraw
+  // section. Without it, a declined card shows neither, since there is nowhere to go.
+  editHref?: string;
 };
-
-// The student's own post is not public, so Edit and Withdraw go to My ideas until the
-// real actions exist. Edit and resubmit is #128 (#193).
-const PLACEHOLDER_HREF = "/me";
 
 const actionLink = "inline-flex border-2 px-3 py-1.5 text-sm font-bold";
 const actionStyle = { color: "var(--grey-ink)", borderColor: "var(--grey-ink)" };
@@ -36,6 +35,7 @@ export function PendingIdeaCard({
   declineReason,
   supported = false,
   participating = false,
+  editHref,
 }: PendingIdeaCardData) {
   const b = BOARDS[board];
   const declined = review === "declined";
@@ -69,13 +69,12 @@ export function PendingIdeaCard({
         <div className="card-stack mt-auto flex flex-col pt-1">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <p className="heading text-4xl">{declined ? "DECLINED" : "PENDING"}</p>
-            {declined && (
-              // Edit and Withdraw are placeholders until #128 lands; they link to My ideas.
+            {declined && editHref && (
               <div className="flex flex-wrap gap-2">
-                <Link href={PLACEHOLDER_HREF} className={actionLink} style={actionStyle}>
+                <Link href={editHref} className={actionLink} style={actionStyle}>
                   Edit
                 </Link>
-                <Link href={PLACEHOLDER_HREF} className={actionLink} style={actionStyle}>
+                <Link href={`${editHref}#withdraw`} className={actionLink} style={actionStyle}>
                   Withdraw
                 </Link>
               </div>

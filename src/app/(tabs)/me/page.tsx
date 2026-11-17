@@ -62,6 +62,7 @@ function IdeaGrid({ rows }: { rows: MyRow[] }) {
               board={row.board}
               review={row.review === "declined" ? "declined" : "pending"}
               declineReason={row.declineReason}
+              editHref={row.review === "declined" && row.id ? `/me/ideas/${row.id}/edit` : undefined}
               supported={row.supported}
               participating={row.participated}
             />

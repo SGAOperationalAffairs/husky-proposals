@@ -1,5 +1,6 @@
 // Sample rows for the My ideas page, until the student's queries (#97) land.
 // Invented ideas and a made-up student's activity; no real data.
+import { SAMPLE_OWN_POST } from "@/app/_post/sample";
 import type { MyRow } from "./groups";
 
 export function sampleMyRows(): MyRow[] {
@@ -20,6 +21,7 @@ export function sampleMyRows(): MyRow[] {
       updatedDaysAgo: 0,
     },
     {
+      id: SAMPLE_OWN_POST.ideaId,
       number: 202,
       title: "Bike repair stand by the garage",
       board: "GIB",
