@@ -207,7 +207,7 @@ export function PeopleView({
         </div>
 
         {shown.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <Button size="sm" variant={allShown ? "primary" : "plain"} className="h-9" onClick={toggleAll}>
               {/* Both labels share one cell, so the button is as wide as "Deselect all" and never changes size. */}
               <span className="inline-grid">
