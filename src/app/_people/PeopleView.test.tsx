@@ -134,6 +134,14 @@ describe("PeopleView", () => {
     await waitFor(() => expect(calls).toContainEqual({ userId: "u1", ideaId: "i1", status: "new" }));
   });
 
+  it("Select all ticks every shown row, and the button then reads Deselect all", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(screen.getByText("2 selected")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Deselect all" }));
+    expect(screen.queryByText("2 selected")).toBeNull();
+  });
+
   it("changing a filter drops the picks, so they cannot be saved out of sight", () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));

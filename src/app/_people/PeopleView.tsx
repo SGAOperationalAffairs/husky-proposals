@@ -205,7 +205,7 @@ export function PeopleView({
 
       {shown.length > 0 && (
         <div className="flex items-center justify-between gap-3">
-          <Button size="sm" variant="primary" onClick={toggleAll}>
+          <Button size="sm" variant={allShown ? "primary" : "plain"} onClick={toggleAll}>
             {allShown ? (
               <ListX aria-hidden className="size-4" />
             ) : (
