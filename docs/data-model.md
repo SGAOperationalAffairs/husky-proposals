@@ -49,7 +49,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 
 **update**
 `id`, `idea_id`, `author_id`, `body`, `created_at`, `kind` (board or system).
-- System updates are written when an idea starts, is delivered, or moves board, so students see them in the progress list.
+- System updates are written when an idea starts, is put on hold (with the reason), is delivered, or moves board, so students see them in the progress list.
 - Updates from DAB and CPAB must not reveal confidential administrative initiatives (Bylaws XII).
 
 **email_preference**

@@ -48,6 +48,17 @@ describeWithDatabase("the leader read for an idea page (#59)", () => {
     });
   });
 
+  it("lets the DAB chair manage status on a DAB idea only, and the VP on any board (#98)", async () => {
+    await withSeed(async (tx) => {
+      expect((await leaderIdeaByNumber(tx, dabChair, ideas.foodPantry.number!))?.mayManageStatus).toBe(true);
+      // Another board's idea gives the chair no leader view at all (D16 option A).
+      expect(await leaderIdeaByNumber(tx, dabChair, ideas.printCredits.number!)).toBeNull();
+      for (const idea of [ideas.foodPantry, ideas.walkSignal, ideas.printCredits]) {
+        expect((await leaderIdeaByNumber(tx, vp, idea.number!))?.mayManageStatus, idea.title).toBe(true);
+      }
+    });
+  });
+
   it("gives a student and a visitor nothing", async () => {
     await withSeed(async (tx) => {
       expect(await leaderIdeaByNumber(tx, student, ideas.foodPantry.number!)).toBeNull();

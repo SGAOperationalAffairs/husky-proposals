@@ -6,6 +6,7 @@ import { db } from "@/db/runtime";
 import { env } from "@/env";
 import { parseIdeasNumber } from "@/app/_ideas/data";
 import { usesSampleIdeas } from "@/app/_ideas/source";
+import { IdeaStatusControls } from "@/app/_status/IdeaStatusControls";
 import { LeaderIdeaControls } from "./LeaderIdeaControls";
 import { toLeaderPanel } from "./present";
 
@@ -29,7 +30,17 @@ export async function LeaderIdeaSection({ params }: { params: PageProps<"/ideas/
     <LeaderIdeaPanel
       poster={panel.poster}
       reviewerLabel={panel.reviewerLabel}
+      mayManageStatus={panel.mayManageStatus}
       mayTakeDown={panel.mayTakeDown}
+      status={
+        <IdeaStatusControls
+          ideaId={panel.ideaId}
+          number={panel.number}
+          board={panel.boardId}
+          status={panel.status}
+          waitingReason={panel.waitingReason}
+        />
+      }
       takeDown={<LeaderIdeaControls ideaId={panel.ideaId} number={panel.number} board={panel.boardId} />}
     />
   );
