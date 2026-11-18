@@ -215,4 +215,19 @@ describeWithDatabase("emails about your own post (#211): review decisions", () =
       expect(await tx.emailOutbox.count({ where: { type: "post_decided" } })).toBe(1);
     });
   });
+
+  it("queues nothing when the author turned decision emails off", async () => {
+    await withSeed(async (tx) => {
+      await tx.emailOptOut.create({ data: { userId: users.student.id, type: "post_decided" } });
+      const result = await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "approve",
+        { ideaId: ideas.pending.id },
+        NOW,
+      );
+      expect(result.ok).toBe(true);
+      expect(await tx.emailOutbox.count({ where: { type: "post_decided" } })).toBe(0);
+    });
+  });
 });

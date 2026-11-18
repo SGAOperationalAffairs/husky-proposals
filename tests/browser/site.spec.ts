@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Pages to scan. Add each new route here as it lands.
-const PAGES = ["/", "/ideas/103", "/post", "/sign-in/closed", "/queue"];
+const PAGES = ["/", "/ideas/103", "/post", "/sign-in/closed", "/queue", "/me/notifications"];
 
 test("the style playground is not in a production build (#29)", async ({ page }) => {
   const response = await page.goto("/playground");
@@ -31,6 +31,10 @@ test.describe("public, but not searchable (PRD D18)", () => {
     test(`${path} sends noindex as a header and a meta tag`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.headers()["x-robots-tag"]).toBe("noindex");
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading the tags.
+      await page.waitForLoadState("networkidle");
       // A page that calls notFound() inside Suspense (/queue for a visitor) streams a
       // not-found boundary, and Next adds its own noindex tag beside the layout's.
       // Duplicates are harmless; every robots tag present must say noindex (#59).
@@ -51,6 +55,10 @@ test.describe("styles come from the tokens", () => {
     // Corners only: border widths are a convention by role, not a guarded rule (#33).
     test(`${path} uses only token radii`, async ({ page }) => {
       await page.goto(path);
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading it.
+      await page.waitForLoadState("networkidle");
       const problems = await page.evaluate(() => {
         const root = getComputedStyle(document.documentElement);
         const token = (name: string) => root.getPropertyValue(name).trim();
@@ -87,6 +95,10 @@ test.describe("clickable things show the pointer", () => {
   for (const path of PAGES) {
     test(`${path}: every link, button, and dropdown has cursor: pointer`, async ({ page }) => {
       await page.goto(path);
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading it.
+      await page.waitForLoadState("networkidle");
       const problems = await page.evaluate(() => {
         const clickable =
           'a[href], button, select, summary, [role="button"], [role="tab"], input[type="submit"]';

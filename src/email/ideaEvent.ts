@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BOARD_CODES, BOARDS } from "@/core/boards";
 import { IDEA_STATUSES, STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
+import { followerFooter } from "./footers";
 import type { EmailMessage } from "./sendEmail";
 
 // What a follower is emailed about (#101): pure, with no Prisma and no clock. The
@@ -60,7 +61,7 @@ export type IdeaEventPayload = z.infer<typeof ideaEventPayloadSchema>;
 export function renderIdeaEventEmail(payload: IdeaEventPayload, to: string, siteUrl: string): EmailMessage {
   const board = BOARDS[payload.boardId].name;
   const link = `See where it stands: ${siteUrl}/ideas/${payload.ideaNumber}`;
-  const footer = "You get this email because you follow this idea.";
+  const footer = followerFooter(siteUrl).join("\n");
   const { event } = payload;
 
   if (event.kind === "update") {

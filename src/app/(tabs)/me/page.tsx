@@ -1,7 +1,10 @@
+import { Bell } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireSignedIn } from "@/auth/gate";
+import { Button } from "@/components/Button";
 import { IdeaCard } from "@/components/IdeaCard";
+import { PAGE } from "@/components/pageTransition";
 import { PendingIdeaCard } from "@/components/PendingIdeaCard";
 import { groupMyIdeas, type MyRow } from "./groups";
 import { sampleMyRows } from "./sample";
@@ -84,7 +87,18 @@ async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string 
   const rows = groups[tab];
   return (
     <>
-      <h1 className="heading text-6xl @3xl:text-8xl">My ideas</h1>
+      {/* The way to the notification settings (#211): beside the heading, under it on a phone. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <h1 className="heading text-6xl @3xl:text-8xl">My ideas</h1>
+        <Button
+          variant="text"
+          href="/me/notifications"
+          transitionTypes={PAGE}
+          icon={<Bell aria-hidden className="size-4" />}
+        >
+          Notification settings
+        </Button>
+      </div>
       {/* The tabs are chips, the same look as the board filter (#193). Each is a link. */}
       <nav aria-label="My ideas" className="flex flex-wrap gap-2">
         {TABS.map((t) => (
