@@ -141,6 +141,72 @@ describeWithDatabase("status changes (#98)", () => {
     });
   });
 
+  it("start, hold, and deliver each queue exactly one post_status row for the author (#211)", async () => {
+    await withSeed(async (tx) => {
+      // foodPantry's author is users.student. Followers must not change the count.
+      await addFollowers(tx, ideas.foodPantry.id, 2);
+      const store = prismaStatusStore(tx);
+      const hold = await changeIdeaStatus(
+        store,
+        dabChair,
+        "hold",
+        { ideaId: ideas.foodPantry.id, reason: "It needs more information first." },
+        NOW,
+      );
+      expect(hold.ok).toBe(true);
+      const start = await changeIdeaStatus(
+        store,
+        dabChair,
+        "start",
+        { ideaId: ideas.foodPantry.id, confirmed: true },
+        new Date(NOW.getTime() + 60_000),
+      );
+      expect(start.ok).toBe(true);
+      const deliver = await changeIdeaStatus(
+        store,
+        dabChair,
+        "deliver",
+        { ideaId: ideas.foodPantry.id },
+        new Date(NOW.getTime() + 120_000),
+      );
+      expect(deliver.ok).toBe(true);
+
+      const rows = await tx.emailOutbox.findMany({
+        where: { type: "post_status" },
+        orderBy: { sendAfter: "asc" },
+      });
+      expect(rows).toHaveLength(3);
+      expect(rows.every((row) => row.userId === users.student.id && row.priority === 1)).toBe(true);
+      expect(rows.map((row) => (row.payload as { status: string }).status)).toEqual([
+        "waiting",
+        "in_progress",
+        "delivered",
+      ]);
+      expect(rows[0]?.sendAfter).toEqual(NOW);
+    });
+  });
+
+  it("an author who follows their own idea gets the post_status email and no idea_event row (#211)", async () => {
+    await withSeed(async (tx) => {
+      await tx.follow.create({
+        data: buildFollow({ userId: users.student.id, ideaId: ideas.foodPantry.id }),
+      });
+      await addFollowers(tx, ideas.foodPantry.id, 1);
+      await changeIdeaStatus(
+        prismaStatusStore(tx),
+        dabChair,
+        "hold",
+        { ideaId: ideas.foodPantry.id, reason: "It needs more information first." },
+        NOW,
+      );
+      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "post_status" } })).toBe(
+        1,
+      );
+      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "idea_event" } })).toBe(0);
+      expect(await tx.emailOutbox.count({ where: { type: "idea_event" } })).toBe(1);
+    });
+  });
+
   it("a start sends a fixed number of queries however many followers there are", async () => {
     await withCountedSeed(async (tx, queries) => {
       await addFollowers(tx, ideas.lateNightDining.id, 1);

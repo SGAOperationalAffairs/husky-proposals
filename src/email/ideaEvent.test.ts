@@ -72,6 +72,13 @@ describe("idea event emails (#101)", () => {
     expect(message.text).toContain("You get this email because you follow this idea.");
   });
 
+  it("ends with a link to the notification settings (#211)", () => {
+    for (const event of [statusPayload.event, { kind: "update" as const, body: "A note." }]) {
+      const text = renderIdeaEventEmail({ ...statusPayload, event }, "a@example.com", siteUrl).text;
+      expect(text.endsWith(`Change which emails you get: ${siteUrl}/me/notifications`)).toBe(true);
+    }
+  });
+
   it("renders a waiting change with its reason", () => {
     const message = renderIdeaEventEmail(
       {

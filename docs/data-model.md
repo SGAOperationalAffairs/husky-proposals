@@ -55,9 +55,16 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 **email_preference**
 `user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday` (assigned on creation, used to spread weekly sends), `unsubscribed_at`, `bounced_at`.
 
+**email_opt_out** (#211)
+`user_id`, `type`, `created_at`. Unique on `(user_id, type)`. A row means the student turned that type off. No row means on, so a new student needs nothing created.
+- A student can turn off each of four types: `post_decided`, `post_status`, `digest`, `idea_event`. No other type is ever written (`reviewer_reminder` is a leader's job email).
+- Checked when an email is queued and again when it is sent, so turning a type off after a row is queued is honored.
+- A bounce, complaint, or deactivation (`email_stopped_at`) stops every type whatever the toggles say. A stopped account gets nothing.
+
 **email_outbox**
-`id`, `user_id`, `type` (post_decided, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `provider_message_id` (indexed; matches a bounce webhook to its row), `bounced_at` (set by the Resend bounce webhook), `last_error`.
+`id`, `user_id`, `type` (post_decided, post_status, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `provider_message_id` (indexed; matches a bounce webhook to its row), `bounced_at` (set by the Resend bounce webhook), `last_error`.
 - A bounce also sets `email_stopped_at` on the user, and mail still queued for that user is not sent.
+- Emails about your own post (#211): a review decision (approve, decline, take down) queues one `post_decided` row, and a status change (start, hold, deliver) queues one `post_status` row, both at priority 1. The recipient is always the idea's author, read from the idea and never passed in, so no one else is ever emailed about a post. An anonymous post's email goes to the author's account. Followers get `idea_event` rows instead and never include the author for a status change, so the author gets one email per change.
 - A worker sends rows first in, first out within each priority, under a daily budget.
 - When a limit is hit, rows wait for the next run. None are dropped.
 
@@ -145,7 +152,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - Submit an idea
 - Share (later)
 - My posts and their status
-- Email preferences
+- Notification settings (four email toggles, at `/me/notifications`)
 
 **SGA:**
 - Queue, with board, status, and sort filters

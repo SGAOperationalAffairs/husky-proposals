@@ -106,10 +106,11 @@ enum DigestFrequency {
 }
 
 enum EmailType {
-  post_decided
+  post_decided // approve, decline, or take down of your own post, priority 1 (#211)
   reviewer_reminder
   digest
   idea_event // a status change or update on a followed idea, priority 3 (#101)
+  post_status // a status change on your own post, priority 1 (#211)
 }
 
 // Provisional: whether to log at all is open (D16).
@@ -153,6 +154,7 @@ model User {
   follows          Follow[]
   updates          Update[]
   emailPreference  EmailPreference?
+  emailOptOuts     EmailOptOut[]
   outbox           EmailOutbox[]
   accessLogEntries AccessLog[]
 
@@ -417,6 +419,19 @@ model EmailPreference {
   @@map("email_preferences")
 }
 
+// A type of email the student turned off (#211). No row means on. Only the four types in
+// src/core/emailSettings.ts are ever written. users.email_stopped_at still stops everything.
+model EmailOptOut {
+  userId    String    @map("user_id") @db.Uuid
+  type      EmailType
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type])
+  @@map("email_opt_outs")
+}
+
 // Every email is a row. Sent first in, first out within each priority, under
 // the daily budget. When a limit is hit, rows wait for the next run; none are
 // dropped. The worker claims a batch with FOR UPDATE SKIP LOCKED in
@@ -426,7 +441,7 @@ model EmailOutbox {
   id                String    @id @default(uuid(7)) @db.Uuid
   userId            String    @map("user_id") @db.Uuid
   type              EmailType
-  priority          Int // 1 is highest: post_decided 1, reviewer_reminder 2, digest 3, idea_event 3
+  priority          Int // 1 is highest: post_decided 1, post_status 1, reviewer_reminder 2, digest 3, idea_event 3
   dedupeKey         String    @unique @map("dedupe_key") // e.g. post_decided:<reviewId>, since a take-down is a second decision on one revision (#49)
   payload           Json
   createdAt         DateTime  @default(now()) @map("created_at")
