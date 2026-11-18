@@ -31,6 +31,10 @@ test.describe("public, but not searchable (PRD D18)", () => {
     test(`${path} sends noindex as a header and a meta tag`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.headers()["x-robots-tag"]).toBe("noindex");
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading the tags.
+      await page.waitForLoadState("networkidle");
       // A page that calls notFound() inside Suspense (/queue for a visitor) streams a
       // not-found boundary, and Next adds its own noindex tag beside the layout's.
       // Duplicates are harmless; every robots tag present must say noindex (#59).

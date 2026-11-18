@@ -143,14 +143,16 @@ describeWithDatabase("status changes (#98)", () => {
 
   it("start, hold, and deliver each queue exactly one post_status row for the author (#211)", async () => {
     await withSeed(async (tx) => {
-      // foodPantry's author is users.student. Followers must not change the count.
-      await addFollowers(tx, ideas.foodPantry.id, 2);
+      // lateNightDining starts in collecting_support, so hold, start, and deliver are all
+      // valid in turn (an in_progress idea cannot be held). Its author is
+      // users.anonymousAuthor. Followers must not change the count.
+      await addFollowers(tx, ideas.lateNightDining.id, 2);
       const store = prismaStatusStore(tx);
       const hold = await changeIdeaStatus(
         store,
         dabChair,
         "hold",
-        { ideaId: ideas.foodPantry.id, reason: "It needs more information first." },
+        { ideaId: ideas.lateNightDining.id, reason: "It needs more information first." },
         NOW,
       );
       expect(hold.ok).toBe(true);
@@ -158,7 +160,7 @@ describeWithDatabase("status changes (#98)", () => {
         store,
         dabChair,
         "start",
-        { ideaId: ideas.foodPantry.id, confirmed: true },
+        { ideaId: ideas.lateNightDining.id, confirmed: true },
         new Date(NOW.getTime() + 60_000),
       );
       expect(start.ok).toBe(true);
@@ -166,7 +168,7 @@ describeWithDatabase("status changes (#98)", () => {
         store,
         dabChair,
         "deliver",
-        { ideaId: ideas.foodPantry.id },
+        { ideaId: ideas.lateNightDining.id },
         new Date(NOW.getTime() + 120_000),
       );
       expect(deliver.ok).toBe(true);
@@ -176,7 +178,7 @@ describeWithDatabase("status changes (#98)", () => {
         orderBy: { sendAfter: "asc" },
       });
       expect(rows).toHaveLength(3);
-      expect(rows.every((row) => row.userId === users.student.id && row.priority === 1)).toBe(true);
+      expect(rows.every((row) => row.userId === users.anonymousAuthor.id && row.priority === 1)).toBe(true);
       expect(rows.map((row) => (row.payload as { status: string }).status)).toEqual([
         "waiting",
         "in_progress",
@@ -188,22 +190,23 @@ describeWithDatabase("status changes (#98)", () => {
 
   it("an author who follows their own idea gets the post_status email and no idea_event row (#211)", async () => {
     await withSeed(async (tx) => {
-      await tx.follow.create({
-        data: buildFollow({ userId: users.student.id, ideaId: ideas.foodPantry.id }),
-      });
-      await addFollowers(tx, ideas.foodPantry.id, 1);
-      await changeIdeaStatus(
+      // lateNightDining is held from collecting_support. The seed already has users.student
+      // following it, so with the author and one more follower added, two non-authors follow.
+      const author = users.anonymousAuthor.id;
+      await tx.follow.create({ data: buildFollow({ userId: author, ideaId: ideas.lateNightDining.id }) });
+      await addFollowers(tx, ideas.lateNightDining.id, 1);
+      const ideaEventsBefore = await tx.emailOutbox.count({ where: { type: "idea_event" } });
+      const result = await changeIdeaStatus(
         prismaStatusStore(tx),
         dabChair,
         "hold",
-        { ideaId: ideas.foodPantry.id, reason: "It needs more information first." },
+        { ideaId: ideas.lateNightDining.id, reason: "It needs more information first." },
         NOW,
       );
-      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "post_status" } })).toBe(
-        1,
-      );
-      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "idea_event" } })).toBe(0);
-      expect(await tx.emailOutbox.count({ where: { type: "idea_event" } })).toBe(1);
+      expect(result.ok).toBe(true);
+      expect(await tx.emailOutbox.count({ where: { userId: author, type: "post_status" } })).toBe(1);
+      expect(await tx.emailOutbox.count({ where: { userId: author, type: "idea_event" } })).toBe(0);
+      expect(await tx.emailOutbox.count({ where: { type: "idea_event" } })).toBe(ideaEventsBefore + 2);
     });
   });
 
