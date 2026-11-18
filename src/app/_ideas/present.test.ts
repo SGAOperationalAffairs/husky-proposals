@@ -25,6 +25,7 @@ function record(
       timeHorizon: null,
       status: "in_progress",
       waitingReason: null,
+      closedReason: null,
       fromSga: false,
       authorName: "Maya Test",
       submittedAt: daysBefore(60),
@@ -101,6 +102,13 @@ describe("presenting a public idea (#60)", () => {
       toPage(record({ status: "waiting", waitingReason: "Waiting on a survey." }), NOW).waitingReason,
     ).toBe("Waiting on a survey.");
     expect(toPage(record({ waitingReason: "Stale text." }), NOW).waitingReason).toBeUndefined();
+  });
+
+  it("gives a closed reason only to a closed idea (#237)", () => {
+    expect(toPage(record({ status: "closed", closedReason: "Not funded this year" }), NOW).closedReason).toBe(
+      "Not funded this year",
+    );
+    expect(toPage(record({ closedReason: "Stale text." }), NOW).closedReason).toBeUndefined();
   });
 
   it("turns updates into days ago and text", () => {

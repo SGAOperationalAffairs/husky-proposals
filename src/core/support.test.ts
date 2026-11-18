@@ -37,6 +37,13 @@ describe("support rules (#94)", () => {
       });
     });
 
+    it("a closed idea is closed to support (#237)", () => {
+      expect(checkSupportable({ reviewStatus: "approved", status: "closed" })).toEqual({
+        ok: false,
+        error: { code: "closed" },
+      });
+    });
+
     it("a post that is not approved is closed", () => {
       for (const reviewStatus of ["pending", "declined", "withdrawn"] as const) {
         expect(checkSupportable({ reviewStatus, status: "collecting_support" })).toEqual({

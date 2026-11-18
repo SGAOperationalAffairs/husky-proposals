@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { BOARD_CODES, type BoardCode } from "@/core/boards";
-import { IDEA_STATUSES, type IdeaStatus } from "@/core/statuses";
+import { WALL_STATUSES, type IdeaStatus } from "@/core/statuses";
 
 // How the student list filters and sorts (#61, #55). Plain functions with no
 // server code, so the browser filters the wall in place without asking the
@@ -21,7 +21,7 @@ const lenient = <T extends z.ZodType>(schema: T) => schema.optional().catch(unde
 const querySchema = z.object({
   q: lenient(z.string().trim().max(100)).transform((q) => q || undefined),
   board: lenient(z.enum(BOARD_CODES as [BoardCode, ...BoardCode[]])),
-  status: lenient(z.enum(IDEA_STATUSES as [IdeaStatus, ...IdeaStatus[]])),
+  status: lenient(z.enum(WALL_STATUSES as [IdeaStatus, ...IdeaStatus[]])),
   sort: z.enum(Object.keys(SORTS) as [Sort, ...Sort[]]).catch("support"),
   view: lenient(z.enum(["list"])),
 });

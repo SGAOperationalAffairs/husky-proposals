@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { describeWithDatabase, withRollback } from "@/db/testing/database";
 import { buildApprovedIdea, buildRevision, buildReview, testUuid } from "@/db/testing/factories";
+import { ideas } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 
 // Each check constraint (#44) rejects a bad row and accepts a good one. A failed
@@ -51,6 +52,32 @@ describeWithDatabase("check constraints (#44)", () => {
         },
       });
       expect(idea.status).toBe("waiting");
+    });
+  });
+
+  it("ideas_closed_needs_reason: closed needs a reason with some text in it (#237)", async () => {
+    await expect(
+      withSeed((tx) =>
+        tx.idea.create({
+          data: {
+            ...buildApprovedIdea({ id: testUuid(9006), status: "closed", closedReason: "   " }),
+            updatedAt: new Date(),
+          },
+        }),
+      ),
+    ).rejects.toThrow(/ideas_closed_needs_reason/);
+    await expect(
+      withSeed((tx) => tx.idea.update({ where: { id: ideas.foodPantry.id }, data: { status: "closed" } })),
+    ).rejects.toThrow(/ideas_closed_needs_reason/);
+  });
+
+  it("ideas_closed_needs_reason: a closed idea with a reason is accepted (#237)", async () => {
+    await withSeed(async (tx) => {
+      const idea = await tx.idea.update({
+        where: { id: ideas.foodPantry.id },
+        data: { status: "closed", closedReason: "Dining Services is not funding a pantry this year" },
+      });
+      expect(idea.status).toBe("closed");
     });
   });
 

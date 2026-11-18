@@ -46,6 +46,13 @@ describe("factories (#43)", () => {
     );
   });
 
+  it("requires a reason for a closed idea (#237)", () => {
+    expect(() => buildApprovedIdea({ status: "closed" })).toThrow(/closedReason/);
+    expect(buildApprovedIdea({ status: "closed", closedReason: "Not funded this year" }).status).toBe(
+      "closed",
+    );
+  });
+
   it("matches an idea's category to its board", () => {
     expect(buildIdea({ boardId: "GIB" }).category).toBe("green_initiatives");
     expect(buildIdea({ boardId: "CPAB" }).category).toBe("campus_planning");

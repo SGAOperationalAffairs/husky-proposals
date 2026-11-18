@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
 import { changeIdeaStatus } from "@/app/_status/changeIdeaStatus";
+import { changeStatus } from "@/core/ideaStatus";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "@/core/positions";
 import type { Prisma } from "@/generated/prisma/client";
 import { describeWithDatabase } from "@/db/testing/database";
@@ -100,6 +101,67 @@ describeWithDatabase("status changes (#98)", () => {
         orderBy: { createdAt: "desc" },
       });
       expect(latest.body).toBe("The Dining Advisory Board marked this idea delivered.");
+    });
+  });
+
+  // The close and reopen actions are #126; the rules and the store already carry them (#237).
+  it("closing then reopening through record() writes one update each and clears the reason", async () => {
+    await withSeed(async (tx) => {
+      const store = prismaStatusStore(tx);
+      const reason = "Dining Services is not funding a pantry this year";
+      const idea = { status: "in_progress" as const, waitingReason: null, boardId: "DAB" as const };
+
+      const closed = changeStatus(idea, "closed", { closedReason: reason, now: NOW });
+      if (!closed.ok || !closed.value.update) throw new Error("closing should be allowed");
+      const closeWrite = {
+        ideaId: ideas.foodPantry.id,
+        from: "in_progress" as const,
+        patch: closed.value.patch,
+        update: closed.value.update,
+        event: {
+          kind: "status" as const,
+          ideaId: ideas.foodPantry.id,
+          status: "closed" as const,
+          waitingReason: null,
+          closedReason: reason,
+          changedAt: NOW,
+        },
+      };
+      const updatesBefore = await tx.update.count({ where: { ideaId: ideas.foodPantry.id } });
+      expect(await store.record(closeWrite)).not.toBeNull();
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
+        status: "closed",
+        closedReason: reason,
+        statusChangedAt: NOW,
+      });
+      expect(await tx.update.count({ where: { ideaId: ideas.foodPantry.id } })).toBe(updatesBefore + 1);
+
+      const later = new Date(NOW.getTime() + 60_000);
+      const reopened = changeStatus({ ...idea, status: "closed" }, "collecting_support", { now: later });
+      if (!reopened.ok || !reopened.value.update) throw new Error("reopening should be allowed");
+      await store.record({
+        ideaId: ideas.foodPantry.id,
+        from: "closed",
+        patch: reopened.value.patch,
+        update: reopened.value.update,
+        event: {
+          kind: "status",
+          ideaId: ideas.foodPantry.id,
+          status: "collecting_support",
+          waitingReason: null,
+          changedAt: later,
+        },
+      });
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
+        status: "collecting_support",
+        closedReason: null,
+      });
+      const latest = await tx.update.findFirstOrThrow({
+        where: { ideaId: ideas.foodPantry.id, kind: "system" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(latest.body).toBe("The Dining Advisory Board reopened this idea.");
+      expect(await tx.update.count({ where: { ideaId: ideas.foodPantry.id } })).toBe(updatesBefore + 2);
     });
   });
 

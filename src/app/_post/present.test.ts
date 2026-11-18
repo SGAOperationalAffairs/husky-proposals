@@ -20,6 +20,7 @@ function idea(overrides: Partial<AuthorIdea> = {}): AuthorIdea {
     timeHorizon: "this_semester",
     status: null,
     waitingReason: null,
+    closedReason: null,
     fromSga: false,
     authorName: "Priya Test",
     submittedAt: NOW,

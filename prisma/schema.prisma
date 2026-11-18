@@ -38,6 +38,7 @@ enum IdeaStatus {
   in_progress
   delivered
   waiting
+  closed // reversible: off the wall, no support, public by link (#237)
 }
 
 // What the student picks on the form. Each category maps to one board
@@ -193,12 +194,17 @@ model Board {
 // Rule: status is null unless reviewStatus is approved (check constraint in
 //   the migration). New approvals start at collecting_support.
 // Rule: waitingReason is required when status is waiting (check constraint).
+// Rule: only an in-progress idea can be closed. closedReason is required when
+//   status is closed (check constraint) and is cleared when the idea leaves closed.
+//   Closed ideas take no support, have no rank, and are off the wall, but stay
+//   public by link (#237).
 // Rule: the board is the only field SGA can change on a posted idea.
 // Rule: only the author can withdraw, and only from pending or declined.
 //   withdrawn is final and writes no Review row. Withdrawn posts never count
 //   toward the 3-pending limit and are never public (#49).
 // Rule: a take-down sets reviewStatus to declined and clears status and
-//   waitingReason, as the "status is null unless approved" constraint needs.
+//   waitingReason and closedReason, as the "status is null unless approved"
+//   constraint needs.
 //   The author can then edit and resubmit, as after any decline (#49).
 // Provisional: an idea that is taken down and approved again keeps its number.
 model Idea {
@@ -229,6 +235,7 @@ model Idea {
   reviewStatus  ReviewStatus @default(pending) @map("review_status")
   status        IdeaStatus?
   waitingReason String?      @map("waiting_reason") // students see this
+  closedReason  String?      @map("closed_reason") // students see this
 
   createdAt       DateTime  @default(now()) @map("created_at")
   submittedAt     DateTime  @default(now()) @map("submitted_at") // latest submission; review is due the board's reviewDueDays after
@@ -377,7 +384,8 @@ model Follow {
 // ---------------------------------------------------------------------------
 // Updates
 // Rule: system updates are written when an idea starts, is put on hold (with
-//   the reason), is delivered, or moves board (#98).
+//   the reason), is delivered, is closed (with the reason) or reopened, or moves
+//   board (#98, #237).
 // Rule: an in-progress idea is flagged when it misses its board's cadence
 //   (Board.updateCadenceDays, monthly by default). Board and check-in updates
 //   count, and so does starting work; other system updates do not (IdeaStats).
@@ -488,7 +496,7 @@ view IdeaStats {
   supportCount  Int       @map("support_count") // public
   willingCount  Int       @map("willing_count") // public count, never names (#60)
   followerCount Int       @map("follower_count") // leaders only
-  rankInBoard   Int?      @map("rank_in_board") // null once delivered
+  rankInBoard   Int?      @map("rank_in_board") // null once delivered or closed
   lastUpdateAt  DateTime? @map("last_update_at")
   isStale       Boolean   @map("is_stale") // in progress and past the board's update cadence
 

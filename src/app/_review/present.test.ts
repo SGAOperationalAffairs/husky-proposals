@@ -21,6 +21,7 @@ function leaderIdea(overrides: Partial<LeaderIdea> = {}): LeaderIdea {
     timeHorizon: "this_semester",
     status: null,
     waitingReason: null,
+    closedReason: null,
     fromSga: false,
     authorName: "Maya Test",
     submittedAt: new Date(NOW.getTime() - 2 * DAY),

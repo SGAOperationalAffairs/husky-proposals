@@ -27,7 +27,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 | `--accent-soft` | 14% accent on surface | same mix | Row hover |
 | `--focus` | `#1f5fbf` | `#7aa7f0` | Focus outline |
 
-**Status chips** (`src/components/StatusLabel.tsx`): collecting support `bg-grey text-grey-ink`, under review `bg-sky text-sky-ink`, in progress `bg-amber text-amber-ink`, delivered `bg-green text-green-ink`, waiting an outline (`bordered`) on a transparent background with `text-grey-ink`.
+**Status chips** (`src/components/StatusLabel.tsx`): collecting support `bg-grey text-grey-ink`, closed `bg-sky text-sky-ink` (the pair freed when under review was retired, #202, #237), in progress `bg-amber text-amber-ink`, delivered `bg-green text-green-ink`, waiting an outline (`bordered`) on a transparent background with `text-grey-ink`.
 
 **Board colors** (`--board-<name>` / `--on-board-<name>`), reached through `data-board` as `--b` / `--on-b`:
 
@@ -101,7 +101,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 - **Say "in progress," never "slots."** Boards usually work on 1 to 2 ideas at a time.
 - **Rank wording must not read as a promise:** "Ranked 2 of 14 ideas for Dining."
 - **Proposal numbers:** visible text is always `#103`; screen-reader labels say "proposal 103" (`SupportPair`'s group label).
-- **Status words** are the labels in `src/core/` ("Collecting support," "Under review," "In progress," "Delivered," "Waiting"), and a waiting idea always shows why.
+- **Status words** are the labels in `src/core/` ("Collecting support," "In progress," "Delivered," "On hold," "Closed"), and a waiting or closed idea always shows why. A closed idea shows a plain note in place of the Support and I'll participate buttons, never disabled buttons (#237).
 - **Dates read as people say them:** "updated today," "updated yesterday," "updated 4 days ago" (`updatedText` in `IdeaCard.tsx`).
 - **Errors say what to fix,** in the field's error line.
 

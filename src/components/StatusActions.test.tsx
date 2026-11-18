@@ -53,6 +53,12 @@ describe("status actions in the leader panel (#98)", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
+  it("closed has no buttons and says it is off the wall (#237)", () => {
+    setup({ status: "closed" });
+    expect(screen.getByText("Closed. It is off the wall and is not taking support.")).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("while starting, the button reads Starting and ignores clicks", () => {
     const props = setup({ busy: "start" });
     fireEvent.click(screen.getByRole("button", { name: "Starting…" }));

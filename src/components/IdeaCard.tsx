@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { PAGE } from "@/components/pageTransition";
 import { BOARDS, type BoardCode } from "@/core/boards";
-import { STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
+import { STATUS_LABELS, takesSupport, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
 import { FromSgaTag } from "./Tag";
 
@@ -46,7 +46,9 @@ const posterClass = (arrival: number | undefined) =>
 
 export function IdeaCard(props: Props) {
   const board = BOARDS[props.board];
-  const delivered = props.status === "delivered";
+  // A delivered or closed idea is done: no support buttons, and support is in the past
+  // (#63, #237). Closed cards are off the wall; this covers the leader filter (#122).
+  const done = !takesSupport(props.status);
   // The status is a tag in the poster's top-right corner (Nov 11), in the top row, so it
   // never covers the board line and works on a narrow card too. The picked-up stamp is gone.
   return (
@@ -97,15 +99,14 @@ export function IdeaCard(props: Props) {
           <p className="flex flex-wrap items-end gap-x-2.5">
             <span className="poster-number heading tabular-nums">{props.supportCount}</span>
             <span className="pb-1 text-sm leading-tight font-semibold">
-              {/* Delivered ideas are done; support is in the past (#63). */}
-              {delivered ? "students supported this" : "students want this"}
+              {done ? "students supported this" : "students want this"}
               <br />
               {props.willingCount} will help
             </span>
           </p>
           <div className="flex items-center justify-between gap-3">
-            {delivered ? (
-              <span className="text-sm font-bold">Delivered</span>
+            {done ? (
+              <span className="text-sm font-bold">{STATUS_LABELS[props.status]}</span>
             ) : (
               <div className="relative z-10">
                 <SupportPair

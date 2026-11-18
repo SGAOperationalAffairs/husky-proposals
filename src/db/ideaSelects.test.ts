@@ -4,6 +4,7 @@ import {
   awaitingReview,
   isPublic,
   leaderIdeaSelect,
+  onWall,
   publicStatsSelect,
   publicUpdateSelect,
   reviewQueueSelect,
@@ -24,6 +25,38 @@ describe("studentIdeaSelect", () => {
 
   it("reads only the author's display name, never their id or email", () => {
     expect(studentIdeaSelect.author).toEqual({ select: { displayName: true } });
+  });
+
+  // Pinned (#237): a new field, such as who closed an idea, fails here until someone
+  // decides it is public.
+  it("reads exactly these fields", () => {
+    expect(Object.keys(studentIdeaSelect).sort()).toEqual(
+      [
+        "approvedAt",
+        "author",
+        "boardId",
+        "category",
+        "closedReason",
+        "costBand",
+        "deliveredAt",
+        "description",
+        "fromSga",
+        "fullText",
+        "id",
+        "isAnonymous",
+        "location",
+        "number",
+        "reviewStatus",
+        "scale",
+        "status",
+        "statusChangedAt",
+        "submittedAt",
+        "timeHorizon",
+        "title",
+        "updatedAt",
+        "waitingReason",
+      ].sort(),
+    );
   });
 });
 
@@ -95,5 +128,11 @@ describe("public stats and update selects (#60)", () => {
 describe("isPublic", () => {
   it("is approved posts only, so pending, declined, and withdrawn never match", () => {
     expect(isPublic).toEqual({ reviewStatus: "approved" });
+  });
+});
+
+describe("onWall (#237)", () => {
+  it("is public ideas that are not closed", () => {
+    expect(onWall).toEqual({ reviewStatus: "approved", NOT: { status: "closed" } });
   });
 });
