@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { addReport, formatErrorsForCopy, type ErrorEntry } from "@/core/errorReport";
 import { ErrorFloater } from "./ErrorFloater";
 
-afterEach(cleanup);
+const toast = vi.hoisted(() => vi.fn());
+vi.mock("./Toast", () => ({ useToast: () => toast }));
+
+afterEach(() => {
+  cleanup();
+  toast.mockClear();
+});
 
 function entriesFor(...reports: Array<[ErrorEntry["source"], string]>): ErrorEntry[] {
   let entries: ErrorEntry[] = [];
@@ -71,7 +77,10 @@ describe("ErrorFloater copy (#247)", () => {
     render(<ErrorFloater entries={entries} latest="" onDismiss={vi.fn()} onClearAll={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Copy errors" }));
     expect(writeText).toHaveBeenCalledWith(formatErrorsForCopy(entries));
-    expect(await screen.findByText("Copied")).toBeTruthy();
+    await waitFor(() =>
+      expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Errors copied." })),
+    );
+    expect(screen.getByRole("button", { name: "Copy errors" })).toBeTruthy();
   });
 
   it("a blocked clipboard does not break the panel", async () => {
@@ -90,5 +99,6 @@ describe("ErrorFloater copy (#247)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy errors" }));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
     expect(screen.getByText("boom")).toBeTruthy();
+    expect(toast).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,8 @@
-import { formatErrorsForCopy } from "./errorReport";
 import { describe, expect, it } from "vitest";
 import {
   addReport,
   dismissEntry,
+  formatErrorsForCopy,
   MAX_ENTRIES,
   normalizeError,
   showsErrors,
@@ -143,6 +143,33 @@ describe("formatErrorsForCopy (#247)", () => {
     expect(formatErrorsForCopy(entries)).toBe(
       "2026-11-10T14:03:00.000Z Browser: thrown in the browser\n2026-11-10T14:05:00.000Z Action (3 times): postIdea: down",
     );
+  });
+
+  it("indents the continuation lines of a multi-line message", () => {
+    const entries = [
+      {
+        key: "a",
+        source: "client" as const,
+        message: "Error: boom\n    at run (a.ts:1)\r\n    at main (b.ts:2)",
+        count: 1,
+        firstAt: "2026-11-10T14:03:00.000Z",
+        lastAt: "2026-11-10T14:03:00.000Z",
+      },
+      {
+        key: "b",
+        source: "action" as const,
+        message: "next",
+        count: 1,
+        firstAt: "2026-11-10T14:04:00.000Z",
+        lastAt: "2026-11-10T14:04:00.000Z",
+      },
+    ];
+    expect(formatErrorsForCopy(entries).split("\n")).toEqual([
+      "2026-11-10T14:03:00.000Z Browser: Error: boom",
+      "      at run (a.ts:1)",
+      "      at main (b.ts:2)",
+      "2026-11-10T14:04:00.000Z Action: next",
+    ]);
   });
 
   it("is empty when there is nothing to copy", () => {

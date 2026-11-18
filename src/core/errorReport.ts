@@ -76,12 +76,14 @@ export function dismissEntry(entries: readonly ErrorEntry[], key: string): Error
 }
 
 // The text the Copy button writes (#247): one line per error, in the order shown, with the
-// time, the source, the repeat count when it is more than one, and the full message.
+// time, the source, the repeat count when it is more than one, and the full message. A
+// message with several lines (a stack) keeps them all, indented, so each error still
+// starts on its own unindented line.
 export function formatErrorsForCopy(entries: readonly ErrorEntry[]): string {
   return entries
     .map(
       (e) =>
-        `${e.lastAt} ${ERROR_SOURCE_LABELS[e.source]}${e.count > 1 ? ` (${e.count} times)` : ""}: ${e.message}`,
+        `${e.lastAt} ${ERROR_SOURCE_LABELS[e.source]}${e.count > 1 ? ` (${e.count} times)` : ""}: ${e.message.replace(/\r?\n/g, "\n  ")}`,
     )
     .join("\n");
 }
