@@ -1,6 +1,8 @@
 import { expect, it } from "vitest";
 import { createCapturingMailer } from "@/email/capturingMailer";
+import { createFakeResendFetch } from "@/email/fakeResendFetch";
 import type { IdeaEvent } from "@/email/ideaEvent";
+import { createResendMailer } from "@/email/resendMailer";
 import type { Prisma } from "@/generated/prisma/client";
 import { drainOutbox, queueFollowerEmails } from "./outbox";
 import { MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
@@ -182,6 +184,60 @@ describeWithDatabase("follower email outbox (#101)", () => {
       const later = new Date(NOW.getTime() + 60 * MINUTE);
       expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
       expect(mailer.sent).toHaveLength(0);
+    });
+  });
+
+  it("stops at once for a user whose email is stopped, without sending (#209)", async () => {
+    await withSeed(async (tx) => {
+      const [user] = await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      // The account bounced after the row was queued.
+      await tx.user.update({ where: { id: user!.id }, data: { emailStoppedAt: FIXTURE_TIME } });
+      const mailer = createCapturingMailer();
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(mailer.sent).toHaveLength(0);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { userId: user!.id } });
+      expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "email stopped" });
+    });
+  });
+
+  it("a Resend error lands as a failed row with a backoff and no provider id (#209)", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      const fake = createFakeResendFetch();
+      const mailer = createResendMailer({
+        apiKey: "re_test_key",
+        from: "updates@example.com",
+        fetch: fake.fetch,
+      });
+
+      fake.respondNext({ status: 422, body: { name: "validation_error", message: "Invalid `to` field." } });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
+      expect(row.sentAt).toBeNull();
+      expect(row.providerMessageId).toBeNull();
+      expect(row.lastError).toMatch(/^Resend 422/);
+      expect(row.lockedUntil).toEqual(new Date(NOW.getTime() + 5 * MINUTE));
+    });
+  });
+
+  it("a Resend success stores the provider id on the row (#209)", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      const fake = createFakeResendFetch();
+      const mailer = createResendMailer({
+        apiKey: "re_test_key",
+        from: "updates@example.com",
+        fetch: fake.fetch,
+      });
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 1, failed: 0 });
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
+      expect(row).toMatchObject({ providerMessageId: "fake-resend-1", lastError: null });
     });
   });
 

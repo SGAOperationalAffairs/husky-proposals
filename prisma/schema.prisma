@@ -436,10 +436,12 @@ model EmailOutbox {
   sentAt            DateTime? @map("sent_at")
   providerMessageId String?   @map("provider_message_id") // matches bounce webhooks to rows
   lastError         String?   @map("last_error")
+  bouncedAt         DateTime? @map("bounced_at") // set by the Resend bounce webhook (#209)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([sentAt, priority, createdAt]) // a partial index on unsent rows replaces this in the migration
+  @@index([providerMessageId]) // a webhook finds its row by this (#209)
   @@map("email_outbox")
 }
 

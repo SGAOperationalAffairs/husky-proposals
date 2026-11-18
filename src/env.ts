@@ -56,6 +56,24 @@ const schema = z
         error: "SGAUTH_COOKIE_NAME may hold only letters, digits, and !#$%&'*+-.^_`|~",
       }),
     ),
+    // Email through Resend (#209). Not required in any environment yet: #210 is the first
+    // caller that sends on a schedule, and tightens this for dev and production.
+    RESEND_API_KEY: optional(z.string().startsWith("re_", { error: "RESEND_API_KEY must start with re_" })),
+    // "Name <address@domain>" or a bare address.
+    EMAIL_FROM: optional(
+      z.string().regex(/^([^<>@\r\n]+ <[^<>@\s]+@[^<>@\s]+>|[^<>@\s]+@[^<>@\s]+)$/, {
+        error: "EMAIL_FROM must be an address, or Name <address>",
+      }),
+    ),
+    // The Svix signing secret of the Resend webhook, checked on /api/webhooks/resend.
+    RESEND_WEBHOOK_SECRET: optional(
+      z.string().startsWith("whsec_", { error: "RESEND_WEBHOOK_SECRET must start with whsec_" }),
+    ),
+  })
+  .refine((env) => (env.RESEND_API_KEY === undefined) === (env.EMAIL_FROM === undefined), {
+    // Half a sender config would fail at the first send, so refuse at start instead.
+    message: "RESEND_API_KEY and EMAIL_FROM must be set together",
+    path: ["EMAIL_FROM"],
   })
   .refine((env) => !env.AUTH_STAND_IN || env.APP_ENV === "local" || env.APP_ENV === "test", {
     // Otherwise anyone could choose "I'm the VP" on a deployed site (dev-process.md).

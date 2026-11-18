@@ -99,9 +99,11 @@ export async function drainOutbox(
 
   const users = await db.user.findMany({
     where: { id: { in: [...new Set(claimed.map((row) => row.userId))] } },
-    select: { id: true, email: true },
+    select: { id: true, email: true, emailStoppedAt: true },
   });
   const emails = new Map(users.map((user) => [user.id, user.email]));
+  // A bounce or complaint stops the account (#209), so mail queued before it is not sent.
+  const stopped = new Set(users.filter((user) => user.emailStoppedAt !== null).map((user) => user.id));
 
   let sent = 0;
   let failed = 0;
@@ -121,8 +123,16 @@ export async function drainOutbox(
     const to = emails.get(row.userId);
     const payload = ideaEventPayloadSchema.safeParse(row.payload);
     // Permanent failures: a retry cannot fix them, so the row stops at once for a human.
-    if (!to || !payload.success) {
-      await fail(to ? "invalid payload" : "no recipient", null, true);
+    if (!to) {
+      await fail("no recipient", null, true);
+      continue;
+    }
+    if (stopped.has(row.userId)) {
+      await fail("email stopped", null, true);
+      continue;
+    }
+    if (!payload.success) {
+      await fail("invalid payload", null, true);
       continue;
     }
 
