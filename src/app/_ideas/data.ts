@@ -26,6 +26,8 @@ export type IdeaPageData = IdeaCardData & {
   timing?: string;
   // Students always see why a waiting idea waits (CLAUDE.md, "Honest status").
   waitingReason?: string;
+  // Why a closed idea is closed, public like the hold reason (#237).
+  closedReason?: string;
   updates: IdeaUpdate[];
   rank?: { position: number; of: number; board: string };
 };

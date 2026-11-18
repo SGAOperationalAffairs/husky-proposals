@@ -39,6 +39,7 @@ export type IdeaPatch = {
   approvedAt?: Date;
   status?: IdeaStatus | null;
   waitingReason?: null;
+  closedReason?: null;
   statusChangedAt?: Date;
 };
 
@@ -127,7 +128,8 @@ export async function decidePost(
     // by when it came back (#58).
     patch = { reviewStatus: "approved", number, approvedAt: now, ...statusOnApproval(now) };
   } else if (result.clearIdeaStatus) {
-    patch = { reviewStatus: "declined", status: null, waitingReason: null };
+    // closedReason goes too, so a closed idea taken down and approved again shows no stale one (#237).
+    patch = { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null };
   } else {
     patch = { reviewStatus: "declined" };
   }

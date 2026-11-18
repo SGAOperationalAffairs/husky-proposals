@@ -13,18 +13,22 @@ export type SystemUpdate = { kind: "system"; body: string };
 export type StatusError =
   | { code: "invalid_transition"; from: IdeaStatus; to: IdeaStatus }
   | { code: "same_status"; status: IdeaStatus }
-  | { code: "waiting_reason_required" };
+  | { code: "waiting_reason_required" }
+  | { code: "closed_reason_required" };
 
 export type BoardError = { code: "same_board"; boardId: BoardCode };
 
 // Typed as a Record so a new IdeaStatus member fails to compile. delivered is
-// final (data-model gap 4). in_progress to waiting is not allowed yet: it is
+// final until #126 (data-model gap 4); closed is reversible and reopens to
+// collecting support (#237). Only an in-progress idea closes: a board cannot close
+// one it never started. in_progress to waiting is not allowed yet: it is
 // proposed for E7 and undecided (gap 3), so adding it is one entry here.
 export const TRANSITIONS: Record<IdeaStatus, readonly IdeaStatus[]> = {
   collecting_support: ["waiting", "in_progress"],
   waiting: ["collecting_support", "in_progress"],
-  in_progress: ["delivered"],
+  in_progress: ["delivered", "closed"],
   delivered: [],
+  closed: ["collecting_support"],
 };
 
 const rowFor = (from: IdeaStatus): readonly IdeaStatus[] => TRANSITIONS[from];
@@ -37,6 +41,8 @@ export function nextStatuses(from: IdeaStatus): readonly IdeaStatus[] {
 export type StatusPatch = {
   status?: IdeaStatus;
   waitingReason: string | null;
+  // Set when moving to closed, null when moving out of it, left out otherwise (#237).
+  closedReason?: string | null;
   statusChangedAt?: Date;
   deliveredAt?: Date;
 };
@@ -59,11 +65,21 @@ export const HOLD_REASONS = [
 ] as const;
 
 export const HOLD_REASON_MAX = 200;
+// The closing reason is free text, with no preset list (#237).
+export const CLOSED_REASON_MAX = 200;
 
 // One shape for a reason, preset or typed: the page reads it as "<reason>." so a
-// trailing period would double up (#98).
+// trailing period would double up (#98, #237).
+function normalizeReason(reason: string, max: number): string {
+  return reason.trim().replace(/\.+$/, "").trim().slice(0, max);
+}
+
 export function normalizeHoldReason(reason: string): string {
-  return reason.trim().replace(/\.+$/, "").trim().slice(0, HOLD_REASON_MAX);
+  return normalizeReason(reason, HOLD_REASON_MAX);
+}
+
+export function normalizeClosedReason(reason: string): string {
+  return normalizeReason(reason, CLOSED_REASON_MAX);
 }
 
 // Input for the status server actions (#98). Same shape as the review inputs in review.ts.
@@ -73,11 +89,18 @@ export const holdInputSchema = z.object({
   reason: z.string().trim().min(1).max(HOLD_REASON_MAX),
 });
 export const deliverInputSchema = z.object({ ideaId: z.uuid() });
+// Consumed by #126's close action. Who may close stays #126's.
+export const closeInputSchema = z.object({
+  ideaId: z.uuid(),
+  reason: z.string().trim().min(1).max(CLOSED_REASON_MAX),
+});
 
 type SystemEvent =
   | { type: "started"; boardId: BoardCode }
   | { type: "delivered"; boardId: BoardCode }
   | { type: "held"; boardId: BoardCode; reason: string }
+  | { type: "closed"; boardId: BoardCode; reason: string }
+  | { type: "reopened"; boardId: BoardCode }
   | { type: "moved"; from: BoardCode; to: BoardCode };
 
 // One place for the copy, so a wording change is one edit and the seed and the
@@ -90,6 +113,10 @@ export function systemUpdateBody(event: SystemEvent): string {
       return `The ${BOARDS[event.boardId].name} marked this idea delivered.`;
     case "held":
       return `The ${BOARDS[event.boardId].name} put this idea on hold: ${event.reason}.`;
+    case "closed":
+      return `The ${BOARDS[event.boardId].name} closed this idea: ${event.reason}.`;
+    case "reopened":
+      return `The ${BOARDS[event.boardId].name} reopened this idea.`;
     case "moved":
       return `Moved from the ${BOARDS[event.from].name} to the ${BOARDS[event.to].name}.`;
   }
@@ -102,10 +129,11 @@ function systemUpdate(event: SystemEvent): SystemUpdate {
 export function changeStatus(
   idea: { status: IdeaStatus; waitingReason: string | null; boardId: BoardCode },
   to: IdeaStatus,
-  { waitingReason, now }: { waitingReason?: string; now: Date },
+  { waitingReason, closedReason, now }: { waitingReason?: string; closedReason?: string; now: Date },
 ): Result<{ patch: StatusPatch; update: SystemUpdate | null }, StatusError> {
   const from = idea.status;
   const reason = waitingReason?.trim() ?? "";
+  const closeReason = closedReason?.trim() ?? "";
 
   if (to === from) {
     // A board may correct the reason students see. statusChangedAt stays, so the
@@ -121,6 +149,9 @@ export function changeStatus(
   if (to === "waiting" && reason === "") {
     return { ok: false, error: { code: "waiting_reason_required" } };
   }
+  if (to === "closed" && closeReason === "") {
+    return { ok: false, error: { code: "closed_reason_required" } };
+  }
 
   const patch: StatusPatch = {
     status: to,
@@ -129,11 +160,16 @@ export function changeStatus(
     statusChangedAt: now,
   };
   if (to === "delivered") patch.deliveredAt = now;
+  if (to === "closed") patch.closedReason = closeReason;
+  // Leaving closed clears the reason, so a reopened idea shows no old one.
+  if (from === "closed") patch.closedReason = null;
 
   let update: SystemUpdate | null = null;
   if (to === "in_progress") update = systemUpdate({ type: "started", boardId: idea.boardId });
   if (to === "delivered") update = systemUpdate({ type: "delivered", boardId: idea.boardId });
   if (to === "waiting") update = systemUpdate({ type: "held", boardId: idea.boardId, reason });
+  if (to === "closed") update = systemUpdate({ type: "closed", boardId: idea.boardId, reason: closeReason });
+  if (from === "closed") update = systemUpdate({ type: "reopened", boardId: idea.boardId });
 
   return { ok: true, value: { patch, update } };
 }

@@ -6,7 +6,7 @@
 -- One grouped pass, so a page never runs one query per idea. Read through the
 -- IdeaStats view in schema.prisma.
 --
--- Rank: within the board, among approved ideas that are not delivered, by
+-- Rank: within the board, among approved ideas that are not delivered or closed, by
 -- support count. Ties share a rank. Wording in the app must not read rank as
 -- a promise.
 --
@@ -41,9 +41,9 @@ SELECT
   willing_count,
   follower_count,
   CASE
-    WHEN status = 'delivered' THEN NULL
+    WHEN status IN ('delivered', 'closed') THEN NULL
     ELSE (rank() OVER (
-      PARTITION BY board_id, (status = 'delivered')
+      PARTITION BY board_id, (status IN ('delivered', 'closed'))
       ORDER BY support_count DESC
     ))::int
   END AS rank_in_board,

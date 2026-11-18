@@ -85,6 +85,16 @@ describe("setSupport (#94)", () => {
     expect(store.set).not.toHaveBeenCalled();
   });
 
+  it("a closed idea is closed, with nothing written before the abuse limit either (#237)", async () => {
+    const store = fakeStore({ ...open, status: "closed" });
+    expect(await setSupport(store, student, { number: 103, supported: true }, NOW)).toEqual({
+      ok: false,
+      error: { code: "closed" },
+    });
+    expect(store.bump).not.toHaveBeenCalled();
+    expect(store.set).not.toHaveBeenCalled();
+  });
+
   it("the 60th change in a minute goes through and the 61st is rate_limited with no write", async () => {
     const sixtieth = fakeStore(open, { count: 60 });
     expect(await setSupport(sixtieth, student, { number: 103, supported: true }, NOW)).toMatchObject({

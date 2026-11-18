@@ -37,6 +37,7 @@ function idea(overrides: Partial<IdeaRow> = {}): IdeaRow {
     timeHorizon: "one_term",
     status: "collecting_support",
     waitingReason: null,
+    closedReason: null,
     fromSga: false,
     isAnonymous: false,
     reviewStatus: "approved",
@@ -106,6 +107,54 @@ describe("student shape", () => {
       expect(ideaForViewer(visitor, idea({ reviewStatus }))).toBeNull();
       expect(ideaForViewer(student, idea({ reviewStatus }))).toBeNull();
     }
+  });
+});
+
+// A closed idea (#237). The reason is public, like the hold reason. No column says who
+// closed it, so nothing about a closer or a reviewer may appear in the student shape.
+describe("student shape of a closed idea (#237)", () => {
+  const REASON = "Facilities is not adding new outdoor power this year";
+  const closed = (overrides: Partial<IdeaRow> = {}) =>
+    idea({ status: "closed", closedReason: REASON, ...overrides });
+
+  it("gives a visitor and a student the status and the reason", () => {
+    for (const who of [visitor, student]) {
+      for (const isAnonymous of [true, false]) {
+        const result = ideaForViewer(who, closed({ isAnonymous }));
+        expect(result?.shape).toBe("student");
+        expect(result?.idea).toMatchObject({ status: "closed", closedReason: REASON });
+      }
+    }
+  });
+
+  it("carries no identity and no reviewer data anywhere in its keys or values", () => {
+    const seen = everyKeyAndValue(
+      ideaForViewer(student, closed({ reviews: [{ decision: "approved", reason: "Fine." }] })),
+    );
+    for (const forbidden of [
+      ...FORBIDDEN_IN_STUDENT_SHAPE,
+      "reviews",
+      "review",
+      "reviewerId",
+      "decision",
+      "closedBy",
+      "closedById",
+    ]) {
+      expect(seen).not.toContain(forbidden);
+    }
+  });
+
+  it("still hides the author of an anonymous closed idea", () => {
+    const result = ideaForViewer(student, closed({ isAnonymous: true }));
+    expect(result?.idea.authorName).toBeNull();
+    expect(everyKeyAndValue(result)).not.toContain("Ada Lovelace");
+  });
+
+  it("gives a chair of another board the student shape (D16 option A holds for closed)", () => {
+    const result = ideaForViewer(cscChair, closed());
+    expect(result?.shape).toBe("student");
+    expect(everyKeyAndValue(result)).not.toContain("ada@northeastern.edu");
+    expect(everyKeyAndValue(result)).not.toContain("sam@northeastern.edu");
   });
 });
 

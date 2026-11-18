@@ -64,7 +64,12 @@ export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promis
     boardId: idea.boardId,
     event:
       event.kind === "status"
-        ? { kind: "status", status: event.status, waitingReason: event.waitingReason }
+        ? {
+            kind: "status",
+            status: event.status,
+            waitingReason: event.waitingReason,
+            ...(event.closedReason ? { closedReason: event.closedReason } : {}),
+          }
         : { kind: "update", body: event.body },
   });
 

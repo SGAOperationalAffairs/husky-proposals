@@ -36,6 +36,13 @@ describe("idea card on a delivered idea (#63)", () => {
     expect(document.body.textContent).toMatch(/305students supported this/);
   });
 
+  it("a closed card has no support buttons and speaks of support in the past (#237)", () => {
+    render(<IdeaCard {...idea} status="closed" />);
+    expect(screen.queryByRole("button", { name: "Support" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "I'll participate" })).toBeNull();
+    expect(document.body.textContent).toMatch(/305students supported this/);
+  });
+
   it("keeps both buttons on an idea still collecting support", () => {
     render(<IdeaCard {...idea} status="collecting_support" />);
     expect(screen.getByRole("button", { name: "Support" })).toBeTruthy();

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import type { IdeaPageData } from "@/app/_ideas/data";
 import { BOARDS } from "@/core/boards";
+import { takesSupport } from "@/core/statuses";
 
 // The share dialog's poster (#64): the idea as a poster in its board's color,
 // drawn on request from its text, with nothing stored (PRD S7). Portrait, for
@@ -45,7 +46,8 @@ export async function posterImage(idea: IdeaPageData, host: string) {
   const css = await readFile(root("design/tokens.css"), "utf8");
   const bg = tokenValue(css, `board-${board.color}`);
   const fg = tokenValue(css, `on-board-${board.color}`);
-  const delivered = idea.status === "delivered";
+  // Delivered and closed ideas take no more support, so the count is past tense (#237).
+  const done = !takesSupport(idea.status);
   const title = shorten(idea.title, 90);
 
   return new ImageResponse(
@@ -82,7 +84,7 @@ export async function posterImage(idea: IdeaPageData, host: string) {
           {idea.supportCount}
         </span>
         <span style={{ display: "flex", flexDirection: "column", fontSize: 38, fontWeight: 700 }}>
-          <span>{delivered ? "students supported this" : "students want this"}</span>
+          <span>{done ? "students supported this" : "students want this"}</span>
           <span>{idea.willingCount} will help</span>
         </span>
       </div>

@@ -26,6 +26,22 @@ describe("idea page stand-in (#62)", () => {
   it("always gives a waiting idea its reason", () => {
     expect(sampleGetIdea(140)?.waitingReason).toBeTruthy();
   });
+
+  // One invented closed idea (#237): off the wall, but its page loads by number.
+  it("has a closed idea with its reason, no rank, and no place on the wall", () => {
+    const closed = sampleGetIdea(121);
+    expect(closed).toMatchObject({
+      status: "closed",
+      board: "GIB",
+      title: "Solar charging benches on the quad",
+      supportCount: 34,
+      willingCount: 6,
+      closedReason: "Facilities is not adding new outdoor power this year",
+    });
+    expect(closed?.rank).toBeUndefined();
+    expect(sampleListWall().map((i) => i.number)).not.toContain(121);
+    expect(sampleListWall().map((i) => i.status)).not.toContain("closed");
+  });
 });
 
 describe("ideas list stand-in (#61)", () => {
@@ -69,5 +85,9 @@ describe("ideas list stand-in (#61)", () => {
 describe("the wall's stand-in data (#61, #55)", () => {
   it("sends the wall all its public ideas once, for the browser to filter", () => {
     expect(sampleListWall()).toHaveLength(IDEAS.length);
+  });
+
+  it("does not put the closed idea in any filtered list either (#237)", () => {
+    expect(listIdeas(parseIdeasQuery({})).map((i) => i.number)).not.toContain(121);
   });
 });

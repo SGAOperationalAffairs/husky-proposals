@@ -8,7 +8,15 @@ import type { EmailMessage } from "./sendEmail";
 // its dedupe key, and renders the text.
 
 export type IdeaEvent =
-  | { kind: "status"; ideaId: string; status: IdeaStatus; waitingReason: string | null; changedAt: Date }
+  | {
+      kind: "status";
+      ideaId: string;
+      status: IdeaStatus;
+      waitingReason: string | null;
+      // Set when the idea was closed (#237). Optional so a hold or a start leaves it out.
+      closedReason?: string | null;
+      changedAt: Date;
+    }
   | { kind: "update"; ideaId: string; updateId: string; body: string };
 
 // Same priority as the digest: one email a day is the budget's smallest unit, not a rush.
@@ -39,6 +47,8 @@ export const ideaEventPayloadSchema = z.strictObject({
       kind: z.literal("status"),
       status: z.enum(statusValues),
       waitingReason: z.string().nullable(),
+      // Optional so rows queued before closing existed still parse (#237).
+      closedReason: z.string().nullable().optional(),
     }),
     z.strictObject({ kind: z.literal("update"), body: z.string() }),
   ]),
@@ -67,6 +77,7 @@ export function renderIdeaEventEmail(payload: IdeaEventPayload, to: string, site
   const lines = [payload.ideaTitle, "", `The ${board} moved this idea to "${label}".`];
   if (event.status === "waiting" && event.waitingReason)
     lines.push(`Why it is on hold: ${event.waitingReason}`);
+  if (event.status === "closed" && event.closedReason) lines.push(`Why it is closed: ${event.closedReason}`);
   lines.push("", link, "", footer);
   return { to, subject: `Proposal #${payload.ideaNumber}: ${label}`, text: lines.join("\n") };
 }

@@ -25,7 +25,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - How to handle ideas outside Campus Affairs is open (D15).
 
 **idea**
-`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting), `waiting_reason`, `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
+`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting, closed), `waiting_reason`, `closed_reason` (#237), `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
 
 **idea_revision** (for edit and resubmit)
 `id`, `idea_id`, `version`, the editable fields, `submitted_at`.
@@ -49,7 +49,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 
 **update**
 `id`, `idea_id`, `author_id`, `body`, `created_at`, `kind` (board or system).
-- System updates are written when an idea starts, is put on hold (with the reason), is delivered, or moves board, so students see them in the progress list.
+- System updates are written when an idea starts, is put on hold (with the reason), is delivered, is closed (with the reason) or reopened, or moves board, so students see them in the progress list.
 - Updates from DAB and CPAB must not reveal confidential administrative initiatives (Bylaws XII).
 
 **email_preference**
@@ -74,7 +74,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 Counts, rank, and the stale flag come from the `idea_stats` database view (`prisma/views/public/idea_stats.sql`), read through the `IdeaStats` model. App code never counts or ranks by hand. The view does one grouped pass, so a page never runs one query per idea. Keep a stored counter in reserve, in case counting ever gets slow.
 
 - `support_count` per idea (public).
-- `rank` within the board: rank among that board's ideas that are not delivered, by `support_count`. Ties share a rank.
+- `rank` within the board: rank among that board's ideas that are not delivered or closed, by `support_count`. Ties share a rank.
 - `willing_count`: number of participations. Public as a count ("N will help"); who offered is for leaders only.
 - `stale`: an in-progress idea whose latest counting update is older than its board's update cadence (monthly by default, set per board). The "Still working, no news" update counts, and so does any status change (the view uses `status_changed_at`), so an idea that resumes after waiting starts a fresh clock. Moving boards and other system updates do not count. The schema change for per-board cadence is #12.
 - `board_load`: in-progress ideas for a board, where a large idea counts as 2. Compare with the soft guideline (default 2). Starting an idea past the guideline shows a heads-up and a confirm, not a block.
@@ -97,6 +97,9 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - A board can start work on an idea from `collecting_support`, `under_review`, or `waiting`, moving it to `in_progress`. Write a system update.
 - `in_progress` moves to `delivered`. Write a system update.
 - `waiting` requires a `waiting_reason` that students see.
+- `in_progress` can move to `closed` (#237), only from in progress. Closing needs a `closed_reason`, free text of 1 to 200 characters that students see and that must not name confidential administrative matters (a check constraint requires it). Write a system update ("The ... closed this idea: ...").
+- `closed` moves back to `collecting_support` (reopen), which clears `closed_reason` and writes a system update ("The ... reopened this idea."). Closing and reopening are reversible; nothing is deleted.
+- A closed idea is off the public wall and the ranked list, takes no support and no "I'll participate", and has no rank. Its page still loads by link, with its counts kept as history.
 - Changing an idea's board writes a system update ("Moved to the ...").
 
 **Support and follow:**
@@ -105,7 +108,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 
 ## Visibility and privacy
 
-- **Public, no sign-in needed:** approved ideas, `support_count`, the "will help" count (`willing_count`, a count only, never names), rank, status, waiting reason, updates, when the idea was last updated ("Updated N days ago"), board, and a "From SGA" tag on ideas posted by SGA leaders. Every page has `noindex` (PRD D18).
+- **Public, no sign-in needed:** approved ideas, `support_count`, the "will help" count (`willing_count`, a count only, never names), rank, status, waiting reason, closed reason, updates, when the idea was last updated ("Updated N days ago"), board, and a "From SGA" tag on ideas posted by SGA leaders. Every page has `noindex` (PRD D18).
 - **Signed-out visitors and students (not the author):** get the student shape.
   - They never receive `author_id` or supporter identities.
   - If `is_anonymous` is true, they never see the author's name at all. The form labels this "anonymous to students" and says exactly who can see the name.

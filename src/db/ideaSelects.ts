@@ -22,6 +22,7 @@ export const studentIdeaSelect = {
   timeHorizon: true,
   status: true,
   waitingReason: true,
+  closedReason: true,
   fromSga: true,
   isAnonymous: true,
   reviewStatus: true,
@@ -88,3 +89,7 @@ export const publicUpdateSelect = {
 // Who may see a post with no sign-in. Approved only: pending, declined, and
 // withdrawn posts are never public (#49, #53).
 export const isPublic = { reviewStatus: "approved" } as const satisfies Prisma.IdeaWhereInput;
+
+// The public wall: public ideas minus closed ones. A closed idea stays public by its
+// link (the idea page reads isPublic alone) but is off the wall (#237).
+export const onWall = { ...isPublic, NOT: { status: "closed" } } as const satisfies Prisma.IdeaWhereInput;

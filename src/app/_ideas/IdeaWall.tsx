@@ -10,7 +10,7 @@ import { IdeaFilters } from "@/components/IdeaFilters";
 import { QueueHeader } from "@/app/(tabs)/queue/QueueRow";
 import { IdeaRow } from "./IdeaRow";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
-import { IDEA_STATUSES, STATUS_LABELS } from "@/core/statuses";
+import { STATUS_LABELS, WALL_STATUSES } from "@/core/statuses";
 import { filterIdeas, ideasHref, parseIdeasQuery, SORTS, type IdeasQuery } from "./filter";
 import { arrivalSteps } from "./arrival";
 import { useLocalTaps } from "./useLocalTaps";
@@ -29,7 +29,8 @@ const VIEWS = [
   { id: "list", label: "List", icon: List },
 ];
 const SORT_OPTIONS = Object.entries(SORTS).map(([value, label]) => ({ value, label }));
-const STATUS_OPTIONS = IDEA_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
+// No Closed option: closed ideas are off the wall (#237).
+const STATUS_OPTIONS = WALL_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
 export function IdeaWall({ ideas }: Props) {
   const params = useSearchParams();

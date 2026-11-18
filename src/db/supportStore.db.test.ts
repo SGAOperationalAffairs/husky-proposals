@@ -61,6 +61,24 @@ describeWithDatabase("support store (#94)", () => {
     });
   });
 
+  it("refuses a closed idea and writes nothing (#237)", async () => {
+    await withSeed(async (tx) => {
+      await tx.idea.update({
+        where: { id: ideas.walkSignal.id },
+        data: { status: "closed", closedReason: "Not funded this year" },
+      });
+      const before = await tx.support.count();
+      const result = await setSupport(
+        prismaSupportStore(tx),
+        maya,
+        input(true, ideas.walkSignal.number!),
+        NOW,
+      );
+      expect(result).toEqual({ ok: false, error: { code: "closed" } });
+      expect(await tx.support.count()).toBe(before);
+    });
+  });
+
   it("a withdrawn post is not found", async () => {
     await withSeed(async (tx) => {
       // status is only allowed on approved posts (ideas_status_only_when_approved), so clear it too (#94).

@@ -5,7 +5,7 @@ import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
-import { IDEA_STATUSES, STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
+import { STATUS_LABELS, WALL_STATUSES, type IdeaStatus } from "@/core/statuses";
 import { filterIdeas, SORTS, type IdeasQuery } from "@/app/_ideas/filter";
 import { IDEAS } from "../sample";
 
@@ -13,7 +13,7 @@ import { IDEAS } from "../sample";
 // sample ideas, filtered by the real filterIdeas, so the layout and the counts
 // are honest. One list, with a Status filter over every status.
 const SORT_OPTIONS = Object.entries(SORTS).map(([value, label]) => ({ value, label }));
-const STATUS_OPTIONS = IDEA_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
+const STATUS_OPTIONS = WALL_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
 export function FiltersSection() {
   return (

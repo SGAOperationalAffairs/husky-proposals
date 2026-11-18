@@ -16,6 +16,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS, JOIN } from "@/core/boards";
+import { takesSupport } from "@/core/statuses";
 
 // One idea's page (#62): the poster from the playground (#29) beside where the
 // idea stands, then the details and how to join the board (prototype sPage).
@@ -75,12 +76,12 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <p className="flex items-end gap-3">
             <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
             <span className="pb-2 leading-tight font-semibold">
-              {idea.status === "delivered" ? "students supported this" : "students want this"}
+              {takesSupport(idea.status) ? "students want this" : "students supported this"}
               <br />
               {idea.willingCount} will help
             </span>
           </p>
-          {idea.status !== "delivered" && (
+          {takesSupport(idea.status) && (
             <>
               <LocalSupportPair ideaNumber={idea.number} board={idea.board} />
               <p className="text-sm">
@@ -88,6 +89,12 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
                 forward.
               </p>
             </>
+          )}
+          {/* A plain note, not disabled buttons (#237). Counts above stay as history. */}
+          {idea.status === "closed" && (
+            <p className="text-sm font-semibold">
+              This idea is closed, so it is not taking support or offers to help.
+            </p>
           )}
         </article>
 
@@ -165,6 +172,8 @@ function standing(idea: IdeaPageData) {
       return `The ${board} delivered this idea.`;
     case "waiting":
       return `On hold. ${idea.waitingReason ?? "The board will come back to it"}. It stays on the list and keeps its support.`;
+    case "closed":
+      return `Closed. ${idea.closedReason ?? "The board closed this idea"}. The ${board} is not moving it forward right now. Its support stays on record.`;
   }
 }
 

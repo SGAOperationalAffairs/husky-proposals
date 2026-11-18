@@ -135,5 +135,8 @@ function Buttons({
       );
     case "delivered":
       return <p className="text-sm text-muted">Delivered. It stays on record.</p>;
+    // No buttons yet: Reopen, with the reason shown, is #126.
+    case "closed":
+      return <p className="text-sm text-muted">Closed. It is off the wall and is not taking support.</p>;
   }
 }

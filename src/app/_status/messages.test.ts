@@ -36,6 +36,11 @@ describe("status messages (#98)", () => {
       text: "Pick a reason students will see.",
       field: "reason",
     });
+    expect(statusMessage("closed_reason_required", undefined)).toEqual({
+      text: "Write the reason students will see.",
+      field: "reason",
+      refresh: false,
+    });
     expect(statusMessage("invalid", ["reason"])).toMatchObject({ field: "reason" });
     expect(statusMessage("invalid", ["ideaId"]).field).toBeUndefined();
   });

@@ -1,5 +1,6 @@
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { BOARDS } from "@/core/boards";
+import { WALL_STATUSES, takesSupport } from "@/core/statuses";
 import { IDEAS } from "@/playground/sample";
 import type { IdeaPageData } from "./data";
 import { filterIdeas, type IdeasQuery } from "./filter";
@@ -10,12 +11,12 @@ import { filterIdeas, type IdeasQuery } from "./filter";
 
 // Every public idea, for the wall to filter in the browser (#61, #55).
 export function sampleListWall(): IdeaCardData[] {
-  return IDEAS;
+  return IDEAS.filter((idea) => WALL_STATUSES.includes(idea.status));
 }
 
 // The filtered list, for tests and for anything that needs it on the server.
 export function listIdeas(query: IdeasQuery): IdeaCardData[] {
-  return filterIdeas(IDEAS, query);
+  return filterIdeas(sampleListWall(), query);
 }
 
 type Extra = Omit<IdeaPageData, keyof IdeaCardData | "rank"> & { anonymous?: boolean; authorName?: string };
@@ -67,19 +68,46 @@ const EXTRA: Record<number, Partial<Extra>> = {
   },
 };
 
-// Rank among the board's ideas that are not delivered (docs/data-model.md,
-// "Derived values"). Ties share a rank. The database path reads it from idea_stats.
+// One invented closed idea (#237, #121). Kept out of the playground's IDEAS so it is
+// not on the wall; its page still loads by number, like a closed idea in the database.
+const CLOSED_IDEA: IdeaCardData = {
+  number: 121,
+  title: "Solar charging benches on the quad",
+  description: "Benches with built-in solar panels and outlets, so students can charge a phone outside.",
+  board: "GIB",
+  status: "closed",
+  updatedDaysAgo: 6,
+  supportCount: 34,
+  willingCount: 6,
+};
+
+const CLOSED_EXTRA: Partial<Extra> = {
+  authorName: "Taylor M.",
+  proposedDaysAgo: 75,
+  scale: "Medium",
+  closedReason: "Facilities is not adding new outdoor power this year",
+  updates: [
+    {
+      daysAgo: 6,
+      text: "The Green Initiatives Board closed this idea: Facilities is not adding new outdoor power this year.",
+    },
+  ],
+};
+
+// Rank among the board's ideas that take support, so not delivered or closed
+// (docs/data-model.md, "Derived values"). Ties share a rank. The database path reads it
+// from idea_stats.
 function rankOf(idea: IdeaCardData): IdeaPageData["rank"] {
-  if (idea.status === "delivered") return undefined;
-  const peers = IDEAS.filter((i) => i.board === idea.board && i.status !== "delivered");
+  if (!takesSupport(idea.status)) return undefined;
+  const peers = IDEAS.filter((i) => i.board === idea.board && takesSupport(i.status));
   const position = 1 + peers.filter((i) => i.supportCount > idea.supportCount).length;
   return { position, of: peers.length, board: BOARDS[idea.board].category };
 }
 
 export function sampleGetIdea(number: number): IdeaPageData | undefined {
-  const idea = IDEAS.find((i) => i.number === number);
+  const idea = number === CLOSED_IDEA.number ? CLOSED_IDEA : IDEAS.find((i) => i.number === number);
   if (!idea) return undefined;
-  const { anonymous, authorName, ...extra } = EXTRA[number] ?? {};
+  const { anonymous, authorName, ...extra } = (idea === CLOSED_IDEA ? CLOSED_EXTRA : EXTRA[number]) ?? {};
   const page: IdeaPageData = {
     ...idea,
     proposedDaysAgo: extra.proposedDaysAgo ?? idea.updatedDaysAgo,
@@ -88,6 +116,7 @@ export function sampleGetIdea(number: number): IdeaPageData | undefined {
     cost: extra.cost,
     timing: extra.timing,
     waitingReason: extra.waitingReason,
+    closedReason: extra.closedReason,
     updates: extra.updates ?? [],
     rank: rankOf(idea),
   };

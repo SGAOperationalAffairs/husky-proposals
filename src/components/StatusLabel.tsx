@@ -10,6 +10,8 @@ const STYLES: Record<ChipStatus, string> = {
   in_progress: "bg-amber text-amber-ink",
   delivered: "bg-green text-green-ink",
   waiting: "bordered bg-transparent text-grey-ink",
+  // The pair freed when under review was retired (#202), AA in both modes (docs/DESIGN.md).
+  closed: "bg-sky text-sky-ink",
   pending: "bordered bg-surface text-line",
 };
 

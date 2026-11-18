@@ -170,7 +170,7 @@ describe("decidePost (#58)", () => {
       expect(store.record).toHaveBeenCalledWith(
         expect.objectContaining({
           from: "approved",
-          patch: { reviewStatus: "declined", status: null, waitingReason: null },
+          patch: { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null },
           review: expect.objectContaining({
             kind: "take_down",
             decision: "declined",

@@ -147,6 +147,7 @@ const SHORT: Record<Row["state"], string> = {
   in_progress: "Underway",
   delivered: "Done",
   waiting: "Waiting",
+  closed: "Closed",
 };
 
 const wordsFor = (state: Row["state"], style: WordStyle) => (style === "plain" ? PLAIN : SHORT)[state];
@@ -460,6 +461,7 @@ const STATUS_LABEL: Record<Row["state"], CSSProperties> = {
   in_progress: { background: "var(--amber)", color: "var(--amber-ink)" },
   delivered: { background: "var(--grey)", color: "var(--grey-ink)" },
   waiting: { background: "var(--grey)", color: "var(--grey-ink)" },
+  closed: { background: "var(--sky)", color: "var(--sky-ink)" },
 };
 
 // The status label, by the sidebar's choice. Board outline is transparent on pending
