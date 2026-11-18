@@ -98,6 +98,40 @@ export function countByStatus(
   return counts;
 }
 
+// The longest mailto link we hand to a mail app (#243). Some handlers (Outlook on Windows among
+// them) cut links near 2,083 characters, so 2,000 leaves room. A guess at the weakest handler,
+// not a measured limit.
+export const MAILTO_MAX_LENGTH = 2000;
+
+// One student can appear once per idea, so the same address can be picked twice. Case-insensitive,
+// keeping the first spelling and the list order.
+function uniqueAddresses(emails: string[]): string[] {
+  const seen = new Set<string>();
+  return emails.filter((e) => {
+    const key = e.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export type BccMailto = { ok: true; href: string } | { ok: false; error: { code: "empty" | "too_long" } };
+
+// A mailto link with everyone in BCC (RFC 6068), so volunteers do not see each other. No To,
+// subject, or body: the leader's own mail app opens and they write it. Nothing is sent from here.
+export function bccMailto(emails: string[]): BccMailto {
+  const addresses = uniqueAddresses(emails);
+  if (addresses.length === 0) return { ok: false, error: { code: "empty" } };
+  const href = `mailto:?bcc=${addresses.map(encodeURIComponent).join(",")}`;
+  if (href.length > MAILTO_MAX_LENGTH) return { ok: false, error: { code: "too_long" } };
+  return { ok: true, href };
+}
+
+// The same list for pasting into a mail app's BCC box. Outlook splits on semicolons by default.
+export function addressList(emails: string[]): string {
+  return uniqueAddresses(emails).join("; ");
+}
+
 // The ideas the idea search offers. Each idea once, in number order. With a board chosen, only
 // that board's ideas, so the idea list follows the board list.
 export type IdeaChoice = { number: number; title: string; board: BoardCode };

@@ -13,6 +13,7 @@ vi.mock("./actions", () => ({
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
 
+import { ToastProvider } from "@/components/Toast";
 import { PeopleView } from "./PeopleView";
 
 afterEach(() => {
@@ -63,9 +64,16 @@ const boards = [
   { value: "CPAB" as const, label: "Campus Planning Advisory Board" },
 ];
 
+// The bar's copy fallback calls useToast, so the view renders inside the provider, as in layout.tsx.
 function renderView(initialIdea = "all", list = rows) {
-  return render(<PeopleView rows={list} boards={boards} now={NOW} initialIdea={initialIdea} />);
+  return render(
+    <ToastProvider>
+      <PeopleView rows={list} boards={boards} now={NOW} initialIdea={initialIdea} />
+    </ToastProvider>,
+  );
 }
+
+const INTERIM_LINE = "Opens your own email app. Replies go to you, not the SGA inbox.";
 
 describe("PeopleView", () => {
   it("opens on To contact, with the overdue row first and the list line says what it shows", () => {
@@ -156,7 +164,11 @@ describe("PeopleView", () => {
     expect(screen.getByText("2 selected")).toBeTruthy();
     // Another leader marks Ava joined, and the refresh delivers it. Her row leaves To contact.
     const refreshed = rows.map((r) => (r.userId === "u1" ? { ...r, contactStatus: "joined" as const } : r));
-    view.rerender(<PeopleView rows={refreshed} boards={boards} now={NOW} initialIdea="all" />);
+    view.rerender(
+      <ToastProvider>
+        <PeopleView rows={refreshed} boards={boards} now={NOW} initialIdea="all" />
+      </ToastProvider>,
+    );
     expect(screen.getByText("1 selected")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
     const dialog = screen.getByRole("dialog");
@@ -189,12 +201,62 @@ describe("PeopleView", () => {
     expect(screen.queryByDisplayValue(/#103/)).toBeNull();
   });
 
-  it("Message stays disabled until email is built", () => {
+  it("Message selected is a mailto link with the picked people in BCC and nobody in To (#243)", () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));
-    expect((screen.getByRole("button", { name: /Message selected/ }) as HTMLButtonElement).disabled).toBe(
-      true,
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Priya Nair" }));
+    const link = screen.getByRole("link", { name: /Message selected/ });
+    const url = new URL(link.getAttribute("href") ?? "");
+    expect(url.protocol).toBe("mailto:");
+    expect(url.pathname).toBe("");
+    expect(url.searchParams.get("bcc")).toBe("ava@husky.example,priya@husky.example");
+    expect(url.searchParams.has("subject")).toBe(false);
+    expect(screen.getByText(INTERIM_LINE)).toBeTruthy();
+    expect(link.getAttribute("aria-describedby")).toBe(screen.getByText(INTERIM_LINE).id);
+  });
+
+  it("shows no Message selected with nothing picked (#243)", () => {
+    renderView();
+    expect(screen.queryByText(/Message selected/)).toBeNull();
+    expect(screen.queryByText(INTERIM_LINE)).toBeNull();
+  });
+
+  it("a picked row that a refresh hides is not mailed (#243, #238)", () => {
+    const view = renderView();
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    const refreshed = rows.map((r) => (r.userId === "u1" ? { ...r, contactStatus: "joined" as const } : r));
+    view.rerender(
+      <ToastProvider>
+        <PeopleView rows={refreshed} boards={boards} now={NOW} initialIdea="all" />
+      </ToastProvider>,
     );
+    const link = screen.getByRole("link", { name: /Message selected/ });
+    expect(new URL(link.getAttribute("href") ?? "").searchParams.get("bcc")).toBe("priya@husky.example");
+  });
+
+  it("past the link limit it offers Copy addresses and the notice, not a link or the interim line (#243)", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const many: PersonRow[] = Array.from({ length: 120 }, (_, i) => ({
+      ...base,
+      userId: `v${i}`,
+      name: `Volunteer ${i}`,
+      email: `volunteer${String(i).padStart(3, "0")}@husky.example`,
+      contactStatus: "new" as const,
+      signedUpAt: new Date(Date.parse(NOW) - DAY),
+      contactedAt: null,
+    }));
+    renderView("all", many);
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(
+      screen.getByText("Too many people for one email link. Copy the addresses and paste them into BCC."),
+    ).toBeTruthy();
+    expect(screen.queryByText(INTERIM_LINE)).toBeNull();
+    expect(screen.queryByRole("link", { name: /Message selected/ })).toBeNull();
+    expect(document.querySelector('a[href^="mailto:?bcc"]')).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Copy addresses" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(writeText).toHaveBeenCalledWith(many.map((r) => r.email).join("; "));
   });
 
   it("shows the empty line when a filter has nobody", () => {

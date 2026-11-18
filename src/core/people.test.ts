@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   CONTACT_DAYS,
+  MAILTO_MAX_LENGTH,
+  addressList,
+  bccMailto,
   contactBy,
   countByStatus,
   filterPeople,
@@ -122,5 +125,47 @@ describe("ideaChoicesFor", () => {
       { number: 118, title: "Bike racks", board: "DAB" },
     ]);
     expect(ideaChoicesFor(rows, "CPAB").map((i) => i.number)).toEqual([130]);
+  });
+});
+
+describe("bccMailto and addressList (#243)", () => {
+  it("puts every address in bcc, with no to, subject, or body", () => {
+    const result = bccMailto(["ava@husky.example", "marcus@husky.example"]);
+    expect(result).toEqual({ ok: true, href: "mailto:?bcc=ava%40husky.example,marcus%40husky.example" });
+    if (!result.ok) return;
+    const url = new URL(result.href);
+    expect(url.pathname).toBe("");
+    expect(url.searchParams.get("bcc")).toBe("ava@husky.example,marcus@husky.example");
+    expect(url.searchParams.has("subject")).toBe(false);
+    expect(url.searchParams.has("body")).toBe(false);
+  });
+
+  it("lists a duplicate address once, whatever its case, keeping the first spelling and order", () => {
+    const result = bccMailto(["Ava@husky.example", "marcus@husky.example", "ava@HUSKY.example"]);
+    expect(result).toEqual({ ok: true, href: "mailto:?bcc=Ava%40husky.example,marcus%40husky.example" });
+  });
+
+  it("says the list is empty", () => {
+    expect(bccMailto([])).toEqual({ ok: false, error: { code: "empty" } });
+  });
+
+  it("allows a link just under the limit and refuses one past it", () => {
+    // Each address is 20 characters, 22 once encoded, plus a comma.
+    const make = (n: number) =>
+      Array.from({ length: n }, (_, i) => `p${String(i).padStart(5, "0")}@husky.example`);
+    const fits = (n: number) => {
+      const r = bccMailto(make(n));
+      return r.ok && r.href.length <= MAILTO_MAX_LENGTH;
+    };
+    let n = 1;
+    while (fits(n + 1)) n += 1;
+    expect(bccMailto(make(n)).ok).toBe(true);
+    expect(bccMailto(make(n + 1))).toEqual({ ok: false, error: { code: "too_long" } });
+  });
+
+  it("joins the deduped addresses with semicolons for pasting", () => {
+    expect(addressList(["ava@husky.example", "AVA@husky.example", "marcus@husky.example"])).toBe(
+      "ava@husky.example; marcus@husky.example",
+    );
   });
 });

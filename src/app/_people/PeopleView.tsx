@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   CircleDashed,
+  Copy,
   ListChecks,
   ListX,
   Mail,
@@ -19,8 +20,11 @@ import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { BoardSelect } from "@/components/BoardSelect";
 import { IdeaSearch } from "@/components/IdeaSearch";
+import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
 import {
+  addressList,
+  bccMailto,
   contactBy,
   daysUntil,
   filterPeople,
@@ -82,6 +86,7 @@ export function PeopleView({
   initialIdea: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const nowDate = useMemo(() => new Date(now), [now]);
 
   const [board, setBoard] = useState<BoardCode | "all">("all");
@@ -175,6 +180,27 @@ export function PeopleView({
       if (done.size < targets.length) setFailed(true);
       router.refresh();
     });
+  };
+
+  // The bar's Message selected is a mailto link from the leader's own email app. It is built from
+  // pickedShown only, so a row a refresh hid is never mailed (#243, #238). The bar only renders
+  // with a picked row, so "empty" never reaches a leader.
+  const mailto = bccMailto(pickedShown.map((r) => r.email));
+  const copyAddresses = async () => {
+    try {
+      await navigator.clipboard.writeText(addressList(pickedShown.map((r) => r.email)));
+      toast({
+        id: "copy-addresses",
+        title: "Addresses copied.",
+        description: "Paste them into BCC so people do not see each other.",
+      });
+    } catch {
+      toast({
+        id: "copy-addresses",
+        title: "Could not copy.",
+        description: "Select fewer people and try Message selected again.",
+      });
+    }
   };
 
   return (
@@ -326,10 +352,22 @@ export function PeopleView({
             <span className="text-sm font-bold whitespace-nowrap" aria-live="polite">
               {pickedShown.length} selected
             </span>
-            <Button size="sm" variant="primary" disabled title="Email is coming soon.">
-              <Mail aria-hidden className="size-4" />
-              Message selected
-            </Button>
+            {mailto.ok ? (
+              <>
+                <Button size="sm" variant="primary" href={mailto.href} aria-describedby="people-mail-note">
+                  <Mail aria-hidden className="size-4" />
+                  Message selected
+                </Button>
+                <span id="people-mail-note" className="text-xs text-muted">
+                  Opens your own email app. Replies go to you, not the SGA inbox.
+                </span>
+              </>
+            ) : (
+              <Button size="sm" variant="primary" onClick={copyAddresses}>
+                <Copy aria-hidden className="size-4" />
+                Copy addresses
+              </Button>
+            )}
             <Button size="sm" variant="plain" disabled={pending} onClick={() => setConfirming("new")}>
               <CircleDashed aria-hidden className="size-4" />
               Mark to contact
@@ -348,6 +386,11 @@ export function PeopleView({
             </Button>
             {failed && (
               <span className="basis-full text-sm text-muted">Some changes did not save. Try again.</span>
+            )}
+            {!mailto.ok && (
+              <span className="basis-full text-sm text-muted">
+                Too many people for one email link. Copy the addresses and paste them into BCC.
+              </span>
             )}
           </div>
         </div>
