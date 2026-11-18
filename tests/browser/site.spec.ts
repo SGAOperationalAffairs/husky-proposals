@@ -55,6 +55,10 @@ test.describe("styles come from the tokens", () => {
     // Corners only: border widths are a convention by role, not a guarded rule (#33).
     test(`${path} uses only token radii`, async ({ page }) => {
       await page.goto(path);
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading it.
+      await page.waitForLoadState("networkidle");
       const problems = await page.evaluate(() => {
         const root = getComputedStyle(document.documentElement);
         const token = (name: string) => root.getPropertyValue(name).trim();
@@ -91,6 +95,10 @@ test.describe("clickable things show the pointer", () => {
   for (const path of PAGES) {
     test(`${path}: every link, button, and dropdown has cursor: pointer`, async ({ page }) => {
       await page.goto(path);
+      // A page that streams its shell and redirects a visitor afterwards (/me/notifications,
+      // #211) navigates away mid-test and destroys the execution context. Let the page
+      // settle before reading it.
+      await page.waitForLoadState("networkidle");
       const problems = await page.evaluate(() => {
         const clickable =
           'a[href], button, select, summary, [role="button"], [role="tab"], input[type="submit"]';
