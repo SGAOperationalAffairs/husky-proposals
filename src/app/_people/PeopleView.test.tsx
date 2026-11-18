@@ -150,6 +150,45 @@ describe("PeopleView", () => {
     expect(screen.queryByText("1 selected")).toBeNull();
   });
 
+  it("a picked row that leaves the list on a refresh is not counted or saved (#238)", async () => {
+    const view = renderView();
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(screen.getByText("2 selected")).toBeTruthy();
+    // Another leader marks Ava joined, and the refresh delivers it. Her row leaves To contact.
+    const refreshed = rows.map((r) => (r.userId === "u1" ? { ...r, contactStatus: "joined" as const } : r));
+    view.rerender(<PeopleView rows={refreshed} boards={boards} now={NOW} initialIdea="all" />);
+    expect(screen.getByText("1 selected")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Mark joined" }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Mark 1 person as joined?")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark joined" }));
+    await waitFor(() => expect(calls).toEqual([{ userId: "u3", ideaId: "i2", status: "joined" }]));
+  });
+
+  it("switching the board resets the idea and drops the picks (#238)", async () => {
+    renderView("103");
+    expect(screen.getAllByRole("checkbox").map((c) => c.getAttribute("aria-label"))).toEqual([
+      "Select Ava Chen",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(screen.getByText("1 selected")).toBeTruthy();
+    fireEvent.click(screen.getByRole("combobox", { name: "Board" }));
+    const option = await screen.findByRole("option", { name: "Campus Planning Advisory Board" });
+    // Base UI picks an item on the pointer's release, and ignores a click that lands right after
+    // the list opens, so the test waits a beat and sends the whole pointer sequence.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    fireEvent.pointerDown(option);
+    fireEvent.mouseDown(option);
+    fireEvent.pointerUp(option);
+    fireEvent.mouseUp(option);
+    fireEvent.click(option);
+    await waitFor(() => expect(screen.queryByText("1 selected")).toBeNull());
+    expect(screen.getAllByRole("checkbox").map((c) => c.getAttribute("aria-label"))).toEqual([
+      "Select Priya Nair",
+    ]);
+    expect(screen.queryByDisplayValue(/#103/)).toBeNull();
+  });
+
   it("Message stays disabled until email is built", () => {
     renderView();
     fireEvent.click(screen.getByRole("checkbox", { name: "Select Ava Chen" }));

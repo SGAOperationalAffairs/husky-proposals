@@ -109,8 +109,9 @@ export function PeopleView({
   // The bulk action waiting for the leader's confirmation. Nothing is saved until they confirm.
   const [confirming, setConfirming] = useState<MarkTo | null>(null);
 
-  // Changing a filter drops the picks. A row picked under one filter must not be saved under
-  // another, where the leader can no longer see it (#129 review).
+  // Changing a filter drops the picks, so a row picked under one filter is not saved under another.
+  // A refresh can also move a picked row out of the shown list without any filter change (#238),
+  // so the bar counts and saves only the picks that are shown. A hidden row is never saved here.
   const narrow =
     <T,>(set: (v: T) => void) =>
     (v: T) => {
@@ -128,6 +129,7 @@ export function PeopleView({
   const scope = { idea, board };
   const shown = filterPeople(rows, { status, ...scope }, nowDate);
   const shownKeys = shown.map(keyOf);
+  const pickedShown = shown.filter((r) => picked.has(keyOf(r)));
 
   // Shift+click takes the state of the box clicked, and applies it to every row in between.
   const togglePick = (key: string, shift: boolean) => {
@@ -161,7 +163,7 @@ export function PeopleView({
   // Back to To contact, Joined, and Not now. Each row is saved on its own; rows that save leave the selection, and a
   // failure keeps the rest picked and says so.
   const mark = (to: MarkTo) => {
-    const targets = rows.filter((r) => picked.has(keyOf(r)));
+    const targets = pickedShown;
     setFailed(false);
     setConfirming(null);
     startTransition(async () => {
@@ -300,10 +302,7 @@ export function PeopleView({
                   <div className="ml-auto flex shrink-0 items-start justify-end gap-3 whitespace-nowrap">
                     {listStatus === "to_contact" && (
                       <span
-                        className="px-2 py-0.5 text-xs font-bold whitespace-nowrap"
-                        style={
-                          overdue ? { background: "var(--accent)", color: "var(--on-accent)" } : undefined
-                        }
+                        className={`px-2 py-0.5 text-xs font-bold whitespace-nowrap ${overdue ? "bg-accent text-on-accent" : ""}`}
                       >
                         {contactText(days)}
                       </span>
@@ -321,11 +320,11 @@ export function PeopleView({
 
       {/* A bar at the bottom of the screen. It takes no room in the list, so ticking a row never
           moves anything. */}
-      {picked.size > 0 && (
+      {pickedShown.length > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-20 flex justify-center px-4">
           <div className="pointer-events-auto flex max-w-5xl flex-wrap items-center justify-center gap-3 bordered bg-surface p-3 surface-float">
             <span className="text-sm font-bold whitespace-nowrap" aria-live="polite">
-              {picked.size} selected
+              {pickedShown.length} selected
             </span>
             <Button size="sm" variant="primary" disabled title="Email is coming soon.">
               <Mail aria-hidden className="size-4" />
@@ -355,7 +354,7 @@ export function PeopleView({
       )}
       <ConfirmMarkDialog
         to={confirming}
-        count={picked.size}
+        count={pickedShown.length}
         busy={pending}
         onConfirm={() => confirming && mark(confirming)}
         onCancel={() => setConfirming(null)}
