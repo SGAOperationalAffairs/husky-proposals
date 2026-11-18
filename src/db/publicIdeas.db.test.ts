@@ -83,6 +83,30 @@ describeWithDatabase("public ideas (#60)", () => {
     });
   });
 
+  it("leaves a closed idea off the list, but its page still loads with the reason and no identity (#237)", async () => {
+    await withSeed(async (tx) => {
+      const reason = "Dining Services is not funding a pantry this year";
+      await tx.idea.update({
+        where: { id: ideas.foodPantry.id },
+        data: { status: "closed", closedReason: reason },
+      });
+      const queries = publicIdeaQueries(tx);
+      expect((await queries.list()).map((r) => r.idea.number)).not.toContain(103);
+
+      const record = await queries.byNumber(103);
+      expect(record?.idea).toMatchObject({ status: "closed", closedReason: reason });
+      expect(record?.stats.rankInBoard).toBeNull();
+      expect(record?.rankOf).toBeUndefined();
+
+      const everything = JSON.stringify(record);
+      for (const user of Object.values(users)) {
+        expect(everything).not.toContain(user.email);
+        expect(everything).not.toContain(user.id);
+      }
+      expect(everything).not.toContain("authorId");
+    });
+  });
+
   it("sends the same few queries however many ideas there are, not one per idea", async () => {
     await withCountedSeed(async (tx, queries) => {
       const reads = publicIdeaQueries(tx);

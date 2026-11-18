@@ -110,6 +110,9 @@ export function buildIdea(
   if (idea.status === "waiting" && !idea.waitingReason) {
     throw new Error("A waiting idea needs a waitingReason (schema rule)");
   }
+  if (idea.status === "closed" && !idea.closedReason) {
+    throw new Error("A closed idea needs a closedReason (schema rule)");
+  }
   return idea;
 }
 

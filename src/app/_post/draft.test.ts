@@ -45,6 +45,17 @@ describe("post draft (#181)", () => {
     expect(loadDraft()).toBeNull();
   });
 
+  it("keeps a draft per idea apart from the new-post draft (#128)", () => {
+    saveDraft(DRAFT);
+    saveDraft({ ...DRAFT, title: "Edited" }, "idea-1");
+    expect(loadDraft()?.title).toBe("Later dining hours");
+    expect(loadDraft("idea-1")?.title).toBe("Edited");
+    expect(loadDraft("idea-2")).toBeNull();
+    clearDraft("idea-1");
+    expect(loadDraft("idea-1")).toBeNull();
+    expect(loadDraft()?.title).toBe("Later dining hours");
+  });
+
   it("stays quiet when storage throws", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("full");

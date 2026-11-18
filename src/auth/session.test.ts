@@ -11,12 +11,19 @@ const DEV_ORIGIN = "https://dev.proposals.northeasternsga.com";
 const SGAUTH_URL = "https://dev.auth.northeasternsga.com";
 const SGAUTH_COOKIE_NAME = "__Secure-sgauth-dev.session_token";
 
-const { clientGetSession, createClient } = vi.hoisted(() => {
+const { clientGetSession, createClient, connection } = vi.hoisted(() => {
   const clientGetSession = vi.fn();
   const createClient = vi.fn<(options: unknown) => { getSession: typeof clientGetSession }>(() => ({
     getSession: clientGetSession,
   }));
-  return { clientGetSession, createClient };
+  const connection = vi.fn(async () => {});
+  return { clientGetSession, createClient, connection };
+});
+
+vi.mock("next/server", () => ({ connection }));
+vi.mock("./standIn", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./standIn")>();
+  return { ...actual, standInResponse: vi.fn(actual.standInResponse) };
 });
 
 vi.mock("next/headers", () => ({
@@ -54,6 +61,9 @@ beforeEach(() => {
   set.mockClear();
   del.mockClear();
   clientGetSession.mockReset();
+  connection.mockReset();
+  connection.mockImplementation(async () => {});
+  vi.mocked(standInResponse).mockClear();
   standIn = true;
   sgauth = false;
 });
@@ -64,6 +74,23 @@ describe("session module (#45)", () => {
     const session = await getSession();
     expect(session?.user.name).toBe("Sam Rivera");
     expect(session?.roles.leads).toEqual(["DAB"]);
+  });
+
+  it("waits for the request before reading the clock (#206)", async () => {
+    const prerenderAbort = new Error("prerender abort");
+    connection.mockRejectedValue(prerenderAbort);
+    jar.set(STAND_IN_COOKIE, "dab-chair");
+    await expect(getSession()).rejects.toBe(prerenderAbort);
+    expect(standInResponse).not.toHaveBeenCalled();
+  });
+
+  it("marks the request dynamic before the stand-in clock read (#206)", async () => {
+    jar.set(STAND_IN_COOKIE, "dab-chair");
+    const session = await getSession();
+    expect(session?.user.name).toBe("Sam Rivera");
+    expect(connection.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(standInResponse).mock.invocationCallOrder[0]!,
+    );
   });
 
   it("returns null for an unknown cookie or no cookie", async () => {
@@ -123,6 +150,12 @@ describe("SGAuth session (#177)", () => {
     expect(createClient).toHaveBeenCalledWith({
       config: { url: SGAUTH_URL, cookieName: SGAUTH_COOKIE_NAME },
     });
+  });
+
+  it("marks the request dynamic here too (#206)", async () => {
+    clientGetSession.mockResolvedValue({ ok: false, error: { code: "signed_out" } });
+    await getSession();
+    expect(connection).toHaveBeenCalledTimes(1);
   });
 
   it("forwards the SGAuth cookie with the leader purpose and returns the session", async () => {

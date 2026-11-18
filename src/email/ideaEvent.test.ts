@@ -67,7 +67,7 @@ describe("idea event emails (#101)", () => {
     expect(message.subject).toBe("Proposal #103: In progress");
     expect(message.text).toContain("More vegan options");
     expect(message.text).toContain('The Dining Advisory Board moved this idea to "In progress".');
-    expect(message.text).not.toContain("Why it is waiting");
+    expect(message.text).not.toContain("Why it is on hold");
     expect(message.text).toContain(`See where it stands: ${siteUrl}/ideas/103`);
     expect(message.text).toContain("You get this email because you follow this idea.");
   });
@@ -81,8 +81,36 @@ describe("idea event emails (#101)", () => {
       "a@example.com",
       siteUrl,
     );
-    expect(message.subject).toBe("Proposal #103: Waiting");
-    expect(message.text).toContain("Why it is waiting: Waiting on the dining contract.");
+    expect(message.subject).toBe("Proposal #103: On hold");
+    expect(message.text).toContain("Why it is on hold: Waiting on the dining contract.");
+  });
+
+  it("renders a closed change with its reason (#237)", () => {
+    const closedEvent = {
+      kind: "status" as const,
+      status: "closed" as const,
+      waitingReason: null,
+      closedReason: "Facilities is not adding new outdoor power this year",
+    };
+    const payload = { ...statusPayload, event: closedEvent };
+    expect(ideaEventPayloadSchema.safeParse(payload).success).toBe(true);
+    // A reviewer or author key is still refused by the strict schema.
+    expect(
+      ideaEventPayloadSchema.safeParse({ ...payload, event: { ...closedEvent, reviewerId: userId } }).success,
+    ).toBe(false);
+    expect(
+      ideaEventPayloadSchema.safeParse({ ...payload, event: { ...closedEvent, authorId: userId } }).success,
+    ).toBe(false);
+
+    const message = renderIdeaEventEmail(payload, "a@example.com", siteUrl);
+    expect(message.subject).toBe("Proposal #103: Closed");
+    expect(message.text).toContain('The Dining Advisory Board moved this idea to "Closed".');
+    expect(message.text).toContain("Why it is closed: Facilities is not adding new outdoor power this year");
+  });
+
+  it("still parses a status payload queued before closedReason existed (#237)", () => {
+    expect(statusPayload.event).not.toHaveProperty("closedReason");
+    expect(ideaEventPayloadSchema.safeParse(statusPayload).success).toBe(true);
   });
 
   it("renders an update", () => {

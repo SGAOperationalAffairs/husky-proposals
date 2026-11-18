@@ -30,6 +30,10 @@ export function pendingPostsText(count: number): string {
 export const PENDING_LIMIT_REASON =
   "You can't post a new idea right now. You can post again once one of your pending posts is reviewed.";
 
+// What an author reads at the limit when sending a declined post back for review (#128).
+export const RESUBMIT_LIMIT_REASON =
+  "You can't send this again right now. You can send it once one of your pending posts is reviewed.";
+
 // A pending post is due this many days after it was submitted, set per board by the
 // VP or the board's chair or director (#58). The default is pinned to the schema by a
 // test; the bounds are backed by a check constraint on boards.review_due_days.
@@ -45,6 +49,12 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 // Input for the review server actions (#58). The reason is shared by decline and take-down.
 export const approveInputSchema = z.object({ ideaId: z.uuid() });
 export const reasonInputSchema = z.object({ ideaId: z.uuid(), reason: text(1000) });
+// A decline needs enough written for the student to know what to change (#58).
+export const DECLINE_REASON_MIN = 40;
+export const declineReasonSchema = z.object({
+  ideaId: z.uuid(),
+  reason: z.string().trim().min(DECLINE_REASON_MIN).max(1000),
+});
 // Input for the author's withdraw action (#56).
 export const withdrawInputSchema = z.object({ ideaId: z.uuid() });
 export const reviewDueDaysInputSchema = z.object({

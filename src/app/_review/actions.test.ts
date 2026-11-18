@@ -109,7 +109,12 @@ describe("review actions (#58)", () => {
 
     updateTag.mockClear();
     reviewStore.find.mockResolvedValue(pending());
-    expect(await actions.declinePost({ ideaId: IDEA, reason: "Already planned" })).toMatchObject({
+    expect(
+      await actions.declinePost({
+        ideaId: IDEA,
+        reason: "Already planned for spring, so it cannot take a new slot this year",
+      }),
+    ).toMatchObject({
       ok: true,
     });
     expect(updateTag).not.toHaveBeenCalled();

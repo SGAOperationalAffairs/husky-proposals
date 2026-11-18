@@ -13,6 +13,8 @@ export const CATEGORIES = [
 // The rules for posting an idea (#55 form, #54 action). Plain functions with no
 // server code, so the form and the action check the same thing.
 
+export const DETAILS_MIN = 80;
+export const DETAILS_MAX = 1000;
 const TITLE_MAX = 120; // three lines of headline on the poster (#29)
 
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -21,19 +23,16 @@ export const postIdeaSchema = z.object({
   title: text(TITLE_MAX),
   // The short text students see on the poster (data-model `description`).
   summary: text(140),
-  // The long text, shown on the idea page (data-model `full_text`). Optional.
-  details: z
-    .string()
-    .trim()
-    .max(4000)
-    .optional()
-    .transform((v) => v || null),
+  // The long text, shown on the idea page (data-model `full_text`). Required, so ideas
+  // arrive developed enough to judge: at least DETAILS_MIN characters (#55, Luis, Nov 11).
+  details: z.string().trim().min(DETAILS_MIN).max(DETAILS_MAX),
   category: z.enum(CATEGORIES),
+  // nullish: an empty location comes out of the first parse as null, and the server parses it again (#181).
   location: z
     .string()
     .trim()
     .max(120)
-    .optional()
+    .nullish()
     .transform((v) => v || null),
   // "Not sure" is the form's default; the stored value is null, so reviewers can fill it in.
   scale: z

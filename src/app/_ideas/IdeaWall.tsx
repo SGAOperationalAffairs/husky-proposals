@@ -7,10 +7,10 @@ import { useMemo, useState, type AnimationEvent } from "react";
 import { BoardFilter } from "@/components/BoardFilter";
 import { IdeaCard, type IdeaCardData } from "@/components/IdeaCard";
 import { IdeaFilters } from "@/components/IdeaFilters";
-import { QueueHeader } from "@/app/queue/QueueRow";
+import { QueueHeader } from "@/app/(tabs)/queue/QueueRow";
 import { IdeaRow } from "./IdeaRow";
 import { BOARD_CODES, BOARDS, type BoardCode } from "@/core/boards";
-import { IDEA_STATUSES, STATUS_LABELS } from "@/core/statuses";
+import { STATUS_LABELS, WALL_STATUSES } from "@/core/statuses";
 import { filterIdeas, ideasHref, parseIdeasQuery, SORTS, type IdeasQuery } from "./filter";
 import { arrivalSteps } from "./arrival";
 import { useLocalTaps } from "./useLocalTaps";
@@ -29,7 +29,8 @@ const VIEWS = [
   { id: "list", label: "List", icon: List },
 ];
 const SORT_OPTIONS = Object.entries(SORTS).map(([value, label]) => ({ value, label }));
-const STATUS_OPTIONS = IDEA_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
+// No Closed option: closed ideas are off the wall (#237).
+const STATUS_OPTIONS = WALL_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }));
 
 export function IdeaWall({ ideas }: Props) {
   const params = useSearchParams();
@@ -84,6 +85,18 @@ export function IdeaWall({ ideas }: Props) {
   return (
     <section aria-label="Ideas" className="flex flex-col gap-5">
       <IdeaFilters
+        // Cards or the list (#138), on the board row. A link without JavaScript, the same URL with the view set.
+        viewSwitch={
+          <ViewSwitch
+            label="View"
+            current={view}
+            options={VIEWS.map((v) => ({
+              ...v,
+              href: ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined }),
+            }))}
+            onSelect={(id) => apply({ view: id === "list" ? "list" : undefined })}
+          />
+        }
         action={path}
         q={query.q}
         board={query.board}
@@ -108,21 +121,10 @@ export function IdeaWall({ ideas }: Props) {
         }
         onChange={apply}
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-sm text-muted">
-          {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
-        </p>
-        {/* Cards or the list (#138). A link without JavaScript, the same URL with the view set. */}
-        <ViewSwitch
-          label="View"
-          current={view}
-          options={VIEWS.map((v) => ({
-            ...v,
-            href: ideasHref(path, { ...query, view: v.id === "list" ? "list" : undefined }),
-          }))}
-          onSelect={(id) => apply({ view: id === "list" ? "list" : undefined })}
-        />
-      </div>
+      {/* -my-2 pulls the count closer to the chips and the cards: the section gap is 20px each side. */}
+      <p role="status" className="-my-2 text-sm text-muted">
+        {shown.length === 1 ? "1 idea" : `${shown.length} ideas`}
+      </p>
       {shown.length > 0 ? (
         view === "list" ? (
           <div className="overflow-hidden bordered bg-surface">

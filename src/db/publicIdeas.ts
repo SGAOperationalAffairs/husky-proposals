@@ -2,7 +2,7 @@ import { BOARD_CODES, type BoardCode } from "@/core/boards";
 import type { IdeaStatus } from "@/core/statuses";
 import { ideaForViewer, type IdeaRow, type StudentIdea } from "@/core/viewerShapes";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { isPublic, publicStatsSelect, publicUpdateSelect, studentIdeaSelect } from "./ideaSelects";
+import { isPublic, onWall, publicStatsSelect, publicUpdateSelect, studentIdeaSelect } from "./ideaSelects";
 
 // The public reads behind the ideas wall and the idea page (#60). Anyone may see these,
 // so every idea goes through ideaForViewer(null, row), the one viewer-shape function:
@@ -90,10 +90,11 @@ function toRecord(row: IdeaRow & { stats: StatsRow | null }): Omit<PublicIdeaRec
 
 export function publicIdeaQueries(db: Db) {
   return {
-    // Every public idea, once, for the wall to filter in the browser. One query.
+    // Every public idea on the wall, once, for the wall to filter in the browser. One
+    // query. Closed ideas are left out (#237); byNumber still finds them.
     async list(): Promise<PublicIdeaRecord[]> {
       const rows = await db.idea.findMany({
-        where: publicWhere,
+        where: { ...publicWhere, ...onWall },
         select: { ...studentIdeaSelect, stats: { select: publicStatsSelect } },
         orderBy: { number: "asc" },
       });

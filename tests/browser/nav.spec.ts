@@ -13,12 +13,22 @@ test("a visitor sees only the Ideas tab (#156)", async ({ page }) => {
   await expect(pages.getByRole("link", { name: "Ideas" })).toHaveAttribute("aria-current", "page");
 });
 
+// My ideas is a student page, not a leader page: a signed-out visitor is sent to sign-in
+// (requireSignedIn), so the check is that no part of the page shows, not not-found (#193).
+test("/me sends a visitor to sign-in and shows nothing of the page (#193)", async ({ page }) => {
+  await page.goto("/me");
+  // Where sign-in leads depends on the environment: /sign-in with a stand-in or SGAuth, /sign-in/closed without either (CI).
+  await expect(page).toHaveURL(/\/sign-in/);
+  await expect(page.getByRole("heading", { name: "My ideas", exact: true })).toHaveCount(0);
+  const pages = page.getByRole("navigation", { name: "Pages" });
+  await expect(pages.getByRole("link", { name: "My ideas", exact: true })).toHaveCount(0);
+});
+
 // The page streams its shell first, so the status can be 200 (see queue.spec.ts);
 // assert that nothing of the page shows once the check has run.
 for (const [path, title] of [
   ["/people", "People"],
   ["/updates", "Updates"],
-  ["/me", "My ideas"],
 ] as const) {
   test(`${path} shows a visitor nothing of the page (#156)`, async ({ page }) => {
     await page.goto(path);

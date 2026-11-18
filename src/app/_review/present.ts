@@ -10,6 +10,7 @@ import {
   type TimeHorizonValue,
 } from "@/core/ideaFacts";
 import { dueText, reviewerLabel } from "@/core/reviewText";
+import type { IdeaStatus } from "@/core/statuses";
 import type { LeaderIdea } from "@/core/viewerShapes";
 import type { LeaderIdeaData } from "@/db/leaderIdea";
 import type { ApprovedItemData, ReviewQueueItemData } from "@/db/reviewQueue";
@@ -46,6 +47,9 @@ export type LeaderPanelData = {
   ideaId: string;
   number: number;
   boardId: BoardCode;
+  status: IdeaStatus;
+  waitingReason: string | null;
+  mayManageStatus: boolean;
   mayTakeDown: boolean;
   reviewerLabel: string | null;
   poster: PosterData;
@@ -115,13 +119,18 @@ export function toApprovedRow({ idea }: ApprovedItemData, now: Date): ApprovedRo
 // `reviewBoards` is boardsFor(viewer, "review"). The badge shows only on a board the
 // viewer reviews, which is exactly when they may take the idea down.
 export function toLeaderPanel(
-  { idea, mayTakeDown }: LeaderIdeaData,
+  { idea, mayTakeDown, mayManageStatus }: LeaderIdeaData,
   reviewBoards: BoardCode[],
 ): LeaderPanelData {
+  // Like the number, an approved idea always has a status (#98).
+  if (idea.status === null) throw new Error(`Approved idea ${idea.id} has no status`);
   return {
     ideaId: idea.id,
     number: publicNumber(idea),
     boardId: idea.boardId,
+    status: idea.status,
+    waitingReason: idea.waitingReason,
+    mayManageStatus,
     mayTakeDown,
     reviewerLabel: mayTakeDown ? reviewerLabel(reviewBoards) : null,
     poster: posterOf(idea),

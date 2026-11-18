@@ -13,10 +13,10 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { daysAgoText, updatedText } from "@/components/IdeaCard";
 import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
-import { STATUS_LABELS } from "@/core/statuses";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
 import { BOARDS, JOIN } from "@/core/boards";
+import { takesSupport } from "@/core/statuses";
 
 // One idea's page (#62): the poster from the playground (#29) beside where the
 // idea stands, then the details and how to join the board (prototype sPage).
@@ -24,7 +24,7 @@ import { BOARDS, JOIN } from "@/core/boards";
 export default function IdeaPage({ params }: PageProps<"/ideas/[number]">) {
   return (
     <main className="@container mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 @lg:px-8 @lg:py-12">
-      <SiteHeader nav={<NavTabs current="ideas" />} />
+      <SiteHeader nav={<NavTabs />} />
       <Button
         variant="text"
         href="/"
@@ -62,12 +62,11 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
       {/* One order for every reader: poster, where it stands, about, join. On wide
           screens the right column runs beside the other three (idea-rows). */}
       <div className="grid items-start gap-6 @3xl:grid-cols-5 @3xl:idea-rows">
-        <article data-board={board.color} className="poster flex flex-col gap-4 @3xl:col-span-3">
+        <article data-board={board.color} className="poster relative flex flex-col gap-4 @3xl:col-span-3">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold">
             <span>{board.name}</span>
             <span>#{idea.number}</span>
             {idea.fromSga && <FromSgaTag look="poster" />}
-            <span className="ml-auto">{STATUS_LABELS[idea.status]}</span>
           </p>
           <h1 className="heading text-5xl text-balance @3xl:text-7xl">{idea.title}</h1>
           <p className="max-w-prose">{idea.description}</p>
@@ -77,12 +76,12 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <p className="flex items-end gap-3">
             <span className="heading text-8xl tabular-nums">{idea.supportCount}</span>
             <span className="pb-2 leading-tight font-semibold">
-              {idea.status === "delivered" ? "students supported this" : "students want this"}
+              {takesSupport(idea.status) ? "students want this" : "students supported this"}
               <br />
               {idea.willingCount} will help
             </span>
           </p>
-          {idea.status !== "delivered" && (
+          {takesSupport(idea.status) && (
             <>
               <LocalSupportPair ideaNumber={idea.number} board={idea.board} />
               <p className="text-sm">
@@ -90,6 +89,12 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
                 forward.
               </p>
             </>
+          )}
+          {/* A plain note, not disabled buttons (#237). Counts above stay as history. */}
+          {idea.status === "closed" && (
+            <p className="text-sm font-semibold">
+              This idea is closed, so it is not taking support or offers to help.
+            </p>
           )}
         </article>
 
@@ -161,14 +166,14 @@ function standing(idea: IdeaPageData) {
   switch (idea.status) {
     case "collecting_support":
       return `This idea is collecting support. The ${board} looks at its ideas regularly and usually works on 1 to 2 at a time.`;
-    case "under_review":
-      return `The ${board} is looking at this idea now. An update will show here when they decide.`;
     case "in_progress":
       return `The ${board} is working on this now.`;
     case "delivered":
       return `The ${board} delivered this idea.`;
     case "waiting":
       return `On hold. ${idea.waitingReason ?? "The board will come back to it"}. It stays on the list and keeps its support.`;
+    case "closed":
+      return `Closed. ${idea.closedReason ?? "The board closed this idea"}. The ${board} is not moving it forward right now. Its support stays on record.`;
   }
 }
 

@@ -1,0 +1,106 @@
+# Database migrations (#248). The dev database is migrated on every push to `dev`, so dev
+# never runs code against a schema it does not have (the missing `boards` rows of #219).
+# Production is migrated only by hand: dispatch the `production` target from `main`, and a
+# required reviewer on the `production-database` environment approves each run.
+#
+# Why it is built this way:
+# - No `pull_request` trigger. Previews share the dev database, and a pull request must never
+#   migrate it with unmerged migrations.
+# - No `paths` filter. `migrate deploy` is a no-op when nothing is pending, so running on every
+#   push costs about a minute and also catches up a database that fell behind.
+# - Each URL is a secret on a GitHub environment limited to its own branch (`dev-database`:
+#   `dev`; `production-database`: `main`), so no other branch can read either database URL.
+# - Only `DIRECT_URL` is set, never `DATABASE_URL`, so a migration cannot fall back to the pooled URL.
+# - No `continue-on-error`. A failed migration fails the job and GitHub emails the pusher.
+# - Migrations only add in a pull request, so the previous code keeps working while one runs.
+#   The deploy and this job finish in either order. See docs/ENGINEERING.md, section 3.
+name: migrate
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which database to migrate
+        type: choice
+        required: true
+        options:
+          - dev
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  dev:
+    if: github.ref == 'refs/heads/dev' && (github.event_name == 'push' || inputs.target == 'dev')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: dev-database
+    # Two quick pushes queue. A running migration is never cancelled.
+    concurrency:
+      group: migrate-dev
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # npm ci runs postinstall, which generates the Prisma client.
+      - run: npm ci
+      # prisma.config.ts falls back to a localhost placeholder when no URL is set, which would
+      # fail with a confusing connection error instead of naming the missing secret.
+      - name: Check the secret is set
+        env:
+          DIRECT_URL: ${{ secrets.NEON_DEV_DIRECT_URL }}
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::error::NEON_DEV_DIRECT_URL is not set on the dev-database environment"
+            exit 1
+          fi
+      - name: Apply pending migrations
+        env:
+          DIRECT_URL: ${{ secrets.NEON_DEV_DIRECT_URL }}
+        run: npm run db:migrate
+      # Postcondition: exits non-zero if anything is still pending or failed. Its "up to date"
+      # line is the audit line in the log.
+      - name: Check nothing is pending
+        env:
+          DIRECT_URL: ${{ secrets.NEON_DEV_DIRECT_URL }}
+        run: npx --no-install prisma migrate status
+
+  # Nothing calls this from a deploy or a release. It can only be dispatched once this file
+  # reaches `main` through a release.
+  production:
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'production' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production-database
+    concurrency:
+      group: migrate-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Check the secret is set
+        env:
+          DIRECT_URL: ${{ secrets.NEON_PRODUCTION_DIRECT_URL }}
+        run: |
+          if [ -z "$DIRECT_URL" ]; then
+            echo "::error::NEON_PRODUCTION_DIRECT_URL is not set on the production-database environment"
+            exit 1
+          fi
+      - name: Apply pending migrations
+        env:
+          DIRECT_URL: ${{ secrets.NEON_PRODUCTION_DIRECT_URL }}
+        run: npm run db:migrate
+      - name: Check nothing is pending
+        env:
+          DIRECT_URL: ${{ secrets.NEON_PRODUCTION_DIRECT_URL }}
+        run: npx --no-install prisma migrate status

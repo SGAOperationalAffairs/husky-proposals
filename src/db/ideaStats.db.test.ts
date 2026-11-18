@@ -39,6 +39,21 @@ describeWithDatabase("idea_stats (#44)", () => {
     });
   });
 
+  it('a closed idea has no rank and does not count in the board\'s "of" (#237)', async () => {
+    await withSeed(async (tx) => {
+      await tx.idea.update({
+        where: { id: ideas.foodPantry.id },
+        data: { status: "closed", closedReason: "Not funded this year" },
+      });
+      const rows = await tx.ideaStats.findMany();
+      const rank = (id: string) => rows.find((r) => r.ideaId === id)!.rankInBoard;
+      expect(rank(ideas.foodPantry.id)).toBeNull();
+      // DAB's remaining ranked idea moves up, and "of" counts only it.
+      expect(rank(ideas.lateNightDining.id)).toBe(1);
+      expect(await tx.ideaStats.count({ where: { boardId: "DAB", rankInBoard: { not: null } } })).toBe(1);
+    });
+  });
+
   it("flags an in-progress idea past its board's cadence, and not before", async () => {
     await withSeed(async (tx) => {
       const stale = async () =>

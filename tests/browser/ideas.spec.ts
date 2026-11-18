@@ -73,6 +73,44 @@ test.describe("idea page (#62)", () => {
   });
 });
 
+// A closed idea is off the wall but public by its link (#237). Sample idea #121.
+test.describe("a closed idea (#237)", () => {
+  test("is not on the default wall", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("article.poster").first()).toBeVisible();
+    await expect(page.locator('article[data-idea="121"]')).toHaveCount(0);
+    await expect(page.getByText("Solar charging benches on the quad")).toHaveCount(0);
+  });
+
+  test("the status filter has no Closed option, and ?status=closed shows the full wall", async ({ page }) => {
+    await page.goto("/");
+    const all = await page.locator("article.poster").count();
+    await page.goto("/?status=closed");
+    await expect(page.locator("article.poster")).toHaveCount(all);
+    await expect(page.getByLabel("Status")).toHaveValue("");
+    await expect(page.getByLabel("Status").locator("option", { hasText: "Closed" })).toHaveCount(0);
+  });
+
+  test("its page loads by link with the reason, the counts, a note, and no support buttons", async ({
+    page,
+  }) => {
+    await page.goto("/ideas/121");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Solar charging benches on the quad");
+    await expect(
+      page.getByText(
+        "Closed. Facilities is not adding new outdoor power this year. The Green Initiatives Board is not moving it forward right now. Its support stays on record.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByText("students supported this")).toBeVisible();
+    await expect(page.getByText("6 will help")).toBeVisible();
+    await expect(
+      page.getByText("This idea is closed, so it is not taking support or offers to help."),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Support" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "I'll participate" })).toHaveCount(0);
+  });
+});
+
 test.describe("one list with picked-up ideas (#55)", () => {
   test("the status filter finds ideas a board has picked up", async ({ page }) => {
     await page.goto("/");

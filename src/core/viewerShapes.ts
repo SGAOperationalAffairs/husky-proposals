@@ -25,6 +25,7 @@ export type IdeaRow = {
   timeHorizon: string | null;
   status: IdeaStatus | null;
   waitingReason: string | null;
+  closedReason: string | null;
   fromSga: boolean;
   isAnonymous: boolean;
   reviewStatus: ReviewStatus;
@@ -56,6 +57,9 @@ export type StudentIdea = {
   timeHorizon: string | null;
   status: IdeaStatus | null;
   waitingReason: string | null;
+  // Public, like waitingReason. No column records who closed an idea, so there is no
+  // closer identity to leak (#237).
+  closedReason: string | null;
   fromSga: boolean;
   // Null for an anonymous post, always. The form says so (#53, data model).
   authorName: string | null;
@@ -122,6 +126,7 @@ function studentShape(row: IdeaRow): StudentIdea {
     timeHorizon: row.timeHorizon,
     status: row.status,
     waitingReason: row.waitingReason,
+    closedReason: row.closedReason,
     fromSga: row.fromSga,
     authorName: publicAuthorName(row),
     submittedAt: row.submittedAt,

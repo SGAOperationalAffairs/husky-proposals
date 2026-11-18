@@ -12,6 +12,7 @@ import {
   checkNewPost,
   isEditable,
   pendingPostsText,
+  declineReasonSchema,
   reasonInputSchema,
   reviewDueAt,
   reviewDueDaysInputSchema,
@@ -306,6 +307,14 @@ describe("review input schemas (#58)", () => {
     expect(reasonInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
     expect(reasonInputSchema.safeParse({ ideaId: id, reason: "x".repeat(1001) }).success).toBe(false);
     expect(reasonInputSchema.safeParse({ ideaId: "nope", reason: "Out of scope" }).success).toBe(false);
+  });
+
+  // A decline needs enough written to tell the student what to change (#58). A take
+  // down keeps the looser rule above.
+  it("asks for at least 40 characters when declining", () => {
+    expect(declineReasonSchema.safeParse({ ideaId: id, reason: "x".repeat(39) }).success).toBe(false);
+    expect(declineReasonSchema.safeParse({ ideaId: id, reason: "x".repeat(40) }).success).toBe(true);
+    expect(declineReasonSchema.safeParse({ ideaId: id, reason: "x".repeat(1001) }).success).toBe(false);
   });
 
   it("the due days are a whole number from 1 to 14 on a known board", () => {

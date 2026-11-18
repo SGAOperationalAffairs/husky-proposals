@@ -35,7 +35,7 @@
   --on-board-dining: #ffffff;
   --board-planning: #ff8700;
   --on-board-planning: #111111;
-  --board-services: #f2c230;
+  --board-services: #f5b82c;
   --on-board-services: #111111;
   --board-green: #2e7d32;
   --on-board-green: #ffffff;
@@ -49,6 +49,13 @@
   --board-services-text: #7a5900;
   --board-green-text: #256628;
   --board-sust-text: #213f99;
+  /* The same text colors in light mode, for text on the white status tag, in both modes
+     (Nov 11). The dark block does not redefine these, so the tag stays dark on white. */
+  --board-dining-on-paper: #b00d28;
+  --board-planning-on-paper: #a84800;
+  --board-services-on-paper: #7a5900;
+  --board-green-on-paper: #256628;
+  --board-sust-on-paper: #213f99;
 
   /* Type: Public Sans for reading, Big Shoulders for headlines and big numbers.
      The --font-* faces are loaded by next/font in src/app/layout.tsx. */
@@ -121,5 +128,5 @@
   }
 }
 /* Status chip colors:
-   collecting_support: grey   under_review: sky   in_progress: amber
+   collecting_support: grey   in_progress: amber
    delivered: green           waiting: outline on a transparent background */

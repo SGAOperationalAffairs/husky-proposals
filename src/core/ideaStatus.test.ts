@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { IDEA_STATUSES, type IdeaStatus } from "./statuses";
 import {
+  CLOSED_REASON_MAX,
+  HOLD_REASONS,
+  HOLD_REASON_MAX,
   TRANSITIONS,
   changeStatus,
+  closeInputSchema,
+  deliverInputSchema,
+  holdInputSchema,
   moveBoard,
   nextStatuses,
+  normalizeClosedReason,
+  normalizeHoldReason,
+  startInputSchema,
   statusOnApproval,
   systemUpdateBody,
 } from "./ideaStatus";
@@ -17,7 +26,7 @@ function idea(status: IdeaStatus, waitingReason: string | null = null) {
 
 describe("idea status rules (#51)", () => {
   describe("transition table", () => {
-    it("is pinned to the status words from #34", () => {
+    it("covers the live statuses, and no retired one", () => {
       expect(Object.keys(TRANSITIONS).sort()).toEqual([...IDEA_STATUSES].sort());
       for (const targets of Object.values(TRANSITIONS)) {
         for (const target of targets) expect(IDEA_STATUSES).toContain(target);
@@ -25,7 +34,7 @@ describe("idea status rules (#51)", () => {
     });
 
     it("nextStatuses returns the table row", () => {
-      expect(nextStatuses("in_progress")).toEqual(["delivered"]);
+      expect(nextStatuses("in_progress")).toEqual(["delivered", "closed"]);
       expect(nextStatuses("delivered")).toEqual([]);
     });
 
@@ -35,6 +44,7 @@ describe("idea status rules (#51)", () => {
         it(`${from} to ${to} is ${allowed ? "allowed" : "rejected"}`, () => {
           const result = changeStatus(idea(from, from === "waiting" ? "Needs a budget answer" : null), to, {
             waitingReason: "Needs a budget answer",
+            closedReason: "Not funded this year",
             now,
           });
           if (allowed) {
@@ -59,7 +69,7 @@ describe("idea status rules (#51)", () => {
 
     it("requires a reason for waiting: missing, empty, and whitespace-only", () => {
       for (const waitingReason of [undefined, "", "   "]) {
-        expect(changeStatus(idea("under_review"), "waiting", { waitingReason, now })).toEqual({
+        expect(changeStatus(idea("collecting_support"), "waiting", { waitingReason, now })).toEqual({
           ok: false,
           error: { code: "waiting_reason_required" },
         });
@@ -67,7 +77,7 @@ describe("idea status rules (#51)", () => {
     });
 
     it("stores a padded reason trimmed", () => {
-      const result = changeStatus(idea("under_review"), "waiting", {
+      const result = changeStatus(idea("collecting_support"), "waiting", {
         waitingReason: "  Needs funding  ",
         now,
       });
@@ -78,10 +88,10 @@ describe("idea status rules (#51)", () => {
     });
 
     it("clears the reason when leaving waiting", () => {
-      const result = changeStatus(idea("waiting", "Needs funding"), "under_review", { now });
+      const result = changeStatus(idea("waiting", "Needs funding"), "collecting_support", { now });
       expect(result).toMatchObject({
         ok: true,
-        value: { patch: { status: "under_review", waitingReason: null } },
+        value: { patch: { status: "collecting_support", waitingReason: null } },
       });
     });
 
@@ -107,8 +117,8 @@ describe("idea status rules (#51)", () => {
       expect(result).toEqual({ ok: false, error: { code: "same_status", status: "waiting" } });
     });
 
-    it("returns a system update naming the board for start and deliver only", () => {
-      const start = changeStatus(idea("under_review"), "in_progress", { now });
+    it("returns a system update naming the board for start, deliver, and hold (#98)", () => {
+      const start = changeStatus(idea("collecting_support"), "in_progress", { now });
       expect(start).toMatchObject({
         ok: true,
         value: { update: { kind: "system", body: "The Dining Advisory Board started work on this idea." } },
@@ -118,8 +128,112 @@ describe("idea status rules (#51)", () => {
         ok: true,
         value: { update: { kind: "system", body: "The Dining Advisory Board marked this idea delivered." } },
       });
-      const other = changeStatus(idea("collecting_support"), "under_review", { now });
-      expect(other).toMatchObject({ ok: true, value: { update: null } });
+      const held = changeStatus(idea("collecting_support"), "waiting", {
+        waitingReason: "Needs a budget answer",
+        now,
+      });
+      expect(held).toMatchObject({
+        ok: true,
+        value: {
+          update: {
+            kind: "system",
+            body: "The Dining Advisory Board put this idea on hold: Needs a budget answer.",
+          },
+        },
+      });
+    });
+
+    it("writes no update for leaving waiting or for fixing the reason", () => {
+      const back = changeStatus(idea("waiting", "Old"), "collecting_support", { now });
+      expect(back).toMatchObject({ ok: true, value: { update: null } });
+    });
+  });
+
+  describe("closing and reopening (#237)", () => {
+    const reason = "Facilities is not adding new outdoor power this year";
+
+    it("closes only from in progress", () => {
+      expect(nextStatuses("in_progress")).toEqual(["delivered", "closed"]);
+      for (const from of ["collecting_support", "waiting", "delivered"] as const) {
+        expect(
+          changeStatus(idea(from, from === "waiting" ? "x" : null), "closed", { closedReason: reason, now }),
+        ).toEqual({ ok: false, error: { code: "invalid_transition", from, to: "closed" } });
+      }
+    });
+
+    it("requires a reason to close: missing, empty, and whitespace-only", () => {
+      for (const closedReason of [undefined, "", "   "]) {
+        expect(changeStatus(idea("in_progress"), "closed", { closedReason, now })).toEqual({
+          ok: false,
+          error: { code: "closed_reason_required" },
+        });
+      }
+    });
+
+    it("closes with a trimmed reason, clears the hold reason, and writes a system update", () => {
+      const result = changeStatus(idea("in_progress"), "closed", { closedReason: `  ${reason}  `, now });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          patch: { status: "closed", waitingReason: null, closedReason: reason, statusChangedAt: now },
+          update: { kind: "system", body: `The Dining Advisory Board closed this idea: ${reason}.` },
+        },
+      });
+    });
+
+    it("reopens to collecting support, clears the reason, and writes a system update", () => {
+      const result = changeStatus(idea("closed"), "collecting_support", { now });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          patch: {
+            status: "collecting_support",
+            waitingReason: null,
+            closedReason: null,
+            statusChangedAt: now,
+          },
+          update: { kind: "system", body: "The Dining Advisory Board reopened this idea." },
+        },
+      });
+    });
+
+    it("leaves closedReason out of every other patch", () => {
+      const result = changeStatus(idea("collecting_support"), "in_progress", { now });
+      expect(result.ok && "closedReason" in result.value.patch).toBe(false);
+    });
+
+    it("rejects closed to anything else, and closed to closed", () => {
+      for (const to of ["in_progress", "waiting", "delivered"] as const) {
+        expect(changeStatus(idea("closed"), to, { waitingReason: "x", now })).toEqual({
+          ok: false,
+          error: { code: "invalid_transition", from: "closed", to },
+        });
+      }
+      expect(changeStatus(idea("closed"), "closed", { closedReason: reason, now })).toEqual({
+        ok: false,
+        error: { code: "same_status", status: "closed" },
+      });
+    });
+
+    it("normalizeClosedReason trims, strips trailing periods, and caps at 200 characters", () => {
+      expect(normalizeClosedReason("  Not funded. ")).toBe("Not funded");
+      expect(normalizeClosedReason("a".repeat(250))).toHaveLength(CLOSED_REASON_MAX);
+    });
+
+    it("close takes an idea and a reason of 1 to 200 characters after trimming", () => {
+      const id = "00000000-0000-4000-8000-000000000101";
+      expect(closeInputSchema.parse({ ideaId: id, reason: `  ${reason}  ` }).reason).toBe(reason);
+      expect(closeInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
+      expect(closeInputSchema.safeParse({ ideaId: id, reason: "a".repeat(201) }).success).toBe(false);
+    });
+
+    it("the update copy promises nothing", () => {
+      expect(systemUpdateBody({ type: "closed", boardId: "GIB", reason })).not.toMatch(
+        /petition|slot|\bwill\b/i,
+      );
+      expect(systemUpdateBody({ type: "reopened", boardId: "GIB" })).toBe(
+        "The Green Initiatives Board reopened this idea.",
+      );
     });
   });
 
@@ -161,8 +275,52 @@ describe("idea status rules (#51)", () => {
         systemUpdateBody({ type: "started", boardId: "GIB" }),
         systemUpdateBody({ type: "delivered", boardId: "SC" }),
         systemUpdateBody({ type: "moved", from: "CPAB", to: "CSC" }),
+        systemUpdateBody({ type: "held", boardId: "CSC", reason: HOLD_REASONS[0] }),
       ];
       for (const body of bodies) expect(body).not.toMatch(/petition|slot|\bwill\b/i);
+    });
+  });
+
+  describe("hold reasons (#98)", () => {
+    it("every preset reads as a plain reason with no trailing period and no promise", () => {
+      expect(HOLD_REASONS.length).toBeGreaterThan(0);
+      for (const reason of HOLD_REASONS) {
+        expect(reason).toBe(normalizeHoldReason(reason));
+        expect(reason).not.toMatch(/petition|slot|\bwill\b|—/i);
+      }
+    });
+
+    it("normalizeHoldReason trims, strips trailing periods, and caps at 200 characters", () => {
+      expect(normalizeHoldReason("  Needs funding. ")).toBe("Needs funding");
+      expect(normalizeHoldReason("Needs funding...")).toBe("Needs funding");
+      expect(normalizeHoldReason("...")).toBe("");
+      expect(normalizeHoldReason("a".repeat(250))).toHaveLength(HOLD_REASON_MAX);
+    });
+  });
+
+  describe("input schemas (#98)", () => {
+    const id = "00000000-0000-4000-8000-000000000101";
+
+    it("start takes an idea and defaults confirmed to false", () => {
+      expect(startInputSchema.parse({ ideaId: id })).toEqual({ ideaId: id, confirmed: false });
+      expect(startInputSchema.parse({ ideaId: id, confirmed: true })).toEqual({
+        ideaId: id,
+        confirmed: true,
+      });
+      expect(startInputSchema.safeParse({ ideaId: "nope" }).success).toBe(false);
+    });
+
+    it("hold needs a reason of 1 to 200 characters after trimming", () => {
+      expect(holdInputSchema.parse({ ideaId: id, reason: "  Needs more information  " }).reason).toBe(
+        "Needs more information",
+      );
+      expect(holdInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
+      expect(holdInputSchema.safeParse({ ideaId: id, reason: "a".repeat(201) }).success).toBe(false);
+    });
+
+    it("deliver takes only an idea", () => {
+      expect(deliverInputSchema.parse({ ideaId: id })).toEqual({ ideaId: id });
+      expect(deliverInputSchema.safeParse({}).success).toBe(false);
     });
   });
 });

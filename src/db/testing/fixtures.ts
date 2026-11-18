@@ -112,7 +112,7 @@ export const ideas = {
     description: "Raise the free print allowance so course readings do not cost students extra.",
     boardId: "CSC",
     authorId: users.secondStudent.id,
-    status: "under_review",
+    status: "collecting_support",
     approvedAt: daysBefore(10),
   }),
   pending: buildIdea({

@@ -13,12 +13,13 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea, TextField } from "@/components/Field";
 import { PAGE } from "@/components/pageTransition";
+import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
-import { PENDING_LIMIT, PENDING_LIMIT_REASON, pendingPostsText } from "@/core/review";
+import { PENDING_LIMIT, PENDING_LIMIT_REASON, RESUBMIT_LIMIT_REASON, pendingPostsText } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 import { clearDraft, loadDraft, saveDraft, type PostDraft } from "./draft";
-import { FIELD_MESSAGES, postMessage } from "./messages";
+import { FIELD_MESSAGES, postMessage, RESUBMIT_SIGNED_OUT } from "./messages";
 import { usePostIdea } from "./usePostIdea";
 
 // The post form (#55). A student picks the board first; the rest of the form
@@ -26,6 +27,9 @@ import { usePostIdea } from "./usePostIdea";
 // transition (board-shift in globals.css). Validation is the shared rules in
 // src/core/postIdea.ts, so the form and the post action (#54) check the same
 // thing. A valid submit runs the action through usePostIdea (#181).
+//
+// With `edit` (#128) it is the edit form for a post the review sent back: prefilled,
+// sent through resubmit, with a section to withdraw the post. Without it nothing changes.
 
 const NOT_SURE = "";
 
@@ -73,14 +77,16 @@ function toInput(values: Values) {
 type Props = {
   // How many of this student's posts are waiting for review (PENDING_LIMIT caps them).
   pendingCount: number;
+  // The declined post being edited, and its values to start from (#128).
+  edit?: { ideaId: string; values: PostDraft };
   // grid: the boards in two columns. line: all five in one row on a wide panel (#55 playground).
   boardTiles?: "grid" | "line";
   // above: the icon sits over the name. inline: the icon sits on the same line as the name (#55 playground).
   iconAlign?: "above" | "inline";
 };
 
-export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inline" }: Props) {
-  const [values, setValues] = useState<Values>(EMPTY);
+export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = "inline" }: Props) {
+  const [values, setValues] = useState<Values>(edit?.values ?? EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const ids = useId();
   const blocked = pendingCount >= PENDING_LIMIT;
@@ -88,13 +94,30 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   const limitRef = useRef<HTMLParagraphElement>(null);
   const focusFirstError = useRef(false);
   const confirmationRef = useRef<HTMLHeadingElement>(null);
-  const { phase, message, submit: postIt, reset } = usePostIdea();
+  const withdrawnRef = useRef<HTMLHeadingElement>(null);
+  const withdrawRef = useRef<HTMLDivElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  // In edit mode the board is already picked, so the title is not focused on mount. It is
+  // once the student has changed the board. Set in `set`, not in an effect, so a second
+  // mount-time effect run in development does not count as a change.
+  const boardChanged = useRef(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const ideaId = edit?.ideaId;
+  const editing = !!edit;
+  const { phase, message, submit: postIt, withdraw, reset } = usePostIdea(ideaId);
   const posting = phase === "posting";
   const saved = phase === "saved";
+  const withdrawn = phase === "withdrawn";
+  const done = saved || withdrawn;
 
   const boardCode = isCategory(values.category) ? BOARD_FOR_CATEGORY[values.category] : undefined;
   const board = boardCode ? BOARDS[boardCode] : undefined;
   const BandIcon = isCategory(values.category) ? CATEGORY_ICON[values.category] : undefined;
+  const originalCategory = edit?.values.category;
+  const originalBoard =
+    originalCategory && isCategory(originalCategory) ? BOARD_FOR_CATEGORY[originalCategory] : undefined;
+  const boardDiffers = !!edit && !!board && values.category !== originalCategory;
 
   // Focus the first field with an error, so keyboard users land on it. This runs
   // after the render that marks the fields invalid, not before it.
@@ -108,29 +131,41 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   // At the limit the fields are disabled, so the reason gets focus instead (#132).
   const picked = !!board;
   useEffect(() => {
-    if (!picked) return;
+    if (!picked || (editing && !boardChanged.current)) return;
     const target = blocked
       ? limitRef.current
       : formRef.current?.querySelector<HTMLElement>("input:not([type='checkbox'])");
     target?.focus();
-  }, [picked, blocked]);
+  }, [picked, blocked, editing]);
 
   // A post made while signed out comes back here after sign-in (#181). It is filled in
   // after the first render, so the server and the client draw the same first frame.
+  // An edit keeps its own draft per idea (#128), and it wins over the server's values.
   useEffect(() => {
-    const draft = loadDraft();
+    const draft = loadDraft(ideaId);
     if (!draft) return;
-    clearDraft();
+    clearDraft(ideaId);
     // Storage is an outside system: its value arrives in a callback, not in the effect body.
     queueMicrotask(() => setValues(draft));
-  }, []);
+  }, [ideaId]);
 
-  // The fields are gone once a post is saved, so focus moves to what replaced them.
+  // A link to the card's Withdraw (#withdraw) lands on the section's button (#128).
+  useEffect(() => {
+    if (ideaId && window.location.hash === "#withdraw") {
+      withdrawRef.current?.querySelector("button")?.focus();
+    }
+  }, [ideaId]);
+
+  // The fields are gone once a post is saved or withdrawn, so focus moves to what replaced them.
   useEffect(() => {
     if (saved) confirmationRef.current?.focus();
   }, [saved]);
+  useEffect(() => {
+    if (withdrawn) withdrawnRef.current?.focus();
+  }, [withdrawn]);
 
   const set = <K extends keyof Values>(key: K, value: Values[K]) => {
+    if (key === "category") boardChanged.current = true;
     setValues((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => {
       if (!(key in prev)) return prev;
@@ -155,7 +190,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
       return;
     }
     // The server checks again and is the authority; the client check only saves a trip (#181).
-    const serverErrors = await postIt(result.data, () => saveDraft(values));
+    const serverErrors = await postIt(result.data, () => saveDraft(values, ideaId));
     if (serverErrors && Object.keys(serverErrors).length > 0) {
       setErrors(serverErrors);
       focusFirstError.current = true;
@@ -166,8 +201,8 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
   // The first save happens in onSubmit, before the Sign in link renders; this keeps the
   // draft current if the student edits the form while the prompt is showing.
   useEffect(() => {
-    if (phase === "signed_out") saveDraft(values);
-  }, [phase, values]);
+    if (phase === "signed_out") saveDraft(values, ideaId);
+  }, [phase, values, ideaId]);
 
   function postAnother() {
     setValues(EMPTY);
@@ -175,12 +210,21 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
     reset();
   }
 
+  async function confirmWithdraw() {
+    setWithdrawError(null);
+    const line = await withdraw();
+    if (line) setWithdrawError(line);
+    else setWithdrawOpen(false);
+  }
+
+  const editPath = ideaId ? `/me/ideas/${ideaId}/edit` : undefined;
+
   return (
     <div className="flex flex-col gap-8">
       <form
         noValidate
         onSubmit={onSubmit}
-        aria-label="Post an idea"
+        aria-label={editing ? "Edit your post" : "Post an idea"}
         ref={formRef}
         // The panel takes the color of the board once one is picked (#55). The color
         // changes in place, so board-shift can animate it.
@@ -193,7 +237,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
             {BandIcon && <BandIcon aria-hidden className="size-8 shrink-0" />}
             {board ? board.category : "What is this for?"}
           </p>
-          {board && !saved && (
+          {board && !done && (
             <button
               type="button"
               className="inline-flex items-center gap-1 font-semibold underline underline-offset-4"
@@ -206,7 +250,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
         </div>
 
         <div className="flex flex-col">
-          {!board && (
+          {!board && !done && (
             <div className="flex flex-col gap-4 py-card">
               <div
                 role="group"
@@ -243,29 +287,64 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
             </div>
           )}
 
-          {board && saved && (
+          {saved && (
             <div role="status" className="flex flex-col gap-4 p-card">
               <h2 ref={confirmationRef} tabIndex={-1} className="heading text-4xl">
-                Sent for review
+                {editing ? "Sent for review again" : "Sent for review"}
               </h2>
-              <p>
-                Your idea is not public yet. The board&apos;s chair or director, or the VP of Campus Affairs,
-                usually reviews it within 2 to 3 days. If it is declined, you will see why, and you can edit
-                it and send it again.
-              </p>
+              {editing ? (
+                <p>
+                  Your post is not public yet. The board&apos;s chair or director, or the VP of Campus
+                  Affairs, usually reviews it within 2 to 3 days.
+                </p>
+              ) : (
+                <p>
+                  Your idea is not public yet. The board&apos;s chair or director, or the VP of Campus
+                  Affairs, usually reviews it within 2 to 3 days. If it is declined, you will see why, and you
+                  can edit it and send it again.
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-4">
-                <Button variant="primary" href="/" transitionTypes={PAGE}>
-                  Back to ideas
+                {editing ? (
+                  <Button variant="primary" href="/me" transitionTypes={PAGE}>
+                    Back to my ideas
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="primary" href="/" transitionTypes={PAGE}>
+                      Back to ideas
+                    </Button>
+                    <Button variant="text" onClick={postAnother}>
+                      Post another idea
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {withdrawn && (
+            <div role="status" className="flex flex-col gap-4 p-card">
+              <h2 ref={withdrawnRef} tabIndex={-1} className="heading text-4xl">
+                Post withdrawn
+              </h2>
+              <p>It will not be reviewed. You can post a new idea at any time.</p>
+              <div className="flex flex-wrap items-center gap-4">
+                <Button variant="primary" href="/me" transitionTypes={PAGE}>
+                  Back to my ideas
                 </Button>
-                <Button variant="text" onClick={postAnother}>
-                  Post another idea
+                <Button variant="text" href="/post" transitionTypes={PAGE}>
+                  Post an idea
                 </Button>
               </div>
             </div>
           )}
 
-          {board && !saved && (
+          {board && !done && (
             <div key="fields" className="poster-arrive flex flex-col gap-6 p-card">
+              {boardDiffers && board && (
+                <p className="text-muted">A different board will review it: {board.category}.</p>
+              )}
               {blocked && (
                 <p
                   id={`${ids}-limit`}
@@ -274,7 +353,7 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   ref={limitRef}
                   className="bordered p-card font-semibold"
                 >
-                  {PENDING_LIMIT_REASON}
+                  {editing ? RESUBMIT_LIMIT_REASON : PENDING_LIMIT_REASON}
                 </p>
               )}
 
@@ -283,8 +362,10 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextField
                       label="Title"
-                      hint="Short and specific. Up to 120 characters."
+                      required
+                      hint="Short and specific."
                       error={errors.title}
+                      max={120}
                       maxLength={120}
                       value={values.title}
                       onChange={(e) => set("title", e.target.value)}
@@ -294,9 +375,11 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Short description"
-                      hint="One or two sentences. Students see this on the poster. Up to 140 characters."
+                      required
+                      hint="One or two sentences. Students see this on the poster."
                       error={errors.summary}
                       rows={2}
+                      max={140}
                       maxLength={140}
                       value={values.summary}
                       onChange={(e) => set("summary", e.target.value)}
@@ -306,9 +389,12 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   <div className="@lg:col-span-2">
                     <TextArea
                       label="Detailed description"
-                      hint="Optional. Background, who it helps, and what has already been tried."
+                      required
+                      hint="Background, who it helps, and what has been tried. At least 80 characters."
                       error={errors.details}
                       rows={5}
+                      min={80}
+                      max={1000}
                       value={values.details}
                       onChange={(e) => set("details", e.target.value)}
                     />
@@ -318,6 +404,8 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                     label="Where on campus"
                     hint="Optional. A building or an area is enough."
                     error={errors.location}
+                    max={120}
+                    maxLength={120}
                     value={values.location}
                     onChange={(e) => set("location", e.target.value)}
                   />
@@ -389,9 +477,13 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   user can hear why it does nothing (#132). */}
               {phase === "signed_out" && (
                 <div role="status" className="flex flex-col items-start gap-3 bordered p-card">
-                  <p>{postMessage("signed_out")}</p>
+                  <p>{editing ? RESUBMIT_SIGNED_OUT : postMessage("signed_out")}</p>
                   {/* No prefetch: on dev /sign-in redirects off site (#177). */}
-                  <Button variant="primary" href="/sign-in?next=%2Fpost" prefetch={false}>
+                  <Button
+                    variant="primary"
+                    href={`/sign-in?next=${encodeURIComponent(editPath ?? "/post")}`}
+                    prefetch={false}
+                  >
                     Sign in
                   </Button>
                 </div>
@@ -415,9 +507,51 @@ export function PostForm({ pendingCount, boardTiles = "grid", iconAlign = "inlin
                   aria-disabled={blocked || posting || undefined}
                   aria-describedby={blocked ? `${ids}-pending ${ids}-limit` : `${ids}-pending`}
                 >
-                  {posting ? "Posting" : "Post idea"}
+                  {editing
+                    ? posting
+                      ? "Sending"
+                      : "Send for review again"
+                    : posting
+                      ? "Posting"
+                      : "Post idea"}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Edit mode only, and outside the fieldset so it works at the pending limit. */}
+          {editing && !done && (
+            <div
+              id="withdraw"
+              ref={withdrawRef}
+              className="flex flex-col items-start gap-3 border-t border-line p-card"
+            >
+              <p className="font-bold">Withdraw this post</p>
+              <p className="text-muted">
+                It will not be reviewed, and it stops counting toward your pending posts. This cannot be
+                undone.
+              </p>
+              <Button
+                variant="line"
+                onClick={(e) => {
+                  opener.current = e.currentTarget;
+                  setWithdrawError(null);
+                  setWithdrawOpen(true);
+                }}
+              >
+                Withdraw post
+              </Button>
+              {(boardCode ?? originalBoard) && (
+                <WithdrawDialog
+                  board={(boardCode ?? originalBoard)!}
+                  open={withdrawOpen}
+                  busy={phase === "withdrawing"}
+                  error={withdrawError}
+                  onConfirm={confirmWithdraw}
+                  onCancel={() => setWithdrawOpen(false)}
+                  returnFocus={opener}
+                />
+              )}
             </div>
           )}
         </div>

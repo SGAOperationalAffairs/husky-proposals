@@ -14,7 +14,39 @@ import { SubmitYours } from "@/components/SubmitYours";
 import { PostForm } from "@/app/_post/PostForm";
 import { ButtonsSection } from "./sections/ButtonsSection";
 import { FiltersSection } from "./sections/FiltersSection";
+import { HoldSection } from "./sections/HoldSection";
 import { InProgressCardsSection } from "./sections/InProgressCardsSection";
+import { CORNER_TAG_STYLES, CornerCardSection, type CornerTagStyle } from "./sections/CornerCardSection";
+import {
+  UPDATE_ROW_STYLES,
+  UpdatesPageSection,
+  type ComposerOpens,
+  type GoStyle,
+  type PanelSticky,
+  type BoardTag,
+  type DueFlag,
+  type HistoryFlag,
+  type NumberFlag,
+  type RowButtons,
+  type StaleFlag,
+  type StatusFlag,
+  type UpdateForm,
+  type UpdateButtonStyle,
+  type UpdateButtonTone,
+  type UpdateRowStyle,
+  type UpdatesRow,
+} from "./sections/UpdatesPageSection";
+import type { PosterFill } from "@/components/PendingPoster";
+import {
+  MyIdeasFinalSection,
+  type Columns,
+  type GridPending,
+  type LabelStyle,
+  type ListStyle,
+  MyIdeasPageSection,
+  type SwitchStyle,
+  type WordStyle,
+} from "./sections/MyIdeasPageSection";
 import { SurfacesSection } from "./sections/SurfacesSection";
 import { TextSection } from "./sections/TextSection";
 import { TOP_BAR_STYLES, TopBarSection, type TopBarStyle } from "./sections/TopBarSection";
@@ -56,8 +88,34 @@ type Choices = {
   posterShadow: "on" | "off";
   textWidth: "prose" | "full";
   topBarStyle: TopBarStyle;
+  cornerTag: CornerTagStyle;
+  cornerX: number;
+  cornerY: number;
+  updatesRow: UpdatesRow;
+  updatesDue: DueFlag;
+  updatesForm: UpdateForm;
+  updatesRowStyle: UpdateRowStyle;
+  updatesButtons: RowButtons;
+  updatesStatus: StatusFlag;
+  updatesStale: StaleFlag;
+  updatesNumber: NumberFlag;
+  updatesBoardTag: BoardTag;
+  updatesHistory: HistoryFlag;
+  updatesOpens: ComposerOpens;
+  updatesSticky: PanelSticky;
+  updatesGoStyle: GoStyle;
+  updatesButtonTone: UpdateButtonTone;
+  updatesButtonStyle: UpdateButtonStyle;
   logoInline: boolean;
   fullWidth: boolean;
+  myIdeasList: ListStyle;
+  myIdeasSwitch: SwitchStyle;
+  myIdeasColumns: Columns;
+  myIdeasPending: number;
+  myIdeasWords: WordStyle;
+  myIdeasStatusLabel: LabelStyle;
+  myIdeasGridPending: GridPending;
+  myIdeasGridFill: PosterFill;
 };
 const INITIAL_CHOICES: Choices = {
   boardTiles: "grid",
@@ -69,8 +127,34 @@ const INITIAL_CHOICES: Choices = {
   posterShadow: "off",
   textWidth: "full",
   topBarStyle: "underline",
+  cornerTag: "white-board",
+  cornerX: 0,
+  cornerY: 0,
+  updatesRow: "rows",
+  updatesDue: "chip",
+  updatesForm: "open",
+  updatesRowStyle: "plain",
+  updatesButtons: "none",
+  updatesStatus: "chip",
+  updatesStale: "off",
+  updatesNumber: "show",
+  updatesBoardTag: "name",
+  updatesHistory: "hidden",
+  updatesOpens: "form",
+  updatesSticky: "scroll",
+  updatesGoStyle: "outline",
+  updatesButtonTone: "red",
+  updatesButtonStyle: "outline",
   logoInline: false,
   fullWidth: true,
+  myIdeasList: "rows",
+  myIdeasSwitch: "underline",
+  myIdeasColumns: "2",
+  myIdeasPending: 1,
+  myIdeasWords: "plain",
+  myIdeasStatusLabel: "board",
+  myIdeasGridPending: "muted",
+  myIdeasGridFill: "blank",
 };
 
 // The preview shows one section at a time, as Resume Studio's playground does.
@@ -84,10 +168,15 @@ const SECTIONS = [
   { id: "one", label: "One idea", title: "One idea" },
   { id: "idea-page", label: "Idea page", title: "Idea page in its color" },
   { id: "in-progress-cards", label: "In progress cards", title: "In progress cards" },
+  { id: "corner-card", label: "Corner tag card", title: "Corner tag card" },
+  { id: "updates-page", label: "Updates page", title: "Updates page" },
   { id: "loading", label: "Loading", title: "Loading" },
   { id: "share", label: "Share", title: "Share" },
   { id: "post", label: "Post an idea", title: "Post an idea" },
   { id: "queue", label: "SGA queue", title: "SGA queue" },
+  { id: "my-ideas-page", label: "My ideas page", title: "My ideas page" },
+  { id: "hold", label: "Hold to take down", title: "Hold to take down" },
+  { id: "my-ideas-final", label: "My ideas, final", title: "My ideas, final" },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
@@ -111,6 +200,32 @@ const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choice
     tuner: true,
   },
   "in-progress-cards": { dials: [...TYPE, "titleLines", "desc", ...LOOK], choices: [], tuner: true },
+  "corner-card": {
+    dials: [...LAYOUT, ...TYPE, "titleLines", "desc", ...LOOK],
+    choices: ["cornerTag", "cornerX", "cornerY"],
+    tuner: true,
+  },
+  "updates-page": {
+    dials: [...TYPE, "titleLines", "desc", ...LOOK],
+    choices: [
+      "updatesRow",
+      "updatesRowStyle",
+      "updatesButtons",
+      "updatesStatus",
+      "updatesStale",
+      "updatesNumber",
+      "updatesBoardTag",
+      "updatesHistory",
+      "updatesOpens",
+      "updatesSticky",
+      "updatesGoStyle",
+      "updatesButtonTone",
+      "updatesButtonStyle",
+      "updatesDue",
+      "updatesForm",
+    ],
+    tuner: true,
+  },
   loading: { dials: [...LAYOUT, "bg", "border", "corners"], choices: [], tuner: false },
   share: { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
   post: {
@@ -119,6 +234,22 @@ const PAGE_SETTINGS: Record<SectionId, { dials: string[]; choices: (keyof Choice
     tuner: true,
   },
   queue: { dials: ["boards", "bg", "border", "corners"], choices: [], tuner: true },
+  hold: { dials: LOOK, choices: [], tuner: true },
+  "my-ideas-final": { dials: [...TYPE, ...LOOK], choices: [], tuner: true },
+  "my-ideas-page": {
+    dials: [...TYPE, ...LOOK],
+    choices: [
+      "myIdeasList",
+      "myIdeasSwitch",
+      "myIdeasColumns",
+      "myIdeasPending",
+      "myIdeasWords",
+      "myIdeasStatusLabel",
+      "myIdeasGridPending",
+      "myIdeasGridFill",
+    ],
+    tuner: true,
+  },
 };
 
 export function Playground() {
@@ -137,7 +268,14 @@ export function Playground() {
   const overrides: Overrides = applyTuned(applyDials(emptyOverrides(), dials), tuned);
 
   const copy = async () => {
-    const text = JSON.stringify(settingsBlob(template, overrides), null, 2);
+    // The sidebar's choices (which row, which button, which panel) travel with the tokens, so a
+    // pasted blob reproduces the whole view. Only choices that differ from the starting ones.
+    const changed = Object.fromEntries(
+      (Object.keys(choices) as (keyof Choices)[])
+        .filter((k) => choices[k] !== INITIAL_CHOICES[k])
+        .map((k) => [k, choices[k]]),
+    );
+    const text = JSON.stringify({ ...settingsBlob(template, overrides), choices: changed }, null, 2);
     try {
       await navigator.clipboard.writeText(text);
       setCopied("Copied. Paste it into the chat to apply it to design/tokens.css.");
@@ -327,6 +465,7 @@ function ChoiceGroup<T extends string>(props: {
           <Button
             key={o.value}
             size="sm"
+            className="h-9 whitespace-nowrap"
             variant={props.value === o.value ? "primary" : "plain"}
             aria-pressed={props.value === o.value}
             onClick={() => props.onChange(o.value)}
@@ -336,6 +475,34 @@ function ChoiceGroup<T extends string>(props: {
         ))}
       </div>
     </fieldset>
+  );
+}
+
+// A slider with its label and the value in pixels.
+function SliderRow(props: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="flex items-center justify-between gap-3 text-sm font-semibold">
+        {props.label}
+        <span className="text-muted tabular-nums">{props.value}px</span>
+      </label>
+      <input
+        id={id}
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={1}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      />
+    </div>
   );
 }
 
@@ -422,6 +589,96 @@ function SectionSettings({
           />
         </>
       )}
+      {section === "my-ideas-page" && (
+        <ChoiceGroup
+          label="My ideas list"
+          value={choices.myIdeasList}
+          options={[
+            { value: "rows", label: "Rows" },
+            { value: "grid", label: "Poster grid" },
+            { value: "ledger", label: "Ledger" },
+            { value: "compact", label: "Compact cards" },
+            { value: "solid", label: "Solid and outline rows" },
+            { value: "stages", label: "Stages" },
+          ]}
+          onChange={(v) => set("myIdeasList", v)}
+        />
+      )}
+      {section === "my-ideas-page" && (
+        <>
+          <ChoiceGroup
+            label="Switch"
+            value={choices.myIdeasSwitch}
+            options={[
+              { value: "underline", label: "Underline" },
+              { value: "chips", label: "Chips" },
+              { value: "segmented", label: "Segmented" },
+            ]}
+            onChange={(v) => set("myIdeasSwitch", v)}
+          />
+          <ChoiceGroup
+            label="Poster grid columns"
+            value={choices.myIdeasColumns}
+            options={[
+              { value: "1", label: "One" },
+              { value: "2", label: "Two" },
+              { value: "3", label: "Three" },
+            ]}
+            onChange={(v) => set("myIdeasColumns", v)}
+          />
+          <ChoiceGroup
+            label="Pending posts shown"
+            value={String(choices.myIdeasPending) as "0" | "1" | "2" | "3"}
+            options={[
+              { value: "0", label: "0" },
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+            ]}
+            onChange={(v) => set("myIdeasPending", Number(v))}
+          />
+          <ChoiceGroup
+            label="Status words"
+            value={choices.myIdeasWords}
+            options={[
+              { value: "plain", label: "Plain" },
+              { value: "short", label: "Short" },
+            ]}
+            onChange={(v) => set("myIdeasWords", v)}
+          />
+          <ChoiceGroup
+            label="Status label (solid rows)"
+            value={choices.myIdeasStatusLabel}
+            options={[
+              { value: "board", label: "Board outline" },
+              { value: "neutral", label: "Neutral" },
+              { value: "solid", label: "Solid block" },
+              { value: "status", label: "Status colors" },
+            ]}
+            onChange={(v) => set("myIdeasStatusLabel", v)}
+          />
+          <ChoiceGroup
+            label="Pending posts in the grid"
+            value={choices.myIdeasGridPending}
+            options={[
+              { value: "muted", label: "Muted" },
+              { value: "outline", label: "Outline" },
+              { value: "hatched", label: "Hatched" },
+            ]}
+            onChange={(v) => set("myIdeasGridPending", v)}
+          />
+          <ChoiceGroup
+            label="Empty space on grid posters"
+            value={choices.myIdeasGridFill}
+            options={[
+              { value: "blank", label: "Blank" },
+              { value: "zero", label: "Big 0 (see note)" },
+              { value: "word", label: "PENDING" },
+            ]}
+            onChange={(v) => set("myIdeasGridFill", v)}
+          />
+        </>
+      )}
       {section === "text" && (
         <ChoiceGroup
           label="Intro width"
@@ -432,6 +689,172 @@ function SectionSettings({
           ]}
           onChange={(v) => set("textWidth", v)}
         />
+      )}
+      {section === "updates-page" && (
+        <>
+          <ChoiceGroup
+            label="Rows"
+            value={choices.updatesRow}
+            options={[
+              { value: "rows", label: "Cards" },
+              { value: "compact", label: "Compact list" },
+            ]}
+            onChange={(v) => set("updatesRow", v)}
+          />
+          <ChoiceGroup
+            label="Status"
+            value={choices.updatesStatus}
+            options={[
+              { value: "hidden", label: "Hidden" },
+              { value: "chip", label: "Chip" },
+            ]}
+            onChange={(v) => set("updatesStatus", v)}
+          />
+          <ChoiceGroup
+            label="Stale flag"
+            value={choices.updatesStale}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "14", label: "After 14 days" },
+              { value: "30", label: "After 30 days" },
+            ]}
+            onChange={(v) => set("updatesStale", v)}
+          />
+          <ChoiceGroup
+            label="Idea number"
+            value={choices.updatesNumber}
+            options={[
+              { value: "show", label: "Show" },
+              { value: "hide", label: "Hide" },
+            ]}
+            onChange={(v) => set("updatesNumber", v)}
+          />
+          <ChoiceGroup
+            label="Board tag"
+            value={choices.updatesBoardTag}
+            options={[
+              { value: "hidden", label: "Hidden" },
+              { value: "color", label: "Color only" },
+              { value: "name", label: "Name" },
+            ]}
+            onChange={(v) => set("updatesBoardTag", v)}
+          />
+          <ChoiceGroup
+            label="Past updates"
+            value={choices.updatesHistory}
+            options={[
+              { value: "hidden", label: "Hidden" },
+              { value: "under", label: "Under the row" },
+              { value: "dropdown", label: "Drop down" },
+            ]}
+            onChange={(v) => set("updatesHistory", v)}
+          />
+          <ChoiceGroup
+            label="Update button style"
+            value={choices.updatesButtonStyle}
+            options={[
+              { value: "outline", label: "Outline" },
+              { value: "solid", label: "Solid" },
+            ]}
+            onChange={(v) => set("updatesButtonStyle", v)}
+          />
+          <ChoiceGroup
+            label="Update button"
+            value={choices.updatesButtonTone}
+            options={[
+              { value: "red", label: "Red" },
+              { value: "black", label: "Black" },
+              { value: "board", label: "Board color" },
+            ]}
+            onChange={(v) => set("updatesButtonTone", v)}
+          />
+          <ChoiceGroup
+            label="Go to idea button"
+            value={choices.updatesGoStyle}
+            options={[
+              { value: "outline", label: "Outline" },
+              { value: "solid", label: "Solid" },
+            ]}
+            onChange={(v) => set("updatesGoStyle", v)}
+          />
+          <ChoiceGroup
+            label="Side panel"
+            value={choices.updatesSticky}
+            options={[
+              { value: "scroll", label: "Scrolls" },
+              { value: "sticky", label: "Sticky" },
+            ]}
+            onChange={(v) => set("updatesSticky", v)}
+          />
+          <ChoiceGroup
+            label="Update opens"
+            value={choices.updatesOpens}
+            options={[
+              { value: "form", label: "Form below" },
+              { value: "side", label: "Side panel" },
+              { value: "modal", label: "Modal" },
+            ]}
+            onChange={(v) => set("updatesOpens", v)}
+          />
+          <ChoiceGroup
+            label="Row style"
+            value={choices.updatesRowStyle}
+            options={UPDATE_ROW_STYLES.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(v) => set("updatesRowStyle", v)}
+          />
+          <ChoiceGroup
+            label="Update buttons"
+            value={choices.updatesButtons}
+            options={[
+              { value: "none", label: "Off" },
+              { value: "row", label: "On each row" },
+              { value: "title", label: "Click the idea" },
+            ]}
+            onChange={(v) => set("updatesButtons", v)}
+          />
+          <ChoiceGroup
+            label="Due flag"
+            value={choices.updatesDue}
+            options={[
+              { value: "chip", label: "Chip" },
+              { value: "text", label: "Plain text" },
+            ]}
+            onChange={(v) => set("updatesDue", v)}
+          />
+          <ChoiceGroup
+            label="Post form"
+            value={choices.updatesForm}
+            options={[
+              { value: "open", label: "Open" },
+              { value: "behind", label: "Behind a button" },
+            ]}
+            onChange={(v) => set("updatesForm", v)}
+          />
+        </>
+      )}
+      {section === "corner-card" && (
+        <>
+          <ChoiceGroup
+            label="Tag color"
+            value={choices.cornerTag}
+            options={CORNER_TAG_STYLES.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(v) => set("cornerTag", v)}
+          />
+          <SliderRow
+            label="Tag across"
+            value={choices.cornerX}
+            min={-40}
+            max={40}
+            onChange={(v) => set("cornerX", v)}
+          />
+          <SliderRow
+            label="Tag down"
+            value={choices.cornerY}
+            min={-40}
+            max={40}
+            onChange={(v) => set("cornerY", v)}
+          />
+        </>
       )}
       {section === "topbar" && (
         <>
@@ -663,6 +1086,39 @@ function PreviewPage({
         </Section>
       )}
 
+      {section === "updates-page" && (
+        <Section title="Updates page">
+          <UpdatesPageSection
+            options={{
+              row: choices.updatesRow,
+              due: choices.updatesDue,
+              form: choices.updatesForm,
+              rowStyle: choices.updatesRowStyle,
+              rowButtons: choices.updatesButtons,
+              status: choices.updatesStatus,
+              stale: choices.updatesStale,
+              number: choices.updatesNumber,
+              board: choices.updatesBoardTag,
+              history: choices.updatesHistory,
+              opens: choices.updatesOpens,
+              sticky: choices.updatesSticky,
+              goStyle: choices.updatesGoStyle,
+              buttonTone: choices.updatesButtonTone,
+              buttonStyle: choices.updatesButtonStyle,
+            }}
+          />
+        </Section>
+      )}
+
+      {section === "corner-card" && (
+        <Section title="Corner tag card">
+          <CornerCardSection
+            tagStyle={choices.cornerTag}
+            offset={{ x: choices.cornerX, y: choices.cornerY }}
+          />
+        </Section>
+      )}
+
       {section === "loading" && (
         <Section title="Loading">
           <WallPlaceholder />
@@ -729,6 +1185,33 @@ function PreviewPage({
             <Button variant="line">Put on hold</Button>
             <Button size="sm">Change board</Button>
           </div>
+        </Section>
+      )}
+
+      {section === "my-ideas-final" && (
+        <Section title="My ideas, final">
+          <MyIdeasFinalSection />
+        </Section>
+      )}
+
+      {section === "hold" && (
+        <Section title="Hold to take down">
+          <HoldSection />
+        </Section>
+      )}
+
+      {section === "my-ideas-page" && (
+        <Section title="My ideas page">
+          <MyIdeasPageSection
+            list={choices.myIdeasList}
+            switchStyle={choices.myIdeasSwitch}
+            columns={choices.myIdeasColumns}
+            pendingCount={choices.myIdeasPending}
+            words={choices.myIdeasWords}
+            statusLabel={choices.myIdeasStatusLabel}
+            gridPending={choices.myIdeasGridPending}
+            gridFill={choices.myIdeasGridFill}
+          />
         </Section>
       )}
     </div>

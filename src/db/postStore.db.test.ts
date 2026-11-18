@@ -20,6 +20,8 @@ const student: Session = {
 const post = (overrides: Record<string, unknown> = {}) => ({
   title: "Later dining hours on Sundays",
   summary: "The dining hall closes at 7 on Sundays, after most people finish class.",
+  details:
+    "Students who study on weekends want dinner until 8, and most of the dining hall is closed by 7 on Sundays.",
   category: "dining",
   anonymous: false,
   ...overrides,
@@ -52,7 +54,15 @@ describeWithDatabase("posting an idea (#54)", () => {
 
   it("writes revision 1 with the submitted words, on the board for the category", async () => {
     await withSeed(async (tx) => {
-      const result = await submitPost(prismaPostStore(tx), student, post({ details: "More about it." }), NOW);
+      const result = await submitPost(
+        prismaPostStore(tx),
+        student,
+        post({
+          details:
+            "More about it, with enough detail for a reviewer to judge the idea. Who it helps and what was tried before.",
+        }),
+        NOW,
+      );
       if (!result.ok) throw new Error("expected the post to be saved");
       const idea = await tx.idea.findUniqueOrThrow({
         where: { id: result.id },
@@ -63,7 +73,8 @@ describeWithDatabase("posting an idea (#54)", () => {
         expect.objectContaining({
           version: 1,
           title: "Later dining hours on Sundays",
-          fullText: "More about it.",
+          fullText:
+            "More about it, with enough detail for a reviewer to judge the idea. Who it helps and what was tried before.",
         }),
       ]);
     });

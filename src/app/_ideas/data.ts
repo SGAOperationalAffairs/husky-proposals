@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { connection } from "next/server";
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { db } from "@/db/runtime";
 import { publicIdeaQueries } from "@/db/publicIdeas";
@@ -25,12 +26,15 @@ export type IdeaPageData = IdeaCardData & {
   timing?: string;
   // Students always see why a waiting idea waits (CLAUDE.md, "Honest status").
   waitingReason?: string;
+  // Why a closed idea is closed, public like the hold reason (#237).
+  closedReason?: string;
   updates: IdeaUpdate[];
   rank?: { position: number; of: number; board: string };
 };
 
-// The cached reads return plain data with ISO times. `now` is read outside them, after
-// the caller's dynamic access, so "updated N days ago" never freezes in the cache.
+// The cached reads return plain data with ISO times. `now` is read outside them, and
+// listWall() and getIdea() mark the request dynamic themselves before reading it, so no
+// caller can reach the clock while prerendering and "updated N days ago" never freezes.
 // The hours backstop covers changes no writer has refreshed yet (support, until E6).
 async function cachedList() {
   "use cache";
@@ -49,6 +53,8 @@ async function cachedIdea(number: number) {
 
 // Every public idea, for the wall to filter in the browser (#61, #55).
 export async function listWall(): Promise<IdeaCardData[]> {
+  // Next refuses new Date() while a route prerenders, so wait for a request first (#223, #206).
+  await connection();
   if (usesSampleIdeas(env())) return sampleListWall();
   const records = await cachedList();
   const now = new Date();
@@ -56,6 +62,7 @@ export async function listWall(): Promise<IdeaCardData[]> {
 }
 
 export async function getIdea(number: number): Promise<IdeaPageData | undefined> {
+  await connection(); // Same reason as listWall (#223).
   if (usesSampleIdeas(env())) return sampleGetIdea(number);
   const record = await cachedIdea(number);
   return record ? toPage(record, new Date()) : undefined;

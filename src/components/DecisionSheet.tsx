@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { ReviewRowData } from "@/app/_review/present";
 import { BOARDS } from "@/core/boards";
+import { DECLINE_REASON_MIN } from "@/core/review";
 import { Button } from "./Button";
 import { TextArea } from "./Field";
 import { PosterLine } from "./PosterLine";
@@ -15,6 +16,7 @@ import { PosterLine } from "./PosterLine";
 // holds focus inside, closes on Escape, and hands focus back to `returnFocus`.
 // Presentational: the caller runs the actions and passes back busy and error.
 export const REASON_MISSING = "Write a reason so the student knows what to change.";
+export const REASON_SHORT = `Write at least ${DECLINE_REASON_MIN} characters so the student knows what to change.`;
 
 type Props = {
   row: ReviewRowData | null;
@@ -62,21 +64,31 @@ function DecisionBody({
 }: Pick<Props, "busy" | "error" | "onApprove" | "onDecline"> & { row: ReviewRowData }) {
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
-  const [missing, setMissing] = useState(false);
+  // Set when a decline is sent with a reason that is blank or too short (#58).
+  const [attempted, setAttempted] = useState(false);
   const field = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (declining) field.current?.querySelector("textarea")?.focus();
   }, [declining]);
 
   // A refused or blank reason shows on the field itself, not above the buttons.
-  const fieldError = missing ? REASON_MISSING : error?.field === "reason" ? error.text : undefined;
+  const trimmed = reason.trim().length;
+  const fieldError = attempted
+    ? trimmed === 0
+      ? REASON_MISSING
+      : trimmed < DECLINE_REASON_MIN
+        ? REASON_SHORT
+        : undefined
+    : error?.field === "reason"
+      ? error.text
+      : undefined;
   const generalError = error && error.field !== "reason" ? error.text : undefined;
   const isBusy = busy !== null;
 
   const send = () => {
     if (isBusy) return;
-    if (reason.trim() === "") {
-      setMissing(true);
+    if (reason.trim().length < DECLINE_REASON_MIN) {
+      setAttempted(true);
       return;
     }
     onDecline(reason);
@@ -117,12 +129,15 @@ function DecisionBody({
         <div ref={field}>
           <TextArea
             label="Reason the student will see"
-            hint="Say what to change, so they can edit it and send it again."
+            required
+            hint={`Say what to change, so they can edit it and send it again. At least ${DECLINE_REASON_MIN} characters.`}
+            min={DECLINE_REASON_MIN}
+            max={1000}
             value={reason}
             error={fieldError}
             onChange={(e) => {
               setReason(e.target.value);
-              setMissing(false);
+              setAttempted(false);
             }}
           />
         </div>
@@ -144,7 +159,7 @@ function DecisionBody({
               onClick={() => {
                 if (isBusy) return;
                 setDeclining(false);
-                setMissing(false);
+                setAttempted(false);
               }}
             >
               Cancel

@@ -6,6 +6,7 @@ import { can } from "@/core/permissions";
 import {
   applyReviewEvent,
   approveInputSchema,
+  declineReasonSchema,
   reasonInputSchema,
   type ReviewDecision,
   type ReviewError,
@@ -38,6 +39,7 @@ export type IdeaPatch = {
   approvedAt?: Date;
   status?: IdeaStatus | null;
   waitingReason?: null;
+  closedReason?: null;
   statusChangedAt?: Date;
 };
 
@@ -126,7 +128,8 @@ export async function decidePost(
     // by when it came back (#58).
     patch = { reviewStatus: "approved", number, approvedAt: now, ...statusOnApproval(now) };
   } else if (result.clearIdeaStatus) {
-    patch = { reviewStatus: "declined", status: null, waitingReason: null };
+    // closedReason goes too, so a closed idea taken down and approved again shows no stale one (#237).
+    patch = { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null };
   } else {
     patch = { reviewStatus: "declined" };
   }
@@ -160,7 +163,10 @@ function parseInput(
   type: DecisionType,
   raw: unknown,
 ): { ok: true; ideaId: string; reason: string } | { ok: false; fields: string[] } {
-  const parsed = type === "approve" ? approveInputSchema.safeParse(raw) : reasonInputSchema.safeParse(raw);
+  // A decline needs a longer reason than a take down, so each has its own rule (#58).
+  const schema =
+    type === "approve" ? approveInputSchema : type === "decline" ? declineReasonSchema : reasonInputSchema;
+  const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];
     return { ok: false, fields };

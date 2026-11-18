@@ -51,12 +51,16 @@ describeWithDatabase("review decisions (#58)", () => {
         prismaReviewStore(tx),
         dabChair,
         "decline",
-        { ideaId: ideas.pending.id, reason: "Already planned" },
+        { ideaId: ideas.pending.id, reason: "Already planned with Dining Services for the spring term." },
         NOW,
       );
       expect(result).toMatchObject({ ok: true, reviewStatus: "declined", refresh: [] });
       const review = await tx.review.findFirstOrThrow({ where: { ideaId: ideas.pending.id } });
-      expect(review).toMatchObject({ kind: "review", decision: "declined", reason: "Already planned" });
+      expect(review).toMatchObject({
+        kind: "review",
+        decision: "declined",
+        reason: "Already planned with Dining Services for the spring term.",
+      });
       expect(await tx.idea.count({ where: { ...isPublic, id: ideas.pending.id } })).toBe(0);
     });
   });
@@ -67,7 +71,10 @@ describeWithDatabase("review decisions (#58)", () => {
         prismaReviewStore(tx),
         dabChair,
         "take_down",
-        { ideaId: ideas.lateNightDining.id, reason: "The details were not accurate" },
+        {
+          ideaId: ideas.lateNightDining.id,
+          reason: "The details were not accurate, so the board could not judge the idea.",
+        },
         NOW,
       );
       expect(result).toMatchObject({ ok: true, reviewStatus: "declined", number: 131 });
@@ -82,7 +89,10 @@ describeWithDatabase("review decisions (#58)", () => {
       const takeDown = await tx.review.findFirstOrThrow({
         where: { ideaId: ideas.lateNightDining.id, kind: "take_down" },
       });
-      expect(takeDown).toMatchObject({ decision: "declined", reason: "The details were not accurate" });
+      expect(takeDown).toMatchObject({
+        decision: "declined",
+        reason: "The details were not accurate, so the board could not judge the idea.",
+      });
     });
   });
 
