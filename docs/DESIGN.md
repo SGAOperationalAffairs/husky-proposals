@@ -35,7 +35,7 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 |---|---|---|---|
 | DAB | `dining` | `#c8102e` | `#ffffff` |
 | CPAB | `planning` | `#ff8700` (orange) | `#111111` |
-| CSC | `services` | `#f2c230` (yellow) | `#111111` |
+| CSC | `services` | `#f5b82c` (yellow; dark `#f2c230`) | `#111111` |
 | GIB | `green` | `#2e7d32` | `#ffffff` |
 | SC | `sust` | `#213f99` (blue; dark `#3355c4`) | `#ffffff` |
 
@@ -69,17 +69,17 @@ All values are declared in `design/tokens.css`. Change a value there, never in a
 
 - **The wall of posters** is `.card-grid`: up to `--cards-per-row: 3` columns, falling back to fewer whenever a card would be narrower than `12rem`, so a phone shows one. Every row is as tall as its tallest card (`grid-auto-rows: 1fr`).
 - **Inside a poster** the count and buttons sit at the bottom (`mt-auto`), so they line up across a row.
-- **Components respond to their container** (`@container`, then `@2xs:`, `@lg:`, `@2xl:`); screen breakpoints (`md:`, `lg:`) are for page layout only. `QueueRow` stacks into two columns (`queue-cols`) and spreads into six at `@2xl` (`queue-cols-wide`).
+- **Components respond to their container** (`@container`, then `@2xs:`, `@lg:`, `@2xl:`); screen breakpoints (`md:`, `lg:`) are for page layout only. The queue row (`src/app/queue/QueueRow.tsx`) stacks into two columns (`queue-cols`) and spreads into six at `@2xl` (`queue-cols-wide`).
 - **Page width:** content pages use `mx-auto max-w-2xl px-4` (`src/app/page.tsx`); the playground preview goes to `max-w-6xl`.
 
 ## 4. Component treatments
 
 - **Poster** (`IdeaCard`): the whole card in its board's color (`.poster`). The top line, always one line with ellipsis: board category, `#103`, From SGA, status. Then headline, description, support count with "students want this / N will help", then `SupportPair` and Learn more. No place line, tape, tilt, or tear-off tabs.
 - **Support and I'll participate** (`SupportPair`) are always shown together. `look="icons"` on the wall: an outline heart and raised hand that fill in when pressed. `look="buttons"` on an idea's page: `.poster-btn` labeled buttons with the same icons, reading "Supported" and "Participating" when pressed. Pressed inside a poster is the board's text color as background; outside a poster, ink on the page.
-- **Buttons** (`Button`): `primary` (accent fill) for the one main action on a screen, `line` (accent outline) for a secondary action that matters, `plain` (surface) for the rest. Sizes `md` and `sm`. Disabled is `aria-disabled` at 55% opacity.
+- **Buttons** (`Button`): `primary` (accent fill) for the one main action on a screen, `line` (accent outline) for a secondary action that matters, `plain` (surface) for the rest, and `text` for a link-like action with no box, such as "Back to ideas." Sizes `md` and `sm`. Disabled is `aria-disabled` at 55% opacity.
 - **Fields** (`TextField`, `TextArea`, `SelectField`): label above, then the control (`rounded-field bordered bg-surface`), then a muted hint or an `accent-text` error, never both.
 - **Tabs and badges** (`Tabs`, `Badge`): the active tab is `accent-text` with an accent underline; the badge is accent when its count is above 0, grey at 0.
-- **Queue row** (`QueueRow`): accent-soft on hover; a stale idea shows "Needs an update" in `accent-text` beside its status.
+- **Queue row** (`src/app/queue/QueueRow.tsx`): accent-soft on hover; a stale idea shows "Needs an update" in `accent-text` beside its status.
 - **Tags** (`BoardTag`, `FromSgaTag`): a square board swatch with the category; From SGA as an outlined label (`bordered`): `look="plain"` off a poster, and `look="poster"` on one, in the poster's text color.
 
 - **An idea's page takes its board's color as its accent** (#64): buttons, links, the share dialog's tabs, and the participate confirmation. Text uses `--board-<board>-text`, a shade of the board color that passes AA on the page and on cards in both modes. The rest of the site keeps Husky red.

@@ -26,6 +26,8 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 
 **idea**
 `id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting, closed), `waiting_reason`, `closed_reason` (#237), `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
+- `category` is the topic the student picked, in their words (Dining, Campus Planning, and so on). It is what the student chose and it does not change.
+- `board_id` is the board that owns the idea. It comes from the category when the idea is posted, but a move between boards changes only `board_id`. `category` stays as the student chose it.
 
 **idea_revision** (for edit and resubmit)
 `id`, `idea_id`, `version`, the editable fields, `submitted_at`.
