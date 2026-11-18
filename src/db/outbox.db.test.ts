@@ -2,9 +2,10 @@ import { expect, it } from "vitest";
 import { createCapturingMailer } from "@/email/capturingMailer";
 import { createFakeResendFetch } from "@/email/fakeResendFetch";
 import type { IdeaEvent } from "@/email/ideaEvent";
+import type { PostDecidedEvent } from "@/email/postDecided";
 import { createResendMailer } from "@/email/resendMailer";
 import type { Prisma } from "@/generated/prisma/client";
-import { drainOutbox, queueFollowerEmails } from "./outbox";
+import { drainOutbox, queueDecisionEmail, queueFollowerEmails, queuePostStatusEmail } from "./outbox";
 import { MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 import { describeWithDatabase } from "./testing/database";
 import { withCountedSeed } from "./testing/countQueries";
@@ -16,7 +17,7 @@ import {
   FIXTURE_TIME,
   testUuid,
 } from "./testing/factories";
-import { ideas } from "./testing/fixtures";
+import { ideas, users } from "./testing/fixtures";
 import { withSeed } from "./testing/seededTransaction";
 
 // The follower email outbox against Postgres (#101), inside the seed's rolled-back
@@ -259,6 +260,172 @@ describeWithDatabase("follower email outbox (#101)", () => {
       expect(mailer.sent).toHaveLength(0);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
       expect(row).toMatchObject({ sentAt: null, lockedUntil: null, attempts: 0, lastError: null });
+    });
+  });
+});
+
+describeWithDatabase("emails about your own post (#211)", () => {
+  const REASON = "This repeats an open idea. Support that one instead.";
+  const decided = (
+    overrides: Partial<PostDecidedEvent> & { ideaId: string; reviewId: string },
+  ): PostDecidedEvent => ({
+    decision: "declined",
+    reason: REASON,
+    decidedAt: NOW,
+    ...overrides,
+  });
+  const pendingDecline = decided({ ideaId: ideas.pending.id, reviewId: testUuid(7001) });
+  const ownPostTypes = ["post_decided", "post_status"] as const;
+
+  it("a decision on a pending post queues one post_decided row for its author, once", async () => {
+    await withSeed(async (tx) => {
+      expect(await queueDecisionEmail(tx, pendingDecline)).toEqual({ queued: 1 });
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ userId: users.student.id, priority: 1, sentAt: null });
+      expect(rows[0]?.sendAfter).toEqual(NOW);
+      // The same event again adds none.
+      expect(await queueDecisionEmail(tx, pendingDecline)).toEqual({ queued: 0 });
+      expect(await tx.emailOutbox.count({ where: { type: "post_decided" } })).toBe(1);
+    });
+  });
+
+  it("only the idea's author is ever emailed, however many people follow, support, or help", async () => {
+    await withSeed(async (tx) => {
+      // foodPantry already has two supporters and a participant. Add three followers.
+      await addFollowers(tx, 3);
+      await queueDecisionEmail(tx, {
+        ...pendingDecline,
+        ideaId: ideas.foodPantry.id,
+        decision: "taken_down",
+        reviewId: testUuid(7002),
+      });
+      await queuePostStatusEmail(tx, started);
+      await queueFollowerEmails(tx, started);
+
+      const ownRows = await tx.emailOutbox.findMany({ where: { type: { in: [...ownPostTypes] } } });
+      expect(ownRows).toHaveLength(2);
+      expect(ownRows.every((row) => row.userId === users.student.id)).toBe(true);
+      // The followers got their own idea_event rows, and nobody else got an own-post row.
+      expect(await tx.emailOutbox.count({ where: { type: "idea_event" } })).toBe(3);
+    });
+  });
+
+  it("an idea with no author queues nothing, and neither does a stopped author", async () => {
+    await withSeed(async (tx) => {
+      expect(await queuePostStatusEmail(tx, { ...started, ideaId: ideas.refillStations.id })).toEqual({
+        queued: 0,
+      });
+      await tx.user.update({ where: { id: users.student.id }, data: { emailStoppedAt: FIXTURE_TIME } });
+      expect(await queueDecisionEmail(tx, pendingDecline)).toEqual({ queued: 0 });
+      expect(await queuePostStatusEmail(tx, started)).toEqual({ queued: 0 });
+      expect(await tx.emailOutbox.count({ where: { type: { in: [...ownPostTypes] } } })).toBe(0);
+    });
+  });
+
+  it("a stopped follower gets no follower row", async () => {
+    await withSeed(async (tx) => {
+      const [follower] = await addFollowers(tx, 1);
+      await tx.user.update({ where: { id: follower!.id }, data: { emailStoppedAt: FIXTURE_TIME } });
+      expect(await queueFollowerEmails(tx, started)).toEqual({ queued: 0 });
+    });
+  });
+
+  it("an anonymous post is emailed to its author's account, and the payload names no author", async () => {
+    await withSeed(async (tx) => {
+      await queueDecisionEmail(
+        tx,
+        decided({
+          ideaId: ideas.lateNightDining.id,
+          reviewId: testUuid(7003),
+          decision: "approved",
+          reason: null,
+        }),
+      );
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "post_decided" } });
+      expect(row.userId).toBe(users.anonymousAuthor.id);
+      expect(row.payload).toMatchObject({ isAnonymous: true });
+      expect(Object.keys(row.payload as object)).not.toContain("authorId");
+      expect(JSON.stringify(row.payload)).not.toContain(users.anonymousAuthor.displayName);
+    });
+  });
+
+  it("an author who follows their own idea gets one post_status row and no idea_event row", async () => {
+    await withSeed(async (tx) => {
+      await tx.follow.create({
+        data: buildFollow({ userId: users.student.id, ideaId: ideas.foodPantry.id }),
+      });
+      await queueFollowerEmails(tx, started);
+      await queuePostStatusEmail(tx, started);
+      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "idea_event" } })).toBe(0);
+      expect(await tx.emailOutbox.count({ where: { userId: users.student.id, type: "post_status" } })).toBe(
+        1,
+      );
+    });
+  });
+
+  it("throws for a status email on a post that is not approved", async () => {
+    await withSeed(async (tx) => {
+      await expect(queuePostStatusEmail(tx, { ...started, ideaId: ideas.pending.id })).rejects.toThrow(
+        /not approved/,
+      );
+    });
+  });
+
+  it("drains a declined row to the author with the reason and the edit link", async () => {
+    await withSeed(async (tx) => {
+      await queueDecisionEmail(tx, pendingDecline);
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 1, failed: 0 });
+      const [message] = mailer.sent;
+      expect(message?.to).toBe(users.student.email);
+      expect(message?.subject).toBe(`Your post was not approved: ${ideas.pending.title}`);
+      expect(message?.text).toContain(REASON);
+      expect(message?.text).toContain(`${SITE}/me/ideas/${ideas.pending.id}/edit`);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "post_decided" } });
+      expect(row.sentAt).toEqual(NOW);
+    });
+  });
+
+  it("drains priority 1 before priority 3", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      await queuePostStatusEmail(tx, started);
+      const mailer = createCapturingMailer();
+      await drainOutbox(tx, mailer, NOW, { siteUrl: SITE, limit: 1 });
+      expect(mailer.sent).toHaveLength(1);
+      expect(mailer.sent[0]?.to).toBe(users.student.email);
+    });
+  });
+
+  it("a stopped account gets nothing at send", async () => {
+    await withSeed(async (tx) => {
+      await queuePostStatusEmail(tx, started);
+      await tx.user.update({ where: { id: users.student.id }, data: { emailStoppedAt: FIXTURE_TIME } });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(mailer.sent).toHaveLength(0);
+    });
+  });
+
+  it("a bad payload of either new type fails with 'invalid payload'", async () => {
+    await withSeed(async (tx) => {
+      for (const type of ownPostTypes) {
+        await tx.emailOutbox.create({
+          data: buildOutboxRow({
+            userId: users.student.id,
+            type,
+            dedupeKey: `bad:${type}`,
+            payload: { nope: true },
+            sendAfter: NOW,
+          }),
+        });
+      }
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 2 });
+      const rows = await tx.emailOutbox.findMany({ where: { type: { in: [...ownPostTypes] } } });
+      expect(rows.every((row) => row.lastError === "invalid payload")).toBe(true);
     });
   });
 });

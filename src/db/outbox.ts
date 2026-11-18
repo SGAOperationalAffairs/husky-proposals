@@ -5,21 +5,32 @@ import {
   renderIdeaEventEmail,
   type IdeaEvent,
 } from "@/email/ideaEvent";
-import { sendEmail, type Mailer } from "@/email/sendEmail";
-import type { Prisma } from "@/generated/prisma/client";
+import {
+  POST_DECIDED_PRIORITY,
+  postDecidedDedupeKey,
+  postDecidedPayloadSchema,
+  renderPostDecidedEmail,
+  type PostDecidedEvent,
+} from "@/email/postDecided";
+import {
+  POST_STATUS_PRIORITY,
+  postStatusDedupeKey,
+  postStatusPayloadSchema,
+  renderPostStatusEmail,
+  type PostStatusEvent,
+} from "@/email/postStatus";
+import { sendEmail, type EmailMessage, type Mailer } from "@/email/sendEmail";
+import type { EmailType, Prisma } from "@/generated/prisma/client";
 import { claimOutboxBatch, MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 
 // The email outbox (#101): rows are written in the caller's transaction, and a drain
-// sends them. Nothing calls the drain on a schedule yet (a later E9 ticket).
+// sends them. Nothing calls the drain on a schedule yet (#210).
 
 const MINUTE = 60 * 1000;
 // A claim holds a row this long. A worker that dies mid-send frees it after this.
 const CLAIM_MS = 10 * MINUTE;
 const BACKOFF_MS = 5 * MINUTE;
 const MAX_ERROR_LENGTH = 500;
-// The types this drain can render. Only idea_event has a renderer in this ticket; each
-// later type adds itself here with its renderer, so its rows wait unclaimed until then.
-const RENDERABLE_TYPES = ["idea_event"] as const;
 
 type QueueDb = Pick<Prisma.TransactionClient, "idea" | "emailOutbox">;
 
@@ -29,8 +40,13 @@ type QueueDb = Pick<Prisma.TransactionClient, "idea" | "emailOutbox">;
 // Caller contract: starting or delivering an idea changes the status and also writes a
 // system update. Pass only the status event, so followers get one email for it, not two.
 //
+// The author is left out of a status change's followers: they get a post_status email for
+// it instead (queuePostStatusEmail), so an author who follows their own idea gets one
+// email per change, not two (#211).
+//
 // Two queries however many followers there are: one read of the idea and its eligible
-// followers, and one createMany. Eligibility is checked now, at queue time only.
+// followers, and one createMany. Eligibility is checked now, at queue time, and again at
+// send (drainOutbox) for a stopped account.
 export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promise<{ queued: number }> {
   const idea = await tx.idea.findUnique({
     where: { id: event.ideaId },
@@ -39,6 +55,7 @@ export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promis
       title: true,
       boardId: true,
       reviewStatus: true,
+      authorId: true,
       follows: {
         where: {
           user: {
@@ -73,8 +90,9 @@ export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promis
         : { kind: "update", body: event.body },
   });
 
+  const followers = idea.follows.filter(({ userId }) => event.kind !== "status" || userId !== idea.authorId);
   const result = await tx.emailOutbox.createMany({
-    data: idea.follows.map(({ userId }) => ({
+    data: followers.map(({ userId }) => ({
       userId,
       type: "idea_event" as const,
       priority: IDEA_EVENT_PRIORITY,
@@ -87,6 +105,118 @@ export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promis
   });
   return { queued: result.count };
 }
+
+// The idea and its author, for an email about the author's own post, in one query. The
+// recipient is always the idea's author, read here and never passed in (#211): that is
+// what keeps a post's decision from ever reaching anyone else. `recipient` is null when
+// there is nobody to email: the author's account is gone (D14) or stopped. A missing idea
+// is a programming error and throws, as queueFollowerEmails does.
+async function readAuthor(tx: QueueDb, ideaId: string) {
+  const idea = await tx.idea.findUnique({
+    where: { id: ideaId },
+    select: {
+      number: true,
+      title: true,
+      boardId: true,
+      reviewStatus: true,
+      isAnonymous: true,
+      authorId: true,
+      // A to-one relation cannot be filtered in a select, so the same rule runs in code.
+      author: { select: { emailStoppedAt: true } },
+    },
+  });
+  if (!idea) throw new Error(`Cannot queue email about own post: idea ${ideaId} not found`);
+  const recipient = idea.authorId && idea.author?.emailStoppedAt === null ? idea.authorId : null;
+  return { idea, recipient };
+}
+
+// One post_decided row for the idea's author, in the review's own transaction (#211).
+// `sendAfter` is the decision time, set explicitly because the column's default is the
+// database clock, which a test with a fixed time would never reach.
+export async function queueDecisionEmail(tx: QueueDb, event: PostDecidedEvent): Promise<{ queued: number }> {
+  const { idea, recipient } = await readAuthor(tx, event.ideaId);
+  if (!recipient) return { queued: 0 };
+
+  const payload = postDecidedPayloadSchema.parse({
+    ideaId: event.ideaId,
+    ideaNumber: idea.number,
+    ideaTitle: idea.title,
+    boardId: idea.boardId,
+    isAnonymous: idea.isAnonymous,
+    event:
+      event.decision === "approved"
+        ? { kind: "approved" }
+        : { kind: event.decision, reason: event.reason ?? "" },
+  });
+  const result = await tx.emailOutbox.createMany({
+    data: [
+      {
+        userId: recipient,
+        type: "post_decided",
+        priority: POST_DECIDED_PRIORITY,
+        dedupeKey: postDecidedDedupeKey(event),
+        payload,
+        sendAfter: event.decidedAt,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  return { queued: result.count };
+}
+
+// One post_status row for the idea's author, in the status change's own transaction (#211).
+export async function queuePostStatusEmail(tx: QueueDb, event: PostStatusEvent): Promise<{ queued: number }> {
+  const { idea, recipient } = await readAuthor(tx, event.ideaId);
+  if (idea.reviewStatus !== "approved" || idea.number === null) {
+    throw new Error(`Cannot queue post status email: idea ${event.ideaId} is not approved`);
+  }
+  if (!recipient) return { queued: 0 };
+
+  const payload = postStatusPayloadSchema.parse({
+    ideaNumber: idea.number,
+    ideaTitle: idea.title,
+    boardId: idea.boardId,
+    status: event.status,
+    waitingReason: event.waitingReason,
+  });
+  const result = await tx.emailOutbox.createMany({
+    data: [
+      {
+        userId: recipient,
+        type: "post_status",
+        priority: POST_STATUS_PRIORITY,
+        dedupeKey: postStatusDedupeKey(event),
+        payload,
+        sendAfter: event.changedAt,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  return { queued: result.count };
+}
+
+// What the drain can render, by type. A null result is an invalid payload. A type with no
+// entry is never claimed, so its rows wait unclaimed and burn no attempt until it has one.
+type Renderer = (payload: unknown, to: string, siteUrl: string) => EmailMessage | null;
+
+const RENDERERS = {
+  idea_event: (payload, to, siteUrl) => {
+    const parsed = ideaEventPayloadSchema.safeParse(payload);
+    return parsed.success ? renderIdeaEventEmail(parsed.data, to, siteUrl) : null;
+  },
+  post_decided: (payload, to, siteUrl) => {
+    const parsed = postDecidedPayloadSchema.safeParse(payload);
+    return parsed.success ? renderPostDecidedEmail(parsed.data, to, siteUrl) : null;
+  },
+  post_status: (payload, to, siteUrl) => {
+    const parsed = postStatusPayloadSchema.safeParse(payload);
+    return parsed.success ? renderPostStatusEmail(parsed.data, to, siteUrl) : null;
+  },
+} as const satisfies Partial<Record<EmailType, Renderer>>;
+
+type RenderableType = keyof typeof RENDERERS;
+const RENDERABLE_TYPES = Object.keys(RENDERERS) as RenderableType[];
+const isRenderable = (type: string): type is RenderableType => Object.hasOwn(RENDERERS, type);
 
 type DrainDb = Pick<Prisma.TransactionClient, "$queryRaw" | "user" | "emailOutbox">;
 
@@ -106,9 +236,7 @@ export async function drainOutbox(
     where: { id: { in: [...new Set(claimed.map((row) => row.userId))] } },
     select: { id: true, email: true, emailStoppedAt: true },
   });
-  const emails = new Map(users.map((user) => [user.id, user.email]));
-  // A bounce or complaint stops the account (#209), so mail queued before it is not sent.
-  const stopped = new Set(users.filter((user) => user.emailStoppedAt !== null).map((user) => user.id));
+  const byId = new Map(users.map((user) => [user.id, user]));
 
   let sent = 0;
   let failed = 0;
@@ -125,24 +253,25 @@ export async function drainOutbox(
       });
     };
 
-    const to = emails.get(row.userId);
-    const payload = ideaEventPayloadSchema.safeParse(row.payload);
+    const user = byId.get(row.userId);
     // Permanent failures: a retry cannot fix them, so the row stops at once for a human.
-    if (!to) {
+    if (!user) {
       await fail("no recipient", null, true);
       continue;
     }
-    if (stopped.has(row.userId)) {
+    // A bounce or complaint stops the account (#209), so mail queued before it is not sent.
+    if (user.emailStoppedAt !== null) {
       await fail("email stopped", null, true);
       continue;
     }
-    if (!payload.success) {
+    const message = isRenderable(row.type) ? RENDERERS[row.type](row.payload, user.email, siteUrl) : null;
+    if (!message) {
       await fail("invalid payload", null, true);
       continue;
     }
 
     try {
-      const { providerMessageId } = await sendEmail(mailer, renderIdeaEventEmail(payload.data, to, siteUrl));
+      const { providerMessageId } = await sendEmail(mailer, message);
       await db.emailOutbox.update({
         where: { id: row.id },
         data: { sentAt: now, providerMessageId, lockedUntil: null, lastError: null },

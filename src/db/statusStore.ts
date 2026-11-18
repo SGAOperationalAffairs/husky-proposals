@@ -1,7 +1,7 @@
 import type { StatusStore } from "@/app/_status/changeIdeaStatus";
 import type { Prisma } from "@/generated/prisma/client";
 import { isPublic } from "./ideaSelects";
-import { queueFollowerEmails } from "./outbox";
+import { queueFollowerEmails, queuePostStatusEmail } from "./outbox";
 
 // The Prisma store for start, hold, and deliver (#98). Always handed a transaction
 // client: the idea write, the system update, and the follower email rows land together
@@ -50,6 +50,8 @@ export function prismaStatusStore(tx: Tx): StatusStore {
         select: { id: true },
       });
       await queueFollowerEmails(tx, event);
+      // The author's own email for the same change, in the same transaction (#211).
+      await queuePostStatusEmail(tx, event);
       return { updateId: row.id };
     },
   };

@@ -73,7 +73,8 @@ export function useReviewActions() {
         ({ number }) =>
           toast({
             title: number ? `Approved as #${number}` : "Approved",
-            description: "Anyone with the link can see it now.",
+            description:
+              "Anyone with the link can see it now. Any email to the student can take a while to arrive.",
             board: target.boardId,
           }),
       ),
@@ -85,7 +86,8 @@ export function useReviewActions() {
         () =>
           toast({
             title: "Declined",
-            description: "The student sees your reason and can edit it and send it again.",
+            description:
+              "The student sees your reason and can edit it and send it again. Any email to them can take a while to arrive.",
             board: target.boardId,
           }),
       ),
@@ -97,7 +99,7 @@ export function useReviewActions() {
         () =>
           toast({
             title: "Taken down",
-            description: `#${target.number} is no longer public.`,
+            description: `#${target.number} is no longer public. Any email to the student can take a while to arrive.`,
             board: target.boardId,
           }),
       ),

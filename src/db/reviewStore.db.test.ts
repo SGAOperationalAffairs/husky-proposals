@@ -137,3 +137,82 @@ describeWithDatabase("review decisions (#58)", () => {
     });
   });
 });
+
+describeWithDatabase("emails about your own post (#211): review decisions", () => {
+  const declineReason = "Already planned with Dining Services for the spring term.";
+
+  it("approving queues one post_decided row for the author, at priority 1, due at the decision", async () => {
+    await withSeed(async (tx) => {
+      await decidePost(prismaReviewStore(tx), dabChair, "approve", { ideaId: ideas.pending.id }, NOW);
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ userId: users.student.id, priority: 1, sentAt: null });
+      expect(rows[0]?.sendAfter).toEqual(NOW);
+      expect(rows[0]?.payload).toMatchObject({
+        ideaId: ideas.pending.id,
+        ideaNumber: 157,
+        event: { kind: "approved" },
+      });
+    });
+  });
+
+  it("declining queues one row for the author with the reason", async () => {
+    await withSeed(async (tx) => {
+      await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "decline",
+        { ideaId: ideas.pending.id, reason: declineReason },
+        NOW,
+      );
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.userId).toBe(users.student.id);
+      expect(rows[0]?.payload).toMatchObject({ event: { kind: "declined", reason: declineReason } });
+    });
+  });
+
+  it("taking down queues one row for the author, even when the post is anonymous", async () => {
+    await withSeed(async (tx) => {
+      await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "take_down",
+        { ideaId: ideas.lateNightDining.id, reason: declineReason },
+        NOW,
+      );
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.userId).toBe(users.anonymousAuthor.id);
+      expect(rows[0]?.payload).toMatchObject({
+        isAnonymous: true,
+        ideaNumber: 131,
+        event: { kind: "taken_down", reason: declineReason },
+      });
+    });
+  });
+
+  it("a second decision on the same post adds no second row", async () => {
+    await withSeed(async (tx) => {
+      const store = prismaReviewStore(tx);
+      await decidePost(store, dabChair, "approve", { ideaId: ideas.pending.id }, NOW);
+      const target = await store.find(ideas.pending.id);
+      const second = await store.record({
+        ideaId: ideas.pending.id,
+        from: "pending",
+        patch: { reviewStatus: "declined" },
+        review: {
+          kind: "review",
+          decision: "declined",
+          reason: "Too late",
+          revisionId: target!.latestRevisionId,
+          reviewerId: dabChair.user.id,
+          decidedAt: NOW,
+        },
+        reviewer: { id: dabChair.user.id, email: dabChair.user.email, displayName: dabChair.user.name },
+      });
+      expect(second).toBeNull();
+      expect(await tx.emailOutbox.count({ where: { type: "post_decided" } })).toBe(1);
+    });
+  });
+});
