@@ -5,6 +5,8 @@ import type { BoardCode } from "@/core/boards";
 import type { IdeaStatus } from "@/core/statuses";
 
 export type MyRow = {
+  // The idea's id, which the edit page is keyed by (#128). The real rows from #97 carry it.
+  id?: string;
   number: number;
   title: string;
   board: BoardCode;

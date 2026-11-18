@@ -30,6 +30,10 @@ export function pendingPostsText(count: number): string {
 export const PENDING_LIMIT_REASON =
   "You can't post a new idea right now. You can post again once one of your pending posts is reviewed.";
 
+// What an author reads at the limit when sending a declined post back for review (#128).
+export const RESUBMIT_LIMIT_REASON =
+  "You can't send this again right now. You can send it once one of your pending posts is reviewed.";
+
 // A pending post is due this many days after it was submitted, set per board by the
 // VP or the board's chair or director (#58). The default is pinned to the schema by a
 // test; the bounds are backed by a check constraint on boards.review_due_days.

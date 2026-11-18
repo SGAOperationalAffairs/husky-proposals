@@ -73,10 +73,17 @@ describe("pending idea card, declined (#194, #128)", () => {
     expect(screen.getByText("DECLINED")).toBeTruthy();
   });
 
-  it("offers Edit and Withdraw as links, placeholders that point at My ideas for now", () => {
+  it("links Edit to the edit page and Withdraw to its withdraw section", () => {
+    const editHref = "/me/ideas/6f9c0f5e-2b1d-4a63-9a53-0d3f9b2f1c10/edit";
+    render(<PendingIdeaCard {...declined} editHref={editHref} />);
+    expect(screen.getByRole("link", { name: "Edit" }).getAttribute("href")).toBe(editHref);
+    expect(screen.getByRole("link", { name: "Withdraw" }).getAttribute("href")).toBe(`${editHref}#withdraw`);
+  });
+
+  it("shows neither link without an editHref", () => {
     render(<PendingIdeaCard {...declined} />);
-    expect(screen.getByRole("link", { name: "Edit" }).getAttribute("href")).toBe("/me");
-    expect(screen.getByRole("link", { name: "Withdraw" }).getAttribute("href")).toBe("/me");
+    expect(screen.queryByRole("link", { name: "Edit" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Withdraw" })).toBeNull();
   });
 
   it("still links to no public idea page and shows no count", () => {
