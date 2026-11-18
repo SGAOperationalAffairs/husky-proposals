@@ -1,5 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { X } from "lucide-react";
-import { ERROR_SOURCE_LABELS, type ErrorEntry } from "@/core/errorReport";
+import { ERROR_SOURCE_LABELS, formatErrorsForCopy, type ErrorEntry } from "@/core/errorReport";
 
 type Props = {
   entries: readonly ErrorEntry[];
@@ -15,7 +18,18 @@ const time = (iso: string) =>
 // The on-screen error panel for dev and preview (#191). Dark on the page, so it reads as a
 // tool and not as content. Presentational: the store and the gate live in src/app/_errors/.
 export function ErrorFloater({ entries, latest, onDismiss, onClearAll }: Props) {
+  const [copied, setCopied] = useState(false);
   if (entries.length === 0) return null;
+  // Writes every error as text (#247). A blocked clipboard is ignored, so the panel keeps working.
+  const copyAll = async () => {
+    try {
+      await navigator.clipboard.writeText(formatErrorsForCopy(entries));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // The clipboard can be blocked; the button just does nothing then.
+    }
+  };
   return (
     <section
       aria-label="Errors on this page"
@@ -33,9 +47,14 @@ export function ErrorFloater({ entries, latest, onDismiss, onClearAll }: Props) 
             </h2>
             <p className="text-sm">Shown on dev and preview only.</p>
           </div>
-          <button type="button" onClick={onClearAll} className="text-sm underline underline-offset-4">
-            Clear all
-          </button>
+          <div className="flex shrink-0 items-baseline gap-4">
+            <button type="button" onClick={copyAll} className="text-sm underline underline-offset-4">
+              {copied ? "Copied" : "Copy errors"}
+            </button>
+            <button type="button" onClick={onClearAll} className="text-sm underline underline-offset-4">
+              Clear all
+            </button>
+          </div>
         </div>
         <ul className="mt-2 max-h-80 overflow-y-auto">
           {entries.map((entry) => (
