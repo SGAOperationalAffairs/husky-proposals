@@ -49,6 +49,10 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 - **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
 - **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`. The soft launch runs on `dev.proposals`, which deploys from `dev`, so `v0.9.0` on `main` is a checkpoint, not the build testers use.
 - **Cadence:** release when a milestone's work is verified on `dev.proposals`. Weekly during launch.
+- **Production migrations.** Production is migrated by hand, never by the release itself (#248).
+  1. Before merging the release pull request, list the pending migrations with `git diff --stat main..dev -- prisma/migrations` and confirm each one only adds (#203).
+  2. After merging, open Actions, then migrate, then "Run workflow" on `main` with target `production`, and approve the run.
+  3. Check the log lists exactly those migrations and ends with "up to date".
 
 ### Hotfixes
 
@@ -60,6 +64,7 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 
 - Pull requests may only add to the schema (expand). Removals come in a later release (contract).
 - Previews share the `dev` database, so a destructive migration in an open pull request would break every preview and `dev.proposals`.
+- Previews never migrate it. Only a push to `dev` does, through `.github/workflows/migrate.yml` (#248).
 
 ### The sign-in stand-in
 
