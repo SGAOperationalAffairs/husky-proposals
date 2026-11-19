@@ -10,18 +10,33 @@ const student: Session = {
   roles: rolesFromPositions([]),
 };
 
+const LINK_SECRET = "k".repeat(40);
+const formWith = (token: string) => {
+  const form = new FormData();
+  form.set("token", token);
+  return form;
+};
+
 let headerValues: Record<string, string | null> = {};
 let currentSession: Session | null = student;
 
-const store = { set: vi.fn(async () => undefined) };
+const store = { set: vi.fn(async () => undefined), turnOff: vi.fn(async () => undefined) };
 const getSession = vi.fn(async () => currentSession);
+const db = vi.fn(() => ({}));
+let environment: { APP_ENV: string; DATABASE_URL?: string; EMAIL_LINK_SECRET?: string } = {
+  APP_ENV: "dev",
+  DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
+  EMAIL_LINK_SECRET: LINK_SECRET,
+};
+
+vi.mock("@/env", () => ({ env: () => environment }));
 
 vi.mock("next/headers", () => ({
   headers: async () => ({ get: (name: string) => headerValues[name] ?? null }),
 }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn(), unstable_rethrow: vi.fn() }));
 vi.mock("@/auth/session", () => ({ getSession: () => getSession(), signInUrl: vi.fn() }));
-vi.mock("@/db/runtime", () => ({ db: () => ({}) }));
+vi.mock("@/db/runtime", () => ({ db: () => db() }));
 vi.mock("@/db/emailSettingsStore", () => ({ prismaEmailSettingsStore: () => store }));
 
 const own = { origin: "https://proposals.northeasternsga.com", host: "proposals.northeasternsga.com" };
@@ -32,7 +47,14 @@ describe("setEmailSettingAction (#211)", () => {
     headerValues = own;
     currentSession = student;
     store.set.mockClear();
+    store.turnOff.mockClear();
     getSession.mockClear();
+    db.mockClear();
+    environment = {
+      APP_ENV: "dev",
+      DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
+      EMAIL_LINK_SECRET: LINK_SECRET,
+    };
   });
 
   it("refuses a request from another site before the session or the store is touched", async () => {
@@ -77,5 +99,61 @@ describe("setEmailSettingAction (#211)", () => {
       error: { code: "invalid" },
     });
     expect(store.set).not.toHaveBeenCalled();
+  });
+});
+
+describe("unsubscribeAction (#212)", () => {
+  const userId = "00000000-0000-4000-8000-0000000000a1";
+
+  beforeEach(() => {
+    headerValues = own;
+    store.turnOff.mockClear();
+    getSession.mockClear();
+    db.mockClear();
+    environment = {
+      APP_ENV: "dev",
+      DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
+      EMAIL_LINK_SECRET: LINK_SECRET,
+    };
+  });
+
+  it("refuses a request from another site before the database or the store is touched", async () => {
+    headerValues = foreign;
+    const { signUnsubscribeToken } = await import("@/email/unsubscribeToken");
+    const { unsubscribeAction } = await import("./actions");
+    const token = signUnsubscribeToken(LINK_SECRET, "digest", userId);
+    expect(await unsubscribeAction(null, formWith(token))).toEqual({
+      ok: false,
+      error: { code: "cross_origin" },
+    });
+    expect(db).not.toHaveBeenCalled();
+    expect(store.turnOff).not.toHaveBeenCalled();
+  });
+
+  it("turns the digest off for the token's student, with no session", async () => {
+    const { signUnsubscribeToken } = await import("@/email/unsubscribeToken");
+    const { unsubscribeAction } = await import("./actions");
+    const token = signUnsubscribeToken(LINK_SECRET, "digest", userId);
+    expect(await unsubscribeAction(null, formWith(token))).toEqual({ ok: true, type: "digest" });
+    expect(store.turnOff).toHaveBeenCalledWith(userId, "digest");
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  it("says invalid for a bad token or a missing field, and writes nothing", async () => {
+    const { unsubscribeAction } = await import("./actions");
+    expect(await unsubscribeAction(null, formWith("digest.nope.nope"))).toEqual({
+      ok: false,
+      error: { code: "invalid" },
+    });
+    expect(await unsubscribeAction(null, new FormData())).toEqual({ ok: false, error: { code: "invalid" } });
+    expect(store.turnOff).not.toHaveBeenCalled();
+  });
+
+  it("in a run with no database it says done and never touches db()", async () => {
+    environment = { APP_ENV: "local" };
+    const { unsubscribeAction } = await import("./actions");
+    expect(await unsubscribeAction(null, formWith("anything"))).toEqual({ ok: true, type: "digest" });
+    expect(db).not.toHaveBeenCalled();
+    expect(store.turnOff).not.toHaveBeenCalled();
   });
 });

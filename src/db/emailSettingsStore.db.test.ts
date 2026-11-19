@@ -64,6 +64,25 @@ describeWithDatabase("notification settings store (#211)", () => {
     });
   });
 
+  it("turnOff writes one row, twice is fine, and it touches no other type or student (#212)", async () => {
+    await withSeed(async (tx) => {
+      const store = prismaEmailSettingsStore(tx);
+      await store.turnOff(maya.id, "digest");
+      await store.turnOff(maya.id, "digest");
+      expect(await tx.emailOptOut.count({ where: { userId: maya.id } })).toBe(1);
+      expect(await tx.emailOptOut.count({ where: { userId: maya.id, type: "digest" } })).toBe(1);
+      expect((await store.read(priya.id)).settings.digest).toBe(true);
+    });
+  });
+
+  it("turnOff for a student with no user row is a no-op and creates nothing (#212)", async () => {
+    await withSeed(async (tx) => {
+      await prismaEmailSettingsStore(tx).turnOff(stranger.id, "digest");
+      expect(await tx.user.count({ where: { id: stranger.id } })).toBe(0);
+      expect(await tx.emailOptOut.count({ where: { userId: stranger.id } })).toBe(0);
+    });
+  });
+
   it("reports stopped from email_stopped_at", async () => {
     await withSeed(async (tx) => {
       const store = prismaEmailSettingsStore(tx);

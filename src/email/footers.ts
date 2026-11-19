@@ -9,6 +9,13 @@ export const followerFooter = (siteUrl: string): string[] => [
   settingsLine(siteUrl),
 ];
 
+// The digest's footer carries the signed unsubscribe link (#212), then the settings line.
+export const digestFooter = (siteUrl: string, unsubscribeLink: string): string[] => [
+  "You get this weekly digest because you follow these ideas.",
+  `Stop the weekly digest: ${unsubscribeLink}`,
+  settingsLine(siteUrl),
+];
+
 export const ownPostFooter = (siteUrl: string): string[] => [
   "You get this email because you posted this idea.",
   settingsLine(siteUrl),
