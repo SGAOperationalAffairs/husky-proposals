@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
-import { setFollow } from "@/app/_follow/setFollow";
+import { setFollow as applyFollow } from "@/app/_follow/setFollow";
+import { ACTION_LIMIT, windowStart } from "@/core/actionLimit";
 import { rolesFromPositions } from "@/core/positions";
 import { prismaFollowStore } from "./followStore";
 import { describeWithDatabase } from "./testing/database";
@@ -18,6 +19,10 @@ const priya: Session = {
   roles: rolesFromPositions([]),
 };
 const where = { userId: priya.user.id, ideaId: ideas.foodPantry.id };
+const NOW = new Date("2026-11-18T14:30:00Z");
+// The action passes a clock; the store tests use one fixed time.
+const setFollow = (store: Parameters<typeof applyFollow>[0], session: Session, raw: unknown) =>
+  applyFollow(store, session, raw, NOW);
 
 describeWithDatabase("follow store (#101)", () => {
   it("following twice leaves one follow row", async () => {
@@ -38,6 +43,37 @@ describeWithDatabase("follow store (#101)", () => {
       expect(await setFollow(store, priya, off)).toEqual({ ok: true, following: false });
       expect(await tx.follow.count({ where })).toBe(0);
       expect(await setFollow(store, priya, off)).toEqual({ ok: true, following: false });
+    });
+  });
+
+  it("refuses to follow a closed or delivered idea and writes nothing (#255)", async () => {
+    await withSeed(async (tx) => {
+      const result = await setFollow(prismaFollowStore(tx), priya, {
+        ideaId: ideas.compostBins.id,
+        following: true,
+      });
+      expect(result).toEqual({ ok: false, error: { code: "closed" } });
+      expect(await tx.follow.count({ where: { userId: priya.user.id, ideaId: ideas.compostBins.id } })).toBe(
+        0,
+      );
+    });
+  });
+
+  it("counts follows toward the abuse limit, and one more in the same minute is refused (#255)", async () => {
+    await withSeed(async (tx) => {
+      // Sets the student's counter to the limit for this minute, rather than making 60 real
+      // calls, which would run past the interactive transaction's time limit.
+      await tx.actionCount.upsert({
+        where: { userId_windowStart: { userId: priya.user.id, windowStart: windowStart(NOW) } },
+        create: { userId: priya.user.id, windowStart: windowStart(NOW), count: ACTION_LIMIT },
+        update: { count: ACTION_LIMIT },
+      });
+      const result = await setFollow(prismaFollowStore(tx), priya, {
+        ideaId: ideas.foodPantry.id,
+        following: true,
+      });
+      expect(result).toEqual({ ok: false, error: { code: "rate_limited" } });
+      expect(await tx.follow.count({ where })).toBe(0);
     });
   });
 

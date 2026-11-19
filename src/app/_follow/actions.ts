@@ -1,7 +1,6 @@
 "use server";
 
 import { headers } from "next/headers";
-import type { Session } from "@/auth/contract";
 import { reportThrows } from "@/app/_errors/reportThrows";
 import { withSession } from "@/auth/gate";
 import { isSameOrigin } from "@/core/sameOrigin";
@@ -12,6 +11,7 @@ import { setFollow } from "./setFollow";
 // The follow action (#101): from our own origin, then a signed-in session, then the
 // rules. A request from another site is refused before the session is read. No cache
 // tag is refreshed: the follower count is leaders only (publicStatsSelect leaves it out).
+// The abuse-limit bump and the write commit in one transaction (#255), as support does.
 type CrossOrigin = { ok: false; error: { code: "cross_origin" } };
 
 async function isOwnOrigin(): Promise<boolean> {
@@ -21,8 +21,8 @@ async function isOwnOrigin(): Promise<boolean> {
 
 const crossOrigin: CrossOrigin = { ok: false, error: { code: "cross_origin" } };
 
-const setFollowingAsSession = withSession((session: Session, raw: unknown) =>
-  setFollow(prismaFollowStore(db()), session, raw),
+const setFollowingAsSession = withSession((session, raw: unknown) =>
+  db().$transaction((tx) => setFollow(prismaFollowStore(tx), session, raw, new Date())),
 );
 
 // Every exported action goes through reportThrows, so a throw shows on dev and preview (#191).

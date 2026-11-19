@@ -1,24 +1,37 @@
 import type { FollowStore } from "@/app/_follow/setFollow";
-import type { Prisma } from "@/generated/prisma/client";
+import type { PrismaClient } from "@/generated/prisma/client";
+import { bumpActionCount } from "./actionLimit";
 import { isPublic } from "./ideaSelects";
 
-// The Prisma store for following (#101).
-type Db = Pick<Prisma.TransactionClient, "idea" | "user" | "follow">;
+// The Prisma store for following (#101). Works with a client or a transaction client,
+// so the bump and the write commit together (#255), as supportStore does.
+type Db = Pick<PrismaClient, "idea" | "user" | "follow" | "actionCount">;
 
 export function prismaFollowStore(db: Db): FollowStore {
   return {
-    findPublicIdea: (ideaId) =>
-      db.idea.findFirst({ where: { id: ideaId, ...isPublic }, select: { id: true } }),
+    findPublicIdea: async (ideaId) => {
+      const idea = await db.idea.findFirst({
+        where: { id: ideaId, ...isPublic, status: { not: null } },
+        select: { id: true, reviewStatus: true, status: true },
+      });
+      // An approved idea has a status; the check narrows the nullable column's type.
+      return idea && idea.status !== null ? { ...idea, status: idea.status } : null;
+    },
 
-    follow: async (user, ideaId) => {
-      // Copied from the session so the follow has a user row to point at, as reviewStore does.
+    ensureUser: async (user) => {
+      // Copied from the session so the follow and the counter have a user row to point at.
       await db.user.upsert({
         where: { id: user.id },
         create: { id: user.id, email: user.email, displayName: user.displayName },
         update: { email: user.email, displayName: user.displayName },
       });
-      // skipDuplicates: a double tap writes one row, never an error.
-      await db.follow.createMany({ data: [{ userId: user.id, ideaId }], skipDuplicates: true });
+    },
+
+    bump: (userId, now) => bumpActionCount(db, userId, now),
+
+    // skipDuplicates: a double tap writes one row, never an error.
+    follow: async (userId, ideaId) => {
+      await db.follow.createMany({ data: [{ userId, ideaId }], skipDuplicates: true });
     },
 
     // deleteMany, so unfollowing when there is no row is fine.
