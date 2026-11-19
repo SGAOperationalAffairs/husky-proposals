@@ -1,5 +1,8 @@
+import type { IdeaCardData } from "@/components/IdeaCard";
 import type { BoardCode } from "@/core/boards";
+import { categoryForBoard, type CATEGORIES } from "@/core/postIdea";
 import type { ReviewStatus } from "@/core/review";
+import type { IdeaStatus } from "@/core/statuses";
 import type { AuthorIdea } from "@/core/viewerShapes";
 import type { PostDraft } from "./draft";
 
@@ -14,6 +17,23 @@ export type EditPostData = {
   reason: string | null;
   values: PostDraft;
 };
+
+// What the similar-ideas check needs from a public wall card (#55): the number, title,
+// category, and status. Only these cross to the client, so a visitor gets nothing the wall
+// does not already show, and no counts, description, or author.
+export type SimilarIdeaData = {
+  number: number;
+  title: string;
+  category: (typeof CATEGORIES)[number];
+  status: IdeaStatus;
+};
+
+export function toSimilarIdeas(cards: IdeaCardData[]): SimilarIdeaData[] {
+  return cards.flatMap((card) => {
+    const category = categoryForBoard(card.board);
+    return category ? [{ number: card.number, title: card.title, category, status: card.status }] : [];
+  });
+}
 
 export function toEditPost(idea: AuthorIdea): EditPostData {
   const latest = idea.review;

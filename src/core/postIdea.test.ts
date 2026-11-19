@@ -134,6 +134,12 @@ describe("similarIdeas", () => {
     expect(similarIdeas({ title: "", category: "dining" }, ideas)).toEqual([]);
   });
 
+  it("keeps extra fields on the ideas it returns (#55)", () => {
+    const withStatus = [{ ...ideas[0]!, status: "in_progress" }];
+    const found = similarIdeas({ title: "Later dining hours", category: "dining" }, withStatus);
+    expect(found[0]?.status).toBe("in_progress");
+  });
+
   it("caps the list so the form stays short", () => {
     const many = Array.from({ length: 20 }, (_, n) => ({
       number: n,

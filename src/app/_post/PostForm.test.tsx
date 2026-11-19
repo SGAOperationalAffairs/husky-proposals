@@ -310,6 +310,35 @@ describe("PostForm, sending the post (#181)", () => {
   });
 });
 
+// Similar ideas while typing the title (#55).
+const SIMILAR = [
+  {
+    number: 101,
+    title: "Later dining hours on weekends",
+    category: "dining" as const,
+    status: "in_progress" as const,
+  },
+];
+
+describe("PostForm, similar ideas (#55)", () => {
+  it("lists a match for the picked board as the title is typed, and keeps the title on a board change", () => {
+    render(<PostForm pendingCount={0} similarIdeas={SIMILAR} />);
+    pickBoard();
+    expect(screen.queryByText("Similar ideas already posted")).toBeNull();
+    fireEvent.change(screen.getByLabelText(/^Title/), { target: { value: "Later dining hours" } });
+    expect(screen.getByRole("link", { name: /#101 Later dining hours on weekends/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Change board/ }));
+    pickBoard(/^Green Initiatives/);
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
+    expect(screen.queryByRole("link", { name: /#101/ })).toBeNull();
+  });
+
+  it("shows nothing in edit mode", () => {
+    render(<PostForm pendingCount={0} edit={edit} similarIdeas={SIMILAR} />);
+    expect(screen.queryByText("Similar ideas already posted")).toBeNull();
+  });
+});
+
 // Edit mode (#128): the same form, prefilled from a declined post, sent through
 // resubmitIdea, with a withdraw section.
 const IDEA_ID = "6f9c0f5e-2b1d-4a63-9a53-0d3f9b2f1c10";

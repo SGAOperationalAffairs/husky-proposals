@@ -72,11 +72,11 @@ export type SimilarCandidate = { number: number; title: string; category: string
 
 // The similar-idea check (#54, #55): a plain word match on the title, against
 // approved ideas in the same board. No AI. Shows at most three, so the form stays short.
-export function similarIdeas(
+export function similarIdeas<T extends SimilarCandidate>(
   draft: { title: string; category: string },
-  ideas: SimilarCandidate[],
+  ideas: T[],
   limit = 3,
-): SimilarCandidate[] {
+): T[] {
   const wanted = new Set(words(draft.title));
   if (wanted.size === 0) return [];
   return ideas
