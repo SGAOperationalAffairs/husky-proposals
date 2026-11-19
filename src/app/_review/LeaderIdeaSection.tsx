@@ -7,6 +7,7 @@ import { env } from "@/env";
 import { parseIdeasNumber } from "@/app/_ideas/data";
 import { usesSampleIdeas } from "@/app/_ideas/source";
 import { IdeaStatusControls } from "@/app/_status/IdeaStatusControls";
+import { CheckInControl } from "@/app/_updates/CheckInControl";
 import { LeaderIdeaControls } from "./LeaderIdeaControls";
 import { toLeaderPanel } from "./present";
 
@@ -41,6 +42,16 @@ export async function LeaderIdeaSection({ params }: { params: PageProps<"/ideas/
           waitingReason={panel.waitingReason}
           closedReason={panel.closedReason}
         />
+      }
+      checkIn={
+        panel.status === "in_progress" ? (
+          <CheckInControl
+            ideaId={panel.ideaId}
+            number={panel.number}
+            board={panel.boardId}
+            cadenceDays={panel.cadenceDays}
+          />
+        ) : undefined
       }
       takeDown={<LeaderIdeaControls ideaId={panel.ideaId} number={panel.number} board={panel.boardId} />}
     />

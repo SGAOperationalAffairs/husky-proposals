@@ -15,6 +15,8 @@ type Props = {
   mayManageStatus: boolean;
   mayTakeDown: boolean;
   status?: ReactNode;
+  // The "Still working, no news" button (#131), for an idea in progress.
+  checkIn?: ReactNode;
   takeDown?: ReactNode;
 };
 
@@ -24,6 +26,7 @@ export function LeaderIdeaPanel({
   mayManageStatus,
   mayTakeDown,
   status,
+  checkIn,
   takeDown,
 }: Props) {
   return (
@@ -36,6 +39,7 @@ export function LeaderIdeaPanel({
         <PosterLine poster={poster} />
       </div>
       {mayManageStatus && status}
+      {mayManageStatus && checkIn}
       {mayTakeDown && takeDown}
     </section>
   );

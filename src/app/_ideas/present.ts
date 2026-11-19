@@ -68,7 +68,11 @@ export function toPage(record: PublicIdeaRecord, now: Date): IdeaPageData {
     timing: labelled<TimeHorizonValue>(TIME_LABELS, idea.timeHorizon),
     waitingReason: idea.status === "waiting" ? (idea.waitingReason ?? undefined) : undefined,
     closedReason: idea.status === "closed" ? (idea.closedReason ?? undefined) : undefined,
-    updates: (record.updates ?? []).map((u) => ({ daysAgo: daysBetween(u.createdAt, now), text: u.body })),
+    updates: (record.updates ?? []).map((u) => ({
+      daysAgo: daysBetween(u.createdAt, now),
+      text: u.body,
+      kind: u.kind,
+    })),
     rank:
       stats.rankInBoard !== null && record.rankOf !== undefined
         ? { position: stats.rankInBoard, of: record.rankOf, board: BOARDS[idea.boardId].category }

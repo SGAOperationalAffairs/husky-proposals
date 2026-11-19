@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { connection } from "next/server";
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { db } from "@/db/runtime";
-import { publicIdeaQueries } from "@/db/publicIdeas";
+import { publicIdeaQueries, type PublicUpdate } from "@/db/publicIdeas";
 import { env } from "@/env";
 import { toCard, toPage } from "./present";
 import { sampleGetIdea, sampleListWall } from "./sample";
@@ -15,7 +15,7 @@ import { IDEAS_TAG, ideaTag } from "./tags";
 // DATABASE_URL read the sample instead (source.ts). Filtering lives in filter.ts.
 
 // The fields an idea's own page adds to its poster (#62).
-export type IdeaUpdate = { daysAgo: number; text: string };
+export type IdeaUpdate = { daysAgo: number; text: string; kind: PublicUpdate["kind"] };
 export type IdeaPageData = IdeaCardData & {
   // Only when the post is not anonymous, and only the display name (docs/data-model.md, gap 6).
   author?: string;

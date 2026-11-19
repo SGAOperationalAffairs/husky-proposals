@@ -111,7 +111,7 @@ describe("presenting a public idea (#60)", () => {
     expect(toPage(record({ closedReason: "Stale text." }), NOW).closedReason).toBeUndefined();
   });
 
-  it("turns updates into days ago and text", () => {
+  it("turns updates into days ago, text, and kind (#131)", () => {
     const page = toPage(
       record(
         {},
@@ -125,8 +125,8 @@ describe("presenting a public idea (#60)", () => {
       NOW,
     );
     expect(page.updates).toEqual([
-      { daysAgo: 2, text: "Began drafting." },
-      { daysAgo: 9, text: "Still working, no news." },
+      { daysAgo: 2, text: "Began drafting.", kind: "board" },
+      { daysAgo: 9, text: "Still working, no news.", kind: "check_in" },
     ]);
   });
 

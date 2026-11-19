@@ -35,6 +35,23 @@ describe("UpdateList (#130)", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("labels a system row as a status change, and no other row (#131)", () => {
+    render(
+      <UpdateList
+        updates={[
+          { key: "a", daysAgo: 1, text: "Met with dining services.", kind: "board" },
+          { key: "b", daysAgo: 2, text: "Still working, no news.", kind: "check_in" },
+          { key: "c", daysAgo: 9, text: "The board started work on this idea.", kind: "system" },
+          { key: "d", daysAgo: 10, text: "No kind given." },
+        ]}
+      />,
+    );
+    expect(screen.getAllByText("Status change")).toHaveLength(1);
+    const items = screen.getAllByRole("listitem");
+    expect(items[2]?.textContent).toBe("9 days agoStatus changeThe board started work on this idea.");
+    expect(items[0]?.textContent).toBe("YesterdayMet with dining services.");
+  });
+
   it("renders nothing when there are no updates", () => {
     const { container } = render(<UpdateList updates={[]} />);
     expect(container.innerHTML).toBe("");

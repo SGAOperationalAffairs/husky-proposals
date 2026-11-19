@@ -52,6 +52,8 @@ export type LeaderPanelData = {
   closedReason: string | null;
   mayManageStatus: boolean;
   mayTakeDown: boolean;
+  // The board's update schedule, for the check-in toast's "next one due" (#131).
+  cadenceDays: number;
   reviewerLabel: string | null;
   poster: PosterData;
 };
@@ -120,7 +122,7 @@ export function toApprovedRow({ idea }: ApprovedItemData, now: Date): ApprovedRo
 // `reviewBoards` is boardsFor(viewer, "review"). The badge shows only on a board the
 // viewer reviews, which is exactly when they may take the idea down.
 export function toLeaderPanel(
-  { idea, mayTakeDown, mayManageStatus }: LeaderIdeaData,
+  { idea, mayTakeDown, mayManageStatus, cadenceDays }: LeaderIdeaData,
   reviewBoards: BoardCode[],
 ): LeaderPanelData {
   // Like the number, an approved idea always has a status (#98).
@@ -134,6 +136,7 @@ export function toLeaderPanel(
     closedReason: idea.closedReason,
     mayManageStatus,
     mayTakeDown,
+    cadenceDays,
     reviewerLabel: mayTakeDown ? reviewerLabel(reviewBoards) : null,
     poster: posterOf(idea),
   };

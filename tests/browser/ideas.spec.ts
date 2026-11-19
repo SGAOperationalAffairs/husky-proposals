@@ -64,6 +64,25 @@ test.describe("idea page (#62)", () => {
     await expect(page.getByRole("button", { name: "Take down" })).toHaveCount(0);
   });
 
+  test("updates are their own card, newest first, with status changes labeled (#131)", async ({ page }) => {
+    await page.goto("/ideas/103");
+    await expect(page.getByRole("heading", { name: "Updates", level: 2 })).toBeVisible();
+    const items = page.getByRole("list", { name: "Updates" }).getByRole("listitem");
+    await expect(items).toHaveCount(2);
+    await expect(items.nth(0)).toContainText("Began drafting a plan for the pilot");
+    await expect(items.nth(0)).not.toContainText("Status change");
+    await expect(items.nth(1)).toContainText("Status change");
+    await expect(items.nth(1)).toContainText("The board started work on this idea.");
+    await expect(page.getByRole("button", { name: "Still working, no news" })).toHaveCount(0);
+  });
+
+  test("an idea with no updates says so (#131)", async ({ page }) => {
+    await page.goto("/ideas/131");
+    await expect(page.getByRole("heading", { name: "Updates", level: 2 })).toBeVisible();
+    await expect(page.getByText("No updates yet.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Still working, no news" })).toHaveCount(0);
+  });
+
   // The shell streams first, so the status is 200 (see not-found.tsx); assert what students see.
   test("unknown or malformed numbers say no idea has that number", async ({ page }) => {
     for (const path of ["/ideas/9999", "/ideas/abc"]) {

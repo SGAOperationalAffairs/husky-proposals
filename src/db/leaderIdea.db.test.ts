@@ -59,6 +59,13 @@ describeWithDatabase("the leader read for an idea page (#59)", () => {
     });
   });
 
+  it("returns the idea's board update schedule (#131)", async () => {
+    await withSeed(async (tx) => {
+      const result = await leaderIdeaByNumber(tx, dabChair, ideas.foodPantry.number!);
+      expect(result?.cadenceDays).toBeGreaterThan(0);
+    });
+  });
+
   it("gives a student and a visitor nothing", async () => {
     await withSeed(async (tx) => {
       expect(await leaderIdeaByNumber(tx, student, ideas.foodPantry.number!)).toBeNull();

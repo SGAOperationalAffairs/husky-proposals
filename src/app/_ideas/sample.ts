@@ -35,8 +35,8 @@ const EXTRA: Record<number, Partial<Extra>> = {
     cost: "$5k+",
     timing: "Within a year",
     updates: [
-      { daysAgo: 2, text: "Began drafting a plan for the pilot with Student Life." },
-      { daysAgo: 9, text: "The board started work on this idea." },
+      { daysAgo: 2, text: "Began drafting a plan for the pilot with Student Life.", kind: "board" },
+      { daysAgo: 9, text: "The board started work on this idea.", kind: "system" },
     ],
   },
   131: {
@@ -52,7 +52,7 @@ const EXTRA: Record<number, Partial<Extra>> = {
     scale: "Small",
     cost: "$1k to $5k",
     waitingReason: "Waiting on university partners",
-    updates: [{ daysAgo: 14, text: "Waiting on university partners." }],
+    updates: [{ daysAgo: 14, text: "Waiting on university partners.", kind: "system" }],
   },
   151: { anonymous: true, proposedDaysAgo: 18, scale: "Small", cost: "Under $1k", timing: "This semester" },
   156: { authorName: "Sam R.", proposedDaysAgo: 12, scale: "Small", cost: "Under $1k" },
@@ -90,6 +90,7 @@ const CLOSED_EXTRA: Partial<Extra> = {
     {
       daysAgo: 6,
       text: "The Green Initiatives Board closed this idea: Facilities is not adding new outdoor power this year.",
+      kind: "system",
     },
   ],
 };
