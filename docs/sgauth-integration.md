@@ -44,17 +44,18 @@ SGAuth only says which positions a user holds. Husky Proposals decides what each
   - Run SGAuth locally at `auth.sga.localhost:3000`, using a personal Neon branch.
   - Never use bare `localhost`. The cookie will not be set there.
   - Chrome resolves `*.localhost` on its own. Firefox and Safari need a hosts-file entry.
-- **Until SGAuth's session endpoint ships,** we build against a development-only stand-in. It lets a developer pick a fake user and positions, and returns the same shape as the session endpoint. Swapping in the real SGAuth changes one module.
+- **SGAuth's session endpoint is live** (SGAuth #40, closed October 23, 2026). Our code still uses a development-only stand-in in local and test runs, which lets a developer pick a fake user and positions. Swapping in the real SGAuth changes one module. Real sign-in on `dev.proposals` waits on our own wiring (#177) and the manual test (#180), not on SGAuth.
+- **The SGAuth SDK is published on npm as `@nusgaops/sgauth`** (version 0.2.0, October 25, 2026). Our code does not import it yet. `CLAUDE.md` names the package `@sgaoperations/sgauth`, which does not exist on npm, so one of the two names needs correcting.
 
 ## What SGAuth must finish
 
-Status as of October 15, 2026.
+Status as of November 17, 2026, checked against SGAuth's issues. Every milestone is closed.
 
 | Milestone | SGAuth tickets | What it changes for us | Status |
 |---|---|---|---|
-| **1. Cookie verdict** | #115 | Proves the shared cookie works across browsers. A failure changes our sign-in plan. | Open |
-| **2. Ready to connect** | #40 session endpoint, #68 product registry, #43 safe redirects | Real sign-in on `dev.proposals`. The SDK (#69 to #71) is nice to have. Without it, we write a small client against #40's documented response. | Open |
-| **3. Students can sign up** | #30 verification, #31 reset, #32 email, #114 scanner-safe links, #37 login pages, #103 production launch | The launch gate. Students cannot sign in until verification email works and SGAuth is live in production. | Open |
+| **1. Cookie verdict** | #115 | Proves the shared cookie works across browsers. A failure changes our sign-in plan. | Closed October 25 |
+| **2. Ready to connect** | #40 session endpoint, #68 product registry, #43 safe redirects | Real sign-in on `dev.proposals`. | Closed October 23 to 25 |
+| **3. Students can sign up** | #30 verification, #31 reset, #32 email, #114 scanner-safe links, #37 login pages, #103 production launch | The launch gate: verification email and production SGAuth. | Closed October 24 to 28 |
 
 Already done in SGAuth:
 - #29: email and password sign-in for northeastern.edu.

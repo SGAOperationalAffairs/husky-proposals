@@ -1,16 +1,55 @@
 # Timeline
 
-When each epic is planned, mapped to `feature-map.md`. Read this to find what is due. The task detail is in `build-plan.md`. The issues are the live backlog.
+Updated November 18, 2026. The beta is now a beta on production (`main`). Dates are set in the project's Target date field once #279 lands. Until then, this file is the source. Each section starts with what to do. Tickets are GitHub issues; `#N` is the issue number.
 
-Updated November 9, 2026. Dates are inclusive. The chart renders on GitHub. Status reflects work merged into `dev` as of that date; "Done" marks finished epics and checkpoints, and "Active" marks work in progress.
+## What to do now
 
-## Today, in short
+Wednesday, November 18, to Friday, November 20 (feature freeze)
 
-To find what is due on a given day:
-1. Find the rows in "By epic" whose dates include today. Those epics are in flight.
-2. Check "Checkpoints and gates" for anything dated this week.
-3. An epic past its end date that is not done is late. Say so, and apply the cut list in `build-plan.md`.
-4. Check the review queue. If more than 5 pull requests are approved and waiting, merging comes before new work.
+- **Work on the pre-launch bugs (#259).** Plan and build #255 (follow limit), #256 (live pages and pending count), #257 (post and email data), #258 (sign-out and hold rule), and #273 (day arithmetic). Each merges by Friday or moves after the beta.
+- **Merge #253, then #254** (decision emails, split from #211). #251 is superseded. Close it without merging.
+- **Merge #249** (error floater). It is ready for review.
+- **Finish #126** (leader panel: start, hold, finish, reopen). It is on the Feature freeze milestone. Merge by Friday or move.
+- **Finish #131** (idea page updates and the still-working button). E8 ends Friday.
+- **Merge #275** (the docs batch: timeline, SGAuth status, refactor rules).
+- **Write the send route (#210).** Decision emails queue until it exists. It goes on the Feature freeze milestone, with #211.
+- **Set the milestones (needs a go-ahead):** move the E10 readiness milestone to December 13 and put #210 on Feature freeze.
+
+## What to do next
+
+Monday, November 23, to Friday, November 27
+
+- **Work on hardening and training (E10, Nov 23 to 24).** Switch (#213), quota alerts (#214), backups (#215), load test (#216), reviewer guide and training (#217), release checklist (#218). The E10 end date is December 13. These are readiness work, so they may slip into the beta week.
+- **Get production sign-in ready (#180, E3).** The beta runs on `proposals.northeasternsga.com`, so real sign-in there needs Husky Proposals registered in SGAuth's product registry and the production subdomain added. Both are listed under "To ask" in `sgauth-integration.md`. This is a registration, not a test-account allowlist. Luis raises it with Eli. Needed by Friday, November 27.
+- **Confirm the production database path.** List pending migrations (`git diff --stat main..dev -- prisma/migrations`) and check each only adds. Production migrations are run by hand, before the release merges (`dev-process.md`).
+- **Confirm the beta gates (E10).** The switch (#213), alerts (#214), and backups (#215) are needed before real use on production. The load test (#216), guide and training (#217), and release checklist (#218) go with them. See Decisions.
+- **Work on Target dates (#279).** Start with the tickets this timeline names. This is what makes `npm run due` work.
+
+## What to do during the beta
+
+Monday, November 30, to Sunday, December 13
+
+- **Release v0.9.0 from `dev` to `main`** with `/port:release`, once #255 to #258 and #273 are merged. Run the production migration by hand first. Then announce the beta to SGA members and the five boards.
+- **Finish the E6 leftovers (#95, #102).** Both are late; E6 ended November 15.
+- **Ship beta fixes as releases.** Fixes for the beta go to `main` by release, or as a hotfix for production breakage. `dev` keeps its feature work.
+- **Start post-launch hygiene (#272) on December 1, on `dev`.** Refactors ship in regular releases, one pattern per pull request, each passing the full test suite.
+
+## What to do after
+
+- **Finals, December 14 to 20.** Production breakage only.
+- **Winter break, from December 21.** Build the tabling form (E11, estimated; only if it fits). Build the promotion switch (E12) only if feedback asks for it.
+- **Spring prep, January 4 to 17 (E13).** Onboarding, comms, fixes from the beta. Run the five-student test January 13 to 17.
+- **Student launch, Wednesday, January 20.** Tag v1.0.0 (proposed).
+
+## Decisions
+
+- **November 18:** E10 readiness ends December 13 (not the freeze). #210 sits on the Feature freeze milestone.
+- **November 18:** Hygiene opens December 1 on `dev`, not in the beta.
+- **November 18:** #126 and #211 merge by November 20, or move after the beta.
+- **November 18:** The beta (formerly the beta) runs on production, from `main`, as v0.9.0 on November 30. It does not run on dev.
+- **November 18:** No dev allowlist requests. Dev sign-in is not part of the beta, so #180's dev test is replaced by the production sign-in gate above.
+- **Open:** whether the beta gates on E10 (switch, alerts, backups) hold the November 30 date, or whether the beta starts with a smaller set.
+- **Open:** whether the D14 data policy must be in place before the beta, since the beta uses real student data on production.
 
 ## Chart
 
@@ -25,66 +64,65 @@ gantt
     Spring classes start          :milestone, 2027-01-13, 0d
     section Foundations
     E1 Foundations                :done, e1, 2026-10-26, 7d
-    E1 Playground and direction   :done, e1p, 2026-10-28, 5d
-    Creative direction picked     :milestone, done, 2026-11-01, 0d
     E2 Data and core rules        :done, e2, 2026-10-26, 7d
     E3 Sign-in stand-in           :done, e3a, 2026-10-26, 7d
+    E3 SGAuth test on dev         :crit, e3t, 2026-11-18, 9d
     section Student side
+    E4 Posting and review         :done, e4, 2026-11-02, 16d
     E5 Browsing and share link    :done, e5, 2026-11-02, 7d
-    E6 Student actions            :e6, 2026-11-09, 7d
+    E6 Student actions            :active, e6, 2026-11-09, 10d
     section SGA side
-    E4 Posting and review         :active, e4, 2026-11-02, 7d
-    E7 SGA queue and decisions    :active, e7, 2026-11-09, 7d
-    E8 Updates and names          :e8, 2026-11-16, 5d
+    E7 SGA queue and decisions    :active, e7, 2026-11-09, 14d
+    E8 Updates and names          :active, e8, 2026-11-16, 5d
     section Email
-    E9 Email                      :e9, 2026-11-02, 19d
+    E9 Email                      :active, e9, 2026-11-02, 19d
     section Readiness
-    E10 Monitoring and backups    :e10a, 2026-11-09, 7d
-    E3 SGAuth connection spike    :crit, e3s, 2026-11-09, 7d
-    E3 Switch to SGAuth           :e3b, 2026-11-16, 5d
+    E10 Launch readiness          :active, e10, 2026-11-09, 35d
+    Pre-launch bug fixes          :crit, bugs, 2026-11-18, 12d
     Feature freeze                :milestone, 2026-11-20, 0d
-    E10 Hardening and training    :e10c, 2026-11-23, 2d
-    SGA soft launch               :crit, soft, 2026-11-30, 14d
-    section After the soft launch
+    Beta on production              :crit, soft, 2026-11-30, 14d
+    section After the beta
     E11 Tabling form              :e11, 2026-12-21, 21d
     E12 Promotion switch          :e12, 2026-12-21, 7d
     E13 Spring launch prep        :e13, 2027-01-04, 9d
     E13 Five-student test         :e13t, 2027-01-13, 5d
     Student launch                :milestone, crit, 2027-01-20, 0d
+    Post-launch hygiene           :hyg, 2026-12-01, 30d
     Monthly summary and export    :2027-01-25, 21d
 ```
 
 ## By epic
 
-| Epic | Start | End | Notes |
+| Epic | Start | End | Status and notes |
 |---|---|---|---|
-| E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, port (#26, #43, #32). Playground and Poster direction (#29) |
-| E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules module, viewer shapes (#44, #49, #50, #51, #53). Issue #46 is still open as a tracker |
-| E3 Sign-in and roles | Oct 26 | Nov 20 | **Stand-in done** (#45, #93). Connection spike Nov 9 to 15 (not started as of Nov 9) and switch Nov 16 to 20 not started. Fallback to the stand-in if not working by Nov 27 |
-| E4 Posting and review | Nov 2 | Nov 8 | **Active.** Post form and server action merged (#54, #55). Review actions and queue query merged (#58). Resubmit (#56, PR #153) and the review screen (#59, PR #155) are merged. Past its Nov 8 end date and not marked done, so late |
-| E5 Public browsing | Nov 2 | Nov 8 | **Done.** Public queries and caching (#60), ideas list and idea page (#61), share dialog with copy link, poster, and flyer (#81), list view (#138). Issue #48 is still open as a tracker |
-| E9 Email | Nov 2 | Nov 20 | Outbox first, decision emails, then digests. Follow action and follower email outbox (#101, PR #174) are in review, not approved |
-| E6 Student actions | Nov 9 | Nov 15 | **Active.** Support (#94, PR #173) merged. Follow (#101, PR #174) in review. "I'll participate" (#95) and remembered taps (#102) open and not yet in the pipeline. No epic tracking issue |
-| E7 SGA queue and decisions | Nov 9 | Nov 15 | **Active.** Queue page with row styles (#124) and review actions (#58) merged. Start, hold, and deliver controls (#98, #126) still open |
-| E10 Launch readiness | Nov 9 | Dec 13 | **Not started.** No issues filed yet for monitoring and backups, load test, accessibility pass, training, or launch tasks. Monitoring and backups Nov 9 to 15; hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13, with a screen reader pass. Accessibility checks run in every UI pull request. The soft launch does not depend on #80 (the dev Vercel project): `main` already deploys production through the SGA project's Git integration, so the soft launch can run without it. #80 still helps by giving a deployed dev build without merging to `main`, and by catching production issues earlier |
-| E8 Updates and names | Nov 16 | Nov 20 | |
-| E11 Tabling form | Dec 21 | Jan 11 | Estimated at the freeze. Built over winter break if it fits |
-| E12 Promotion switch | Dec 21 | Dec 27 | Off by default; only if feedback asks for it |
-| E13 Spring launch prep | Jan 4 | Jan 17 | Onboarding, comms, fixes from the soft launch, and the five-student test Jan 13 to 17 |
+| E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, Poster direction (#29) |
+| E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules, viewer shapes |
+| E3 Sign-in and roles | Oct 26 | Nov 27 | **Partly done.** SGAuth session endpoint and production milestone closed. Production needs Husky Proposals registered in SGAuth's registry and the production subdomain (#180). The stand-in runs in local and test only |
+| E4 Posting and review | Nov 2 | Nov 8 | **Done, late.** Post, review, and resubmit (#128, PR #240), edit page |
+| E5 Public browsing | Nov 2 | Nov 8 | **Done.** Queries, caching, ideas list, idea page, share dialog, poster and flyer |
+| E6 Student actions | Nov 9 | Nov 15 | **Active, late.** Support and follow merged. Follow's abuse limit (#255) is pre-launch. "I'll participate" (#95) and signed-out taps (#102) open |
+| E7 SGA queue and decisions | Nov 9 | Nov 22 | **Active.** Queue and status actions merged. Closed status (#237, PR #250) merged November 18. Finish and reopen (#126) open |
+| E8 Updates and names | Nov 16 | Nov 20 | **Active.** Leader Updates tab merged. Idea page updates and still-working button (#131) open |
+| E9 Email | Nov 2 | Nov 20 | **Active, at risk.** Resend mailer and bounce webhook merged. Decision and status emails split into #253 and #254. Send route (#210) not started |
+| E10 Launch readiness | Nov 9 | Dec 13 | **Active.** Dev migrations merged (#248, PR #252). Switch (#213), alerts (#214), backups (#215), load test (#216), reviewer guide (#217), release checklist (#218) open |
+| Pre-launch bug fixes | Nov 18 | Nov 29 | **Active.** Epic #259. Must merge before the beta |
+| E11 Tabling form | Dec 21 | Jan 10 | Estimated. Built over winter break if it fits |
+| E12 Promotion switch | Dec 21 | Dec 27 | Off by default. Only if feedback asks for it |
+| E13 Spring launch prep | Jan 4 | Jan 17 | Onboarding, comms, fixes, five-student test Jan 13 to 17 |
+| Post-launch hygiene | Dec 1 | Dec 31 | **Planned.** Epic #272, on `dev`. About one refactor a week |
 
 ## Checkpoints and gates
 
 | Date | What | If missed |
 |---|---|---|
-| Nov 1 | D9 (appeals) answered | The decline message ships without an appeal line |
-| Sun Nov 1 | **Done.** Creative direction picked in the playground (T0.3b): the Poster direction (#29) | E5 builds on the Civic look and restyles later through the tokens |
-| Sun Nov 8 | E4 and E5 merged into `dev`. **E5 is merged. E4 is late: #56 and #59 are merged into dev (PRs #153, #155), but the epic is not marked done** | Cut list items 1 to 2 (`build-plan.md`) |
-| Nov 9 to 15 | SGAuth connection spike: one real sign-in on `dev.proposals`, and the environment checklist written. **Not started as of Nov 9** | The switch starts late; watch the Nov 27 fallback |
-| Sun Nov 15 | E6 and E7 merged. E7 and E6 are in progress; E10 monitoring and backups have no issue yet. **D16 (who sees names) decided Nov 2, option A.** Executive Board names still to be implemented | Cut list items 3 to 4 |
-| Mon Nov 16 | SGAuth milestone 2 done | Stay on the stand-in; the switch moves to Nov 23 to 24 |
-| Fri Nov 20 | Feature freeze. Estimate the tabling form (E11) | Anything unmerged moves after the soft launch |
-| Fri Nov 27 | Real sign-in working on `dev.proposals` | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
-| Mon Nov 30 | Soft launch starts on `dev.proposals` (deployed from `dev`), SGA members on the dev.auth allowlist. `dev` takes fixes only until Dec 13 | |
+| Nov 1 | D9 (appeals) answered | Decline message ships without an appeal line |
+| Nov 8 | E4 and E5 merged | Cut list items 1 to 2 |
+| Nov 9 to 15 | SGAuth connection spike; manual sign-in test (#180) open | Switch starts late |
+| Nov 16 | SGAuth session endpoint (done early, Oct 23) | None |
+| Wed Nov 18 | Merged today: #250, #252, #236, #234, #233, #240, #239, #241. At risk: send route (#210) | Decision emails wait for #210 |
+| Fri Nov 20 | Feature freeze. #255 to #258 and #273 merge or move. #126 and #211 merge or move | Anything unmerged moves after the beta |
+| Fri Nov 27 | Production sign-in ready: Husky Proposals registered in SGAuth, production subdomain added (#180) | The beta waits. The stand-in does not run in production |
+| Mon Nov 30 | Beta starts: v0.9.0 released from `main`, production migrated | The beta waits |
 | Dec 14 to 20 | Finals: production breakage only | |
-| Before Jan 20 | SGAuth milestone 3 live in production. D14 data policy in place | The student launch waits |
-| Wed Jan 20 | Student launch, `v1.0.0` (proposed) | |
+| Before Jan 20 | SGAuth milestone 3 live in production; D14 data policy in place | Student launch waits |
+| Wed Jan 20 | Student launch, v1.0.0 (proposed) | |

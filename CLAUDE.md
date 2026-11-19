@@ -65,7 +65,8 @@ The prototype predates several decisions. Reuse its layout, spacing, components,
 - **Every new post is reviewed before it shows.** The board's chair or director, or the VP of Campus Affairs, reviews within 2 to 3 days. A declined post gets a written reason, and the student can edit and resubmit.
 - **Privacy.**
   - Support counts are public.
-  - Which students supported an idea, and who posted, is visible to SGA leaders only.
+  - Which students supported an idea is visible to SGA leaders only.
+  - On a post that is not anonymous, students see the poster's name. Leaders see who posted in every case.
   - A student can post "anonymous to students": other students see no name. Only the board's reviewer and the VP of Campus Affairs see who posted it, and the form says so.
   - Tell students this plainly on the site.
 - **Public, but not searchable.** Anyone with the link can browse approved ideas without signing in. Every page sends `noindex`. Pending and declined posts are never public.
@@ -79,7 +80,7 @@ The prototype predates several decisions. Reuse its layout, spacing, components,
 ## Statuses
 
 - Review status of a post: `pending`, `approved`, `declined`.
-- Idea status once approved: `collecting_support`, `under_review`, `in_progress`, `delivered`, `waiting` (with a reason students see).
+- Idea status once approved: `collecting_support`, `in_progress`, `waiting` (with a reason students see), `delivered`, `closed` (with a reason, reversible by reopening).
 
 ## Scope
 
@@ -91,10 +92,10 @@ Version 1 covers the five Campus Affairs boards:
 - SC (Sustainability Committee)
 
 Targets (see `docs/timeline.md`):
-- **SGA soft launch,** November 30 to December 13, 2026, on `proposals-dev` for SGA members and the five boards.
+- **SGA beta,** November 30 to December 13, 2026, on production (`proposals.northeasternsga.com`), released as v0.9.0 from `main`, for SGA members and the five boards.
 - **Student launch,** proposed for January 20, 2027, the week after spring classes start.
 
-**Soft launch scope:**
+**Beta scope:**
 - sign-in;
 - posting with the anonymous option;
 - the review queue with reasons;
@@ -138,7 +139,7 @@ Decided October 22, 2026 (PRD D20, with reasons and what was turned down in the 
 | App | Next.js App Router, TypeScript (strict) |
 | Database | Neon Postgres, a project in the SGAOperations Neon org |
 | Database access | Prisma 7 with the Postgres adapter: pooled connection at runtime, direct connection for migrations |
-| Sign-in | SGAuth, through `@sgaoperations/sgauth`. A dev-only stand-in until the SDK ships |
+| Sign-in | SGAuth, through `@nusgaops/sgauth`. A local and test stand-in only; the app refuses to start with it anywhere else |
 | Email | Resend, behind a provider-neutral `sendEmail()` and an outbox |
 | Hosting | Vercel at `proposals.northeasternsga.com`, with previews at `proposals-dev.northeasternsga.com`. The plan (Hobby or a team plan) is still to confirm with Eli |
 | Scheduled jobs | GitHub Actions calling secret-protected routes (no Vercel cron) |
@@ -252,10 +253,11 @@ Patterns are filled in as the first features land, and no later than the fifth f
   - No tape, tilt, or tear-off tabs. Light and dark mode.
 - **Test the review flow and the privacy rules carefully.** They are the riskiest parts.
 
-## Current state (October 29, 2026)
+## Current state (November 18, 2026)
 
-- The scaffold is in (#26): Next.js 16, Tailwind on our tokens, lint and style guards, `verify` with tests on Chromium and WebKit, CI, the environment module, and Prisma generating offline.
-- **Next:** the test harness with a Neon test branch (T0.4), migrations (T0.5), and the sign-in stand-in (T0.6). Dates are in `docs/timeline.md`.
-- **To confirm with Eli:** the Vercel plan, the product registration, and the subdomains.
-- **Waiting on SGAuth:** see the milestones in `docs/sgauth-integration.md`.
+- The core app is built: posting and review, the ideas list and idea page, support and follow, the SGA queue and status actions, updates, the People page, and email (Resend mailer and bounce webhook). Decision emails wait for the send route (#210).
+- **Next:** the pre-launch bug epic (#259), then the beta. Dates are in `docs/timeline.md`.
+- **The beta runs on production.** It is released as v0.9.0 from `main` on November 30. Production needs Husky Proposals in SGAuth's product registry and the production subdomain, which Luis is raising with Eli.
+- **To confirm with Eli:** the Vercel plan, and the production registration above.
+- **Waiting on SGAuth:** see the milestones in `docs/sgauth-integration.md`. The production milestone (#103) is closed.
 - **Waiting on Luis to raise with Eli:** the email limit proposal (PRD D19).
