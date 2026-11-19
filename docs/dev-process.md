@@ -47,8 +47,8 @@ Agreed October 23, 2026. This matches SGAuth and port's two-branch mode.
 ### Releases
 
 - **Run `/port:release`.** It proposes the version bump from what merged, opens the `dev` to `main` pull request with a changelog, and ships on merge.
-- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` at the SGA soft launch (November 30), `v1.0.0` at the student launch (proposed January 20, 2027). See `timeline.md`. The soft launch runs on `dev.proposals`, which deploys from `dev`, so `v0.9.0` on `main` is a checkpoint, not the build testers use.
-- **Cadence:** release when a milestone's work is verified on `dev.proposals`. Weekly during launch.
+- **Versions are semver tags.** `v0.x` before launch: `v0.9.0` is the SGA beta, released from `main` to production on November 30. `v1.0.0` is the student launch (proposed January 20, 2027). See `timeline.md`. The beta runs on `proposals.northeasternsga.com`, so `v0.9.0` is the build the beta testers use.
+- **Cadence:** release when a milestone's work is verified on `dev.proposals`. Weekly during the beta and launch, with hotfixes for production breakage only.
 - **Production migrations.** Production is migrated by hand, never by the release itself (#248).
   1. Before merging the release pull request, list the pending migrations with `git diff --stat main..dev -- prisma/migrations` and confirm each one only adds (#203).
   2. After merging, open Actions, then migrate, then "Run workflow" on `main` with target `production`, and approve the run.
