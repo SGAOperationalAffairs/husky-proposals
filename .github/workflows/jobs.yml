@@ -1,0 +1,103 @@
+# Scheduled jobs (#210). Every 15 minutes this calls a secret-protected route on the site,
+# which does one batch of work and answers with its counts. The first job is the email send.
+#
+# Why it is built this way:
+# - GitHub Actions calls the route, not Vercel cron (CLAUDE.md, Stack), so the schedule, its
+#   secret, and its history live with the rest of our automation.
+# - A schedule runs only from the default branch (`dev`), so this file does nothing until it is
+#   merged, and the `dev-jobs` environment is limited to the `dev` branch.
+# - GitHub may run a schedule late or skip it under load. Every route is safe to run late or
+#   twice: the outbox claim lock and `FOR UPDATE SKIP LOCKED` keep two runs from sending a row twice.
+# - The minutes are off the top of the hour, when GitHub's schedules are busiest
+#   (docs/scalability.md).
+# - Secrets reach each step through `env:`, never inlined in the command, and `curl` runs
+#   without a checkout. The JSON reply is the audit line in the log.
+# - No `continue-on-error`. A non-2xx reply fails the run, and GitHub emails whoever last
+#   touched the schedule.
+#
+# To add a job (#212): add a route under src/app/api/jobs/<name>/ that calls
+# `handleJobRequest`, then add one step beside "Send queued email" in each job below.
+# Each environment holds the secret `JOBS_SECRET`, the variable `SITE_URL`, and, only when
+# Vercel's deployment protection is on, the secret `VERCEL_BYPASS`.
+name: jobs
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A late run waits for the one before it. A running job is never cancelled.
+concurrency:
+  group: jobs
+  cancel-in-progress: false
+
+jobs:
+  dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: dev-jobs
+    steps:
+      - name: Check the settings are set
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$JOBS_SECRET" ]; then
+            echo "::error::JOBS_SECRET is not set on the dev-jobs environment"
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::SITE_URL is not set on the dev-jobs environment"
+            exit 1
+          fi
+      - name: Send queued email
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          VERCEL_BYPASS: ${{ secrets.VERCEL_BYPASS }}
+        run: |
+          set --
+          if [ -n "$VERCEL_BYPASS" ]; then
+            set -- -H "x-vercel-protection-bypass: $VERCEL_BYPASS"
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 -X POST \
+            -H "Authorization: Bearer $JOBS_SECRET" "$@" \
+            "$SITE_URL/api/jobs/send-email"
+
+  # Off until the repository variable PRODUCTION_JOBS is `on`, so nothing runs against
+  # production before the beta. It reaches production only once this file is released to `main`.
+  production:
+    if: vars.PRODUCTION_JOBS == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: production-jobs
+    steps:
+      - name: Check the settings are set
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$JOBS_SECRET" ]; then
+            echo "::error::JOBS_SECRET is not set on the production-jobs environment"
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::SITE_URL is not set on the production-jobs environment"
+            exit 1
+          fi
+      - name: Send queued email
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          VERCEL_BYPASS: ${{ secrets.VERCEL_BYPASS }}
+        run: |
+          set --
+          if [ -n "$VERCEL_BYPASS" ]; then
+            set -- -H "x-vercel-protection-bypass: $VERCEL_BYPASS"
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 -X POST \
+            -H "Authorization: Bearer $JOBS_SECRET" "$@" \
+            "$SITE_URL/api/jobs/send-email"

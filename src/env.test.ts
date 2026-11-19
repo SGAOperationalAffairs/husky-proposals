@@ -30,6 +30,14 @@ describe("test database environment (#104)", () => {
   });
 });
 
+// What dev and production must set besides the database (#210).
+const DEPLOYED = {
+  RESEND_API_KEY: "re_test_key",
+  EMAIL_FROM: "Husky Proposals <updates@example.com>",
+  JOBS_SECRET: "a".repeat(32),
+  SITE_URL: "https://proposals.example.com",
+};
+
 describe("environment (#26)", () => {
   it("accepts a valid local environment", () => {
     expect(parseEnv({ APP_ENV: "local" })).toEqual({
@@ -68,8 +76,11 @@ describe("environment (#26)", () => {
     }
     for (const APP_ENV of ["local", "test"]) expect(() => parseEnv({ APP_ENV }), APP_ENV).not.toThrow();
     expect(
-      parseEnv({ APP_ENV: "production", DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db" })
-        .DATABASE_URL,
+      parseEnv({
+        ...DEPLOYED,
+        APP_ENV: "production",
+        DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
+      }).DATABASE_URL,
     ).toBeDefined();
   });
 
@@ -88,13 +99,14 @@ describe("environment (#26)", () => {
   it("keeps the sign-in stand-in off by default in every environment (#45)", () => {
     for (const APP_ENV of ["local", "test", "preview", "dev", "production"]) {
       const DATABASE_URL = "postgresql://user:pw@host-pooler.example.com/db";
-      expect(parseEnv({ APP_ENV, DATABASE_URL }).AUTH_STAND_IN, APP_ENV).toBe(false);
+      expect(parseEnv({ ...DEPLOYED, APP_ENV, DATABASE_URL }).AUTH_STAND_IN, APP_ENV).toBe(false);
     }
   });
 
   it("accepts AUTH_STAND_IN=0 in production (#45)", () => {
     expect(
       parseEnv({
+        ...DEPLOYED,
         APP_ENV: "production",
         AUTH_STAND_IN: "0",
         DATABASE_URL: "postgresql://user:pw@host-pooler.example.com/db",
@@ -118,6 +130,7 @@ describe("environment (#26)", () => {
 describe("SGAuth sign-in environment (#177)", () => {
   const DATABASE_URL = "postgresql://user:pw@host-pooler.example.com/db";
   const sgauth = {
+    ...DEPLOYED,
     APP_ENV: "dev",
     AUTH_SGAUTH: "1",
     SGAUTH_URL: "https://dev.auth.northeasternsga.com",
@@ -133,7 +146,7 @@ describe("SGAuth sign-in environment (#177)", () => {
   });
 
   it("is off by default and needs no SGAuth variables then", () => {
-    expect(parseEnv({ APP_ENV: "dev", DATABASE_URL }).AUTH_SGAUTH).toBe(false);
+    expect(parseEnv({ ...DEPLOYED, APP_ENV: "dev", DATABASE_URL }).AUTH_SGAUTH).toBe(false);
   });
 
   it("is refused outside dev, naming SGAuth", () => {
@@ -179,7 +192,7 @@ describe("email environment (#209)", () => {
   const base = { APP_ENV: "local" };
   const email = { RESEND_API_KEY: "re_test_key", EMAIL_FROM: "Husky Proposals <updates@example.com>" };
 
-  it("is all optional, so nothing is needed to start", () => {
+  it("is all optional on local, so nothing is needed to start", () => {
     const parsed = parseEnv(base);
     expect(parsed.RESEND_API_KEY).toBeUndefined();
     expect(parsed.EMAIL_FROM).toBeUndefined();
@@ -212,6 +225,67 @@ describe("email environment (#209)", () => {
     expect(parsed.RESEND_API_KEY).toBeUndefined();
     expect(parsed.EMAIL_FROM).toBeUndefined();
     expect(parsed.RESEND_WEBHOOK_SECRET).toBeUndefined();
+  });
+});
+
+describe("scheduled jobs environment (#210)", () => {
+  const DATABASE_URL = "postgresql://user:pw@host-pooler.example.com/db";
+  const deployed = { ...DEPLOYED, DATABASE_URL };
+
+  it("accepts a complete dev and production environment", () => {
+    for (const APP_ENV of ["dev", "production"]) {
+      const parsed = parseEnv({ ...deployed, APP_ENV });
+      expect(parsed.JOBS_SECRET, APP_ENV).toBe(DEPLOYED.JOBS_SECRET);
+      expect(parsed.SITE_URL, APP_ENV).toBe("https://proposals.example.com");
+    }
+  });
+
+  it("requires each of the four on dev and production, naming it", () => {
+    for (const APP_ENV of ["dev", "production"]) {
+      for (const name of ["RESEND_API_KEY", "EMAIL_FROM", "JOBS_SECRET", "SITE_URL"]) {
+        const message = new RegExp(`${name} is required when APP_ENV is dev or production`);
+        expect(() => parseEnv({ ...deployed, APP_ENV, [name]: undefined }), `${APP_ENV} ${name}`).toThrow(
+          message,
+        );
+        expect(() => parseEnv({ ...deployed, APP_ENV, [name]: "" }), `${APP_ENV} ${name}`).toThrow(message);
+      }
+    }
+  });
+
+  it("starts on local, test, and preview without them", () => {
+    for (const APP_ENV of ["local", "test", "preview"]) {
+      const parsed = parseEnv({ APP_ENV, DATABASE_URL });
+      expect(parsed.JOBS_SECRET, APP_ENV).toBeUndefined();
+      expect(parsed.SITE_URL, APP_ENV).toBeUndefined();
+    }
+  });
+
+  it("refuses a secret shorter than 32 characters", () => {
+    expect(() => parseEnv({ ...deployed, APP_ENV: "dev", JOBS_SECRET: "a".repeat(31) })).toThrow(
+      /JOBS_SECRET must be at least 32/,
+    );
+    expect(() => parseEnv({ APP_ENV: "local", JOBS_SECRET: "a".repeat(31) })).toThrow(/JOBS_SECRET/);
+  });
+
+  it("reduces SITE_URL to its origin", () => {
+    expect(
+      parseEnv({ ...deployed, APP_ENV: "dev", SITE_URL: "https://dev.example.com/some/path/" }).SITE_URL,
+    ).toBe("https://dev.example.com");
+  });
+
+  it("requires https for SITE_URL on dev and production only", () => {
+    for (const APP_ENV of ["dev", "production"]) {
+      expect(() => parseEnv({ ...deployed, APP_ENV, SITE_URL: "http://dev.example.com" }), APP_ENV).toThrow(
+        /SITE_URL must be an https/,
+      );
+    }
+    expect(parseEnv({ APP_ENV: "local", SITE_URL: "http://localhost:3000" }).SITE_URL).toBe(
+      "http://localhost:3000",
+    );
+  });
+
+  it("names SITE_URL when it is not a URL", () => {
+    expect(() => parseEnv({ APP_ENV: "local", SITE_URL: "not a url" })).toThrow(/SITE_URL/);
   });
 });
 

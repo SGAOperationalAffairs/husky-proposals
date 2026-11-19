@@ -128,7 +128,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
       await queueFollowerEmails(tx, started);
       const mailer = createCapturingMailer();
 
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 2, failed: 0 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 2,
+        failed: 0,
+        deferred: 0,
+      });
       expect(mailer.sent.map((message) => message.to).sort()).toEqual([first!.email, second!.email].sort());
       expect(mailer.sent.every((message) => message.subject === "Proposal #103: In progress")).toBe(true);
       expect(mailer.sent[0]?.text).toContain(`${SITE}/ideas/103`);
@@ -141,7 +145,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
       ).toBe(true);
 
       // A second drain finds nothing to send.
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(2);
     });
   });
@@ -153,7 +161,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
       const mailer = createCapturingMailer();
 
       mailer.failNext(new Error("provider down"));
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
       const failedRow = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
       expect(failedRow).toMatchObject({ sentAt: null, attempts: 1, lastError: "provider down" });
 
@@ -161,10 +173,15 @@ describeWithDatabase("follower email outbox (#101)", () => {
       expect(await drainOutbox(tx, mailer, new Date(NOW.getTime() + MINUTE), { siteUrl: SITE })).toEqual({
         sent: 0,
         failed: 0,
+        deferred: 0,
       });
 
       const later = new Date(NOW.getTime() + 6 * MINUTE);
-      expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({ sent: 1, failed: 0 });
+      expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 0,
+      });
       const sentRow = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
       expect(sentRow).toMatchObject({ attempts: 2, lastError: null });
       expect(sentRow.sentAt).toEqual(later);
@@ -178,12 +195,20 @@ describeWithDatabase("follower email outbox (#101)", () => {
         data: buildOutboxRow({ userId: user!.id, payload: { nope: true }, sendAfter: NOW }),
       });
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { userId: user!.id, type: "idea_event" } });
       expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "invalid payload" });
 
       const later = new Date(NOW.getTime() + 60 * MINUTE);
-      expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
+      expect(await drainOutbox(tx, mailer, later, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(0);
     });
   });
@@ -196,7 +221,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
       await tx.user.update({ where: { id: user!.id }, data: { emailStoppedAt: FIXTURE_TIME } });
       const mailer = createCapturingMailer();
 
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(0);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { userId: user!.id } });
       expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "email stopped" });
@@ -215,7 +244,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
       });
 
       fake.respondNext({ status: 422, body: { name: "validation_error", message: "Invalid `to` field." } });
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
 
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
       expect(row.sentAt).toBeNull();
@@ -236,7 +269,11 @@ describeWithDatabase("follower email outbox (#101)", () => {
         fetch: fake.fetch,
       });
 
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 1, failed: 0 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 0,
+      });
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
       expect(row).toMatchObject({ providerMessageId: "fake-resend-1", lastError: null });
     });
@@ -256,10 +293,112 @@ describeWithDatabase("follower email outbox (#101)", () => {
         },
       });
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 0 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(0);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
       expect(row).toMatchObject({ sentAt: null, lockedUntil: null, attempts: 0, lastError: null });
+    });
+  });
+});
+
+describeWithDatabase("paced drain and throttle deferral (#210)", () => {
+  const throttle = (retryAfterMs: number) =>
+    Object.assign(new Error("Resend 429 rate_limit_exceeded"), { retryAfterMs });
+
+  it("paces between sends, not before the first", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 3);
+      await queueFollowerEmails(tx, started);
+      let paced = 0;
+      const pace = async () => void (paced += 1);
+      expect(await drainOutbox(tx, createCapturingMailer(), NOW, { siteUrl: SITE, pace })).toEqual({
+        sent: 3,
+        failed: 0,
+        deferred: 0,
+      });
+      expect(paced).toBe(2);
+    });
+  });
+
+  it("a throttle defers the failing row and the rest without counting the attempt", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 3);
+      await queueFollowerEmails(tx, started);
+      const mailer = createCapturingMailer();
+      mailer.failNext(throttle(60_000));
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 3,
+      });
+      const rows = await tx.emailOutbox.findMany({ where: { type: "idea_event" } });
+      expect(rows.every((row) => row.attempts === 0 && row.sentAt === null)).toBe(true);
+      expect(rows.every((row) => row.lockedUntil?.getTime() === NOW.getTime() + 60_000)).toBe(true);
+      expect(rows.filter((row) => row.lastError !== null)).toHaveLength(1);
+
+      // Inside the wait nothing is claimed; after it all three go out.
+      const inside = new Date(NOW.getTime() + 30_000);
+      expect(await drainOutbox(tx, mailer, inside, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 0,
+      });
+      const after = new Date(NOW.getTime() + 61_000);
+      expect(await drainOutbox(tx, mailer, after, { siteUrl: SITE })).toEqual({
+        sent: 3,
+        failed: 0,
+        deferred: 0,
+      });
+    });
+  });
+
+  it("a throttle after a success defers only what is left", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 3);
+      await queueFollowerEmails(tx, started);
+      const mailer = createCapturingMailer();
+      let calls = 0;
+      const pace = async () => {
+        calls += 1;
+        if (calls === 1) mailer.failNext(throttle(60_000));
+      };
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE, pace })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 2,
+      });
+      const rows = await tx.emailOutbox.findMany({ where: { type: "idea_event" } });
+      expect(rows.filter((row) => row.sentAt !== null)).toHaveLength(1);
+      expect(rows.filter((row) => row.sentAt === null).every((row) => row.attempts === 0)).toBe(true);
+    });
+  });
+
+  it("a Resend daily quota reply defers with a 60-minute lock", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 2);
+      await queueFollowerEmails(tx, started);
+      const fake = createFakeResendFetch();
+      const mailer = createResendMailer({
+        apiKey: "re_test_key",
+        from: "updates@example.com",
+        fetch: fake.fetch,
+      });
+      fake.respondNext({ status: 429, body: { name: "daily_quota_exceeded", message: "Quota used." } });
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 0,
+        deferred: 2,
+      });
+      const rows = await tx.emailOutbox.findMany({ where: { type: "idea_event" } });
+      expect(rows.every((row) => row.lockedUntil?.getTime() === NOW.getTime() + 60 * MINUTE)).toBe(true);
+      expect(rows.every((row) => row.attempts === 0)).toBe(true);
     });
   });
 });
@@ -398,7 +537,11 @@ describeWithDatabase("emails about your own post (#211)", () => {
     await withSeed(async (tx) => {
       await queueDecisionEmail(tx, pendingDecline);
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 1, failed: 0 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 0,
+      });
       const [message] = mailer.sent;
       expect(message?.to).toBe(users.student.email);
       expect(message?.subject).toBe(`Your post was not approved: ${ideas.pending.title}`);
@@ -427,7 +570,11 @@ describeWithDatabase("emails about your own post (#211)", () => {
       await queueDecisionEmail(tx, pendingDecline);
       await tx.emailOptOut.create({ data: { userId: users.student.id, type: "post_decided" } });
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(0);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "post_decided" } });
       expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "turned off" });
@@ -439,7 +586,11 @@ describeWithDatabase("emails about your own post (#211)", () => {
       await queuePostStatusEmail(tx, started);
       await tx.user.update({ where: { id: users.student.id }, data: { emailStoppedAt: FIXTURE_TIME } });
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
       expect(mailer.sent).toHaveLength(0);
     });
   });
@@ -458,7 +609,11 @@ describeWithDatabase("emails about your own post (#211)", () => {
         });
       }
       const mailer = createCapturingMailer();
-      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 2 });
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 2,
+        deferred: 0,
+      });
       const rows = await tx.emailOutbox.findMany({ where: { type: { in: [...ownPostTypes] } } });
       expect(rows.every((row) => row.lastError === "invalid payload")).toBe(true);
     });
