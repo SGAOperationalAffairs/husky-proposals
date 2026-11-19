@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import type { PostIdeaInput } from "@/core/postIdea";
@@ -13,6 +14,7 @@ import { fieldErrors, postMessage, TRY_AGAIN, WITHDRAW_SIGNED_OUT } from "./mess
 export type PostPhase = "idle" | "posting" | "saved" | "signed_out" | "withdrawing" | "withdrawn";
 
 export function usePostIdea(ideaId?: string) {
+  const router = useRouter();
   const [phase, setPhase] = useState<PostPhase>("idle");
   const [message, setMessage] = useState<string | null>(null);
   // The real double-submit guard. State updates are not synchronous, so a fast second
@@ -35,10 +37,17 @@ export function usePostIdea(ideaId?: string) {
       if (result.ok) {
         clearDraft(ideaId);
         setPhase("saved");
+        // The page's pending count is read on the server (#96).
+        router.refresh();
         return null;
       }
       reportActionOutcome(result);
       const { error } = result;
+      if (error.code === "pending_limit") {
+        // The server knows of more pending posts than the page showed, for example from
+        // another tab. Refresh so the count and the blocked state catch up (#96).
+        router.refresh();
+      }
       if (error.code === "signed_out") {
         onSignedOut?.();
         setPhase("signed_out");

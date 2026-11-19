@@ -11,6 +11,7 @@ import { postIdea, resubmitIdea, withdrawIdea } from "./actions";
 // valid submit shows for each result of the post action (#181).
 
 vi.mock("./actions", () => ({ postIdea: vi.fn(), resubmitIdea: vi.fn(), withdrawIdea: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const post = vi.mocked(postIdea);
 const resubmit = vi.mocked(resubmitIdea);
 const withdraw = vi.mocked(withdrawIdea);
@@ -139,6 +140,14 @@ describe("PostForm", () => {
     expect(screen.queryByRole("status")).toBeNull();
     expect(submit().getAttribute("aria-disabled")).toBeNull();
     expect(submit().getAttribute("aria-describedby")).toBe(line.id);
+  });
+
+  it("shows no count line to a visitor, and still allows posting (#96)", () => {
+    render(<PostForm pendingCount={null} />);
+    pickBoard();
+    expect(screen.queryByText(/pending post/)).toBeNull();
+    expect(submit().getAttribute("aria-disabled")).toBeNull();
+    expect(submit().getAttribute("aria-describedby")).toBeNull();
   });
 
   it("marks the fields that need fixing, with a message that says what to do", () => {

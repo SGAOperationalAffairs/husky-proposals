@@ -6,6 +6,7 @@ import { SAMPLE_OWN_POST } from "./sample";
 // The edit page's body (#128): the reviewer's reason before the form for a declined
 // post, and a status block with no form for any other status.
 vi.mock("./actions", () => ({ postIdea: vi.fn(), resubmitIdea: vi.fn(), withdrawIdea: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 afterEach(cleanup);
 

@@ -12,10 +12,14 @@ vi.mock("./actions", () => ({
   withdrawIdea: (arg: unknown) => withdrawIdea(arg),
 }));
 
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+
 import { usePostIdea } from "./usePostIdea";
 
 let disable: (() => void) | undefined;
 beforeEach(() => {
+  refresh.mockReset();
   disable = enableReports();
   postIdea.mockReset();
   resubmitIdea.mockReset();
@@ -99,6 +103,39 @@ describe("usePostIdea error reporting (#207)", () => {
     postIdea.mockResolvedValue({ ok: false, error });
     await click();
     expect(getSnapshot().entries).toEqual([]);
+  });
+});
+
+// The page's pending count is read on the server, so the hook refreshes the page when
+// the count may have changed: after a post, and when the server says the limit is reached (#96).
+describe("usePostIdea page refresh (#96)", () => {
+  it("refreshes after a post is saved", async () => {
+    postIdea.mockResolvedValue({ ok: true, id: "abc" });
+    await click();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes when the server says the limit is reached", async () => {
+    postIdea.mockResolvedValue({ ok: false, error: { code: "pending_limit", limit: 3 } });
+    await click();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["signed_out", { code: "signed_out" }],
+    ["invalid", { code: "invalid", fields: ["title"] }],
+    ["cross_origin", { code: "cross_origin" }],
+    ["unexpected", { code: "unexpected" }],
+  ])("does not refresh on %s", async (_name, error) => {
+    postIdea.mockResolvedValue({ ok: false, error });
+    await click();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("does not refresh when the action throws", async () => {
+    postIdea.mockRejectedValue(new Error("down"));
+    await click();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
 

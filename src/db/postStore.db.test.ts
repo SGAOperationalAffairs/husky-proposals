@@ -5,6 +5,7 @@ import type { BoardCode } from "@/core/boards";
 import { ideaForViewer } from "@/core/viewerShapes";
 import { rolesFromPositions } from "@/core/positions";
 import { describeWithDatabase } from "@/db/testing/database";
+import { buildIdea } from "@/db/testing/factories";
 import { users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 import { prismaPostStore } from "./postStore";
@@ -49,6 +50,33 @@ describeWithDatabase("posting an idea (#54)", () => {
       expect(await store.countPending(fresh.user.id)).toBe(3);
       const fourth = await submitPost(store, fresh, post({ title: "A fourth idea" }), NOW);
       expect(fourth).toEqual({ ok: false, error: { code: "pending_limit", limit: 3 } });
+    });
+  });
+
+  // The post form shows this count (#96). Only the author's own pending posts count.
+  it("counts only this author's pending posts: 0, then 2, then 3", async () => {
+    const author = users.secondStudent.id;
+    await withSeed(async (tx) => {
+      const store = prismaPostStore(tx);
+      // The seed gives this student an approved post; add one in every other state, and
+      // pending posts for another student.
+      await tx.idea.createMany({
+        data: [
+          buildIdea({ authorId: author, reviewStatus: "declined" }),
+          buildIdea({ authorId: author, reviewStatus: "withdrawn" }),
+          buildIdea({ authorId: users.student.id }),
+          buildIdea({ authorId: users.student.id }),
+        ],
+      });
+      expect(await store.countPending(author)).toBe(0);
+
+      await tx.idea.createMany({
+        data: [buildIdea({ authorId: author }), buildIdea({ authorId: author })],
+      });
+      expect(await store.countPending(author)).toBe(2);
+
+      await tx.idea.create({ data: buildIdea({ authorId: author }) });
+      expect(await store.countPending(author)).toBe(3);
     });
   });
 
