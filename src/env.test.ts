@@ -35,6 +35,7 @@ const DEPLOYED = {
   RESEND_API_KEY: "re_test_key",
   EMAIL_FROM: "Husky Proposals <updates@example.com>",
   JOBS_SECRET: "a".repeat(32),
+  EMAIL_LINK_SECRET: "b".repeat(32),
   SITE_URL: "https://proposals.example.com",
 };
 
@@ -190,7 +191,11 @@ describe("SGAuth sign-in environment (#177)", () => {
 
 describe("email environment (#209)", () => {
   const base = { APP_ENV: "local" };
-  const email = { RESEND_API_KEY: "re_test_key", EMAIL_FROM: "Husky Proposals <updates@example.com>" };
+  const email = {
+    RESEND_API_KEY: "re_test_key",
+    EMAIL_FROM: "Husky Proposals <updates@example.com>",
+    EMAIL_LINK_SECRET: "b".repeat(32),
+  };
 
   it("is all optional on local, so nothing is needed to start", () => {
     const parsed = parseEnv(base);
@@ -225,6 +230,35 @@ describe("email environment (#209)", () => {
     expect(parsed.RESEND_API_KEY).toBeUndefined();
     expect(parsed.EMAIL_FROM).toBeUndefined();
     expect(parsed.RESEND_WEBHOOK_SECRET).toBeUndefined();
+  });
+});
+
+describe("email link secret environment (#212)", () => {
+  const email = { RESEND_API_KEY: "re_test_key", EMAIL_FROM: "Husky Proposals <updates@example.com>" };
+
+  it("is optional when email is not configured", () => {
+    expect(parseEnv({ APP_ENV: "local" }).EMAIL_LINK_SECRET).toBeUndefined();
+    expect(parseEnv({ APP_ENV: "local", EMAIL_LINK_SECRET: "" }).EMAIL_LINK_SECRET).toBeUndefined();
+  });
+
+  it("refuses to start with RESEND_API_KEY set and no EMAIL_LINK_SECRET", () => {
+    expect(() => parseEnv({ APP_ENV: "local", ...email })).toThrow(
+      /EMAIL_LINK_SECRET is required when RESEND_API_KEY is set/,
+    );
+    expect(() => parseEnv({ APP_ENV: "local", ...email, EMAIL_LINK_SECRET: "" })).toThrow(
+      /EMAIL_LINK_SECRET/,
+    );
+  });
+
+  it("refuses a secret shorter than 32 characters", () => {
+    expect(() => parseEnv({ APP_ENV: "local", EMAIL_LINK_SECRET: "a".repeat(31) })).toThrow(
+      /EMAIL_LINK_SECRET must be at least 32/,
+    );
+  });
+
+  it("accepts a long enough secret with email configured", () => {
+    const parsed = parseEnv({ APP_ENV: "local", ...email, EMAIL_LINK_SECRET: "a".repeat(32) });
+    expect(parsed.EMAIL_LINK_SECRET).toBe("a".repeat(32));
   });
 });
 

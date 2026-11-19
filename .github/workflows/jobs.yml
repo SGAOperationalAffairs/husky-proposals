@@ -15,7 +15,10 @@
 # - No `continue-on-error`. A non-2xx reply fails the run, and GitHub emails whoever last
 #   touched the schedule.
 #
-# To add a job (#212): add a route under src/app/api/jobs/<name>/ that calls
+# The weekly digest's daily pass (#212) is its own workflow, digests.yml, because it runs once
+# a day at a fixed time, not every 15 minutes.
+#
+# To add a job that runs on this schedule: add a route under src/app/api/jobs/<name>/ that calls
 # `handleJobRequest`, then add one step beside "Send queued email" in each job below.
 # Each environment holds the secret `JOBS_SECRET`, the variable `SITE_URL`, and, only when
 # Vercel's deployment protection is on, the secret `VERCEL_BYPASS`.
