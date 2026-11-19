@@ -16,10 +16,11 @@ import { PAGE } from "@/components/pageTransition";
 import { WithdrawDialog } from "@/components/WithdrawDialog";
 import { BOARDS } from "@/core/boards";
 import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
-import { PENDING_LIMIT, PENDING_LIMIT_REASON, RESUBMIT_LIMIT_REASON, pendingPostsText } from "@/core/review";
+import { PENDING_LIMIT, PENDING_LIMIT_REASON, RESUBMIT_LIMIT_REASON } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 import { clearDraft, loadDraft, saveDraft, type PostDraft } from "./draft";
 import { FIELD_MESSAGES, postMessage, RESUBMIT_SIGNED_OUT } from "./messages";
+import { PendingCount } from "./PendingCount";
 import { usePostIdea } from "./usePostIdea";
 
 // The post form (#55). A student picks the board first; the rest of the form
@@ -76,7 +77,8 @@ function toInput(values: Values) {
 
 type Props = {
   // How many of this student's posts are waiting for review (PENDING_LIMIT caps them).
-  pendingCount: number;
+  // Null for a visitor: there is no count to show (#96).
+  pendingCount: number | null;
   // The declined post being edited, and its values to start from (#128).
   edit?: { ideaId: string; values: PostDraft };
   // grid: the boards in two columns. line: all five in one row on a wide panel (#55 playground).
@@ -89,7 +91,7 @@ export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = 
   const [values, setValues] = useState<Values>(edit?.values ?? EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const ids = useId();
-  const blocked = pendingCount >= PENDING_LIMIT;
+  const blocked = pendingCount !== null && pendingCount >= PENDING_LIMIT;
   const formRef = useRef<HTMLFormElement>(null);
   const limitRef = useRef<HTMLParagraphElement>(null);
   const focusFirstError = useRef(false);
@@ -218,6 +220,10 @@ export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = 
   }
 
   const editPath = ideaId ? `/me/ideas/${ideaId}/edit` : undefined;
+  // Only ids that render: no count line for a visitor, no limit line below the limit.
+  const describedBy =
+    [pendingCount !== null && `${ids}-pending`, blocked && `${ids}-limit`].filter(Boolean).join(" ") ||
+    undefined;
 
   return (
     <div className="flex flex-col gap-8">
@@ -495,9 +501,7 @@ export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = 
                     {message}
                   </p>
                 )}
-                <p id={`${ids}-pending`} className={blocked ? "font-semibold" : "text-muted"}>
-                  {pendingPostsText(pendingCount)}
-                </p>
+                <PendingCount id={`${ids}-pending`} count={pendingCount} />
                 <Button
                   variant="primary"
                   type="submit"
@@ -505,7 +509,7 @@ export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = 
                   // aria-disabled, not disabled, so the button keeps focus; the in-flight guard in
                   // usePostIdea is what stops a second post (#181).
                   aria-disabled={blocked || posting || undefined}
-                  aria-describedby={blocked ? `${ids}-pending ${ids}-limit` : `${ids}-pending`}
+                  aria-describedby={describedBy}
                 >
                   {editing
                     ? posting
