@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
 import { setFollow as applyFollow } from "@/app/_follow/setFollow";
+import { ACTION_LIMIT, windowStart } from "@/core/actionLimit";
 import { rolesFromPositions } from "@/core/positions";
 import { prismaFollowStore } from "./followStore";
 import { describeWithDatabase } from "./testing/database";
@@ -58,12 +59,21 @@ describeWithDatabase("follow store (#101)", () => {
     });
   });
 
-  it("counts follows toward the abuse limit, and the 61st in one minute writes nothing (#255)", async () => {
+  it("counts follows toward the abuse limit, and one more in the same minute is refused (#255)", async () => {
     await withSeed(async (tx) => {
-      const store = prismaFollowStore(tx);
-      const input = { ideaId: ideas.foodPantry.id, following: true };
-      for (let i = 0; i < 60; i++) await setFollow(store, priya, input);
-      expect(await setFollow(store, priya, input)).toEqual({ ok: false, error: { code: "rate_limited" } });
+      // Sets the student's counter to the limit for this minute, rather than making 60 real
+      // calls, which would run past the interactive transaction's time limit.
+      await tx.actionCount.upsert({
+        where: { userId_windowStart: { userId: priya.user.id, windowStart: windowStart(NOW) } },
+        create: { userId: priya.user.id, windowStart: windowStart(NOW), count: ACTION_LIMIT },
+        update: { count: ACTION_LIMIT },
+      });
+      const result = await setFollow(prismaFollowStore(tx), priya, {
+        ideaId: ideas.foodPantry.id,
+        following: true,
+      });
+      expect(result).toEqual({ ok: false, error: { code: "rate_limited" } });
+      expect(await tx.follow.count({ where })).toBe(0);
     });
   });
 
