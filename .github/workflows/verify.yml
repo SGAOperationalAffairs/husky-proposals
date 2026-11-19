@@ -23,6 +23,10 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Playwright's own image has the browsers and their system libraries, so the job does not
+    # install them with apt at run time (#282). The tag must match @playwright/test in the
+    # lock file; src/ci/playwrightImage.test.ts fails when they drift.
+    container: mcr.microsoft.com/playwright:v1.64.1-resolute
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,7 +34,6 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run verify
       # Saved on every run, pass or fail, so a failure can be read after the fact (#143).
       - uses: actions/upload-artifact@v4
