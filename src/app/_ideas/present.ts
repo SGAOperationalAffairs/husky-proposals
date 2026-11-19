@@ -17,8 +17,9 @@ import type { IdeaPageData } from "./data";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Whole days, floored, never negative.
-function daysBetween(then: string, now: Date): number {
+// Whole days, floored, never negative. Exported so the leader's update preview counts days
+// the way the idea page does (#130).
+export function daysBetween(then: string, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - new Date(then).getTime()) / DAY_MS));
 }
 
