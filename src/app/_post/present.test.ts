@@ -1,6 +1,38 @@
 import { describe, expect, it } from "vitest";
 import type { AuthorIdea } from "@/core/viewerShapes";
-import { toEditPost } from "./present";
+import type { IdeaCardData } from "@/components/IdeaCard";
+import { toEditPost, toSimilarIdeas } from "./present";
+
+// Public wall cards as the few fields the similar-ideas check needs (#55).
+describe("toSimilarIdeas (#55)", () => {
+  const card: IdeaCardData = {
+    number: 103,
+    title: "A late-night dining option on weeknights",
+    description: "Something open after 10.",
+    location: "Stetson East",
+    board: "DAB",
+    status: "collecting_support",
+    fromSga: true,
+    updatedDaysAgo: 2,
+    supportCount: 41,
+    willingCount: 6,
+  };
+
+  it("keeps the number, title, category, and status, and nothing else", () => {
+    expect(toSimilarIdeas([card])).toEqual([
+      { number: 103, title: card.title, category: "dining", status: "collecting_support" },
+    ]);
+  });
+
+  it("maps each board to its category", () => {
+    expect(toSimilarIdeas([{ ...card, board: "GIB" }])[0]?.category).toBe("green_initiatives");
+  });
+
+  it("is plain data", () => {
+    const data = toSimilarIdeas([card]);
+    expect(JSON.parse(JSON.stringify(data))).toEqual(data);
+  });
+});
 
 // The author's post as plain data for the edit page (#128).
 const NOW = new Date("2026-11-10T12:00:00Z");

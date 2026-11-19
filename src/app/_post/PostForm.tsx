@@ -21,6 +21,8 @@ import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 import { clearDraft, loadDraft, saveDraft, type PostDraft } from "./draft";
 import { FIELD_MESSAGES, postMessage, RESUBMIT_SIGNED_OUT } from "./messages";
 import { PendingCount } from "./PendingCount";
+import type { SimilarIdeaData } from "./present";
+import { SimilarIdeas } from "./SimilarIdeas";
 import { usePostIdea } from "./usePostIdea";
 
 // The post form (#55). A student picks the board first; the rest of the form
@@ -85,9 +87,17 @@ type Props = {
   boardTiles?: "grid" | "line";
   // above: the icon sits over the name. inline: the icon sits on the same line as the name (#55 playground).
   iconAlign?: "above" | "inline";
+  // Public ideas to match the title against while typing (#55). Not used when editing.
+  similarIdeas?: SimilarIdeaData[];
 };
 
-export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = "inline" }: Props) {
+export function PostForm({
+  pendingCount,
+  edit,
+  boardTiles = "grid",
+  iconAlign = "inline",
+  similarIdeas = [],
+}: Props) {
   const [values, setValues] = useState<Values>(edit?.values ?? EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const ids = useId();
@@ -376,6 +386,9 @@ export function PostForm({ pendingCount, edit, boardTiles = "grid", iconAlign = 
                       value={values.title}
                       onChange={(e) => set("title", e.target.value)}
                     />
+                    {!editing && (
+                      <SimilarIdeas title={values.title} category={values.category} ideas={similarIdeas} />
+                    )}
                   </div>
 
                   <div className="@lg:col-span-2">
