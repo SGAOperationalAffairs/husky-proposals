@@ -43,7 +43,9 @@ describe("update templates and body rules (#130)", () => {
 
 describe("postUpdateInputSchema (#130)", () => {
   it("takes a board update with a body and a check-in with none", () => {
-    expect(postUpdateInputSchema.safeParse({ ideaId: IDEA, kind: "board", body: "Hello" }).success).toBe(true);
+    expect(postUpdateInputSchema.safeParse({ ideaId: IDEA, kind: "board", body: "Hello" }).success).toBe(
+      true,
+    );
     expect(postUpdateInputSchema.safeParse({ ideaId: IDEA, kind: "check_in" }).success).toBe(true);
   });
 

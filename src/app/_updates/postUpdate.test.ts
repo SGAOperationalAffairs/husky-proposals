@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Session } from "@/auth/contract";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "@/core/positions";
+import { IDEA_STATUSES } from "@/core/statuses";
 import { CHECK_IN_BODY, UPDATE_BODY_MAX } from "@/core/updates";
 import { postUpdate, type UpdateStore, type UpdateTarget } from "./postUpdate";
 
@@ -149,7 +150,7 @@ describe("postUpdate (#130)", () => {
   });
 
   it("only an in-progress idea takes an update", async () => {
-    for (const status of ["collecting_support", "under_review", "waiting", "delivered", "closed"] as const) {
+    for (const status of IDEA_STATUSES.filter((s) => s !== "in_progress")) {
       const store = fakeStore(target({ status }));
       expect(await postUpdate(store, dabChair, board("Hello"), NOW)).toEqual({
         ok: false,

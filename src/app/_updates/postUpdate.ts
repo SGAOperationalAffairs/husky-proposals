@@ -82,7 +82,8 @@ export async function postUpdate(
   let body = CHECK_IN_BODY;
   if (kind === "board") {
     body = (parsed.data.body ?? "").trim();
-    if (body.length === 0 || body.length > UPDATE_BODY_MAX) return fail({ code: "invalid", fields: ["body"] });
+    if (body.length === 0 || body.length > UPDATE_BODY_MAX)
+      return fail({ code: "invalid", fields: ["body"] });
     if (hasPlaceholder(body)) return fail({ code: "body_placeholder" });
   }
 

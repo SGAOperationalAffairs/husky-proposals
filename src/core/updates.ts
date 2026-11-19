@@ -69,11 +69,7 @@ export function cadenceDueAt({
 // The chip's words. `isStale` is the database view's flag and stays the rule; the date only
 // supplies the number of days. A flagged idea whose day count is not negative (it went stale
 // earlier today) reads "Due today", never "Due in 2 days".
-export function cadenceFlag(
-  dueAt: Date | null,
-  isStale: boolean,
-  now: Date,
-): { text: string; due: boolean } {
+export function cadenceFlag(dueAt: Date | null, isStale: boolean, now: Date): { text: string; due: boolean } {
   if (!dueAt) return { text: "Due today", due: isStale };
   const { text, overdue } = dueText(dueAt, now);
   if (isStale && !overdue) return { text: "Due today", due: true };
