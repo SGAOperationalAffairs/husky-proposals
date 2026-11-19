@@ -1,7 +1,6 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
 import { changeIdeaStatus } from "@/app/_status/changeIdeaStatus";
-import { changeStatus } from "@/core/ideaStatus";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "@/core/positions";
 import type { Prisma } from "@/generated/prisma/client";
 import { describeWithDatabase } from "@/db/testing/database";
@@ -12,8 +11,8 @@ import { withSeed } from "@/db/testing/seededTransaction";
 import { isPublic } from "./ideaSelects";
 import { prismaStatusStore } from "./statusStore";
 
-// Start, hold, and deliver against Postgres (#98), inside the seed's rolled-back
-// transaction.
+// Start, hold, deliver, close, and reopen against Postgres (#98, #126), inside the seed's
+// rolled-back transaction.
 const NOW = new Date("2026-11-30T15:00:00.000Z");
 const dabChair: Session = {
   user: { id: users.dabChair.id, email: users.dabChair.email, name: users.dabChair.displayName },
@@ -104,31 +103,73 @@ describeWithDatabase("status changes (#98)", () => {
     });
   });
 
-  // The close and reopen actions are #126; the rules and the store already carry them (#237).
-  it("closing then reopening through record() writes one update each and clears the reason", async () => {
+  it("holding an in-progress idea writes the reason and one update (#126)", async () => {
+    await withSeed(async (tx) => {
+      const updatesBefore = await tx.update.count({ where: { ideaId: ideas.foodPantry.id } });
+      const result = await changeIdeaStatus(
+        prismaStatusStore(tx),
+        dabChair,
+        "hold",
+        { ideaId: ideas.foodPantry.id, reason: "It needs more information first" },
+        NOW,
+      );
+      expect(result).toMatchObject({ ok: true, status: "waiting" });
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
+        status: "waiting",
+        waitingReason: "It needs more information first",
+      });
+      expect(await tx.update.count({ where: { ideaId: ideas.foodPantry.id } })).toBe(updatesBefore + 1);
+    });
+  });
+
+  it("reopening a delivered idea clears deliveredAt, writes one update, and queues the followers (#126)", async () => {
+    await withSeed(async (tx) => {
+      const store = prismaStatusStore(tx);
+      await changeIdeaStatus(store, dabChair, "deliver", { ideaId: ideas.foodPantry.id }, NOW);
+      await addFollowers(tx, ideas.foodPantry.id, 2);
+      const updatesBefore = await tx.update.count({ where: { ideaId: ideas.foodPantry.id } });
+      const outboxBefore = await tx.emailOutbox.count({ where: { type: "idea_event" } });
+
+      const later = new Date(NOW.getTime() + 60_000);
+      const result = await changeIdeaStatus(
+        store,
+        dabChair,
+        "reopen",
+        { ideaId: ideas.foodPantry.id, confirmed: true },
+        later,
+      );
+      expect(result).toMatchObject({ ok: true, status: "in_progress" });
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
+        status: "in_progress",
+        deliveredAt: null,
+        statusChangedAt: later,
+      });
+      expect(await tx.update.count({ where: { ideaId: ideas.foodPantry.id } })).toBe(updatesBefore + 1);
+      const latest = await tx.update.findFirstOrThrow({
+        where: { ideaId: ideas.foodPantry.id, kind: "system" },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(latest.body).toBe("The Dining Advisory Board reopened this idea.");
+      expect(await tx.emailOutbox.count({ where: { type: "idea_event" } })).toBeGreaterThanOrEqual(
+        outboxBefore + 2,
+      );
+    });
+  });
+
+  it("closing then reopening writes one update each and clears the reason (#126)", async () => {
     await withSeed(async (tx) => {
       const store = prismaStatusStore(tx);
       const reason = "Dining Services is not funding a pantry this year";
-      const idea = { status: "in_progress" as const, waitingReason: null, boardId: "DAB" as const };
-
-      const closed = changeStatus(idea, "closed", { closedReason: reason, now: NOW });
-      if (!closed.ok || !closed.value.update) throw new Error("closing should be allowed");
-      const closeWrite = {
-        ideaId: ideas.foodPantry.id,
-        from: "in_progress" as const,
-        patch: closed.value.patch,
-        update: closed.value.update,
-        event: {
-          kind: "status" as const,
-          ideaId: ideas.foodPantry.id,
-          status: "closed" as const,
-          waitingReason: null,
-          closedReason: reason,
-          changedAt: NOW,
-        },
-      };
       const updatesBefore = await tx.update.count({ where: { ideaId: ideas.foodPantry.id } });
-      expect(await store.record(closeWrite)).not.toBeNull();
+
+      const closed = await changeIdeaStatus(
+        store,
+        dabChair,
+        "close",
+        { ideaId: ideas.foodPantry.id, reason },
+        NOW,
+      );
+      expect(closed).toMatchObject({ ok: true, status: "closed" });
       expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
         status: "closed",
         closedReason: reason,
@@ -137,21 +178,14 @@ describeWithDatabase("status changes (#98)", () => {
       expect(await tx.update.count({ where: { ideaId: ideas.foodPantry.id } })).toBe(updatesBefore + 1);
 
       const later = new Date(NOW.getTime() + 60_000);
-      const reopened = changeStatus({ ...idea, status: "closed" }, "collecting_support", { now: later });
-      if (!reopened.ok || !reopened.value.update) throw new Error("reopening should be allowed");
-      await store.record({
-        ideaId: ideas.foodPantry.id,
-        from: "closed",
-        patch: reopened.value.patch,
-        update: reopened.value.update,
-        event: {
-          kind: "status",
-          ideaId: ideas.foodPantry.id,
-          status: "collecting_support",
-          waitingReason: null,
-          changedAt: later,
-        },
-      });
+      const reopened = await changeIdeaStatus(
+        store,
+        dabChair,
+        "reopen",
+        { ideaId: ideas.foodPantry.id },
+        later,
+      );
+      expect(reopened).toMatchObject({ ok: true, status: "collecting_support" });
       expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.foodPantry.id } })).toMatchObject({
         status: "collecting_support",
         closedReason: null,
@@ -206,8 +240,8 @@ describeWithDatabase("status changes (#98)", () => {
   it("start, hold, and deliver each queue exactly one post_status row for the author (#211)", async () => {
     await withSeed(async (tx) => {
       // lateNightDining starts in collecting_support, so hold, start, and deliver are all
-      // valid in turn (an in_progress idea cannot be held). Its author is
-      // users.anonymousAuthor. Followers must not change the count.
+      // valid in turn. Its author is users.anonymousAuthor. Followers must not change the
+      // count.
       await addFollowers(tx, ideas.lateNightDining.id, 2);
       const store = prismaStatusStore(tx);
       const hold = await changeIdeaStatus(

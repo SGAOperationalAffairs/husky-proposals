@@ -3,9 +3,13 @@ import { startHeadsUp } from "@/core/boardLoad";
 import { BOARD_CODES, type BoardCode } from "@/core/boards";
 import {
   changeStatus,
+  closeInputSchema,
   deliverInputSchema,
   holdInputSchema,
+  normalizeClosedReason,
   normalizeHoldReason,
+  reopenInputSchema,
+  reopenTarget,
   startInputSchema,
   type StatusError,
   type StatusPatch,
@@ -16,7 +20,7 @@ import type { ReviewStatus } from "@/core/review";
 import type { IdeaStatus } from "@/core/statuses";
 import type { IdeaEvent } from "@/email/ideaEvent";
 
-// Start, hold, and deliver an approved idea (#98): the rules, with the storage behind
+// Start, hold, deliver, close, and reopen an approved idea (#98, #126): the rules, with the storage behind
 // an interface. The server action (actions.ts) supplies the Prisma store inside one
 // transaction; the tests supply a fake one. Who may change a board's ideas is
 // permissions (#52) and what a status allows is src/core/ideaStatus.ts (#51); this
@@ -53,7 +57,7 @@ export type StatusStore = {
   record(write: StatusWrite): Promise<{ updateId: string } | null>;
 };
 
-export type StatusType = "start" | "hold" | "deliver";
+export type StatusType = "start" | "hold" | "deliver" | "close" | "reopen";
 
 export type ChangeStatusError =
   | { code: "invalid"; fields: string[] }
@@ -72,10 +76,12 @@ function isBoardCode(value: string): value is BoardCode {
   return (BOARD_CODES as string[]).includes(value);
 }
 
-const TARGET_STATUS: Record<StatusType, IdeaStatus> = {
+// Reopen has no fixed target: it depends on where the idea is now (reopenTarget).
+const TARGET_STATUS: Record<Exclude<StatusType, "reopen">, IdeaStatus> = {
   start: "in_progress",
   hold: "waiting",
   deliver: "delivered",
+  close: "closed",
 };
 
 export async function changeIdeaStatus(
@@ -100,22 +106,37 @@ export async function changeIdeaStatus(
   }
 
   // changeStatus lets a held idea take a new reason, which is not a hold. Hold from
-  // waiting is refused here (data-model gap 3 keeps in_progress to waiting out too).
+  // waiting is refused here.
   if (type === "hold" && target.status === "waiting") {
     return fail({ code: "same_status", status: "waiting" });
   }
 
+  // The table lets a delivered idea go back to in progress, but that is Reopen's move,
+  // with its own update copy. Start does not take it.
+  if (type === "start" && target.status === "delivered") {
+    return fail({ code: "invalid_transition", from: "delivered", to: "in_progress" });
+  }
+
+  // A reopen of something that is not delivered or closed has nowhere to go.
+  const to = type === "reopen" ? reopenTarget(target.status) : TARGET_STATUS[type];
+  if (to === null) return fail({ code: "invalid_transition", from: target.status, to: target.status });
+
   const changed = changeStatus(
     { status: target.status, waitingReason: target.waitingReason, boardId: target.boardId },
-    TARGET_STATUS[type],
-    { waitingReason: type === "hold" ? normalizeHoldReason(input.reason) : undefined, now },
+    to,
+    {
+      waitingReason: type === "hold" ? normalizeHoldReason(input.reason) : undefined,
+      closedReason: type === "close" ? normalizeClosedReason(input.reason) : undefined,
+      now,
+    },
   );
   if (!changed.ok) return fail(changed.error);
   const { patch, update } = changed.value;
-  // start, hold, and deliver always change the status and write an update.
+  // Every type here changes the status and writes an update.
   if (!update || !patch.status) throw new Error(`The ${type} change produced no update row`);
 
-  if (type === "start" && !input.confirmed) {
+  // Starting, or reopening into in progress, adds to the board's load (#126).
+  if (patch.status === "in_progress" && !input.confirmed) {
     const headsUp = startHeadsUp({
       inProgressScales: await store.boardLoad(target.boardId),
       guideline: target.guideline,
@@ -134,6 +155,8 @@ export async function changeIdeaStatus(
       ideaId: target.id,
       status: patch.status,
       waitingReason: patch.waitingReason,
+      // Followers' email carries the reason a closed idea shows students (#237).
+      ...(patch.closedReason ? { closedReason: patch.closedReason } : {}),
       changedAt: now,
     },
   });
@@ -142,13 +165,21 @@ export async function changeIdeaStatus(
   return { ok: true, status: patch.status, number: target.number };
 }
 
-// Start takes the idea and whether the leader has seen the heads-up; hold also takes the
-// reason; deliver takes only the idea.
+const SCHEMAS = {
+  start: startInputSchema,
+  reopen: reopenInputSchema,
+  hold: holdInputSchema,
+  close: closeInputSchema,
+  deliver: deliverInputSchema,
+} as const;
+
+// Start and reopen take the idea and whether the leader has seen the heads-up; hold and
+// close also take the reason; deliver takes only the idea.
 function parseInput(
   type: StatusType,
   raw: unknown,
 ): { ok: true; ideaId: string; reason: string; confirmed: boolean } | { ok: false; fields: string[] } {
-  const schema = type === "start" ? startInputSchema : type === "hold" ? holdInputSchema : deliverInputSchema;
+  const schema = SCHEMAS[type];
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];

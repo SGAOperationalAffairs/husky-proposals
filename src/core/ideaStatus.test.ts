@@ -13,6 +13,8 @@ import {
   nextStatuses,
   normalizeClosedReason,
   normalizeHoldReason,
+  reopenInputSchema,
+  reopenTarget,
   startInputSchema,
   statusOnApproval,
   systemUpdateBody,
@@ -34,8 +36,16 @@ describe("idea status rules (#51)", () => {
     });
 
     it("nextStatuses returns the table row", () => {
-      expect(nextStatuses("in_progress")).toEqual(["delivered", "closed"]);
-      expect(nextStatuses("delivered")).toEqual([]);
+      expect(nextStatuses("in_progress")).toEqual(["waiting", "delivered", "closed"]);
+      expect(nextStatuses("delivered")).toEqual(["in_progress"]);
+    });
+
+    it("reopenTarget sends delivered to in progress and closed to collecting support (#126)", () => {
+      expect(reopenTarget("delivered")).toBe("in_progress");
+      expect(reopenTarget("closed")).toBe("collecting_support");
+      for (const from of ["collecting_support", "waiting", "in_progress"] as const) {
+        expect(reopenTarget(from)).toBeNull();
+      }
     });
 
     for (const from of IDEA_STATUSES) {
@@ -60,11 +70,39 @@ describe("idea status rules (#51)", () => {
   });
 
   describe("changeStatus", () => {
-    it("rejects every move out of delivered", () => {
+    it("allows only a reopen out of delivered (#126)", () => {
       for (const to of IDEA_STATUSES) {
-        const result = changeStatus(idea("delivered"), to, { waitingReason: "x", now });
-        expect(result.ok, to).toBe(false);
+        const result = changeStatus(idea("delivered"), to, { waitingReason: "x", closedReason: "x", now });
+        expect(result.ok, to).toBe(to === "in_progress");
       }
+    });
+
+    it("puts an in-progress idea on hold with a reason and writes the held update (#126)", () => {
+      const result = changeStatus(idea("in_progress"), "waiting", {
+        waitingReason: "It needs more information first",
+        now,
+      });
+      expect(result).toMatchObject({
+        ok: true,
+        value: {
+          patch: { status: "waiting", waitingReason: "It needs more information first" },
+          update: {
+            kind: "system",
+            body: "The Dining Advisory Board put this idea on hold: It needs more information first.",
+          },
+        },
+      });
+    });
+
+    it("reopens delivered to in progress, clears deliveredAt, and writes the reopened update (#126)", () => {
+      const result = changeStatus(idea("delivered"), "in_progress", { now });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          patch: { status: "in_progress", waitingReason: null, statusChangedAt: now, deliveredAt: null },
+          update: { kind: "system", body: "The Dining Advisory Board reopened this idea." },
+        },
+      });
     });
 
     it("requires a reason for waiting: missing, empty, and whitespace-only", () => {
@@ -153,7 +191,7 @@ describe("idea status rules (#51)", () => {
     const reason = "Facilities is not adding new outdoor power this year";
 
     it("closes only from in progress", () => {
-      expect(nextStatuses("in_progress")).toEqual(["delivered", "closed"]);
+      expect(nextStatuses("in_progress")).toContain("closed");
       for (const from of ["collecting_support", "waiting", "delivered"] as const) {
         expect(
           changeStatus(idea(from, from === "waiting" ? "x" : null), "closed", { closedReason: reason, now }),
@@ -316,6 +354,11 @@ describe("idea status rules (#51)", () => {
       );
       expect(holdInputSchema.safeParse({ ideaId: id, reason: "   " }).success).toBe(false);
       expect(holdInputSchema.safeParse({ ideaId: id, reason: "a".repeat(201) }).success).toBe(false);
+    });
+
+    it("reopen takes an idea and defaults confirmed to false (#126)", () => {
+      expect(reopenInputSchema.parse({ ideaId: id })).toEqual({ ideaId: id, confirmed: false });
+      expect(reopenInputSchema.safeParse({}).success).toBe(false);
     });
 
     it("deliver takes only an idea", () => {

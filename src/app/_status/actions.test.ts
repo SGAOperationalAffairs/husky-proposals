@@ -65,13 +65,15 @@ describe("status actions (#98)", () => {
     statusStore.find.mockResolvedValue(found());
   });
 
-  it("refuses a request from another site before the session or the store is touched, for all three", async () => {
+  it("refuses a request from another site before the session or the store is touched, for all five", async () => {
     headerValues = foreign;
     const actions = await import("./actions");
     const calls = [
       actions.startIdea({ ideaId: IDEA }),
       actions.holdIdea({ ideaId: IDEA, reason: "Busy" }),
       actions.deliverIdea({ ideaId: IDEA }),
+      actions.closeIdea({ ideaId: IDEA, reason: "Not funded" }),
+      actions.reopenIdea({ ideaId: IDEA }),
     ];
     for (const result of await Promise.all(calls)) {
       expect(result).toEqual({ ok: false, error: { code: "cross_origin" } });
@@ -85,7 +87,27 @@ describe("status actions (#98)", () => {
     currentSession = null;
     const actions = await import("./actions");
     expect(await actions.startIdea({ ideaId: IDEA })).toEqual({ ok: false, error: { code: "signed_out" } });
+    expect(await actions.closeIdea({ ideaId: IDEA, reason: "Not funded" })).toEqual({
+      ok: false,
+      error: { code: "signed_out" },
+    });
+    expect(await actions.reopenIdea({ ideaId: IDEA })).toEqual({ ok: false, error: { code: "signed_out" } });
     expect(statusStore.find).not.toHaveBeenCalled();
+  });
+
+  it("a successful close and reopen refresh the wall and the idea page (#126)", async () => {
+    const actions = await import("./actions");
+    statusStore.find.mockResolvedValue(found({ status: "in_progress" }));
+    expect(await actions.closeIdea({ ideaId: IDEA, reason: "Not funded this year" })).toMatchObject({
+      ok: true,
+      status: "closed",
+    });
+    statusStore.find.mockResolvedValue(found({ status: "closed" }));
+    expect(await actions.reopenIdea({ ideaId: IDEA })).toMatchObject({
+      ok: true,
+      status: "collecting_support",
+    });
+    expect(updateTag.mock.calls).toEqual([["ideas"], ["idea:103"], ["ideas"], ["idea:103"]]);
   });
 
   it("a successful start refreshes the wall and the idea page", async () => {

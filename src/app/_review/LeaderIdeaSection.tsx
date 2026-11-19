@@ -39,6 +39,7 @@ export async function LeaderIdeaSection({ params }: { params: PageProps<"/ideas/
           board={panel.boardId}
           status={panel.status}
           waitingReason={panel.waitingReason}
+          closedReason={panel.closedReason}
         />
       }
       takeDown={<LeaderIdeaControls ideaId={panel.ideaId} number={panel.number} board={panel.boardId} />}
