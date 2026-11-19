@@ -1,16 +1,49 @@
 # Timeline
 
-When each epic is planned, mapped to `feature-map.md`. Read this to find what is due. The task detail is in `build-plan.md`. The issues are the live backlog.
+Updated November 18, 2026. Dates are set in the project's Target date field once #279 lands. Until then, this file is the source. Each section starts with what to do. Tickets are GitHub issues; `#N` is the issue number.
 
-Updated November 18, 2026. Dates are inclusive. The chart renders on GitHub. Status reflects work merged into `dev` as of that date; "Done" marks finished epics and checkpoints, and "Active" marks work in progress.
+## What to do now
 
-## Today, in short
+Wednesday, November 18, to Friday, November 20 (feature freeze)
 
-To find what is due on a given day:
-1. Find the rows in "By epic" whose dates include today. Those epics are in flight.
-2. Check "Checkpoints and gates" for anything dated this week.
-3. An epic past its end date that is not done is late. Say so, and apply the cut list in `build-plan.md`.
-4. Check the review queue. If more than 5 pull requests are approved and waiting, merging comes before new work.
+- **Work on the pre-launch bugs (#259).** Plan and build #255 (follow limit), #256 (live pages and pending count), #257 (post and email data), #258 (sign-out and hold rule), and #273 (day arithmetic). Each merges by Friday or moves after the soft launch.
+- **Merge #253, then #254** (decision emails, split from #211). #251 is superseded. Close it without merging.
+- **Merge #249** (error floater). It is ready for review.
+- **Finish #126** (leader panel: start, hold, finish, reopen). It is on the Feature freeze milestone. Merge by Friday or move.
+- **Finish #131** (idea page updates and the still-working button). E8 ends Friday.
+- **Merge #275** (the docs batch: timeline, SGAuth status, refactor rules).
+- **Write the send route (#210).** Decision emails queue until it exists. It goes on the Feature freeze milestone, with #211.
+- **Set the milestones (needs a go-ahead):** move the E10 readiness milestone to December 13 and put #210 on Feature freeze.
+
+## What to do next
+
+Monday, November 23, to Friday, November 27
+
+- **Work on hardening and training (E10, Nov 23 to 24).** Switch (#213), quota alerts (#214), backups (#215), load test (#216), reviewer guide and training (#217), release checklist (#218). The E10 end date is December 13. These are readiness work, so they may slip into the soft launch week.
+- **Work on the sign-in test (#180).** Needs the dev allowlist from Eli first. Due Friday, November 27. If it does not work by then, the soft launch runs on the stand-in and the switch moves to winter break.
+- **Work on Target dates (#279).** Start with the tickets this timeline names. This is what makes `npm run due` work.
+
+## What to do during the soft launch
+
+Monday, November 30, to Sunday, December 13
+
+- **Launch the SGA soft launch** on dev, with SGA members on the dev allowlist.
+- **Finish the E6 leftovers (#95, #102).** Both are late; E6 ended November 15.
+- **Fix only, on dev.** Until December 13, dev takes fixes only.
+- **Start post-launch hygiene (#272) on December 1.** This is an exception to the fixes-only rule: refactors may merge on dev during the soft launch, one pattern per pull request, each passing the full test suite. Nothing else lands unless it is a fix.
+
+## What to do after
+
+- **Finals, December 14 to 20.** Production breakage only.
+- **Winter break, from December 21.** Build the tabling form (E11, estimated; only if it fits). Build the promotion switch (E12) only if feedback asks for it.
+- **Spring prep, January 4 to 17 (E13).** Onboarding, comms, fixes from the soft launch. Run the five-student test January 13 to 17.
+- **Student launch, Wednesday, January 20.** Tag v1.0.0 (proposed).
+
+## Decisions
+
+- **November 18:** E10 readiness ends December 13 (not the freeze). #210 sits on the Feature freeze milestone.
+- **November 18:** Hygiene opens December 1, as an exception to the fixes-only rule above.
+- **November 18:** #126 and #211 merge by November 20, or move after the soft launch.
 
 ## Chart
 
@@ -38,7 +71,7 @@ gantt
     section Email
     E9 Email                      :active, e9, 2026-11-02, 19d
     section Readiness
-    E10 Launch readiness          :active, e10, 2026-11-09, 34d
+    E10 Launch readiness          :active, e10, 2026-11-09, 35d
     Pre-launch bug fixes          :crit, bugs, 2026-11-18, 12d
     Feature freeze                :milestone, 2026-11-20, 0d
     SGA soft launch               :crit, soft, 2026-11-30, 14d
@@ -54,37 +87,36 @@ gantt
 
 ## By epic
 
-| Epic | Start | End | Notes |
+| Epic | Start | End | Status and notes |
 |---|---|---|---|
-| E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, port. Playground and Poster direction (#29) |
-| E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules module, viewer shapes. Tracker #46 open |
-| E3 Sign-in and roles | Oct 26 | Nov 27 | **Partly done.** SGAuth's milestones 1 to 3 are closed on SGAuth's side (session endpoint #40 closed Oct 23). Our wiring (#177) is closed. Real sign-in on `dev.proposals` still needs the manual test (#180), which needs Eli's allowlist and the dev environment. Stand-in in use until then. Fallback to the stand-in if not working by Nov 27 |
-| E4 Posting and review | Nov 2 | Nov 8 | **Done, late.** Post, review, and resubmit (#128, PR #240) merged. Edit page is in |
-| E5 Public browsing | Nov 2 | Nov 8 | **Done.** Public queries, caching, ideas list and idea page, share dialog, poster and flyer |
-| E6 Student actions | Nov 9 | Nov 15 | **Active, late.** Support (#94) and follow (#101, PR #174) merged. Follow needs its abuse limit (#255, pre-launch). "I'll participate" (#95) and taps made while signed out (#102) still open |
-| E7 SGA queue and decisions | Nov 9 | Nov 15 | **Active, late.** Queue (#221, PR #227) and status actions (#98, PR #225) merged. Finish and reopen (#126) waits on the Closed status (#237, PR #250, open) |
-| E8 Updates and names | Nov 16 | Nov 20 | **Active.** Leader Updates tab (#130, PR #228) merged. The idea page updates section and the still-working button (#131) open |
-| E9 Email | Nov 2 | Nov 20 | **Active, at risk.** The Resend mailer and bounce webhook (#209, PR #239) merged. Decision and status emails (#211, split into PRs #253 and #254) open. Emails are queued but not sent until the send route (#210) exists, and #210 is not started. Digests (#212) follow |
-| E10 Launch readiness | Nov 9 | Dec 13 | **Active.** Dev migrations on push (#248, PR #252, merged). Turn-off switch (#213), quota alerts (#214), backups (#215), load test (#216), reviewer guide and training (#217), and the release checklist (#218) are open and not started. Hardening and training Nov 23 to 24; soft launch Nov 30 to Dec 13 |
-| Pre-launch bug fixes | Nov 18 | Nov 27 | **Active.** Epic #259: follow limit (#255), live pages and the real pending count (#256), post and email data (#257), sign-out and hold rule (#258), and the day arithmetic (#273). Must merge before the soft launch |
-| E11 Tabling form | Dec 21 | Jan 11 | Estimated at the freeze. Built over winter break if it fits |
-| E12 Promotion switch | Dec 21 | Dec 27 | Off by default; only if feedback asks for it |
-| E13 Spring launch prep | Jan 4 | Jan 17 | Onboarding, comms, fixes from the soft launch, and the five-student test Jan 13 to 17 |
-| Post-launch hygiene | Dec 1 | Dec 31 | **Planned.** Epic #272: refactors that reduce duplication, under five rules and ratchets. About one per week, next to feature work. Nothing lands during the freeze |
+| E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, Poster direction (#29) |
+| E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules, viewer shapes |
+| E3 Sign-in and roles | Oct 26 | Nov 27 | **Partly done.** SGAuth session endpoint closed Oct 23. Real sign-in on dev needs the manual test (#180) and Eli's allowlist. Stand-in until then |
+| E4 Posting and review | Nov 2 | Nov 8 | **Done, late.** Post, review, and resubmit (#128, PR #240), edit page |
+| E5 Public browsing | Nov 2 | Nov 8 | **Done.** Queries, caching, ideas list, idea page, share dialog, poster and flyer |
+| E6 Student actions | Nov 9 | Nov 15 | **Active, late.** Support and follow merged. Follow's abuse limit (#255) is pre-launch. "I'll participate" (#95) and signed-out taps (#102) open |
+| E7 SGA queue and decisions | Nov 9 | Nov 22 | **Active.** Queue and status actions merged. Closed status (#237, PR #250) merged November 18. Finish and reopen (#126) open |
+| E8 Updates and names | Nov 16 | Nov 20 | **Active.** Leader Updates tab merged. Idea page updates and still-working button (#131) open |
+| E9 Email | Nov 2 | Nov 20 | **Active, at risk.** Resend mailer and bounce webhook merged. Decision and status emails split into #253 and #254. Send route (#210) not started |
+| E10 Launch readiness | Nov 9 | Dec 13 | **Active.** Dev migrations merged (#248, PR #252). Switch (#213), alerts (#214), backups (#215), load test (#216), reviewer guide (#217), release checklist (#218) open |
+| Pre-launch bug fixes | Nov 18 | Nov 29 | **Active.** Epic #259. Must merge before the soft launch |
+| E11 Tabling form | Dec 21 | Jan 10 | Estimated. Built over winter break if it fits |
+| E12 Promotion switch | Dec 21 | Dec 27 | Off by default. Only if feedback asks for it |
+| E13 Spring launch prep | Jan 4 | Jan 17 | Onboarding, comms, fixes, five-student test Jan 13 to 17 |
+| Post-launch hygiene | Dec 1 | Dec 31 | **Planned.** Epic #272. About one refactor a week. Exception to fixes-only, see above |
 
 ## Checkpoints and gates
 
 | Date | What | If missed |
 |---|---|---|
-| Nov 1 | D9 (appeals) answered | The decline message ships without an appeal line |
-| Sun Nov 1 | **Done.** Creative direction picked: the Poster direction (#29) | E5 builds on the Civic look and restyles later through the tokens |
-| Sun Nov 8 | **Done, late.** E4 and E5 merged. E4 finished with #128 on Nov 18 | Cut list items 1 to 2 (`build-plan.md`) |
-| Nov 9 to 15 | SGAuth connection spike. SGAuth's session endpoint shipped Oct 23, and our wiring (#177) is closed. The manual sign-in test (#180) is open | The switch starts late; watch the Nov 27 fallback |
-| Mon Nov 16 | SGAuth milestone 2 (session endpoint). **Done early, on Oct 23** | None |
-| Wed Nov 18 | Merged today: dev migrations (#252), Next.js 16.4.6 (#236), font fallback (#234), People page (#233), edit and resubmit (#240), Resend mailer (#239), People follow-up (#241). **At risk:** the send route (#210) is not started, so decision emails queue but do not send | Decision emails wait for #210 |
-| Fri Nov 20 | Feature freeze. Pre-launch bugs (#255 to #258, #273) must be merged or moved. Unmerged feature PRs (#250, #251 split, #237, #211) move after the soft launch | Anything unmerged moves after the soft launch |
-| Fri Nov 27 | Real sign-in working on `dev.proposals` (#180) | The soft launch runs on the stand-in for SGA members; the switch moves to winter break |
-| Mon Nov 30 | Soft launch starts on `dev.proposals` (deployed from `dev`), SGA members on the dev.auth allowlist. `dev` takes fixes only until Dec 13 | |
+| Nov 1 | D9 (appeals) answered | Decline message ships without an appeal line |
+| Nov 8 | E4 and E5 merged | Cut list items 1 to 2 |
+| Nov 9 to 15 | SGAuth connection spike; manual sign-in test (#180) open | Switch starts late |
+| Nov 16 | SGAuth session endpoint (done early, Oct 23) | None |
+| Wed Nov 18 | Merged today: #250, #252, #236, #234, #233, #240, #239, #241. At risk: send route (#210) | Decision emails wait for #210 |
+| Fri Nov 20 | Feature freeze. #255 to #258 and #273 merge or move. #126 and #211 merge or move | Anything unmerged moves after the soft launch |
+| Fri Nov 27 | Real sign-in working on dev (#180) | Soft launch runs on the stand-in; switch moves to winter break |
+| Mon Nov 30 | Soft launch starts on dev. dev takes fixes only until Dec 13 | |
 | Dec 14 to 20 | Finals: production breakage only | |
-| Before Jan 20 | SGAuth milestone 3 live in production. D14 data policy in place | The student launch waits |
-| Wed Jan 20 | Student launch, `v1.0.0` (proposed) | |
+| Before Jan 20 | SGAuth milestone 3 live in production; D14 data policy in place | Student launch waits |
+| Wed Jan 20 | Student launch, v1.0.0 (proposed) | |
