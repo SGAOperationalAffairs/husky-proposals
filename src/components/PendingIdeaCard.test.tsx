@@ -1,5 +1,5 @@
 // Tests for the muted card for posts that are not public yet (#193, #194). Written first.
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BOARDS } from "@/core/boards";
 import { PendingIdeaCard } from "./PendingIdeaCard";
@@ -62,6 +62,24 @@ describe("pending idea card, waiting for review (#194)", () => {
     expect(screen.getByRole("button", { name: "I'll participate" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Edit" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Withdraw" })).toBeNull();
+  });
+});
+
+describe("pending idea card, Learn more (#200)", () => {
+  it("is a button that opens the waiting dialog on a pending post", () => {
+    render(<PendingIdeaCard {...pending} waitText="Reviewers aim to decide within 2 days." />);
+    fireEvent.click(screen.getByRole("button", { name: /^Learn more/ }));
+    expect(screen.getByRole("dialog", { name: "Waiting for review" }).textContent).toContain(
+      "Reviewers aim to decide within 2 days.",
+    );
+  });
+
+  it("is a button that opens the full reason on a declined post", () => {
+    render(<PendingIdeaCard {...declined} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Learn more/ }));
+    expect(screen.getByRole("dialog", { name: "Not approved" }).textContent).toContain(
+      declined.declineReason,
+    );
   });
 });
 

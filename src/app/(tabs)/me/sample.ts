@@ -3,7 +3,9 @@
 import { SAMPLE_OWN_POST } from "@/app/_post/sample";
 import type { MyRow } from "./groups";
 
-export function sampleMyRows(): MyRow[] {
+const DAY = 24 * 60 * 60 * 1000;
+
+export function sampleMyRows(now: Date): MyRow[] {
   return [
     {
       number: 201,
@@ -15,6 +17,7 @@ export function sampleMyRows(): MyRow[] {
       supported: false,
       participated: false,
       submittedAt: 5,
+      reviewDueAt: new Date(now.getTime() + 2 * DAY).toISOString(),
       description: "The Sunday hours end at 2 p.m. Students who study on weekends want dinner until 8.",
       supportCount: 0,
       willingCount: 0,

@@ -1,8 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { dueText, reviewerLabel } from "./reviewText";
+import { createFakeClock } from "@/testing/fakeClock";
+import { dueText, reviewerLabel, studentWaitText } from "./reviewText";
 
 const NOW = new Date("2026-11-05T15:00:00.000Z");
 const at = (iso: string) => new Date(iso);
+
+describe("the wait text an author sees on a pending post (#200)", () => {
+  const now = createFakeClock("2026-11-05T15:00:00.000Z").now();
+
+  it("says reviewers aim to decide within the days left", () => {
+    expect(studentWaitText(at("2026-11-07T09:00:00.000Z"), now)).toBe(
+      "Reviewers aim to decide within 2 days.",
+    );
+  });
+
+  it("says tomorrow with one day left", () => {
+    expect(studentWaitText(at("2026-11-06T09:00:00.000Z"), now)).toBe("Reviewers aim to decide by tomorrow.");
+  });
+
+  it("says today on the due day, whatever the hour", () => {
+    expect(studentWaitText(at("2026-11-05T01:00:00.000Z"), now)).toBe("Reviewers aim to decide today.");
+  });
+
+  it("says it is taking longer, and asks nothing of the author, once past due", () => {
+    const late =
+      "This is taking longer than usual. It is still waiting for a reviewer, and you do not need to do anything.";
+    expect(studentWaitText(at("2026-11-04T23:00:00.000Z"), now)).toBe(late);
+    expect(studentWaitText(at("2026-11-02T09:00:00.000Z"), now)).toBe(late);
+  });
+
+  it("falls back to a few days when there is no due time", () => {
+    expect(studentWaitText(null, now)).toBe("Reviewers aim to decide within a few days.");
+  });
+});
 
 describe("review due text (#59)", () => {
   it("says due today for the same calendar day, whatever the hour", () => {

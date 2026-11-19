@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { IdeaCard } from "@/components/IdeaCard";
 import { PAGE } from "@/components/pageTransition";
 import { PendingIdeaCard } from "@/components/PendingIdeaCard";
+import { studentWaitText } from "@/core/reviewText";
 import { groupMyIdeas, type MyRow } from "./groups";
 import { sampleMyRows } from "./sample";
 
@@ -39,7 +40,7 @@ const tabFrom = (value: string | string[] | undefined): Tab =>
 // Each cell is a grid so its card stretches to the row's height, and every card in a
 // row is the same height. Approved ideas are the real idea card. Pending and declined
 // posts are the muted card with no count and no public link (#194).
-function IdeaGrid({ rows }: { rows: MyRow[] }) {
+function IdeaGrid({ rows, now }: { rows: MyRow[]; now: Date }) {
   return (
     <ul className="grid auto-rows-fr grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3">
       {rows.map((row) => (
@@ -66,6 +67,11 @@ function IdeaGrid({ rows }: { rows: MyRow[] }) {
               review={row.review === "declined" ? "declined" : "pending"}
               declineReason={row.declineReason}
               editHref={row.review === "declined" && row.id ? `/me/ideas/${row.id}/edit` : undefined}
+              waitText={
+                row.review === "pending"
+                  ? studentWaitText(row.reviewDueAt ? new Date(row.reviewDueAt) : null, now)
+                  : undefined
+              }
               supported={row.supported}
               participating={row.participated}
             />
@@ -82,7 +88,9 @@ async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string 
   const { tab: tabParam } = await searchParams;
   const tab = tabFrom(tabParam);
   await requireSignedIn("/me");
-  const groups = groupMyIdeas(sampleMyRows());
+  // Read once, so every card's wait text counts from the same moment (#200).
+  const now = new Date();
+  const groups = groupMyIdeas(sampleMyRows(now));
   const empty = TABS.find((t) => t.id === tab)?.empty ?? "";
   const rows = groups[tab];
   return (
@@ -112,7 +120,7 @@ async function MyIdeas({ searchParams }: { searchParams: Promise<{ tab?: string 
           </Link>
         ))}
       </nav>
-      {rows.length === 0 ? <p className="text-muted">{empty}</p> : <IdeaGrid rows={rows} />}
+      {rows.length === 0 ? <p className="text-muted">{empty}</p> : <IdeaGrid rows={rows} now={now} />}
     </>
   );
 }

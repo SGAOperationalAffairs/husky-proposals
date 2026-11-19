@@ -18,6 +18,10 @@ export type MyRow = {
   participated: boolean;
   submittedAt: number;
   declineReason?: string;
+  // An ISO time: when a pending post's review is due (#200). #97's rows set it to
+  // reviewDueAt(submittedAt, board.reviewDueDays) (src/core/review.ts), so its query must
+  // select board.reviewDueDays, as reviewQueueSelect does.
+  reviewDueAt?: string;
   // What the idea card shows (#193). Pending and declined posts show only the
   // description; the counts are for approved ideas.
   description: string;

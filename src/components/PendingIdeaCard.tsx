@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BOARDS, type BoardCode } from "@/core/boards";
+import { PostStandingDialog } from "./PostStandingDialog";
 import { SupportPair } from "./SupportPair";
 
 // A post that is not public yet, drawn as the idea card's layout (#193, #194): the same
@@ -21,6 +22,8 @@ export type PendingIdeaCardData = {
   // The edit page of a declined post (#128). Edit goes there and Withdraw to its withdraw
   // section. Without it, a declined card shows neither, since there is nowhere to go.
   editHref?: string;
+  // The "when" line Learn more shows on a pending post (#200), from studentWaitText.
+  waitText?: string;
 };
 
 const actionLink = "inline-flex border-2 px-3 py-1.5 text-sm font-bold";
@@ -36,6 +39,7 @@ export function PendingIdeaCard({
   supported = false,
   participating = false,
   editHref,
+  waitText,
 }: PendingIdeaCardData) {
   const b = BOARDS[board];
   const declined = review === "declined";
@@ -89,8 +93,15 @@ export function PendingIdeaCard({
                 participating={participating}
               />
             </div>
-            {/* Not a link: a pending or declined post has no public page to open (#194). Not underlined either, so it does not look like one. */}
-            <span className="relative z-10 text-sm font-bold whitespace-nowrap">Learn more</span>
+            {/* A button, not a link: a pending or declined post has no public page to open (#194). It opens a dialog with the post's standing instead (#200). */}
+            <PostStandingDialog
+              title={title}
+              board={board}
+              review={review}
+              declineReason={declineReason}
+              editHref={editHref}
+              waitText={waitText}
+            />
           </div>
         </div>
       </article>

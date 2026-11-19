@@ -15,6 +15,20 @@ export function dueText(dueAt: Date, now: Date): { text: string; overdue: boolea
   return { text: `${late} ${late === 1 ? "day" : "days"} overdue`, overdue: true };
 }
 
+// What an author reads on their own pending post (#200). It says reviewers aim to decide,
+// never that they will, so a late review does not break what the page said. Whole UTC days,
+// as in dueText.
+export function studentWaitText(dueAt: Date | null, now: Date): string {
+  if (dueAt === null) return "Reviewers aim to decide within a few days.";
+  const days = utcDay(dueAt) - utcDay(now);
+  if (days < 0) {
+    return "This is taking longer than usual. It is still waiting for a reviewer, and you do not need to do anything.";
+  }
+  if (days === 0) return "Reviewers aim to decide today.";
+  if (days === 1) return "Reviewers aim to decide by tomorrow.";
+  return `Reviewers aim to decide within ${days} days.`;
+}
+
 // The reviewer badge: which boards this leader decides. Null when none.
 export function reviewerLabel(boards: BoardCode[]): string | null {
   if (boards.length === 0) return null;
