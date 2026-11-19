@@ -10,7 +10,19 @@ import { isPublic, reviewQueueSelect } from "./ideaSelects";
 type Db = Pick<Prisma.TransactionClient, "idea">;
 
 // `mayManageStatus` unlocks start, hold, and deliver (#98).
-export type LeaderIdeaData = { idea: LeaderIdea; mayTakeDown: boolean; mayManageStatus: boolean };
+// `cadenceDays` is the board's update schedule (#131), for the check-in toast.
+export type LeaderIdeaData = {
+  idea: LeaderIdea;
+  mayTakeDown: boolean;
+  mayManageStatus: boolean;
+  cadenceDays: number;
+};
+
+// The review queue's read, with the board's update schedule added to its board join.
+const leaderIdeaPageSelect = {
+  ...reviewQueueSelect,
+  board: { select: { ...reviewQueueSelect.board.select, updateCadenceDays: true } },
+} as const satisfies Prisma.IdeaSelect;
 
 export async function leaderIdeaByNumber(
   db: Db,
@@ -26,7 +38,7 @@ export async function leaderIdeaByNumber(
     return null;
   }
 
-  const row = await db.idea.findFirst({ where: { ...isPublic, number }, select: reviewQueueSelect });
+  const row = await db.idea.findFirst({ where: { ...isPublic, number }, select: leaderIdeaPageSelect });
   if (!row) return null;
   const boardId = row.boardId as BoardCode;
   const view = ideaForViewer(viewer, { ...row, boardId });
@@ -36,5 +48,6 @@ export async function leaderIdeaByNumber(
     idea: view.idea,
     mayTakeDown: can(viewer, "review", boardId),
     mayManageStatus: can(viewer, "manage_status", boardId),
+    cadenceDays: row.board.updateCadenceDays,
   };
 }

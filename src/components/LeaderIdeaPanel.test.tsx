@@ -95,6 +95,35 @@ describe("leader panel status slot (#98)", () => {
     expect(screen.queryByRole("button", { name: "Start working on this" })).toBeNull();
   });
 
+  it("shows the check-in after the status actions, and only when the viewer may manage status (#131)", () => {
+    const checkIn = <button type="button">Still working, no news</button>;
+    const { rerender } = render(
+      <LeaderIdeaPanel
+        poster={named}
+        reviewerLabel={null}
+        mayManageStatus={true}
+        mayTakeDown={false}
+        status={status}
+        checkIn={checkIn}
+      />,
+    );
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Start working on this",
+      "Still working, no news",
+    ]);
+    rerender(
+      <LeaderIdeaPanel
+        poster={named}
+        reviewerLabel={null}
+        mayManageStatus={false}
+        mayTakeDown={false}
+        status={status}
+        checkIn={checkIn}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Still working, no news" })).toBeNull();
+  });
+
   it("puts the status actions above take down", () => {
     render(
       <LeaderIdeaPanel

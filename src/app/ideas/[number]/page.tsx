@@ -15,6 +15,7 @@ import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { FromSgaTag } from "@/components/Tag";
 import { SupportSquares } from "@/components/SupportSquares";
+import { UpdateList } from "@/components/UpdateList";
 import { BOARDS, JOIN } from "@/core/boards";
 import { takesSupport } from "@/core/statuses";
 
@@ -108,15 +109,26 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
             <p>{standing(idea)}</p>
             <p className="text-sm text-muted">{capitalize(updatedText(idea.updatedDaysAgo))}.</p>
             {(idea.status === "in_progress" || idea.status === "delivered") && <Steps idea={idea} />}
-            {idea.updates.length > 0 && (
-              <ol aria-label="Updates" className="flex flex-col border-t border-line">
-                {idea.updates.map((u) => (
-                  <li key={u.text} className="flex gap-4 border-b border-line py-2.5 text-sm last:border-b-0">
-                    <span className="w-24 shrink-0 text-muted">{capitalize(daysAgoText(u.daysAgo))}</span>
-                    <span>{u.text}</span>
-                  </li>
-                ))}
-              </ol>
+          </section>
+          <section
+            aria-labelledby="updates-heading"
+            className="flex flex-col gap-3 bg-surface p-card surface-float"
+          >
+            <h2 id="updates-heading" className="heading text-3xl">
+              Updates
+            </h2>
+            {idea.updates.length === 0 ? (
+              <p className="text-sm text-muted">No updates yet.</p>
+            ) : (
+              // Two check-ins can share their words and their day, so the index is part of the key.
+              <UpdateList
+                updates={idea.updates.map((u, i) => ({
+                  key: `${i}-${u.text}`,
+                  daysAgo: u.daysAgo,
+                  text: u.text,
+                  kind: u.kind,
+                }))}
+              />
             )}
           </section>
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">

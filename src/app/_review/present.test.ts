@@ -114,9 +114,18 @@ describe("toApprovedRow (#59)", () => {
 });
 
 describe("toLeaderPanel (#59)", () => {
+  it("carries the board's update schedule (#131)", () => {
+    const idea = leaderIdea({ number: 157, status: "in_progress" });
+    expect(
+      toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true, cadenceDays: 21 }, []).cadenceDays,
+    ).toBe(21);
+  });
+
   it("shows the reviewer tag and take-down only to a reviewer of the idea's board", () => {
     const idea = leaderIdea({ number: 157, status: "in_progress" });
-    expect(toLeaderPanel({ idea, mayTakeDown: true, mayManageStatus: true }, ["DAB"])).toMatchObject({
+    expect(
+      toLeaderPanel({ idea, mayTakeDown: true, mayManageStatus: true, cadenceDays: 30 }, ["DAB"]),
+    ).toMatchObject({
       ideaId: idea.id,
       number: 157,
       boardId: "DAB",
@@ -132,6 +141,7 @@ describe("toLeaderPanel (#59)", () => {
         idea: leaderIdea({ number: 157, status: "in_progress" }),
         mayTakeDown: false,
         mayManageStatus: false,
+        cadenceDays: 30,
       },
       ["DAB"],
     );
@@ -144,12 +154,16 @@ describe("toLeaderPanel (#59)", () => {
       status: "waiting",
       waitingReason: "It overlaps with another idea",
     });
-    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toMatchObject({
+    expect(
+      toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true, cadenceDays: 30 }, []),
+    ).toMatchObject({
       status: "waiting",
       waitingReason: "It overlaps with another idea",
       mayManageStatus: true,
     });
-    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: false }, [])).toMatchObject({
+    expect(
+      toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: false, cadenceDays: 30 }, []),
+    ).toMatchObject({
       mayManageStatus: false,
     });
   });
@@ -160,7 +174,9 @@ describe("toLeaderPanel (#59)", () => {
       status: "closed",
       closedReason: "Facilities is not adding new outdoor power",
     });
-    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toMatchObject({
+    expect(
+      toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true, cadenceDays: 30 }, []),
+    ).toMatchObject({
       status: "closed",
       closedReason: "Facilities is not adding new outdoor power",
     });
@@ -168,6 +184,8 @@ describe("toLeaderPanel (#59)", () => {
 
   it("treats an approved idea with no status as a bad row", () => {
     const idea = leaderIdea({ number: 157, status: null });
-    expect(() => toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toThrow(/no status/);
+    expect(() =>
+      toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true, cadenceDays: 30 }, []),
+    ).toThrow(/no status/);
   });
 });
