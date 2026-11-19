@@ -2,6 +2,9 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LiveErrorFloater } from "./LiveErrorFloater";
 
+// The floater's Copy button calls useToast (#247); this file does not exercise it.
+vi.mock("@/components/Toast", () => ({ useToast: () => vi.fn() }));
+
 afterEach(cleanup);
 
 describe("LiveErrorFloater (#191)", () => {

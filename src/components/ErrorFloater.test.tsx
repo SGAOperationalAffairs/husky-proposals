@@ -1,9 +1,15 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { addReport, type ErrorEntry } from "@/core/errorReport";
+import { addReport, formatErrorsForCopy, type ErrorEntry } from "@/core/errorReport";
 import { ErrorFloater } from "./ErrorFloater";
 
-afterEach(cleanup);
+const toast = vi.hoisted(() => vi.fn());
+vi.mock("./Toast", () => ({ useToast: () => toast }));
+
+afterEach(() => {
+  cleanup();
+  toast.mockClear();
+});
 
 function entriesFor(...reports: Array<[ErrorEntry["source"], string]>): ErrorEntry[] {
   let entries: ErrorEntry[] = [];
@@ -60,5 +66,39 @@ describe("ErrorFloater (#191)", () => {
     expect(onDismiss).toHaveBeenCalledWith(entries[0]!.key);
     fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     expect(onClearAll).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ErrorFloater copy (#247)", () => {
+  it("copies every error as text, and confirms it", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const entries = entriesFor(["client", "thrown in the browser"]);
+    render(<ErrorFloater entries={entries} latest="" onDismiss={vi.fn()} onClearAll={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy errors" }));
+    expect(writeText).toHaveBeenCalledWith(formatErrorsForCopy(entries));
+    await waitFor(() =>
+      expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Errors copied." })),
+    );
+    expect(screen.getByRole("button", { name: "Copy errors" })).toBeTruthy();
+  });
+
+  it("a blocked clipboard does not break the panel", async () => {
+    const writeText = vi.fn(async () => {
+      throw new Error("blocked");
+    });
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(
+      <ErrorFloater
+        entries={entriesFor(["client", "boom"])}
+        latest=""
+        onDismiss={vi.fn()}
+        onClearAll={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Copy errors" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect(screen.getByText("boom")).toBeTruthy();
+    expect(toast).not.toHaveBeenCalled();
   });
 });
