@@ -18,18 +18,24 @@ export type StatusError =
 
 export type BoardError = { code: "same_board"; boardId: BoardCode };
 
-// Typed as a Record so a new IdeaStatus member fails to compile. delivered is
-// final until #126 (data-model gap 4); closed is reversible and reopens to
-// collecting support (#237). Only an in-progress idea closes: a board cannot close
-// one it never started. in_progress to waiting is not allowed yet: it is
-// proposed for E7 and undecided (gap 3), so adding it is one entry here.
+// Typed as a Record so a new IdeaStatus member fails to compile. A held idea can be
+// put on hold from in progress (#126, data-model gap 3). Delivered reopens to in
+// progress (#126, gap 4); closed reopens to collecting support (#237). Only an
+// in-progress idea closes: a board cannot close one it never started.
 export const TRANSITIONS: Record<IdeaStatus, readonly IdeaStatus[]> = {
   collecting_support: ["waiting", "in_progress"],
   waiting: ["collecting_support", "in_progress"],
-  in_progress: ["delivered", "closed"],
-  delivered: [],
+  in_progress: ["waiting", "delivered", "closed"],
+  delivered: ["in_progress"],
   closed: ["collecting_support"],
 };
+
+// Where Reopen sends an idea (#126), or null when the status has nothing to reopen.
+export function reopenTarget(from: IdeaStatus): IdeaStatus | null {
+  if (from === "delivered") return "in_progress";
+  if (from === "closed") return "collecting_support";
+  return null;
+}
 
 const rowFor = (from: IdeaStatus): readonly IdeaStatus[] => TRANSITIONS[from];
 
@@ -44,7 +50,9 @@ export type StatusPatch = {
   // Set when moving to closed, null when moving out of it, left out otherwise (#237).
   closedReason?: string | null;
   statusChangedAt?: Date;
-  deliveredAt?: Date;
+  // Set on delivery, null when the idea leaves delivered so a second delivery stamps a
+  // fresh date (#126).
+  deliveredAt?: Date | null;
 };
 
 // Approval sets collecting_support. The approve action spreads this into the
@@ -89,7 +97,7 @@ export const holdInputSchema = z.object({
   reason: z.string().trim().min(1).max(HOLD_REASON_MAX),
 });
 export const deliverInputSchema = z.object({ ideaId: z.uuid() });
-// Consumed by #126's close action. Who may close stays #126's.
+export const reopenInputSchema = startInputSchema;
 export const closeInputSchema = z.object({
   ideaId: z.uuid(),
   reason: z.string().trim().min(1).max(CLOSED_REASON_MAX),
@@ -163,13 +171,16 @@ export function changeStatus(
   if (to === "closed") patch.closedReason = closeReason;
   // Leaving closed clears the reason, so a reopened idea shows no old one.
   if (from === "closed") patch.closedReason = null;
+  if (from === "delivered") patch.deliveredAt = null;
 
   let update: SystemUpdate | null = null;
   if (to === "in_progress") update = systemUpdate({ type: "started", boardId: idea.boardId });
   if (to === "delivered") update = systemUpdate({ type: "delivered", boardId: idea.boardId });
   if (to === "waiting") update = systemUpdate({ type: "held", boardId: idea.boardId, reason });
   if (to === "closed") update = systemUpdate({ type: "closed", boardId: idea.boardId, reason: closeReason });
-  if (from === "closed") update = systemUpdate({ type: "reopened", boardId: idea.boardId });
+  if (from === "closed" || from === "delivered") {
+    update = systemUpdate({ type: "reopened", boardId: idea.boardId });
+  }
 
   return { ok: true, value: { patch, update } };
 }

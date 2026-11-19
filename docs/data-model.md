@@ -105,6 +105,8 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - A board can move an idea among `collecting_support`, `under_review`, and `waiting`.
 - A board can start work on an idea from `collecting_support`, `under_review`, or `waiting`, moving it to `in_progress`. Write a system update.
 - `in_progress` moves to `delivered`. Write a system update.
+- `in_progress` moves to `waiting` (hold, #126), with a reason students see. Write a system update.
+- `delivered` moves back to `in_progress` (reopen, #126), which clears `delivered_at` so a second delivery stamps a fresh date, and writes a system update ("The ... reopened this idea."). The soft heads-up applies, as for a start.
 - `waiting` requires a `waiting_reason` that students see.
 - `in_progress` can move to `closed` (#237), only from in progress. Closing needs a `closed_reason`, free text of 1 to 200 characters that students see and that must not name confidential administrative matters (a check constraint requires it). Write a system update ("The ... closed this idea: ...").
 - `closed` moves back to `collecting_support` (reopen), which clears `closed_reason` and writes a system update ("The ... reopened this idea."). Closing and reopening are reversible; nothing is deleted.
@@ -187,8 +189,8 @@ Found while drawing the FigJam review diagrams (October 23, 2026, #6). Each need
 **States and transitions:**
 1. **Taking down an approved idea.** Resolved in #49: a take-down is a second `review` row on the approved revision, with `kind` take_down, `decision` declined, and a required reason. The idea returns to `declined` and the author can edit and resubmit. The app action is E4.
 2. **Withdrawing a post.** Resolved in #49: `withdrawn` is a new review status. The author can withdraw a pending or declined post, it is final, and it no longer counts toward the 3 pending. The app action is E4.
-3. **In progress only moves to delivered.** Real work stalls or gets dropped. Proposed: in progress can move to waiting, with a reason, and that writes a system update. [E7]
-4. **Delivered is final.** Fine for launch. Say so in the leader guide. [E10]
+3. **In progress only moves to delivered.** Resolved in #126: in progress can move to waiting, with a reason, and that writes a system update. Closed (#237) covers work that is dropped.
+4. **Delivered is final.** Resolved in #126: a delivered idea can be reopened to in progress.
 5. **Editing after approval.** Not covered. Proposed: authors cannot edit an approved idea; they post a new one or ask the board to add an update. [E4]
 
 **Who sees what:**

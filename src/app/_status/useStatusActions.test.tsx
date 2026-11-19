@@ -5,6 +5,8 @@ import { enableReports, getSnapshot } from "@/app/_errors/reports";
 const startIdea = vi.fn();
 const holdIdea = vi.fn();
 const deliverIdea = vi.fn();
+const closeIdea = vi.fn();
+const reopenIdea = vi.fn();
 const refresh = vi.fn();
 const toast = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
@@ -13,6 +15,8 @@ vi.mock("./actions", () => ({
   startIdea: (arg: unknown) => startIdea(arg),
   holdIdea: (arg: unknown) => holdIdea(arg),
   deliverIdea: (arg: unknown) => deliverIdea(arg),
+  closeIdea: (arg: unknown) => closeIdea(arg),
+  reopenIdea: (arg: unknown) => reopenIdea(arg),
 }));
 
 import { useStatusActions } from "./useStatusActions";
@@ -22,7 +26,7 @@ const target = { id: "i1", number: 103, boardId: "DAB" as const };
 let disable: (() => void) | undefined;
 beforeEach(() => {
   disable = enableReports();
-  for (const fn of [startIdea, holdIdea, deliverIdea, refresh, toast]) fn.mockReset();
+  for (const fn of [startIdea, holdIdea, deliverIdea, closeIdea, reopenIdea, refresh, toast]) fn.mockReset();
 });
 afterEach(() => {
   cleanup();
@@ -36,8 +40,14 @@ function Harness() {
       <button type="button" onClick={() => void actions.start(target)}>
         Start
       </button>
-      <button type="button" onClick={() => void actions.startAnyway(target)}>
-        Start anyway
+      <button type="button" onClick={() => void actions.confirmHeadsUp(target)}>
+        Go ahead
+      </button>
+      <button type="button" onClick={() => void actions.reopen(target)}>
+        Reopen
+      </button>
+      <button type="button" onClick={() => void actions.close(target, "Not funded this year")}>
+        Close
       </button>
       <button type="button" onClick={() => void actions.hold(target, "It needs more information first")}>
         Hold
@@ -52,7 +62,7 @@ function Harness() {
       {actions.error && <p role="alert">{actions.error.text}</p>}
       {actions.headsUp && (
         <p data-testid="heads-up">
-          {actions.headsUp.inProgress} of {actions.headsUp.guideline}
+          {actions.headsUp.for}: {actions.headsUp.inProgress} of {actions.headsUp.guideline}
         </p>
       )}
     </>
@@ -84,21 +94,74 @@ describe("useStatusActions (#98)", () => {
     startIdea.mockResolvedValue({ ok: false, error: { code: "heads_up", inProgress: 2, guideline: 2 } });
     render(<Harness />);
     await click("Start");
-    expect(screen.getByTestId("heads-up").textContent).toBe("2 of 2");
+    expect(screen.getByTestId("heads-up").textContent).toBe("start: 2 of 2");
     expect(screen.queryByRole("alert")).toBeNull();
     expect(toast).not.toHaveBeenCalled();
     expect(getSnapshot().entries).toEqual([]);
   });
 
-  it("Start anyway resends confirmed, and clears the heads-up", async () => {
+  it("confirming a start's heads-up resends start confirmed, and clears it", async () => {
     startIdea.mockResolvedValueOnce({ ok: false, error: { code: "heads_up", inProgress: 2, guideline: 2 } });
     startIdea.mockResolvedValueOnce({ ok: true, status: "in_progress", number: 103 });
     render(<Harness />);
     await click("Start");
-    await click("Start anyway");
+    await click("Go ahead");
     expect(startIdea).toHaveBeenLastCalledWith({ ideaId: "i1", confirmed: true });
+    expect(reopenIdea).not.toHaveBeenCalled();
     expect(screen.queryByTestId("heads-up")).toBeNull();
     expect(toast).toHaveBeenCalledTimes(1);
+  });
+
+  it("confirming a reopen's heads-up resends reopen confirmed, not start (#126)", async () => {
+    reopenIdea.mockResolvedValueOnce({ ok: false, error: { code: "heads_up", inProgress: 2, guideline: 2 } });
+    reopenIdea.mockResolvedValueOnce({ ok: true, status: "in_progress", number: 103 });
+    render(<Harness />);
+    await click("Reopen");
+    expect(screen.getByTestId("heads-up").textContent).toBe("reopen: 2 of 2");
+    await click("Go ahead");
+    expect(reopenIdea).toHaveBeenLastCalledWith({ ideaId: "i1", confirmed: true });
+    expect(startIdea).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("heads-up")).toBeNull();
+  });
+
+  it("a reopen toasts by where the idea went (#126)", async () => {
+    reopenIdea.mockResolvedValueOnce({ ok: true, status: "in_progress", number: 103 });
+    reopenIdea.mockResolvedValueOnce({ ok: true, status: "collecting_support", number: 103 });
+    render(<Harness />);
+    await click("Reopen");
+    expect(reopenIdea).toHaveBeenLastCalledWith({ ideaId: "i1" });
+    expect(toast).toHaveBeenLastCalledWith({
+      title: "Reopened #103",
+      description: "Students see it as in progress again.",
+      board: "DAB",
+    });
+    await click("Reopen");
+    expect(toast).toHaveBeenLastCalledWith({
+      title: "Reopened #103",
+      description: "It is back on the wall, collecting support.",
+      board: "DAB",
+    });
+    expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it("a close sends the reason and toasts (#126)", async () => {
+    closeIdea.mockResolvedValue({ ok: true, status: "closed", number: 103 });
+    render(<Harness />);
+    await click("Close");
+    expect(closeIdea).toHaveBeenCalledWith({ ideaId: "i1", reason: "Not funded this year" });
+    expect(toast).toHaveBeenLastCalledWith({
+      title: "Closed",
+      description: "#103 left the wall. You can reopen it.",
+      board: "DAB",
+    });
+  });
+
+  it("a close without a reason shows the reason copy (#126)", async () => {
+    closeIdea.mockResolvedValue({ ok: false, error: { code: "closed_reason_required" } });
+    render(<Harness />);
+    await click("Close");
+    expect(screen.getByRole("alert").textContent).toBe("Write the reason students will see.");
+    expect(toast).not.toHaveBeenCalled();
   });
 
   it("Not now clears the heads-up without calling anything", async () => {

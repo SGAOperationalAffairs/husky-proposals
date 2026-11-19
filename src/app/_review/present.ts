@@ -49,6 +49,7 @@ export type LeaderPanelData = {
   boardId: BoardCode;
   status: IdeaStatus;
   waitingReason: string | null;
+  closedReason: string | null;
   mayManageStatus: boolean;
   mayTakeDown: boolean;
   reviewerLabel: string | null;
@@ -130,6 +131,7 @@ export function toLeaderPanel(
     boardId: idea.boardId,
     status: idea.status,
     waitingReason: idea.waitingReason,
+    closedReason: idea.closedReason,
     mayManageStatus,
     mayTakeDown,
     reviewerLabel: mayTakeDown ? reviewerLabel(reviewBoards) : null,

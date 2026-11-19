@@ -1,25 +1,29 @@
 "use client";
 
+import { CircleCheck, Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { BOARDS, type BoardCode } from "@/core/boards";
 import type { IdeaStatus } from "@/core/statuses";
 import { Button } from "./Button";
 
-// Start, hold, and deliver, inside the idea page's "For SGA leaders" panel (#98). Shows
-// only the buttons that work for the idea's status. Presentational: the caller runs the
-// actions and passes back busy, error, and the heads-up.
+// Start, Hold, Finish, and Reopen, inside the idea page's "For SGA leaders" panel (#98,
+// #126). Full-width buttons with an icon, and only the ones that work for the idea's
+// status. Presentational: the caller runs the actions and passes back busy, error, and
+// the heads-up.
 type Props = {
   status: IdeaStatus;
   waitingReason: string | null;
+  closedReason: string | null;
   board: BoardCode;
-  busy: "start" | "hold" | "deliver" | null;
+  busy: "start" | "hold" | "deliver" | "close" | "reopen" | null;
   error: { text: string } | null;
-  headsUp: { inProgress: number; guideline: number } | null;
+  headsUp: { for: "start" | "reopen"; inProgress: number; guideline: number } | null;
   onStart: () => void;
-  onStartAnyway: () => void;
+  onReopen: () => void;
+  onConfirmHeadsUp: () => void;
   onDismissHeadsUp: () => void;
   onHold: () => void;
-  onDeliver: () => void;
+  onFinish: () => void;
 };
 
 const plural = (count: number) => (count === 1 ? "1 idea" : `${count} ideas`);
@@ -27,15 +31,17 @@ const plural = (count: number) => (count === 1 ? "1 idea" : `${count} ideas`);
 export function StatusActions({
   status,
   waitingReason,
+  closedReason,
   board,
   busy,
   error,
   headsUp,
   onStart,
-  onStartAnyway,
+  onReopen,
+  onConfirmHeadsUp,
   onDismissHeadsUp,
   onHold,
-  onDeliver,
+  onFinish,
 }: Props) {
   const headsUpText = useRef<HTMLParagraphElement>(null);
   // The buttons are replaced by the heads-up, so focus follows to its text.
@@ -44,8 +50,13 @@ export function StatusActions({
   }, [headsUp]);
 
   const starting = busy === "start";
+  const reopening = busy === "reopen";
   // A click while busy does nothing: aria-disabled keeps the button focusable.
   const start = () => !starting && onStart();
+  const reopen = () => !reopening && onReopen();
+
+  const headsUpBusy = headsUp?.for === "reopen" ? reopening : starting;
+  const verb = headsUp?.for === "reopen" ? "Reopen" : "Start";
 
   return (
     <div className="flex flex-col gap-3">
@@ -59,13 +70,17 @@ export function StatusActions({
             </p>
             <p className="text-sm text-muted">
               {headsUp.inProgress === 0
-                ? `Boards usually work on ${plural(headsUp.guideline)} at a time. Start this one anyway?`
-                : `Boards usually work on ${headsUp.guideline === 1 ? "1 idea" : `1 to ${headsUp.guideline} ideas`} at a time, and a large idea counts as 2. Start this one anyway?`}
+                ? `Boards usually work on ${plural(headsUp.guideline)} at a time. ${verb} this one anyway?`
+                : `Boards usually work on ${headsUp.guideline === 1 ? "1 idea" : `1 to ${headsUp.guideline} ideas`} at a time, and a large idea counts as 2. ${verb} this one anyway?`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="primary" aria-disabled={starting} onClick={() => !starting && onStartAnyway()}>
-              {starting ? "Starting…" : "Start anyway"}
+            <Button
+              variant="primary"
+              aria-disabled={headsUpBusy}
+              onClick={() => !headsUpBusy && onConfirmHeadsUp()}
+            >
+              {headsUpBusy ? (verb === "Reopen" ? "Reopening…" : "Starting…") : `${verb} anyway`}
             </Button>
             <Button onClick={onDismissHeadsUp}>Not now</Button>
           </div>
@@ -74,11 +89,13 @@ export function StatusActions({
         <Buttons
           status={status}
           waitingReason={waitingReason}
+          closedReason={closedReason}
           starting={starting}
-          delivering={busy === "deliver"}
+          reopening={reopening}
           onStart={start}
+          onReopen={reopen}
           onHold={onHold}
-          onDeliver={onDeliver}
+          onFinish={onFinish}
         />
       )}
       {error && (
@@ -93,50 +110,80 @@ export function StatusActions({
 function Buttons({
   status,
   waitingReason,
+  closedReason,
   starting,
-  delivering,
+  reopening,
   onStart,
+  onReopen,
   onHold,
-  onDeliver,
-}: Pick<Props, "status" | "waitingReason" | "onHold" | "onDeliver"> & {
+  onFinish,
+}: Pick<Props, "status" | "waitingReason" | "closedReason" | "onHold" | "onFinish"> & {
   starting: boolean;
-  delivering: boolean;
+  reopening: boolean;
   onStart: () => void;
+  onReopen: () => void;
 }) {
   const startButton = (
-    <Button variant="primary" aria-disabled={starting} onClick={onStart}>
-      {starting ? "Starting…" : "Start working on this"}
+    <Button
+      variant="primary"
+      className="w-full"
+      icon={<Play className="size-4" />}
+      aria-disabled={starting}
+      onClick={onStart}
+    >
+      {starting ? "Starting…" : "Start"}
+    </Button>
+  );
+  const reopenButton = (
+    <Button
+      variant="line"
+      className="w-full"
+      icon={<RotateCcw className="size-4" />}
+      aria-disabled={reopening}
+      onClick={onReopen}
+    >
+      {reopening ? "Reopening…" : "Reopen"}
     </Button>
   );
   switch (status) {
     case "collecting_support":
-      return (
-        <div className="flex flex-wrap gap-2">
-          {startButton}
-          <Button variant="line" onClick={onHold}>
-            Put on hold
-          </Button>
-        </div>
-      );
+      return <div className="flex flex-col gap-2">{startButton}</div>;
     case "waiting":
       return (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-muted">{`Students see: “${waitingReason ?? ""}.”`}</p>
-          <div className="flex flex-wrap gap-2">{startButton}</div>
+          {startButton}
         </div>
       );
     case "in_progress":
       return (
-        <div className="flex flex-wrap gap-2">
-          <Button variant="line" aria-disabled={delivering} onClick={() => !delivering && onDeliver()}>
-            {delivering ? "Delivering…" : "Mark delivered"}
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="primary"
+            className="w-full"
+            icon={<CircleCheck className="size-4" />}
+            onClick={onFinish}
+          >
+            Finish
+          </Button>
+          <Button variant="line" className="w-full" icon={<Pause className="size-4" />} onClick={onHold}>
+            Hold
           </Button>
         </div>
       );
     case "delivered":
-      return <p className="text-sm text-muted">Delivered. It stays on record.</p>;
-    // No buttons yet: Reopen, with the reason shown, is #126.
+      return (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">Delivered. Reopen it if work picks back up.</p>
+          {reopenButton}
+        </div>
+      );
     case "closed":
-      return <p className="text-sm text-muted">Closed. It is off the wall and is not taking support.</p>;
+      return (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">{`Closed. Students see: “${closedReason ?? ""}.”`}</p>
+          {reopenButton}
+        </div>
+      );
   }
 }

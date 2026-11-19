@@ -154,6 +154,18 @@ describe("toLeaderPanel (#59)", () => {
     });
   });
 
+  it("carries the closed reason to the panel (#126)", () => {
+    const idea = leaderIdea({
+      number: 157,
+      status: "closed",
+      closedReason: "Facilities is not adding new outdoor power",
+    });
+    expect(toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toMatchObject({
+      status: "closed",
+      closedReason: "Facilities is not adding new outdoor power",
+    });
+  });
+
   it("treats an approved idea with no status as a bad row", () => {
     const idea = leaderIdea({ number: 157, status: null });
     expect(() => toLeaderPanel({ idea, mayTakeDown: false, mayManageStatus: true }, [])).toThrow(/no status/);

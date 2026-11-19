@@ -36,6 +36,8 @@ async function change(session: Session, type: StatusType, raw: unknown) {
 const startAsSession = withSession((session, raw: unknown) => change(session, "start", raw));
 const holdAsSession = withSession((session, raw: unknown) => change(session, "hold", raw));
 const deliverAsSession = withSession((session, raw: unknown) => change(session, "deliver", raw));
+const reopenAsSession = withSession((session, raw: unknown) => change(session, "reopen", raw));
+const closeAsSession = withSession((session, raw: unknown) => change(session, "close", raw));
 
 // Every exported action goes through reportThrows, so a throw shows on dev and preview (#191).
 const startReporting = reportThrows("startIdea", async (raw: unknown) =>
@@ -46,6 +48,12 @@ const holdReporting = reportThrows("holdIdea", async (raw: unknown) =>
 );
 const deliverReporting = reportThrows("deliverIdea", async (raw: unknown) =>
   (await isOwnOrigin()) ? deliverAsSession(raw) : crossOrigin,
+);
+const reopenReporting = reportThrows("reopenIdea", async (raw: unknown) =>
+  (await isOwnOrigin()) ? reopenAsSession(raw) : crossOrigin,
+);
+const closeReporting = reportThrows("closeIdea", async (raw: unknown) =>
+  (await isOwnOrigin()) ? closeAsSession(raw) : crossOrigin,
 );
 
 export async function startIdea(raw: unknown) {
@@ -58,4 +66,12 @@ export async function holdIdea(raw: unknown) {
 
 export async function deliverIdea(raw: unknown) {
   return deliverReporting(raw);
+}
+
+export async function reopenIdea(raw: unknown) {
+  return reopenReporting(raw);
+}
+
+export async function closeIdea(raw: unknown) {
+  return closeReporting(raw);
 }

@@ -123,7 +123,7 @@ describe("changeIdeaStatus (#98)", () => {
       expect(store.record).not.toHaveBeenCalled();
     });
 
-    it("a delivered idea cannot be started", async () => {
+    it("a delivered idea cannot be started: Reopen is its move (#126)", async () => {
       const store = fakeStore(target({ status: "delivered" }));
       expect(await start(store, dabChair)).toMatchObject({
         ok: false,
@@ -177,16 +177,148 @@ describe("changeIdeaStatus (#98)", () => {
       });
     });
 
-    it("only a collecting support idea can be held", async () => {
+    it("an idea already on hold is refused, and a delivered or closed one is invalid", async () => {
       const held = fakeStore(target({ status: "waiting", waitingReason: "Busy" }));
       expect(await hold(held, dabChair)).toMatchObject({ ok: false, error: { code: "same_status" } });
-      const running = fakeStore(target({ status: "in_progress" }));
-      expect(await hold(running, dabChair)).toMatchObject({
-        ok: false,
-        error: { code: "invalid_transition" },
-      });
       expect(held.record).not.toHaveBeenCalled();
-      expect(running.record).not.toHaveBeenCalled();
+      for (const status of ["delivered", "closed"] as IdeaStatus[]) {
+        const store = fakeStore(target({ status }));
+        expect(await hold(store, dabChair)).toMatchObject({
+          ok: false,
+          error: { code: "invalid_transition" },
+        });
+        expect(store.record).not.toHaveBeenCalled();
+      }
+    });
+
+    it("holds an in-progress idea with one update and one event (#126)", async () => {
+      const store = fakeStore(target({ status: "in_progress" }));
+      expect(await hold(store, dabChair)).toEqual({ ok: true, status: "waiting", number: 103 });
+      expect(store.record).toHaveBeenCalledTimes(1);
+      expect(store.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: "in_progress",
+          update: { kind: "system", body: "The Dining Advisory Board put this idea on hold: Busy." },
+        }),
+      );
+    });
+  });
+
+  describe("close (#126)", () => {
+    const reason = "Facilities is not adding new outdoor power this year";
+    const close = (store: StatusStore, session: Session, raw: unknown = { ideaId: IDEA, reason }) =>
+      changeIdeaStatus(store, session, "close", raw, NOW);
+
+    it("closes an in-progress idea: the reason, one update, and an event carrying the reason", async () => {
+      const store = fakeStore(target({ status: "in_progress" }));
+      expect(await close(store, dabChair, { ideaId: IDEA, reason: ` ${reason}. ` })).toEqual({
+        ok: true,
+        status: "closed",
+        number: 103,
+      });
+      expect(store.record).toHaveBeenCalledWith({
+        ideaId: IDEA,
+        from: "in_progress",
+        patch: { status: "closed", waitingReason: null, closedReason: reason, statusChangedAt: NOW },
+        update: { kind: "system", body: `The Dining Advisory Board closed this idea: ${reason}.` },
+        event: {
+          kind: "status",
+          ideaId: IDEA,
+          status: "closed",
+          waitingReason: null,
+          closedReason: reason,
+          changedAt: NOW,
+        },
+      });
+    });
+
+    it("cannot be submitted without a reason", async () => {
+      for (const raw of [{ ideaId: IDEA }, { ideaId: IDEA, reason: "   " }]) {
+        const store = fakeStore(target({ status: "in_progress" }));
+        expect(await close(store, dabChair, raw)).toEqual({
+          ok: false,
+          error: { code: "invalid", fields: ["reason"] },
+        });
+        expect(store.record).not.toHaveBeenCalled();
+      }
+      const periods = fakeStore(target({ status: "in_progress" }));
+      expect(await close(periods, dabChair, { ideaId: IDEA, reason: "..." })).toEqual({
+        ok: false,
+        error: { code: "closed_reason_required" },
+      });
+    });
+
+    it("only an in-progress idea closes", async () => {
+      for (const status of ["collecting_support", "waiting", "delivered"] as IdeaStatus[]) {
+        const store = fakeStore(target({ status }));
+        expect(await close(store, dabChair)).toMatchObject({
+          ok: false,
+          error: { code: "invalid_transition" },
+        });
+      }
+    });
+
+    it("never asks for the heads-up", async () => {
+      const store = fakeStore(target({ status: "in_progress" }), { load: ["small", "medium"] });
+      expect(await close(store, dabChair)).toMatchObject({ ok: true });
+      expect(store.boardLoad).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("reopen (#126)", () => {
+    const reopen = (store: StatusStore, session: Session, raw: unknown = { ideaId: IDEA }) =>
+      changeIdeaStatus(store, session, "reopen", raw, NOW);
+
+    it("reopens a delivered idea to in progress and clears deliveredAt", async () => {
+      const store = fakeStore(target({ status: "delivered" }));
+      expect(await reopen(store, dabChair)).toEqual({ ok: true, status: "in_progress", number: 103 });
+      expect(store.record).toHaveBeenCalledTimes(1);
+      expect(store.record).toHaveBeenCalledWith({
+        ideaId: IDEA,
+        from: "delivered",
+        patch: { status: "in_progress", waitingReason: null, statusChangedAt: NOW, deliveredAt: null },
+        update: { kind: "system", body: "The Dining Advisory Board reopened this idea." },
+        event: { kind: "status", ideaId: IDEA, status: "in_progress", waitingReason: null, changedAt: NOW },
+      });
+    });
+
+    it("reopens a closed idea to collecting support without a heads-up", async () => {
+      const store = fakeStore(target({ status: "closed" }), { load: ["small", "medium"] });
+      expect(await reopen(store, dabChair)).toEqual({ ok: true, status: "collecting_support", number: 103 });
+      expect(store.boardLoad).not.toHaveBeenCalled();
+      expect(store.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: "closed",
+          patch: expect.objectContaining({ status: "collecting_support", closedReason: null }),
+        }),
+      );
+    });
+
+    it("shows the heads-up when reopening to in progress past the guideline, and writes nothing", async () => {
+      const store = fakeStore(target({ status: "delivered" }), { load: ["small", "medium"] });
+      expect(await reopen(store, dabChair)).toEqual({
+        ok: false,
+        error: { code: "heads_up", inProgress: 2, guideline: 2 },
+      });
+      expect(store.record).not.toHaveBeenCalled();
+    });
+
+    it("reopens anyway once confirmed", async () => {
+      const store = fakeStore(target({ status: "delivered" }), { load: ["small", "medium"] });
+      const result = await reopen(store, dabChair, { ideaId: IDEA, confirmed: true });
+      expect(result).toMatchObject({ ok: true, status: "in_progress" });
+      expect(store.record).toHaveBeenCalledTimes(1);
+    });
+
+    it("an idea that is not delivered or closed is an invalid transition", async () => {
+      for (const status of ["collecting_support", "waiting", "in_progress"] as IdeaStatus[]) {
+        const store = fakeStore(target({ status }));
+        expect(await reopen(store, dabChair)).toMatchObject({
+          ok: false,
+          error: { code: "invalid_transition" },
+        });
+        expect(store.record).not.toHaveBeenCalled();
+      }
     });
   });
 
@@ -221,7 +353,11 @@ describe("changeIdeaStatus (#98)", () => {
   describe("who may change status", () => {
     it("a chair is refused on another board", async () => {
       const store = fakeStore(target({ boardId: "CSC" }));
-      for (const run of [start, hold, deliver]) {
+      const close = (s: StatusStore, session: Session) =>
+        changeIdeaStatus(s, session, "close", { ideaId: IDEA, reason: "No" }, NOW);
+      const reopen = (s: StatusStore, session: Session) =>
+        changeIdeaStatus(s, session, "reopen", { ideaId: IDEA }, NOW);
+      for (const run of [start, hold, deliver, close, reopen]) {
         expect(await run(store, dabChair)).toEqual({ ok: false, error: { code: "not_allowed" } });
       }
       expect(store.record).not.toHaveBeenCalled();

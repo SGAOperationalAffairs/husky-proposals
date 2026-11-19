@@ -5,19 +5,21 @@ import { useState } from "react";
 import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
-import { deliverIdea, holdIdea, startIdea } from "./actions";
+import type { IdeaStatus } from "@/core/statuses";
+import { closeIdea, deliverIdea, holdIdea, reopenIdea, startIdea } from "./actions";
 import { statusMessage, TRY_AGAIN_TEXT, type StatusCode } from "./messages";
 
-// The one hook for the status controls (#98): runs the actions, shows the toast for
+// The one hook for the status controls (#98, #126): runs the actions, shows the toast for
 // what happened, refreshes the page's data, and holds the busy, error, and heads-up
 // state. It never retries. Callers use the returned boolean to close their dialog and
 // to move focus.
-export type StatusBusy = "start" | "hold" | "deliver" | null;
+export type StatusBusy = "start" | "hold" | "deliver" | "close" | "reopen" | null;
 export type StatusError = { text: string; field?: "reason" } | null;
-export type HeadsUpState = { inProgress: number; guideline: number } | null;
+// `for` remembers which action raised the heads-up, so confirming reruns that one.
+export type HeadsUpState = { for: "start" | "reopen"; inProgress: number; guideline: number } | null;
 
 type Outcome =
-  | { ok: true }
+  | { ok: true; status?: IdeaStatus }
   | {
       ok: false;
       error: {
@@ -38,7 +40,11 @@ export function useStatusActions() {
   const [error, setError] = useState<StatusError>(null);
   const [headsUp, setHeadsUp] = useState<HeadsUpState>(null);
 
-  async function run(kind: Exclude<StatusBusy, null>, call: () => Promise<Outcome>, onOk: () => void) {
+  async function run(
+    kind: Exclude<StatusBusy, null>,
+    call: () => Promise<Outcome>,
+    onOk: (status: IdeaStatus | undefined) => void,
+  ) {
     setBusy(kind);
     setError(null);
     try {
@@ -54,13 +60,18 @@ export function useStatusActions() {
       }
       if (outcome.ok) {
         setHeadsUp(null);
-        onOk();
+        onOk(outcome.status);
         router.refresh();
         return true;
       }
       if (outcome.error.code === "heads_up") {
-        // Not a failure: the leader chooses whether to start anyway.
-        setHeadsUp({ inProgress: outcome.error.inProgress ?? 0, guideline: outcome.error.guideline ?? 0 });
+        // Not a failure: the leader chooses whether to go ahead anyway. Only start and
+        // reopen raise it.
+        setHeadsUp({
+          for: kind === "reopen" ? "reopen" : "start",
+          inProgress: outcome.error.inProgress ?? 0,
+          guideline: outcome.error.guideline ?? 0,
+        });
         return false;
       }
       reportActionOutcome(outcome);
@@ -85,6 +96,21 @@ export function useStatusActions() {
         }),
     );
 
+  const reopenWith = (target: Target, confirmed: boolean) =>
+    run(
+      "reopen",
+      () => reopenIdea(confirmed ? { ideaId: target.id, confirmed } : { ideaId: target.id }),
+      (status) =>
+        toast({
+          title: `Reopened #${target.number}`,
+          description:
+            status === "collecting_support"
+              ? "It is back on the wall, collecting support."
+              : "Students see it as in progress again.",
+          board: target.boardId,
+        }),
+    );
+
   return {
     busy,
     error,
@@ -92,7 +118,21 @@ export function useStatusActions() {
     clearError: () => setError(null),
     dismissHeadsUp: () => setHeadsUp(null),
     start: (target: Target) => startWith(target, false),
-    startAnyway: (target: Target) => startWith(target, true),
+    reopen: (target: Target) => reopenWith(target, false),
+    // Reruns whichever action raised the heads-up, now confirmed.
+    confirmHeadsUp: (target: Target) =>
+      headsUp?.for === "reopen" ? reopenWith(target, true) : startWith(target, true),
+    close: (target: Target, reason: string) =>
+      run(
+        "close",
+        () => closeIdea({ ideaId: target.id, reason }),
+        () =>
+          toast({
+            title: "Closed",
+            description: `#${target.number} left the wall. You can reopen it.`,
+            board: target.boardId,
+          }),
+      ),
     hold: (target: Target, reason: string) =>
       run(
         "hold",
