@@ -20,14 +20,14 @@ Wednesday, November 18, to Friday, November 20 (feature freeze)
 Monday, November 23, to Friday, November 27
 
 - **Work on hardening and training (E10, Nov 23 to 24).** Switch (#213), quota alerts (#214), backups (#215), load test (#216), reviewer guide and training (#217), release checklist (#218). The E10 end date is December 13. These are readiness work, so they may slip into the soft launch week.
-- **Work on the sign-in test (#180).** Needs the dev allowlist from Eli first. Due Friday, November 27. If it does not work by then, the soft launch runs on the stand-in and the switch moves to winter break.
+- **Check that SGA members can sign in on dev with their own SGAuth accounts (#180).** No allowlist requests. First check: does an existing member account reach `dev.auth`? Due Friday, November 27. If not, the soft launch waits. The stand-in does not run on dev.
 - **Work on Target dates (#279).** Start with the tickets this timeline names. This is what makes `npm run due` work.
 
 ## What to do during the soft launch
 
 Monday, November 30, to Sunday, December 13
 
-- **Launch the SGA soft launch** on dev, with SGA members on the dev allowlist.
+- **Launch the SGA soft launch** on dev. SGA members sign in with their own SGAuth accounts.
 - **Finish the E6 leftovers (#95, #102).** Both are late; E6 ended November 15.
 - **Fix only, on dev.** Until December 13, dev takes fixes only.
 - **Start post-launch hygiene (#272) on December 1.** This is an exception to the fixes-only rule: refactors may merge on dev during the soft launch, one pattern per pull request, each passing the full test suite. Nothing else lands unless it is a fix.
@@ -44,6 +44,7 @@ Monday, November 30, to Sunday, December 13
 - **November 18:** E10 readiness ends December 13 (not the freeze). #210 sits on the Feature freeze milestone.
 - **November 18:** Hygiene opens December 1, as an exception to the fixes-only rule above.
 - **November 18:** #126 and #211 merge by November 20, or move after the soft launch.
+- **November 18:** No dev allowlist requests. SGA members sign in on dev with their own SGAuth accounts (option 1). Not yet verified: that existing member accounts can reach `dev.auth`. If they cannot, the soft launch waits. The stand-in does not run on dev.
 
 ## Chart
 
@@ -91,7 +92,7 @@ gantt
 |---|---|---|---|
 | E1 Foundations | Oct 26 | Nov 1 | **Done.** Scaffold, test harness, CI, Poster direction (#29) |
 | E2 Data and core rules | Oct 26 | Nov 1 | **Done.** Schema, `idea_stats`, rules, viewer shapes |
-| E3 Sign-in and roles | Oct 26 | Nov 27 | **Partly done.** SGAuth session endpoint closed Oct 23. Real sign-in on dev needs the manual test (#180) and Eli's allowlist. Stand-in until then |
+| E3 Sign-in and roles | Oct 26 | Nov 27 | **Partly done.** SGAuth session endpoint closed Oct 23. Dev sign-in uses members' own SGAuth accounts (#180). The stand-in runs in local and test only |
 | E4 Posting and review | Nov 2 | Nov 8 | **Done, late.** Post, review, and resubmit (#128, PR #240), edit page |
 | E5 Public browsing | Nov 2 | Nov 8 | **Done.** Queries, caching, ideas list, idea page, share dialog, poster and flyer |
 | E6 Student actions | Nov 9 | Nov 15 | **Active, late.** Support and follow merged. Follow's abuse limit (#255) is pre-launch. "I'll participate" (#95) and signed-out taps (#102) open |
@@ -115,7 +116,7 @@ gantt
 | Nov 16 | SGAuth session endpoint (done early, Oct 23) | None |
 | Wed Nov 18 | Merged today: #250, #252, #236, #234, #233, #240, #239, #241. At risk: send route (#210) | Decision emails wait for #210 |
 | Fri Nov 20 | Feature freeze. #255 to #258 and #273 merge or move. #126 and #211 merge or move | Anything unmerged moves after the soft launch |
-| Fri Nov 27 | Real sign-in working on dev (#180) | Soft launch runs on the stand-in; switch moves to winter break |
+| Fri Nov 27 | SGA members can sign in on dev with their own SGAuth accounts (#180) | Soft launch waits. The stand-in does not run on dev |
 | Mon Nov 30 | Soft launch starts on dev. dev takes fixes only until Dec 13 | |
 | Dec 14 to 20 | Finals: production breakage only | |
 | Before Jan 20 | SGAuth milestone 3 live in production; D14 data policy in place | Student launch waits |
