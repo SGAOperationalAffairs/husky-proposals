@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFakeResendFetch } from "./fakeResendFetch";
 import { createResendMailer, ResendError } from "./resendMailer";
-import { sendEmail } from "./sendEmail";
+import { sendEmail, throttledFor } from "./sendEmail";
 
 describe("Resend mailer (#209)", () => {
   const message = { to: "student@example.com", subject: "Hello", text: "Plain body" };
@@ -57,6 +57,32 @@ describe("Resend mailer (#209)", () => {
     expect(error).toBeInstanceOf(ResendError);
     expect((error as ResendError).status).toBe(status);
     expect((error as ResendError).message).toMatch(pattern);
+  });
+
+  it.each([
+    ["the retry-after header, in seconds", { name: "rate_limit_exceeded" }, { "retry-after": "2" }, 2000],
+    ["a quota error, an hour", { name: "daily_quota_exceeded" }, { "retry-after": "2" }, 3_600_000],
+    ["a monthly quota error, an hour", { name: "monthly_quota_exceeded" }, undefined, 3_600_000],
+    ["a minute with no header", { name: "rate_limit_exceeded" }, undefined, 60_000],
+    ["a minute for a header that is not a number", { name: "x" }, { "retry-after": "soon" }, 60_000],
+    ["at least a second", { name: "x" }, { "retry-after": "0" }, 1000],
+    ["at most fifteen minutes", { name: "x" }, { "retry-after": "86400" }, 900_000],
+  ])("carries retryAfterMs on a 429: %s", async (_label, body, headers, expected) => {
+    const { fake, mailer } = setup();
+    fake.respondNext({ status: 429, body, headers });
+    const error = (await sendEmail(mailer, message).catch((caught: unknown) => caught)) as ResendError;
+    expect(error.retryAfterMs).toBe(expected);
+    expect(throttledFor(error)).toBe(expected);
+  });
+
+  it("carries no retryAfterMs on any other failure", async () => {
+    const { fake, mailer } = setup();
+    fake.respondNext({ status: 422, body: { name: "validation_error" }, headers: { "retry-after": "5" } });
+    const error = (await sendEmail(mailer, message).catch((caught: unknown) => caught)) as ResendError;
+    expect(error.retryAfterMs).toBeNull();
+    fake.failNext(new TypeError("fetch failed"));
+    const network = (await sendEmail(mailer, message).catch((caught: unknown) => caught)) as ResendError;
+    expect(network.retryAfterMs).toBeNull();
   });
 
   it("copes with an error body that is not Resend's shape", async () => {

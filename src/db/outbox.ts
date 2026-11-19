@@ -19,13 +19,13 @@ import {
   renderPostStatusEmail,
   type PostStatusEvent,
 } from "@/email/postStatus";
-import { sendEmail, type EmailMessage, type Mailer } from "@/email/sendEmail";
+import { sendEmail, throttledFor, type EmailMessage, type Mailer } from "@/email/sendEmail";
 import type { EmailType, Prisma } from "@/generated/prisma/client";
 import { acceptsEmail, emailPermissionSelect, userAcceptsEmail } from "./emailFilters";
 import { claimOutboxBatch, MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 
 // The email outbox (#101): rows are written in the caller's transaction, and a drain
-// sends them. Nothing calls the drain on a schedule yet (#210).
+// sends them. /api/jobs/send-email calls the drain on a schedule (#210).
 
 const MINUTE = 60 * 1000;
 // A claim holds a row this long. A worker that dies mid-send frees it after this.
@@ -229,10 +229,10 @@ export async function drainOutbox(
   db: DrainDb,
   mailer: Mailer,
   now: Date,
-  { siteUrl, limit = 50 }: { siteUrl: string; limit?: number },
-): Promise<{ sent: number; failed: number }> {
+  { siteUrl, limit = 50, pace }: { siteUrl: string; limit?: number; pace?: () => Promise<void> },
+): Promise<{ sent: number; failed: number; deferred: number }> {
   const claimed = await claimOutboxBatch(db, { now, limit, lockFor: CLAIM_MS, types: RENDERABLE_TYPES });
-  if (claimed.length === 0) return { sent: 0, failed: 0 };
+  if (claimed.length === 0) return { sent: 0, failed: 0, deferred: 0 };
 
   const users = await db.user.findMany({
     where: { id: { in: [...new Set(claimed.map((row) => row.userId))] } },
@@ -242,7 +242,8 @@ export async function drainOutbox(
 
   let sent = 0;
   let failed = 0;
-  for (const row of claimed) {
+  let mailerCalls = 0;
+  for (const [index, row] of claimed.entries()) {
     const fail = async (message: string, retryAfterMs: number | null, permanent = false) => {
       failed += 1;
       await db.emailOutbox.update({
@@ -277,6 +278,9 @@ export async function drainOutbox(
       continue;
     }
 
+    // Only a send that reaches the provider is paced, so rows that fail early cost no wait.
+    if (pace && mailerCalls > 0) await pace();
+    mailerCalls += 1;
     try {
       const { providerMessageId } = await sendEmail(mailer, message);
       await db.emailOutbox.update({
@@ -285,8 +289,27 @@ export async function drainOutbox(
       });
       sent += 1;
     } catch (error) {
-      await fail(error instanceof Error ? error.message : String(error), BACKOFF_MS * row.attempts);
+      const reason = error instanceof Error ? error.message : String(error);
+      const throttle = throttledFor(error);
+      if (throttle === null) {
+        await fail(reason, BACKOFF_MS * row.attempts);
+        continue;
+      }
+      // A limit delays email and never drops it (T2.2): release this row and the rest of
+      // the batch without counting the attempt the claim added, or five throttled runs
+      // would kill a row. Only the row that hit the limit keeps the error.
+      const rest = claimed.slice(index);
+      const until = new Date(now.getTime() + throttle);
+      await db.emailOutbox.updateMany({
+        where: { id: { in: rest.map((released) => released.id) } },
+        data: { attempts: { decrement: 1 }, lockedUntil: until },
+      });
+      await db.emailOutbox.update({
+        where: { id: row.id },
+        data: { lastError: reason.slice(0, MAX_ERROR_LENGTH) },
+      });
+      return { sent, failed, deferred: rest.length };
     }
   }
-  return { sent, failed };
+  return { sent, failed, deferred: 0 };
 }

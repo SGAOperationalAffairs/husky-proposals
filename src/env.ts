@@ -56,8 +56,9 @@ const schema = z
         error: "SGAUTH_COOKIE_NAME may hold only letters, digits, and !#$%&'*+-.^_`|~",
       }),
     ),
-    // Email through Resend (#209). Not required in any environment yet: #210 is the first
-    // caller that sends on a schedule, and tightens this for dev and production.
+    // Email through Resend (#209). Required on dev and production (see the refines below):
+    // the scheduled send needs a mailer and the site's address (#210). Optional elsewhere,
+    // so local, test, and preview start without them.
     RESEND_API_KEY: optional(z.string().startsWith("re_", { error: "RESEND_API_KEY must start with re_" })),
     // "Name <address@domain>" or a bare address.
     EMAIL_FROM: optional(
@@ -69,11 +70,39 @@ const schema = z
     RESEND_WEBHOOK_SECRET: optional(
       z.string().startsWith("whsec_", { error: "RESEND_WEBHOOK_SECRET must start with whsec_" }),
     ),
+    // The bearer secret every scheduled route under /api/jobs checks (#210).
+    JOBS_SECRET: optional(z.string().min(32, { error: "JOBS_SECRET must be at least 32 characters" })),
+    // The site's own address, for links in email. Reduced to its origin so a trailing slash
+    // or a path never doubles up in a link (#210).
+    SITE_URL: optional(
+      z.url({ error: "SITE_URL must be a URL" }).transform((value) => new URL(value).origin),
+    ),
   })
   .refine((env) => (env.RESEND_API_KEY === undefined) === (env.EMAIL_FROM === undefined), {
     // Half a sender config would fail at the first send, so refuse at start instead.
     message: "RESEND_API_KEY and EMAIL_FROM must be set together",
     path: ["EMAIL_FROM"],
+  })
+  .superRefine((env, context) => {
+    // The scheduled send runs on dev and production, so a deploy without these would
+    // queue email that never goes out (#210). One issue per variable, so each is named.
+    if (env.APP_ENV !== "dev" && env.APP_ENV !== "production") return;
+    for (const name of ["RESEND_API_KEY", "EMAIL_FROM", "JOBS_SECRET", "SITE_URL"] as const) {
+      if (env[name] === undefined) {
+        context.addIssue({
+          code: "custom",
+          message: `${name} is required when APP_ENV is dev or production`,
+          path: [name],
+        });
+      }
+    }
+    if (env.SITE_URL !== undefined && !env.SITE_URL.startsWith("https://")) {
+      context.addIssue({
+        code: "custom",
+        message: "SITE_URL must be an https:// URL when APP_ENV is dev or production",
+        path: ["SITE_URL"],
+      });
+    }
   })
   .refine((env) => !env.AUTH_STAND_IN || env.APP_ENV === "local" || env.APP_ENV === "test", {
     // Otherwise anyone could choose "I'm the VP" on a deployed site (dev-process.md).

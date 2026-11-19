@@ -5,11 +5,13 @@ export type FakeResendRequest = {
   body: unknown;
 };
 
+type FakeReply = { status: number; body?: unknown; headers?: Record<string, string> };
+
 export type FakeResendFetch = {
   fetch: typeof globalThis.fetch;
   readonly requests: readonly FakeResendRequest[];
   // The next request gets this reply instead of the default 200 with an id.
-  respondNext(reply: { status: number; body?: unknown }): void;
+  respondNext(reply: FakeReply): void;
   // The next request rejects with this error, as a network failure or timeout does.
   failNext(error: Error): void;
 };
@@ -18,7 +20,7 @@ export type FakeResendFetch = {
 // records what was sent and answers from a script. No test reaches the real service.
 export function createFakeResendFetch(): FakeResendFetch {
   const requests: FakeResendRequest[] = [];
-  const replies: Array<{ status: number; body?: unknown } | Error> = [];
+  const replies: Array<FakeReply | Error> = [];
   let counter = 0;
 
   const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
@@ -30,7 +32,7 @@ export function createFakeResendFetch(): FakeResendFetch {
     });
     const next = replies.shift();
     if (next instanceof Error) throw next;
-    if (next) return Response.json(next.body ?? {}, { status: next.status });
+    if (next) return Response.json(next.body ?? {}, { status: next.status, headers: next.headers });
     counter += 1;
     return Response.json({ id: `fake-resend-${counter}` }, { status: 200 });
   };
