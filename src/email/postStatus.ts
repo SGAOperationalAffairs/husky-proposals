@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BOARD_CODES, BOARDS } from "@/core/boards";
 import { IDEA_STATUSES, STATUS_LABELS, type IdeaStatus } from "@/core/statuses";
+import { ownPostFooter } from "./footers";
 import type { IdeaEvent } from "./ideaEvent";
 import type { EmailMessage } from "./sendEmail";
 
@@ -42,7 +43,7 @@ export function renderPostStatusEmail(payload: PostStatusPayload, to: string, si
     "",
     `See where it stands: ${siteUrl}/ideas/${payload.ideaNumber}`,
     "",
-    "You get this email because you posted this idea.",
+    ...ownPostFooter(siteUrl),
   );
   return { to, subject: `Proposal #${payload.ideaNumber}: ${label}`, text: lines.join("\n") };
 }

@@ -57,6 +57,12 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 **email_preference**
 `user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday` (assigned on creation, used to spread weekly sends), `unsubscribed_at`, `bounced_at`.
 
+**email_opt_out** (#211)
+`user_id`, `type`, `created_at`. Unique on `(user_id, type)`. A row means the student turned that type off. No row means on, so a new student needs nothing created.
+- A student can turn off each of four types: `post_decided`, `post_status`, `digest`, `idea_event`. No other type is ever written (`reviewer_reminder` is a leader's job email).
+- Checked when an email is queued and again when it is sent, so turning a type off after a row is queued is honored.
+- A bounce, complaint, or deactivation (`email_stopped_at`) stops every type whatever the toggles say. A stopped account gets nothing.
+
 **email_outbox**
 `id`, `user_id`, `type` (post_decided, post_status, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `provider_message_id` (indexed; matches a bounce webhook to its row), `bounced_at` (set by the Resend bounce webhook), `last_error`.
 - A bounce also sets `email_stopped_at` on the user, and mail still queued for that user is not sent.
@@ -151,7 +157,7 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - Submit an idea
 - Share (later)
 - My posts and their status
-- Email preferences
+- Notification settings (four email toggles, at `/me/notifications`)
 
 **SGA:**
 - Queue, with board, status, and sort filters

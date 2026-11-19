@@ -113,10 +113,15 @@ describe("emails about your own post (#211): decisions", () => {
     expect(message.text).toContain(`${siteUrl}/me/ideas/${ideaId}/edit`);
   });
 
-  it("says why it was sent, last", () => {
+  it("says why it was sent and links the notification settings, last", () => {
     for (const payload of [approved, declined, takenDown]) {
       const text = renderPostDecidedEmail(payload, "a@example.com", siteUrl).text;
-      expect(text.endsWith("\n\nYou get this email because you posted this idea.")).toBe(true);
+      expect(
+        text.endsWith(
+          "\n\nYou get this email because you posted this idea.\n" +
+            `Change which emails you get: ${siteUrl}/me/notifications`,
+        ),
+      ).toBe(true);
     }
   });
 

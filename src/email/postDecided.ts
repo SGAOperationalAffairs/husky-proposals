@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BOARD_CODES, BOARDS } from "@/core/boards";
 import type { ReviewDecision, ReviewKind } from "@/core/review";
+import { ownPostFooter } from "./footers";
 import type { EmailMessage } from "./sendEmail";
 
 // What an author is emailed when a reviewer decides their post (#211): pure, with no
@@ -74,7 +75,7 @@ export function renderPostDecidedEmail(
   const board = BOARDS[payload.boardId].name;
   const { event, ideaNumber } = payload;
   const editLink = `${siteUrl}/me/ideas/${payload.ideaId}/edit`;
-  const footer = ["", "You get this email because you posted this idea."];
+  const footer = ["", ...ownPostFooter(siteUrl)];
 
   if (event.kind === "approved") {
     const lines = [

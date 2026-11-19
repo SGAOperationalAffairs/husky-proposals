@@ -64,9 +64,14 @@ describe("emails about your own post (#211): status changes", () => {
     expect(message.text).toContain("Why it is on hold: Waiting on the dining contract.");
   });
 
-  it("says why it was sent, last", () => {
+  it("says why it was sent and links the notification settings, last", () => {
     const text = renderPostStatusEmail(payload, "a@example.com", siteUrl).text;
-    expect(text.endsWith("\n\nYou get this email because you posted this idea.")).toBe(true);
+    expect(
+      text.endsWith(
+        "\n\nYou get this email because you posted this idea.\n" +
+          `Change which emails you get: ${siteUrl}/me/notifications`,
+      ),
+    ).toBe(true);
   });
 
   it("never says petition or vote, and never uses an em dash", () => {

@@ -323,7 +323,29 @@ describeWithDatabase("emails about your own post (#211)", () => {
     });
   });
 
-  it("a stopped follower gets no follower row", async () => {
+  it("honors each opt-out on its own type", async () => {
+    await withSeed(async (tx) => {
+      await tx.emailOptOut.create({ data: { userId: users.student.id, type: "post_decided" } });
+      expect(await queueDecisionEmail(tx, pendingDecline)).toEqual({ queued: 0 });
+      expect(await queuePostStatusEmail(tx, started)).toEqual({ queued: 1 });
+    });
+    await withSeed(async (tx) => {
+      await tx.emailOptOut.create({ data: { userId: users.student.id, type: "post_status" } });
+      expect(await queuePostStatusEmail(tx, started)).toEqual({ queued: 0 });
+      expect(await queueDecisionEmail(tx, pendingDecline)).toEqual({ queued: 1 });
+    });
+  });
+
+  it("a follower who turned off idea_event gets no follower row, while the others do", async () => {
+    await withSeed(async (tx) => {
+      const [quiet] = await addFollowers(tx, 3);
+      await tx.emailOptOut.create({ data: { userId: quiet!.id, type: "idea_event" } });
+      expect(await queueFollowerEmails(tx, started)).toEqual({ queued: 2 });
+      expect(await tx.emailOutbox.count({ where: { userId: quiet!.id } })).toBe(0);
+    });
+  });
+
+  it("a bounce stops every type whatever the toggles say", async () => {
     await withSeed(async (tx) => {
       const [follower] = await addFollowers(tx, 1);
       await tx.user.update({ where: { id: follower!.id }, data: { emailStoppedAt: FIXTURE_TIME } });
@@ -372,7 +394,7 @@ describeWithDatabase("emails about your own post (#211)", () => {
     });
   });
 
-  it("drains a declined row to the author with the reason and the edit link", async () => {
+  it("drains a declined row to the author with the reason, the edit link, and the settings link", async () => {
     await withSeed(async (tx) => {
       await queueDecisionEmail(tx, pendingDecline);
       const mailer = createCapturingMailer();
@@ -382,6 +404,7 @@ describeWithDatabase("emails about your own post (#211)", () => {
       expect(message?.subject).toBe(`Your post was not approved: ${ideas.pending.title}`);
       expect(message?.text).toContain(REASON);
       expect(message?.text).toContain(`${SITE}/me/ideas/${ideas.pending.id}/edit`);
+      expect(message?.text).toContain(`${SITE}/me/notifications`);
       const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "post_decided" } });
       expect(row.sentAt).toEqual(NOW);
     });
@@ -399,7 +422,19 @@ describeWithDatabase("emails about your own post (#211)", () => {
     });
   });
 
-  it("a stopped account gets nothing at send", async () => {
+  it("a row for a type turned off after it was queued fails with 'turned off' and is not sent", async () => {
+    await withSeed(async (tx) => {
+      await queueDecisionEmail(tx, pendingDecline);
+      await tx.emailOptOut.create({ data: { userId: users.student.id, type: "post_decided" } });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({ sent: 0, failed: 1 });
+      expect(mailer.sent).toHaveLength(0);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "post_decided" } });
+      expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "turned off" });
+    });
+  });
+
+  it("a stopped account gets nothing at send, even with every toggle on", async () => {
     await withSeed(async (tx) => {
       await queuePostStatusEmail(tx, started);
       await tx.user.update({ where: { id: users.student.id }, data: { emailStoppedAt: FIXTURE_TIME } });

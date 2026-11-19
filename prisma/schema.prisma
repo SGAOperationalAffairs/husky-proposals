@@ -155,7 +155,8 @@ model User {
   follows          Follow[]
   updates          Update[]
   emailPreference  EmailPreference?
-  outbox           EmailOutbox[]
+  emailOptOuts     EmailOptOut[]
+  outbox          EmailOutbox[]
   accessLogEntries AccessLog[]
 
   @@map("users")
@@ -424,6 +425,19 @@ model EmailPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("email_preferences")
+}
+
+// A type of email the student turned off (#211). No row means on. Only the four types in
+// src/core/emailSettings.ts are ever written. users.email_stopped_at still stops everything.
+model EmailOptOut {
+  userId    String    @map("user_id") @db.Uuid
+  type      EmailType
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type])
+  @@map("email_opt_outs")
 }
 
 // Every email is a row. Sent first in, first out within each priority, under
