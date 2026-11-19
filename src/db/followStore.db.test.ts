@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
-import { setFollow } from "@/app/_follow/setFollow";
+import { setFollow as applyFollow } from "@/app/_follow/setFollow";
 import { rolesFromPositions } from "@/core/positions";
 import { prismaFollowStore } from "./followStore";
 import { describeWithDatabase } from "./testing/database";
@@ -18,6 +18,10 @@ const priya: Session = {
   roles: rolesFromPositions([]),
 };
 const where = { userId: priya.user.id, ideaId: ideas.foodPantry.id };
+const NOW = new Date("2026-11-18T14:30:00Z");
+// The action passes a clock; the store tests use one fixed time.
+const setFollow = (store: Parameters<typeof applyFollow>[0], session: Session, raw: unknown) =>
+  applyFollow(store, session, raw, NOW);
 
 describeWithDatabase("follow store (#101)", () => {
   it("following twice leaves one follow row", async () => {
@@ -38,6 +42,28 @@ describeWithDatabase("follow store (#101)", () => {
       expect(await setFollow(store, priya, off)).toEqual({ ok: true, following: false });
       expect(await tx.follow.count({ where })).toBe(0);
       expect(await setFollow(store, priya, off)).toEqual({ ok: true, following: false });
+    });
+  });
+
+  it("refuses to follow a closed or delivered idea and writes nothing (#255)", async () => {
+    await withSeed(async (tx) => {
+      const result = await setFollow(prismaFollowStore(tx), priya, {
+        ideaId: ideas.compostBins.id,
+        following: true,
+      });
+      expect(result).toEqual({ ok: false, error: { code: "closed" } });
+      expect(await tx.follow.count({ where: { userId: priya.user.id, ideaId: ideas.compostBins.id } })).toBe(
+        0,
+      );
+    });
+  });
+
+  it("counts follows toward the abuse limit, and the 61st in one minute writes nothing (#255)", async () => {
+    await withSeed(async (tx) => {
+      const store = prismaFollowStore(tx);
+      const input = { ideaId: ideas.foodPantry.id, following: true };
+      for (let i = 0; i < 60; i++) await setFollow(store, priya, input);
+      expect(await setFollow(store, priya, input)).toEqual({ ok: false, error: { code: "rate_limited" } });
     });
   });
 
