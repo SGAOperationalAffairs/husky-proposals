@@ -77,6 +77,52 @@ describe("EditPostView (#128)", () => {
     expect(screen.queryByRole("link", { name: "See the idea" })).toBeNull();
   });
 
+  it("sent back: heads the reason Why it was sent back, and keeps the form (#286)", () => {
+    render(<EditPostView data={{ ...SAMPLE_OWN_POST, sentBack: true }} pendingCount={0} />);
+    expect(screen.getByText("Why it was sent back")).toBeTruthy();
+    expect(screen.queryByText("Why it was not approved")).toBeNull();
+    expect(screen.getByText(SAMPLE_OWN_POST.reason!)).toBeTruthy();
+    expect(screen.getByRole("form", { name: "Edit your post" })).toBeTruthy();
+    expect(
+      screen.getByText("Change what the reviewer asked for, then send it for review again."),
+    ).toBeTruthy();
+  });
+
+  it("taken down: shows the reason, no form, and no link to the idea (#286)", () => {
+    render(
+      <EditPostView
+        data={{
+          ...SAMPLE_OWN_POST,
+          reviewStatus: "taken_down",
+          number: 142,
+          reason: "It names a person.",
+        }}
+        pendingCount={0}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Taken down" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "A reviewer took this idea off the ideas list. It can no longer be edited or sent for review again.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("Why it was taken down")).toBeTruthy();
+    expect(screen.getByText("It names a person.")).toBeTruthy();
+    expect(screen.queryByRole("form")).toBeNull();
+    expect(screen.queryByRole("link", { name: "See the idea" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Back to my ideas" }).getAttribute("href")).toBe("/me");
+  });
+
+  it("taken down with no reason says so (#286)", () => {
+    render(
+      <EditPostView
+        data={{ ...SAMPLE_OWN_POST, reviewStatus: "taken_down", reason: null }}
+        pendingCount={0}
+      />,
+    );
+    expect(screen.getByText("The reviewer did not leave a reason.")).toBeTruthy();
+  });
+
   it("does not promise action", () => {
     render(<EditPostView data={SAMPLE_OWN_POST} pendingCount={0} />);
     expect(document.body.textContent).not.toMatch(/petition|will be approved|will be built|we will/i);

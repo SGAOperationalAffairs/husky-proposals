@@ -83,6 +83,60 @@ describe("pending idea card, Learn more (#200)", () => {
   });
 });
 
+const sentBack = {
+  ...declined,
+  number: 203,
+  review: "sent_back" as const,
+  declineReason: "Add the cost and the place, then send it again for review.",
+};
+const takenDown = {
+  ...declined,
+  number: 204,
+  review: "taken_down" as const,
+  declineReason: "It names a person.",
+};
+const editHref = "/me/ideas/6f9c0f5e-2b1d-4a63-9a53-0d3f9b2f1c10/edit";
+
+describe("pending idea card, sent back (#286)", () => {
+  it("says Sent back, shows the reason and SENT BACK, and keeps Edit and Withdraw", () => {
+    render(<PendingIdeaCard {...sentBack} editHref={editHref} />);
+    expect(screen.getByText("Sent back")).toBeTruthy();
+    expect(screen.getByText("SENT BACK")).toBeTruthy();
+    expect(screen.getByText(sentBack.declineReason)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Edit" }).getAttribute("href")).toBe(editHref);
+    expect(screen.getByRole("link", { name: "Withdraw" }).getAttribute("href")).toBe(`${editHref}#withdraw`);
+  });
+
+  it("opens the reason under Why it was sent back, with a way to edit", () => {
+    render(<PendingIdeaCard {...sentBack} editHref={editHref} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Learn more/ }));
+    const dialog = screen.getByRole("dialog", { name: "Sent back" });
+    expect(dialog.textContent).toContain("Why it was sent back");
+    expect(dialog.textContent).toContain(sentBack.declineReason);
+    expect(screen.getByRole("link", { name: "Edit and resubmit" })).toBeTruthy();
+  });
+});
+
+describe("pending idea card, taken down (#286)", () => {
+  it("says Taken down, shows the reason and TAKEN DOWN, and offers no Edit or Withdraw", () => {
+    render(<PendingIdeaCard {...takenDown} editHref={editHref} />);
+    expect(screen.getByText("Taken down")).toBeTruthy();
+    expect(screen.getByText("TAKEN DOWN")).toBeTruthy();
+    expect(screen.getByText(takenDown.declineReason)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Edit" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Withdraw" })).toBeNull();
+  });
+
+  it("opens the reason under Why it was taken down, with no way to edit", () => {
+    render(<PendingIdeaCard {...takenDown} editHref={editHref} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Learn more/ }));
+    const dialog = screen.getByRole("dialog", { name: "Taken down" });
+    expect(dialog.textContent).toContain("Why it was taken down");
+    expect(dialog.textContent).toContain("can no longer be edited or sent for review again");
+    expect(screen.queryByRole("link", { name: "Edit and resubmit" })).toBeNull();
+  });
+});
+
 describe("pending idea card, declined (#194, #128)", () => {
   it("says the post is not approved, shows the reason, and shows DECLINED", () => {
     render(<PendingIdeaCard {...declined} />);

@@ -450,6 +450,27 @@ describeWithDatabase("emails about your own post (#211)", () => {
     });
   });
 
+  it("a sent-back decision queues exactly one row, to the author only, with no reviewer or email field (#286)", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 3);
+      expect(
+        await queueDecisionEmail(tx, {
+          ...pendingDecline,
+          ideaId: ideas.foodPantry.id,
+          decision: "sent_back",
+          reviewId: testUuid(7003),
+        }),
+      ).toEqual({ queued: 1 });
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.userId).toBe(users.student.id);
+      expect(rows[0]?.payload).toMatchObject({ event: { kind: "sent_back", reason: REASON } });
+      expect(Object.keys(rows[0]?.payload as object).sort()).toEqual(
+        ["boardId", "event", "ideaId", "ideaNumber", "ideaTitle", "isAnonymous"].sort(),
+      );
+    });
+  });
+
   it("an idea with no author queues nothing, and neither does a stopped author", async () => {
     await withSeed(async (tx) => {
       expect(await queuePostStatusEmail(tx, { ...started, ideaId: ideas.refillStations.id })).toEqual({

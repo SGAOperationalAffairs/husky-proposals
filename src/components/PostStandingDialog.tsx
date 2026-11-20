@@ -15,7 +15,8 @@ import { PAGE } from "./pageTransition";
 export type PostStandingDialogData = {
   title: string;
   board: BoardCode;
-  review: "pending" | "declined";
+  // sent_back and taken_down are what a reviewer did to an approved post (#286).
+  review: "pending" | "declined" | "sent_back" | "taken_down";
   declineReason?: string;
   // The author-only edit page (#128). Without it, a declined post offers only Close.
   editHref?: string;
@@ -34,7 +35,23 @@ export function PostStandingDialog({
   waitText,
 }: PostStandingDialogData) {
   const b = BOARDS[board];
-  const declined = review === "declined";
+  const takenDown = review === "taken_down";
+  // A declined or sent-back post can be edited and sent again. A taken-down one is final.
+  const declined = review === "declined" || review === "sent_back";
+  const reasonHeading =
+    review === "sent_back"
+      ? "Why it was sent back"
+      : takenDown
+        ? "Why it was taken down"
+        : "Why it was not approved";
+  const heading =
+    review === "sent_back"
+      ? "Sent back"
+      : takenDown
+        ? "Taken down"
+        : declined
+          ? "Not approved"
+          : "Waiting for review";
   return (
     <Dialog.Root>
       <Dialog.Trigger
@@ -48,18 +65,18 @@ export function PostStandingDialog({
           data-board={b.color}
           className="sheet board-accent flex flex-col gap-4 bg-surface text-ink"
         >
-          <Dialog.Title className="heading text-4xl">
-            {declined ? "Not approved" : "Waiting for review"}
-          </Dialog.Title>
+          <Dialog.Title className="heading text-4xl">{heading}</Dialog.Title>
           <p className="font-bold">{title}</p>
-          {declined ? (
+          {declined || takenDown ? (
             <>
               <section className="flex flex-col gap-1">
-                <h3 className="font-bold">Why it was not approved</h3>
+                <h3 className="font-bold">{reasonHeading}</h3>
                 <p className="max-w-prose">{declineReason || "The reviewer did not leave a reason."}</p>
               </section>
               <p className="max-w-prose">
-                Change what the reviewer asked for, then send it for review again.
+                {takenDown
+                  ? "This post can no longer be edited or sent for review again."
+                  : "Change what the reviewer asked for, then send it for review again."}
               </p>
               <p className={PRIVATE_NOTE}>
                 This post is not public. Only you, the board&apos;s reviewer, and the VP of Campus Affairs can

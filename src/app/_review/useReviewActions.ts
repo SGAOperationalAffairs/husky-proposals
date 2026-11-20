@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
-import { approvePost, declinePost, takeDownPost } from "./actions";
+import { approvePost, declinePost, sendBackPost, takeDownPost } from "./actions";
 import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import { decisionMessage, TRY_AGAIN_TEXT, type DecisionCode, type DecisionContext } from "./messages";
 
@@ -12,7 +12,7 @@ import { decisionMessage, TRY_AGAIN_TEXT, type DecisionCode, type DecisionContex
 // for what happened, refreshes the page's data, and holds the busy and error state.
 // It never retries. Callers use the returned boolean to close their drawer or dialog
 // and to move focus.
-export type ReviewBusy = "approve" | "decline" | "take_down" | null;
+export type ReviewBusy = "approve" | "decline" | "send_back" | "take_down" | null;
 export type ReviewError = { text: string; field?: "reason" } | null;
 
 type Outcome =
@@ -88,6 +88,18 @@ export function useReviewActions() {
             title: "Declined",
             description:
               "The student sees your reason and can edit it and send it again. Any email to them can take a while to arrive.",
+            board: target.boardId,
+          }),
+      ),
+    sendBack: (target: Target & { number: number }, reason: string) =>
+      run(
+        "send_back",
+        "send_back",
+        () => sendBackPost({ ideaId: target.id, reason }),
+        () =>
+          toast({
+            title: "Sent back",
+            description: `#${target.number} is off the ideas list. The student can edit it and send it again. Any email to them can take a while to arrive.`,
             board: target.boardId,
           }),
       ),

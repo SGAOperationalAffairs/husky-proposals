@@ -65,12 +65,13 @@ describe("review actions (#58)", () => {
     reviewStore.find.mockResolvedValue(pending());
   });
 
-  it("refuses a request from another site before the session or a store is touched, for all four actions", async () => {
+  it("refuses a request from another site before the session or a store is touched, for all five actions", async () => {
     headerValues = foreign;
     const actions = await import("./actions");
     const calls = [
       actions.approvePost({ ideaId: IDEA }),
       actions.declinePost({ ideaId: IDEA, reason: "No" }),
+      actions.sendBackPost({ ideaId: IDEA, reason: "No" }),
       actions.takeDownPost({ ideaId: IDEA, reason: "No" }),
       actions.setReviewDueDays({ boardId: "DAB", days: 3 }),
     ];
@@ -101,10 +102,24 @@ describe("review actions (#58)", () => {
     expect(updateTag.mock.calls).toEqual([["ideas"], ["idea:157"]]);
   });
 
+  it("a successful send-back refreshes both tags (#286)", async () => {
+    const actions = await import("./actions");
+    reviewStore.find.mockResolvedValue({ ...pending(), reviewStatus: "approved", number: 131 });
+    const reason = "Add the cost and the place, then send it again for review";
+    expect(await actions.sendBackPost({ ideaId: IDEA, reason })).toMatchObject({
+      ok: true,
+      reviewStatus: "declined",
+    });
+    expect(updateTag.mock.calls).toEqual([["ideas"], ["idea:131"]]);
+  });
+
   it("a successful take-down refreshes both tags, and a decline refreshes none", async () => {
     const actions = await import("./actions");
     reviewStore.find.mockResolvedValue({ ...pending(), reviewStatus: "approved", number: 131 });
-    expect(await actions.takeDownPost({ ideaId: IDEA, reason: "Not accurate" })).toMatchObject({ ok: true });
+    expect(await actions.takeDownPost({ ideaId: IDEA, reason: "Not accurate" })).toMatchObject({
+      ok: true,
+      reviewStatus: "taken_down",
+    });
     expect(updateTag.mock.calls).toEqual([["ideas"], ["idea:131"]]);
 
     updateTag.mockClear();

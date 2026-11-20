@@ -7,11 +7,11 @@ import { z } from "zod";
 import { BOARD_CODES } from "./boards";
 
 // Mirrors the ReviewStatus enum in prisma/schema.prisma, pinned by a test (#50).
-export const REVIEW_STATUSES = ["pending", "approved", "declined", "withdrawn"] as const;
+export const REVIEW_STATUSES = ["pending", "approved", "declined", "withdrawn", "taken_down"] as const;
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 
 // Mirror the ReviewKind and ReviewDecision enums, pinned by tests (#50).
-export const REVIEW_KINDS = ["review", "take_down"] as const;
+export const REVIEW_KINDS = ["review", "take_down", "send_back"] as const;
 export type ReviewKind = (typeof REVIEW_KINDS)[number];
 
 export const REVIEW_DECISIONS = ["approved", "declined"] as const;
@@ -46,10 +46,11 @@ export function reviewDueAt(submittedAt: Date, dueDays: number): Date {
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
-// Input for the review server actions (#58). The reason is shared by decline and take-down.
+// Input for the review server actions (#58). The looser reason is for take-down (#286).
 export const approveInputSchema = z.object({ ideaId: z.uuid() });
 export const reasonInputSchema = z.object({ ideaId: z.uuid(), reason: text(1000) });
-// A decline needs enough written for the student to know what to change (#58).
+// A decline or a send-back needs enough written for the student to know what to change
+// (#58, #286).
 export const DECLINE_REASON_MIN = 40;
 export const declineReasonSchema = z.object({
   ideaId: z.uuid(),
@@ -70,6 +71,7 @@ export type ReviewPost = { reviewStatus: ReviewStatus; authorId: string | null }
 export type ReviewEvent =
   | { type: "approve"; actorId: string }
   | { type: "decline"; actorId: string; reason: string }
+  | { type: "send_back"; actorId: string; reason: string }
   | { type: "take_down"; actorId: string; reason: string }
   | { type: "withdraw"; actorId: string }
   | { type: "resubmit"; actorId: string; pendingCount: number };
@@ -97,8 +99,9 @@ export type ReviewResult =
 const TRANSITIONS: Record<ReviewStatus, Partial<Record<EventType, ReviewStatus>>> = {
   pending: { approve: "approved", decline: "declined", withdraw: "withdrawn" },
   declined: { resubmit: "pending", withdraw: "withdrawn" },
-  approved: { take_down: "declined" },
+  approved: { send_back: "declined", take_down: "taken_down" },
   withdrawn: {}, // final (#49)
+  taken_down: {}, // final (#286)
 };
 
 const fail = (error: ReviewError): ReviewResult => ({ ok: false, error });
@@ -116,6 +119,7 @@ export function applyReviewEvent(post: ReviewPost, event: ReviewEvent): ReviewRe
   switch (event.type) {
     case "approve":
     case "decline":
+    case "send_back":
     case "take_down":
       // Nobody decides their own post (data-model gap 7). A null author never matches.
       if (isAuthor) return fail({ code: "own_post" });
@@ -127,7 +131,7 @@ export function applyReviewEvent(post: ReviewPost, event: ReviewEvent): ReviewRe
   }
 
   let reason: string | null = null;
-  if (event.type === "decline" || event.type === "take_down") {
+  if (event.type === "decline" || event.type === "send_back" || event.type === "take_down") {
     reason = event.reason.trim();
     if (reason === "") return fail({ code: "reason_required" });
   }
@@ -139,10 +143,16 @@ export function applyReviewEvent(post: ReviewPost, event: ReviewEvent): ReviewRe
   let review: ReviewRecord | null = null;
   if (event.type === "approve") review = { kind: "review", decision: "approved", reason: null };
   if (event.type === "decline") review = { kind: "review", decision: "declined", reason };
+  if (event.type === "send_back") review = { kind: "send_back", decision: "declined", reason };
   if (event.type === "take_down") review = { kind: "take_down", decision: "declined", reason };
 
-  // The idea status is null unless approved, so a take-down clears it.
-  return { ok: true, reviewStatus: next, review, clearIdeaStatus: event.type === "take_down" };
+  // The idea status is null unless approved, so a send-back or take-down clears it.
+  return {
+    ok: true,
+    reviewStatus: next,
+    review,
+    clearIdeaStatus: event.type === "send_back" || event.type === "take_down",
+  };
 }
 
 // A brand-new post has no prior state, so it only checks the limit.

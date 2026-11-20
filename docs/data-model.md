@@ -25,7 +25,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - How to handle ideas outside Campus Affairs is open (D15).
 
 **idea**
-`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting, closed), `waiting_reason`, `closed_reason` (#237), `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
+`id`, `number` (public, like "Proposal 103"), `title`, `description`, `full_text` (optional), `board_id`, `category`, `location`, `scale` (small, medium, large), `cost_band` (under $1k, $1k to $5k, $5k+), `time_horizon`, `author_id`, `is_anonymous`, `review_status` (pending, approved, declined, withdrawn, taken_down), `decline_reason`, `status` (collecting_support, under_review, in_progress, delivered, waiting, closed), `waiting_reason`, `closed_reason` (#237), `created_at`, `approved_at`, `promoted_at` and `promoted_by` (later), `delivered_at`.
 - `category` is the topic the student picked, in their words (Dining, Campus Planning, and so on). It is what the student chose and it does not change.
 - `board_id` is the board that owns the idea. It comes from the category when the idea is posted, but a move between boards changes only `board_id`. `category` stays as the student chose it.
 
@@ -33,8 +33,8 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 `id`, `idea_id`, `version`, the editable fields, `submitted_at`.
 
 **review**
-`id`, `idea_id`, `revision_id`, `reviewer_id`, `kind` (review, take_down), `decision` (approved, declined), `reason` (required when declined, which covers a decline and a take-down), `decided_at`.
-- One review decision per revision, plus at most one take-down. A take-down always has `decision` declined.
+`id`, `idea_id`, `revision_id`, `reviewer_id`, `kind` (review, take_down, send_back), `decision` (approved, declined), `reason` (required when declined, which covers a decline, a send-back, and a take-down), `decided_at`.
+- One review decision per revision, plus at most one take-down or send-back. A take-down and a send-back always have `decision` declined (#286).
 - `due_by` on the idea or review is `submitted_at` plus the board's `review_due_days` (3 by default, set per board). It drives the red number and the 90% target.
 - If declines turn out to be appealable (PRD D9), add an appeal link to the decline message. There is no appeal flow in the app.
 
@@ -66,7 +66,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 **email_outbox**
 `id`, `user_id`, `type` (post_decided, post_status, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `provider_message_id` (indexed; matches a bounce webhook to its row), `bounced_at` (set by the Resend bounce webhook), `last_error`.
 - A bounce also sets `email_stopped_at` on the user, and mail still queued for that user is not sent.
-- Emails about your own post (#211): a review decision (approve, decline, take down) queues one `post_decided` row, and a status change (start, hold, deliver) queues one `post_status` row, both at priority 1. The recipient is always the idea's author, read from the idea and never passed in, so no one else is ever emailed about a post. An anonymous post's email goes to the author's account. Followers get `idea_event` rows instead and never include the author for a status change, so the author gets one email per change.
+- Emails about your own post (#211): a review decision (approve, decline, send back, take down) queues one `post_decided` row whose text says which one happened, and a status change (start, hold, deliver) queues one `post_status` row, both at priority 1. The recipient is always the idea's author, read from the idea and never passed in, so no one else is ever emailed about a post. An anonymous post's email goes to the author's account. Followers get `idea_event` rows instead and never include the author for a status change, so the author gets one email per change.
 - A worker sends rows first in, first out within each priority, under a daily budget.
 - When a limit is hit, rows wait for the next run. None are dropped.
 
@@ -95,8 +95,9 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - `pending` moves to `approved` or `declined`.
 - A declined idea returns to `pending` when the author edits and resubmits.
 - `pending` or `declined` moves to `withdrawn` when the author withdraws the post. This is final and writes no review row.
-- `approved` moves to `declined` through a take-down by a reviewer, with a written reason, recorded in the review history.
-- Only reviewers can decide or take down. A decline or a take-down needs a written reason.
+- `approved` moves to `declined` through a send-back by a reviewer (#286), with a written reason of at least 40 characters, recorded in the review history. The idea keeps its number, and the author edits and resubmits as after any decline.
+- `approved` moves to `taken_down` through a take-down by a reviewer (#286), with a written reason. This is final, like `withdrawn`: the author cannot edit, resubmit, or withdraw it, and it is never public.
+- Only reviewers can decide, send back, or take down. A decline, a send-back, or a take-down needs a written reason.
 - Approved ideas become visible to everyone with the link.
 - A student can have at most 3 posts pending at once.
 
@@ -123,8 +124,8 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 - **Signed-out visitors and students (not the author):** get the student shape.
   - They never receive `author_id` or supporter identities.
   - If `is_anonymous` is true, they never see the author's name at all. The form labels this "anonymous to students" and says exactly who can see the name.
-  - Pending and declined posts are never shown to them.
-- **The author:** sees their own post and its review status, with the reviewer's reason if declined.
+  - Pending, declined, and taken-down posts are never shown to them.
+- **The author:** sees their own post and its review status, with the reviewer's reason if declined, sent back, or taken down. A sent-back post can be edited and resubmitted. A taken-down post cannot.
 - **Anonymous authors:** only the reviewer for the idea's board and the VP of Campus Affairs can see who posted an anonymous idea, so someone can follow up if it moves forward. No other leader sees it.
 - **SGA leaders:** see the author of a non-anonymous post, and supporters, with names and northeastern.edu emails (names alone are often too generic to identify someone). How to define "leader" is open (D16). So is whether to log views.
 - **VPs** see the boards in their own division only, for compartmentalization. In version 1 that is the VP of Campus Affairs and the five Campus Affairs boards.
@@ -187,7 +188,7 @@ From a review of the plan with SGA leadership. These change the schema in #12 wh
 Found while drawing the FigJam review diagrams (October 23, 2026, #6). Each needs a decision before the epic named in brackets. The schema's provisional defaults are listed in its comments.
 
 **States and transitions:**
-1. **Taking down an approved idea.** Resolved in #49: a take-down is a second `review` row on the approved revision, with `kind` take_down, `decision` declined, and a required reason. The idea returns to `declined` and the author can edit and resubmit. The app action is E4.
+1. **Taking down an approved idea.** Resolved in #49 and split in #286. Each outcome is a second `review` row on the approved revision, with `decision` declined and a required reason. A send back (`kind` send_back) returns the idea to `declined`, and the author can edit and resubmit. A take down (`kind` take_down) moves the idea to `taken_down`, which is final. The app actions are E4.
 2. **Withdrawing a post.** Resolved in #49: `withdrawn` is a new review status. The author can withdraw a pending or declined post, it is final, and it no longer counts toward the 3 pending. The app action is E4.
 3. **In progress only moves to delivered.** Resolved in #126: in progress can move to waiting, with a reason, and that writes a system update. Closed (#237) covers work that is dropped.
 4. **Delivered is final.** Resolved in #126: a delivered idea can be reopened to in progress.

@@ -64,9 +64,13 @@ function IdeaGrid({ rows, now }: { rows: MyRow[]; now: Date }) {
               title={row.title}
               description={row.description}
               board={row.board}
-              review={row.review === "declined" ? "declined" : "pending"}
+              review={row.review === "approved" ? "pending" : row.review}
               declineReason={row.declineReason}
-              editHref={row.review === "declined" && row.id ? `/me/ideas/${row.id}/edit` : undefined}
+              editHref={
+                (row.review === "declined" || row.review === "sent_back") && row.id
+                  ? `/me/ideas/${row.id}/edit`
+                  : undefined
+              }
               waitText={
                 row.review === "pending"
                   ? studentWaitText(row.reviewDueAt ? new Date(row.reviewDueAt) : null, now)

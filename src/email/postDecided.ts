@@ -9,9 +9,10 @@ import type { EmailMessage } from "./sendEmail";
 // the event, builds its dedupe key, and renders the text. The recipient is never part of
 // the payload: the outbox reads it from the idea's author.
 
-export type PostDecision = "approved" | "declined" | "taken_down";
+export type PostDecision = "approved" | "declined" | "sent_back" | "taken_down";
 
-// A take-down is stored as a declined review of kind take_down, so the kind decides.
+// A send-back and a take-down are stored as declined reviews of kind send_back and
+// take_down, so the kind decides (#286).
 export function decisionKindOf({
   kind,
   decision,
@@ -19,7 +20,9 @@ export function decisionKindOf({
   kind: ReviewKind;
   decision: ReviewDecision;
 }): PostDecision {
-  return kind === "take_down" ? "taken_down" : decision;
+  if (kind === "take_down") return "taken_down";
+  if (kind === "send_back") return "sent_back";
+  return decision;
 }
 
 export type PostDecidedEvent = {
@@ -53,13 +56,14 @@ export const postDecidedPayloadSchema = z
     event: z.discriminatedUnion("kind", [
       z.strictObject({ kind: z.literal("approved") }),
       z.strictObject({ kind: z.literal("declined"), reason: z.string().min(1) }),
+      z.strictObject({ kind: z.literal("sent_back"), reason: z.string().min(1) }),
       z.strictObject({ kind: z.literal("taken_down"), reason: z.string().min(1) }),
     ]),
   })
-  // A post is public under its number, so an approval and a take-down always have one.
-  // A first decline never had one.
+  // A post is public under its number, so an approval, a send-back, and a take-down
+  // always have one. A first decline never had one.
   .refine((payload) => payload.event.kind === "declined" || payload.ideaNumber !== null, {
-    message: "An approval or take-down needs the idea's number",
+    message: "An approval, send-back, or take-down needs the idea's number",
     path: ["ideaNumber"],
   });
 
@@ -112,6 +116,26 @@ export function renderPostDecidedEmail(
     };
   }
 
+  if (event.kind === "sent_back") {
+    return {
+      to,
+      subject: `Your idea was sent back: Proposal #${ideaNumber}`,
+      text: [
+        payload.ideaTitle,
+        "",
+        `The ${board} took #${ideaNumber} off the ideas list for now and sent it back to you. Other students can no longer see it.`,
+        "",
+        "What to change:",
+        event.reason,
+        "",
+        `Change what the reviewer asked for, then send it for review again. It keeps #${ideaNumber} if it is approved again.`,
+        editLink,
+        ...footer,
+      ].join("\n"),
+    };
+  }
+
+  // A take-down is final (#286): no edit link, only a way to post something new.
   return {
     to,
     subject: `Proposal #${ideaNumber} was taken down`,
@@ -123,8 +147,8 @@ export function renderPostDecidedEmail(
       "Why it was taken down:",
       event.reason,
       "",
-      "You can edit it and send it for review again:",
-      editLink,
+      "This post can no longer be edited or sent for review again. You can still post a new idea:",
+      `${siteUrl}/post`,
       ...footer,
     ].join("\n"),
   };

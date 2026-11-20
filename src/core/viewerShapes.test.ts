@@ -102,8 +102,8 @@ describe("student shape", () => {
     expect(everyKeyAndValue(result)).not.toContain("Ada Lovelace");
   });
 
-  it("is never returned for a pending, declined, or withdrawn post to someone else", () => {
-    for (const reviewStatus of ["pending", "declined", "withdrawn"] as const) {
+  it("is never returned for a pending, declined, withdrawn, or taken-down post to someone else", () => {
+    for (const reviewStatus of ["pending", "declined", "withdrawn", "taken_down"] as const) {
       expect(ideaForViewer(visitor, idea({ reviewStatus }))).toBeNull();
       expect(ideaForViewer(student, idea({ reviewStatus }))).toBeNull();
     }
@@ -129,12 +129,16 @@ describe("student shape of a closed idea (#237)", () => {
 
   it("carries no identity and no reviewer data anywhere in its keys or values", () => {
     const seen = everyKeyAndValue(
-      ideaForViewer(student, closed({ reviews: [{ decision: "approved", reason: "Fine." }] })),
+      ideaForViewer(
+        student,
+        closed({ reviews: [{ decision: "approved", kind: "review", reason: "Fine." }] }),
+      ),
     );
     for (const forbidden of [
       ...FORBIDDEN_IN_STUDENT_SHAPE,
       "reviews",
       "review",
+      "kind",
       "reviewerId",
       "decision",
       "closedBy",
@@ -170,12 +174,28 @@ describe("author shape", () => {
       author,
       idea({
         reviewStatus: "declined",
-        reviews: [{ decision: "declined", reason: "Too similar to #88." }],
+        reviews: [{ decision: "declined", kind: "review", reason: "Too similar to #88." }],
       }),
     );
     expect(result?.idea).toMatchObject({
       reviewStatus: "declined",
-      review: { decision: "declined", reason: "Too similar to #88." },
+      review: { decision: "declined", kind: "review", reason: "Too similar to #88." },
+    });
+  });
+
+  it("gives the author the kind and reason of a take-down (#286)", () => {
+    const result = ideaForViewer(
+      author,
+      idea({
+        reviewStatus: "taken_down",
+        status: null,
+        reviews: [{ decision: "declined", kind: "take_down", reason: "It names a person." }],
+      }),
+    );
+    expect(result?.shape).toBe("author");
+    expect(result?.idea).toMatchObject({
+      reviewStatus: "taken_down",
+      review: { decision: "declined", kind: "take_down", reason: "It names a person." },
     });
   });
 
@@ -188,6 +208,18 @@ describe("author shape", () => {
 describe("leader shape", () => {
   it("is not given to a student, even on an approved idea", () => {
     expect(ideaForViewer(student, idea())?.shape).toBe("student");
+  });
+
+  it("gives a taken-down post to its board's chair and the VP, and to no other leader (#286)", () => {
+    const takenDown = idea({ reviewStatus: "taken_down", status: null });
+    expect(ideaForViewer(dabChair, takenDown)?.shape).toBe("leader");
+    expect(ideaForViewer(vp, takenDown)?.shape).toBe("leader");
+    expect(ideaForViewer(cscChair, takenDown)).toBeNull();
+  });
+
+  it("hides a taken-down post from a board member, who cannot review the board (#286)", () => {
+    const dabMember = viewer("dab-member", [BOARD_POSITIONS.DAB.member]);
+    expect(ideaForViewer(dabMember, idea({ reviewStatus: "taken_down", status: null }))).toBeNull();
   });
 
   it("lets the board's chair see a pending post on that board", () => {
