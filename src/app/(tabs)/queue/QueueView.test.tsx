@@ -8,6 +8,7 @@ import { QueueView } from "./QueueView";
 vi.mock("@/app/_review/actions", () => ({
   approvePost: vi.fn(),
   declinePost: vi.fn(),
+  sendBackPost: vi.fn(),
   takeDownPost: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
@@ -88,12 +89,14 @@ describe("the queue's lists and filters (#59)", () => {
     expect(screen.getByText("Nothing approved in the last 14 days.")).toBeTruthy();
   });
 
-  it("lists recently approved ideas with a take down button", () => {
+  it("lists recently approved ideas with send back and take down buttons (#286)", () => {
     view({ pending, approved });
     showApproved();
     expect(screen.getByRole("heading", { name: "Recently approved" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "A food pantry" }).getAttribute("href")).toBe("/ideas/157");
+    expect(screen.getByRole("button", { name: "Send back #157" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Take down #157" })).toBeTruthy();
+    expect(screen.getByText(/Send one back if the student can fix it/)).toBeTruthy();
     expect(screen.getByText("Approved 3 days ago")).toBeTruthy();
   });
 
@@ -103,6 +106,13 @@ describe("the queue's lists and filters (#59)", () => {
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByRole("heading", { name: "A study space" })).toBeTruthy();
     expect(within(dialog).getByRole("button", { name: "Approve and post" })).toBeTruthy();
+  });
+
+  it("opens the send-back dialog (#286)", async () => {
+    view({ pending, approved });
+    showApproved();
+    fireEvent.click(screen.getByRole("button", { name: "Send back #157" }));
+    expect(await screen.findByRole("dialog", { name: "Send #157 back to the student?" })).toBeTruthy();
   });
 
   it("opens the take-down dialog", async () => {

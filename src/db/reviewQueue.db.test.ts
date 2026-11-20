@@ -133,28 +133,32 @@ describeWithDatabase("the review queue (#58)", () => {
       });
     });
 
-    it("leaves out an idea that was taken down", async () => {
+    it("leaves out an idea that was sent back or taken down (#286)", async () => {
       await withSeed(async (tx) => {
-        const down = buildApprovedIdea({
-          boardId: "DAB",
-          approvedAt: daysAgo(1),
-          reviewStatus: "declined",
-          status: null,
-        });
-        await tx.idea.create({ data: down });
-        await tx.ideaRevision.create({ data: buildRevision(down) });
-        const ids = (await recentlyApproved(tx, vp, daysAgo(14))).map((item) => item.idea.id);
-        expect(ids).not.toContain(down.id);
+        for (const reviewStatus of ["declined", "taken_down"] as const) {
+          const gone = buildApprovedIdea({
+            boardId: "DAB",
+            approvedAt: daysAgo(1),
+            reviewStatus,
+            status: null,
+          });
+          await tx.idea.create({ data: gone });
+          await tx.ideaRevision.create({ data: buildRevision(gone) });
+          const ids = (await recentlyApproved(tx, vp, daysAgo(14))).map((item) => item.idea.id);
+          expect(ids, reviewStatus).not.toContain(gone.id);
+        }
       });
     });
   });
 
-  it("declined and withdrawn posts never appear", async () => {
+  it("declined, withdrawn, and taken-down posts never appear", async () => {
     await withSeed(async (tx) => {
       const withdrawn = await addPending(tx, 9, { boardId: "DAB", reviewStatus: "withdrawn" });
+      const takenDown = await addPending(tx, 10, { boardId: "DAB", reviewStatus: "taken_down" });
       const ids = (await reviewQueue(tx, vp)).map((item) => item.idea.id);
       expect(ids).not.toContain(ideas.declined.id);
       expect(ids).not.toContain(withdrawn.id);
+      expect(ids).not.toContain(takenDown.id);
     });
   });
 });

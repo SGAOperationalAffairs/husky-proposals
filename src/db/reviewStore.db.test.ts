@@ -1,11 +1,13 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
+import { resubmitPost, withdrawPost } from "@/app/_post/ownPost";
 import { decidePost } from "@/app/_review/decidePost";
 import { BOARD_POSITIONS, rolesFromPositions } from "@/core/positions";
 import { describeWithDatabase } from "@/db/testing/database";
 import { ideas, users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 import { isPublic } from "./ideaSelects";
+import { prismaOwnPostStore } from "./ownPostStore";
 import { prismaReviewStore } from "./reviewStore";
 
 // The review actions against Postgres (#58), inside the seed's rolled-back transaction.
@@ -65,16 +67,14 @@ describeWithDatabase("review decisions (#58)", () => {
     });
   });
 
-  it("taking down an approved idea removes it from the public query and keeps its number", async () => {
+  it("sending back an approved idea declines it, keeps its number, and takes it off the public query (#286)", async () => {
     await withSeed(async (tx) => {
+      const reason = "Add the cost and the place, then send it again for review.";
       const result = await decidePost(
         prismaReviewStore(tx),
         dabChair,
-        "take_down",
-        {
-          ideaId: ideas.lateNightDining.id,
-          reason: "The details were not accurate, so the board could not judge the idea.",
-        },
+        "send_back",
+        { ideaId: ideas.lateNightDining.id, reason },
         NOW,
       );
       expect(result).toMatchObject({ ok: true, reviewStatus: "declined", number: 131 });
@@ -86,12 +86,132 @@ describeWithDatabase("review decisions (#58)", () => {
         number: 131,
       });
       expect(await tx.idea.count({ where: { ...isPublic, id: ideas.lateNightDining.id } })).toBe(0);
+      const sendBack = await tx.review.findFirstOrThrow({
+        where: { ideaId: ideas.lateNightDining.id, kind: "send_back" },
+      });
+      expect(sendBack).toMatchObject({ decision: "declined", reason });
+    });
+  });
+
+  it("a sent-back idea can be resubmitted, and approving it again keeps its number (#286)", async () => {
+    await withSeed(async (tx) => {
+      const reason = "Add the cost and the place, then send it again for review.";
+      await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "send_back",
+        { ideaId: ideas.lateNightDining.id, reason },
+        NOW,
+      );
+      const author: Session = {
+        user: {
+          id: users.anonymousAuthor.id,
+          email: users.anonymousAuthor.email,
+          name: users.anonymousAuthor.displayName,
+        },
+        positions: [],
+        roles: rolesFromPositions([]),
+      };
+      const resubmitted = await resubmitPost(
+        prismaOwnPostStore(tx),
+        author,
+        {
+          ideaId: ideas.lateNightDining.id,
+          title: "A late-night dining option on weeknights",
+          summary: "Keep one dining location open until midnight for students coming out of labs.",
+          details:
+            "Labs and the library close late, and the dining halls close before they do. One location open later would fix that for students working into the night.",
+          category: "dining",
+        },
+        NOW,
+      );
+      expect(resubmitted).toMatchObject({ ok: true, version: 2 });
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.lateNightDining.id } })).toMatchObject({
+        reviewStatus: "pending",
+        number: 131,
+      });
+
+      const approved = await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "approve",
+        { ideaId: ideas.lateNightDining.id },
+        NOW,
+      );
+      expect(approved).toMatchObject({ ok: true, reviewStatus: "approved", number: 131 });
+    });
+  });
+
+  it("taking down an approved idea ends it as taken_down, keeping its number and its reason (#286)", async () => {
+    await withSeed(async (tx) => {
+      const result = await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "take_down",
+        {
+          ideaId: ideas.lateNightDining.id,
+          reason: "The details were not accurate, so the board could not judge the idea.",
+        },
+        NOW,
+      );
+      expect(result).toMatchObject({ ok: true, reviewStatus: "taken_down", number: 131 });
+      const idea = await tx.idea.findUniqueOrThrow({ where: { id: ideas.lateNightDining.id } });
+      expect(idea).toMatchObject({
+        reviewStatus: "taken_down",
+        status: null,
+        waitingReason: null,
+        number: 131,
+      });
+      expect(await tx.idea.count({ where: { ...isPublic, id: ideas.lateNightDining.id } })).toBe(0);
       const takeDown = await tx.review.findFirstOrThrow({
         where: { ideaId: ideas.lateNightDining.id, kind: "take_down" },
       });
       expect(takeDown).toMatchObject({
         decision: "declined",
         reason: "The details were not accurate, so the board could not judge the idea.",
+      });
+    });
+  });
+
+  it("a taken-down idea cannot be resubmitted, withdrawn, taken down again, or sent back (#286)", async () => {
+    await withSeed(async (tx) => {
+      const reason = "The details were not accurate, so the board could not judge the idea.";
+      await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "take_down",
+        { ideaId: ideas.lateNightDining.id, reason },
+        NOW,
+      );
+      const reviews = await tx.review.count({ where: { ideaId: ideas.lateNightDining.id } });
+      const author: Session = {
+        user: {
+          id: users.anonymousAuthor.id,
+          email: users.anonymousAuthor.email,
+          name: users.anonymousAuthor.displayName,
+        },
+        positions: [],
+        roles: rolesFromPositions([]),
+      };
+      const own = prismaOwnPostStore(tx);
+      expect(await withdrawPost(own, author, { ideaId: ideas.lateNightDining.id })).toMatchObject({
+        ok: false,
+        error: { code: "invalid_transition" },
+      });
+      for (const type of ["take_down", "send_back"] as const) {
+        expect(
+          await decidePost(
+            prismaReviewStore(tx),
+            dabChair,
+            type,
+            { ideaId: ideas.lateNightDining.id, reason },
+            NOW,
+          ),
+        ).toMatchObject({ ok: false, error: { code: "invalid_transition" } });
+      }
+      expect(await tx.review.count({ where: { ideaId: ideas.lateNightDining.id } })).toBe(reviews);
+      expect(await tx.idea.findUniqueOrThrow({ where: { id: ideas.lateNightDining.id } })).toMatchObject({
+        reviewStatus: "taken_down",
       });
     });
   });
@@ -169,6 +289,30 @@ describeWithDatabase("emails about your own post (#211): review decisions", () =
       expect(rows).toHaveLength(1);
       expect(rows[0]?.userId).toBe(users.student.id);
       expect(rows[0]?.payload).toMatchObject({ event: { kind: "declined", reason: declineReason } });
+    });
+  });
+
+  it("sending back queues one row for the author only, with no reviewer or email in the payload (#286)", async () => {
+    await withSeed(async (tx) => {
+      const reason = "Add the cost and the place, then send it again for review.";
+      await decidePost(
+        prismaReviewStore(tx),
+        dabChair,
+        "send_back",
+        { ideaId: ideas.lateNightDining.id, reason },
+        NOW,
+      );
+      const rows = await tx.emailOutbox.findMany({ where: { type: "post_decided" } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.userId).toBe(users.anonymousAuthor.id);
+      expect(rows[0]?.payload).toMatchObject({
+        isAnonymous: true,
+        ideaNumber: 131,
+        event: { kind: "sent_back", reason },
+      });
+      const text = JSON.stringify(rows[0]?.payload);
+      expect(text).not.toContain(dabChair.user.id);
+      expect(text).not.toContain(dabChair.user.email);
     });
   });
 

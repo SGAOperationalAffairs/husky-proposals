@@ -4,7 +4,7 @@ import type { EditPostData } from "./present";
 import { PostForm } from "./PostForm";
 
 // The edit page's body (#128). A declined post gets the reviewer's reason, then the
-// form. Any other status (a reload after sending, or an old link) gets a line saying
+// form. A taken-down post gets its reason and no form (#286). Any other status (a reload after sending, or an old link) gets a line saying
 // where the post stands, and no form. No white panel: the form sits on the page, like /post.
 type Props = { data: EditPostData; pendingCount: number };
 
@@ -21,6 +21,11 @@ const STANDING = {
     title: "Withdrawn",
     text: "You withdrew this post. It will not be reviewed.",
   },
+  // Final (#286): a take-down cannot be edited, sent again, or withdrawn.
+  taken_down: {
+    title: "Taken down",
+    text: "A reviewer took this idea off the ideas list. It can no longer be edited or sent for review again.",
+  },
 } as const;
 
 export function EditPostView({ data, pendingCount }: Props) {
@@ -32,6 +37,12 @@ export function EditPostView({ data, pendingCount }: Props) {
           <h1 className="heading text-6xl @3xl:text-8xl">{title}</h1>
           <p className="text-muted">{text}</p>
         </header>
+        {data.reviewStatus === "taken_down" && (
+          <section aria-label="Why it was taken down" className="flex flex-col gap-2 bordered p-card">
+            <p className="text-sm font-bold">Why it was taken down</p>
+            <p>{data.reason ?? "The reviewer did not leave a reason."}</p>
+          </section>
+        )}
         <div className="flex flex-wrap items-center gap-4">
           <Button variant="primary" href="/me" transitionTypes={PAGE}>
             Back to my ideas
@@ -46,6 +57,7 @@ export function EditPostView({ data, pendingCount }: Props) {
     );
   }
 
+  const whyLabel = data.sentBack ? "Why it was sent back" : "Why it was not approved";
   return (
     <>
       <header className="flex flex-col gap-3">
@@ -55,8 +67,8 @@ export function EditPostView({ data, pendingCount }: Props) {
           it.
         </p>
       </header>
-      <section aria-label="Why it was not approved" className="flex flex-col gap-2 bordered p-card">
-        <p className="text-sm font-bold">Why it was not approved</p>
+      <section aria-label={whyLabel} className="flex flex-col gap-2 bordered p-card">
+        <p className="text-sm font-bold">{whyLabel}</p>
         <p>{data.reason ?? "The reviewer did not leave a reason."}</p>
         <p className="text-muted">Change what the reviewer asked for, then send it for review again.</p>
       </section>

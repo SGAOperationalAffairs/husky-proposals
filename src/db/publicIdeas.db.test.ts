@@ -75,6 +75,25 @@ describeWithDatabase("public ideas (#60)", () => {
     });
   });
 
+  it("leaves a sent-back or taken-down idea out of list() and byNumber() (#286)", async () => {
+    await withSeed(async (tx) => {
+      const queries = publicIdeaQueries(tx);
+      // 131 is sent back (declined), 103 is taken down. Both keep their numbers.
+      await tx.idea.update({
+        where: { id: ideas.lateNightDining.id },
+        data: { reviewStatus: "declined", status: null },
+      });
+      await tx.idea.update({
+        where: { id: ideas.foodPantry.id },
+        data: { reviewStatus: "taken_down", status: null },
+      });
+      expect((await queries.list()).map((r) => r.idea.number)).not.toContain(131);
+      expect((await queries.list()).map((r) => r.idea.number)).not.toContain(103);
+      expect(await queries.byNumber(131)).toBeNull();
+      expect(await queries.byNumber(103)).toBeNull();
+    });
+  });
+
   it("gives a waiting idea its reason", async () => {
     await withSeed(async (tx) => {
       const record = await publicIdeaQueries(tx).byNumber(140);

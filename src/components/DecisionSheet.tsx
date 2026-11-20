@@ -16,6 +16,7 @@ import { PosterLine } from "./PosterLine";
 // holds focus inside, closes on Escape, and hands focus back to `returnFocus`.
 // Presentational: the caller runs the actions and passes back busy and error.
 export const REASON_MISSING = "Write a reason so the student knows what to change.";
+export const TAKE_DOWN_REASON_MISSING = "Write a reason so the student knows why it came down.";
 export const REASON_SHORT = `Write at least ${DECLINE_REASON_MIN} characters so the student knows what to change.`;
 
 type Props = {

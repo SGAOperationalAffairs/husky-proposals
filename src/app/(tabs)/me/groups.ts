@@ -12,7 +12,8 @@ export type MyRow = {
   board: BoardCode;
   // Only approved ideas have a public status. Pending and declined posts have none.
   status: IdeaStatus | null;
-  review: "approved" | "pending" | "declined";
+  // sent_back and taken_down are what a reviewer did to an approved post (#286).
+  review: "approved" | "pending" | "declined" | "sent_back" | "taken_down";
   posted: boolean;
   supported: boolean;
   participated: boolean;

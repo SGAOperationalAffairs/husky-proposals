@@ -151,16 +151,12 @@ describe("decidePost (#58)", () => {
     });
   });
 
-  describe("take down", () => {
+  describe("send back (#286)", () => {
+    const REASON = "Add the cost and the place, then send it again for review";
+
     it("moves an approved idea to declined, clears its status, keeps the number, and refreshes both tags", async () => {
       const store = fakeStore(target({ reviewStatus: "approved", number: 131 }));
-      const result = await decidePost(
-        store,
-        dabChair,
-        "take_down",
-        { ideaId: IDEA, reason: "The details were not accurate" },
-        NOW,
-      );
+      const result = await decidePost(store, dabChair, "send_back", { ideaId: IDEA, reason: REASON }, NOW);
       expect(result).toEqual({
         ok: true,
         reviewStatus: "declined",
@@ -171,6 +167,63 @@ describe("decidePost (#58)", () => {
         expect.objectContaining({
           from: "approved",
           patch: { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null },
+          review: expect.objectContaining({ kind: "send_back", decision: "declined", reason: REASON }),
+        }),
+      );
+    });
+
+    it("a reason under 40 characters is invalid and nothing is read or written", async () => {
+      const store = fakeStore(target({ reviewStatus: "approved", number: 131 }));
+      const result = await decidePost(
+        store,
+        dabChair,
+        "send_back",
+        { ideaId: IDEA, reason: "x".repeat(39) },
+        NOW,
+      );
+      expect(result).toEqual({ ok: false, error: { code: "invalid", fields: ["reason"] } });
+      expect(store.find).not.toHaveBeenCalled();
+      expect(store.record).not.toHaveBeenCalled();
+    });
+
+    it("a pending post cannot be sent back", async () => {
+      const store = fakeStore(target());
+      const result = await decidePost(store, dabChair, "send_back", { ideaId: IDEA, reason: REASON }, NOW);
+      expect(result).toEqual({
+        ok: false,
+        error: { code: "invalid_transition", from: "pending", event: "send_back" },
+      });
+      expect(store.record).not.toHaveBeenCalled();
+    });
+
+    it("another board's chair gets not_allowed", async () => {
+      const store = fakeStore(target({ reviewStatus: "approved", number: 131, boardId: "CPAB" }));
+      const result = await decidePost(store, dabChair, "send_back", { ideaId: IDEA, reason: REASON }, NOW);
+      expect(result).toEqual({ ok: false, error: { code: "not_allowed" } });
+      expect(store.record).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("take down", () => {
+    it("moves an approved idea to taken_down, clears its status, keeps the number, and refreshes both tags (#286)", async () => {
+      const store = fakeStore(target({ reviewStatus: "approved", number: 131 }));
+      const result = await decidePost(
+        store,
+        dabChair,
+        "take_down",
+        { ideaId: IDEA, reason: "The details were not accurate" },
+        NOW,
+      );
+      expect(result).toEqual({
+        ok: true,
+        reviewStatus: "taken_down",
+        number: 131,
+        refresh: ["ideas", "idea:131"],
+      });
+      expect(store.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: "approved",
+          patch: { reviewStatus: "taken_down", status: null, waitingReason: null, closedReason: null },
           review: expect.objectContaining({
             kind: "take_down",
             decision: "declined",
@@ -178,6 +231,19 @@ describe("decidePost (#58)", () => {
           }),
         }),
       );
+    });
+
+    it("a taken-down idea cannot be taken down or sent back again (#286)", async () => {
+      for (const type of ["take_down", "send_back"] as const) {
+        const store = fakeStore(target({ reviewStatus: "taken_down", number: 131 }));
+        const reason = "x".repeat(40);
+        const result = await decidePost(store, dabChair, type, { ideaId: IDEA, reason }, NOW);
+        expect(result).toEqual({
+          ok: false,
+          error: { code: "invalid_transition", from: "taken_down", event: type },
+        });
+        expect(store.record).not.toHaveBeenCalled();
+      }
     });
 
     it("a pending post cannot be taken down", async () => {

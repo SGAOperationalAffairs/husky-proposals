@@ -35,12 +35,13 @@ export const studentIdeaSelect = {
 } as const satisfies Prisma.IdeaSelect;
 
 // The author's own post. The author id decides "is this my post"; the latest
-// review carries the reviewer's reason, shown only to the author (data model).
+// review carries the reviewer's reason, shown only to the author (data model). Its kind
+// says whether a declined post was sent back (#286). It names no reviewer.
 export const authorIdeaSelect = {
   ...studentIdeaSelect,
   authorId: true,
   reviews: {
-    select: { decision: true, reason: true },
+    select: { decision: true, kind: true, reason: true },
     orderBy: { decidedAt: "desc" },
     take: 1,
   },
@@ -86,8 +87,8 @@ export const publicUpdateSelect = {
   createdAt: true,
 } as const satisfies Prisma.UpdateSelect;
 
-// Who may see a post with no sign-in. Approved only: pending, declined, and
-// withdrawn posts are never public (#49, #53).
+// Who may see a post with no sign-in. Approved only: pending, declined, withdrawn, and
+// taken-down posts are never public (#49, #53, #286).
 export const isPublic = { reviewStatus: "approved" } as const satisfies Prisma.IdeaWhereInput;
 
 // The public wall: public ideas minus closed ones. A closed idea stays public by its

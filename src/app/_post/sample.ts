@@ -9,6 +9,7 @@ export const SAMPLE_OWN_POST: EditPostData = {
   number: null,
   reviewStatus: "declined",
   reason: "This is already in progress with Campus Services. Support the existing idea instead.",
+  sentBack: false,
   values: {
     title: "Bike repair stand by the garage",
     summary: "A stand with a pump and basic tools, so a flat tire does not end the ride.",

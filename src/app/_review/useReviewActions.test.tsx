@@ -4,6 +4,7 @@ import { enableReports, getSnapshot } from "@/app/_errors/reports";
 
 const approvePost = vi.fn();
 const declinePost = vi.fn();
+const sendBackPost = vi.fn();
 const takeDownPost = vi.fn();
 const toast = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -11,6 +12,7 @@ vi.mock("@/components/Toast", () => ({ useToast: () => toast }));
 vi.mock("./actions", () => ({
   approvePost: (arg: unknown) => approvePost(arg),
   declinePost: (arg: unknown) => declinePost(arg),
+  sendBackPost: (arg: unknown) => sendBackPost(arg),
   takeDownPost: (arg: unknown) => takeDownPost(arg),
 }));
 
@@ -21,6 +23,7 @@ beforeEach(() => {
   disable = enableReports();
   approvePost.mockReset();
   declinePost.mockReset();
+  sendBackPost.mockReset();
   takeDownPost.mockReset();
   toast.mockReset();
 });
@@ -77,7 +80,7 @@ describe("useReviewActions error reporting (#191)", () => {
 });
 
 function DecisionHarness() {
-  const { approve, decline, takeDown } = useReviewActions();
+  const { approve, decline, sendBack, takeDown } = useReviewActions();
   const target = { id: "i1", boardId: "DAB" as const };
   return (
     <>
@@ -86,6 +89,12 @@ function DecisionHarness() {
       </button>
       <button type="button" onClick={() => void decline(target, "Not this term.")}>
         Decline
+      </button>
+      <button
+        type="button"
+        onClick={() => void sendBack({ ...target, number: 103 }, "Add the cost and the place.")}
+      >
+        Send back
       </button>
       <button type="button" onClick={() => void takeDown({ ...target, number: 103 }, "Wrong details.")}>
         Take down
@@ -122,6 +131,18 @@ describe("decision toasts (#211)", () => {
       title: "Declined",
       description:
         "The student sees your reason and can edit it and send it again. Any email to them can take a while to arrive.",
+      board: "DAB",
+    });
+  });
+
+  it("sending back says the student can edit it, and the same about any email (#286)", async () => {
+    sendBackPost.mockResolvedValue({ ok: true });
+    await decide("Send back");
+    expect(sendBackPost).toHaveBeenCalledWith({ ideaId: "i1", reason: "Add the cost and the place." });
+    expect(toast).toHaveBeenCalledWith({
+      title: "Sent back",
+      description:
+        "#103 is off the ideas list. The student can edit it and send it again. Any email to them can take a while to arrive.",
       board: "DAB",
     });
   });

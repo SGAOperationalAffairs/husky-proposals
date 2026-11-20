@@ -61,7 +61,7 @@ function idea(overrides: Partial<AuthorIdea> = {}): AuthorIdea {
     deliveredAt: null,
     reviewStatus: "declined",
     isAnonymous: true,
-    review: { decision: "declined", reason: "This repeats an open idea." },
+    review: { decision: "declined", kind: "review", reason: "This repeats an open idea." },
     ...overrides,
   };
 }
@@ -75,6 +75,7 @@ describe("toEditPost (#128)", () => {
       number: null,
       reviewStatus: "declined",
       reason: "This repeats an open idea.",
+      sentBack: false,
       values: {
         title: "Bike repair stand by the garage",
         summary: "A stand with a pump and basic tools.",
@@ -101,14 +102,50 @@ describe("toEditPost (#128)", () => {
   });
 
   it("has no reason when the latest review is not a decline, or there is none", () => {
-    expect(toEditPost(idea({ review: { decision: "approved", reason: null } })).reason).toBeNull();
+    expect(
+      toEditPost(idea({ review: { decision: "approved", kind: "review", reason: null } })).reason,
+    ).toBeNull();
     expect(toEditPost(idea({ review: null })).reason).toBeNull();
+  });
+
+  it("flags a declined post whose latest review is a send-back (#286)", () => {
+    const sentBack = idea({
+      review: { decision: "declined", kind: "send_back", reason: "Add the cost and the place." },
+    });
+    expect(toEditPost(sentBack)).toMatchObject({
+      reviewStatus: "declined",
+      reason: "Add the cost and the place.",
+      sentBack: true,
+    });
+    // A resubmitted post is pending, so the old send-back no longer shows.
+    expect(toEditPost({ ...sentBack, reviewStatus: "pending" })).toMatchObject({
+      reason: null,
+      sentBack: false,
+    });
+  });
+
+  it("returns the reason of a taken-down post, and it was not sent back (#286)", () => {
+    const takenDown = idea({
+      reviewStatus: "taken_down",
+      review: { decision: "declined", kind: "take_down", reason: "It names a person." },
+    });
+    expect(toEditPost(takenDown)).toMatchObject({
+      reviewStatus: "taken_down",
+      reason: "It names a person.",
+      sentBack: false,
+    });
+  });
+
+  it("treats an old take-down that left the post declined as not sent back", () => {
+    // Dev rows from before #286: declined with kind take_down. They read as a plain decline.
+    const old = idea({ review: { decision: "declined", kind: "take_down", reason: "Old." } });
+    expect(toEditPost(old)).toMatchObject({ reason: "Old.", sentBack: false });
   });
 
   it("is plain data with no reviewer field and no dates", () => {
     const data = toEditPost(idea());
     expect(Object.keys(data).sort()).toEqual(
-      ["board", "ideaId", "number", "reason", "reviewStatus", "values"].sort(),
+      ["board", "ideaId", "number", "reason", "reviewStatus", "sentBack", "values"].sort(),
     );
     expect(JSON.parse(JSON.stringify(data))).toEqual(data);
   });

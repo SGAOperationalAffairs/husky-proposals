@@ -17,6 +17,7 @@ type Props = {
   status?: ReactNode;
   // The "Still working, no news" button (#131), for an idea in progress.
   checkIn?: ReactNode;
+  // The Send back and Take down controls (#286). The slot and `mayTakeDown` keep their names.
   takeDown?: ReactNode;
 };
 

@@ -1,7 +1,7 @@
 import type { BoardCode } from "./boards";
 import { can, canSeeWhoPosted, isAuthor, type Viewer } from "./permissions";
 import type { IdeaStatus } from "./statuses";
-import type { ReviewDecision, ReviewStatus } from "./review";
+import type { ReviewDecision, ReviewKind, ReviewStatus } from "./review";
 
 // Viewer shapes (#53). One function decides what a viewer may see of an idea, and
 // each shape is built field by field, never by spreading a row. So a field added to
@@ -39,7 +39,7 @@ export type IdeaRow = {
   // Leader and author selects only.
   authorId?: string | null;
   supports?: { user: { id: string; displayName: string; email: string } }[];
-  reviews?: { decision: ReviewDecision; reason: string | null }[];
+  reviews?: { decision: ReviewDecision; kind: ReviewKind; reason: string | null }[];
 };
 
 // The fields every viewer gets. Nothing identifying the author or supporters.
@@ -69,11 +69,12 @@ export type StudentIdea = {
   deliveredAt: Date | null;
 };
 
-// The author's own post: the student fields, plus its review state and reason.
+// The author's own post: the student fields, plus its review state and reason. The kind
+// is the author's own decision type (sent back or taken down) and names no reviewer (#286).
 export type AuthorIdea = StudentIdea & {
   reviewStatus: ReviewStatus;
   isAnonymous: boolean;
-  review: { decision: ReviewDecision; reason: string | null } | null;
+  review: { decision: ReviewDecision; kind: ReviewKind; reason: string | null } | null;
 };
 
 export type Identity = { id: string; displayName: string; email: string };
@@ -102,7 +103,7 @@ export function ideaForViewer(viewer: Viewer, row: IdeaRow): ViewerIdea | null {
     return { shape: "author", idea: authorShape(row) };
   }
   if (row.reviewStatus !== "approved") {
-    // Pending, declined, and withdrawn posts are for reviewers only (#49, #53).
+    // Pending, declined, withdrawn, and taken-down posts are for reviewers only (#49, #53, #286).
     return can(viewer, "review", row.boardId) ? { shape: "leader", idea: leaderShape(viewer, row) } : null;
   }
   if (can(viewer, "see_names", row.boardId)) {
@@ -148,7 +149,7 @@ function authorShape(row: IdeaRow): AuthorIdea {
     ...studentShape(row),
     reviewStatus: row.reviewStatus,
     isAnonymous: row.isAnonymous,
-    review: latest ? { decision: latest.decision, reason: latest.reason } : null,
+    review: latest ? { decision: latest.decision, kind: latest.kind, reason: latest.reason } : null,
   };
 }
 

@@ -100,6 +100,36 @@ describeWithDatabase("check constraints (#44)", () => {
     ).rejects.toThrow(/reviews_take_down_is_decline/);
   });
 
+  it("reviews_send_back_is_decline: a send-back must be a decline (#286)", async () => {
+    await expect(
+      withSeed(async (tx) => {
+        const idea = buildApprovedIdea({ id: testUuid(9007) });
+        await tx.idea.create({ data: { ...idea, updatedAt: new Date() } });
+        const revision = buildRevision(idea);
+        await tx.ideaRevision.create({ data: revision });
+        await tx.review.create({
+          data: buildReview({
+            ideaId: idea.id,
+            revisionId: revision.id,
+            decision: "approved",
+            kind: "send_back",
+          }),
+        });
+      }),
+    ).rejects.toThrow(/reviews_send_back_is_decline/);
+  });
+
+  it("ideas_status_only_when_approved: a taken-down idea cannot have a status (#286)", async () => {
+    await expect(
+      withSeed((tx) =>
+        tx.idea.update({
+          where: { id: ideas.foodPantry.id },
+          data: { reviewStatus: "taken_down" },
+        }),
+      ),
+    ).rejects.toThrow(/ideas_status_only_when_approved/);
+  });
+
   it("reviews_decline_needs_reason: a decline without text is refused", async () => {
     await expect(
       withSeed(async (tx) => {
