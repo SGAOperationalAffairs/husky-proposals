@@ -47,7 +47,7 @@ export async function queueDigests(
     select: {
       id: true,
       emailPreference: { select: { lastDigestAt: true } },
-      follows: { where: { idea: isPublic }, select: { ideaId: true } },
+      follows: { where: { idea: isPublic }, select: { ideaId: true, createdAt: true } },
     },
   });
   const cohort = eligible.filter(({ id }) => digestWeekday(id) === weekday);
@@ -96,8 +96,12 @@ export async function queueDigests(
   for (const user of cohort) {
     const window = windows.get(user.id);
     if (!window) continue;
+    // An update posted before the student followed the idea is not news to include: a new
+    // follower's first digest would otherwise reach back a week (#212).
     const digest = buildDigest(
-      user.follows.flatMap(({ ideaId }) => updatesByIdea.get(ideaId) ?? []),
+      user.follows.flatMap(({ ideaId, createdAt: followedAt }) =>
+        (updatesByIdea.get(ideaId) ?? []).filter((update) => update.createdAt >= followedAt),
+      ),
       window,
     );
     // No news, no email, and nothing recorded: the next window still starts at the last digest.
