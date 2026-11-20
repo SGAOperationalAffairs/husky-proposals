@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { digestWeekday } from "@/core/digest";
+import { digestDay, digestWeekday } from "@/core/digest";
 import { digestPayloadSchema } from "@/email/digest";
 import { verifyUnsubscribeToken } from "@/email/unsubscribeToken";
 import type { Prisma } from "@/generated/prisma/client";
@@ -371,25 +371,46 @@ describeWithDatabase("weekly digest at the 1,500-student scale (#212)", () => {
             0,
           );
           const smallDay = new Date(MONDAY.getTime() + ((weekday + 6) % 7) * DAY);
-          // One student in the cohort already has a preference row and the rest do not, so
-          // both the insert and the update run in both measurements.
-          await tx.emailPreference.create({
-            data: buildEmailPreference({ userId: byWeekday[weekday]![0]! }),
-          });
+          // One student in each cohort already has a preference row (no last digest) and the
+          // rest do not, so both the insert and the update run in both measurements.
+          const smallWithPreference = byWeekday[weekday]![0]!;
+          await tx.emailPreference.create({ data: buildEmailPreference({ userId: smallWithPreference }) });
+
+          // Rows the pass wrote on `day`: they carry that day's start as their last digest.
+          const stampedOn = async (day: Date, userIds: string[]) =>
+            (
+              await tx.emailPreference.findMany({
+                where: { userId: { in: userIds }, lastDigestAt: digestDay(day).dayStart },
+                select: { userId: true },
+              })
+            ).map(({ userId }) => userId);
 
           queries.reset();
           const first = await queueDigests(tx, smallDay, LINK);
           expect(first.queued).toBeGreaterThan(1);
           const few = queries.count;
+          const firstStamped = await stampedOn(smallDay, byWeekday[weekday]!);
+          // The update moved the existing row, and the insert created rows for the others.
+          expect(firstStamped).toContain(smallWithPreference);
+          expect(firstStamped.length).toBeGreaterThan(1);
 
           // Two weeks later the 60 have a last digest, and the 1,000 have none, so their
           // default window holds the new update.
-          await seedStudents(tx, 1000, new Date("2026-11-29T12:00:00.000Z"), 20_000);
+          const large = await seedStudents(tx, 1000, new Date("2026-11-29T12:00:00.000Z"), 20_000);
           const later = new Date(smallDay.getTime() + 14 * DAY);
+          const largeCohort = large.filter((user) => digestWeekday(user.id) === weekday).map(({ id }) => id);
+          expect(largeCohort.length).toBeGreaterThan(1);
+          const largeWithPreference = largeCohort[0]!;
+          await tx.emailPreference.create({ data: buildEmailPreference({ userId: largeWithPreference }) });
+
           queries.reset();
           const { cohort } = await queueDigests(tx, later, LINK);
+          const many = queries.count;
           expect(cohort).toBeGreaterThan(100);
-          expect(queries.count).toBe(few);
+          const laterStamped = await stampedOn(later, largeCohort);
+          expect(laterStamped).toContain(largeWithPreference);
+          expect(laterStamped.length).toBeGreaterThan(1);
+          expect(many).toBe(few);
         },
         { timeout: SCALE_TIMEOUT },
       );
