@@ -54,7 +54,11 @@ class Rollback extends Error {}
 
 // Runs fn inside a transaction that is always rolled back, so tests share the
 // branch without seeing each other's rows. The long timeouts cover Neon cold starts.
-export async function withRollback<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+// A scale test passes a longer `timeout`, which must also outlast the test's own limit (#212).
+export async function withRollback<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  { timeout = 15_000 }: { timeout?: number } = {},
+): Promise<T> {
   let result: { value: T } | undefined;
   try {
     await getTestClient().$transaction(
@@ -62,7 +66,7 @@ export async function withRollback<T>(fn: (tx: Prisma.TransactionClient) => Prom
         result = { value: await fn(tx) };
         throw new Rollback();
       },
-      { timeout: 15_000, maxWait: 15_000 },
+      { timeout, maxWait: 15_000 },
     );
   } catch (error) {
     if (!(error instanceof Rollback)) throw error;

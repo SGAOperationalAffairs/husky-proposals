@@ -55,7 +55,10 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 - Updates from DAB and CPAB must not reveal confidential administrative initiatives (Bylaws XII).
 
 **email_preference**
-`user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday` (assigned on creation, used to spread weekly sends), `unsubscribed_at`, `bounced_at`.
+`user_id`, `digest_frequency` (weekly, as_it_happens, off; default weekly), `digest_weekday`, `last_digest_at`, `unsubscribed_at`, `bounced_at`.
+- The weekly digest (#212) spreads sends by weekday. A student's day is a stable hash of their id (`digestWeekday` in `src/core/digest.ts`, which never changes). `digest_weekday` is written with that hash when the daily pass creates a preference row, and is never read for routing.
+- `last_digest_at` is the start of the UTC day of the last digest queued for the student. The next digest holds updates from then up to the start of the current day, and no more than 14 days back.
+- `digest_frequency` is honored only for `off`: `weekly` and `as_it_happens` behave the same, and nothing writes `as_it_happens`. The notification toggles (#211) are the student's control, and the unsubscribe link in each digest turns off the `digest` type in `email_opt_out`.
 
 **email_opt_out** (#211)
 `user_id`, `type`, `created_at`. Unique on `(user_id, type)`. A row means the student turned that type off. No row means on, so a new student needs nothing created.
@@ -67,6 +70,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 `id`, `user_id`, `type` (post_decided, post_status, reviewer_reminder, digest, idea_event), `priority` (1 is highest), `dedupe_key` (unique), `payload`, `created_at`, `send_after`, `attempts`, `sent_at`, `provider_message_id` (indexed; matches a bounce webhook to its row), `bounced_at` (set by the Resend bounce webhook), `last_error`.
 - A bounce also sets `email_stopped_at` on the user, and mail still queued for that user is not sent.
 - Emails about your own post (#211): a review decision (approve, decline, take down) queues one `post_decided` row, and a status change (start, hold, deliver) queues one `post_status` row, both at priority 1. The recipient is always the idea's author, read from the idea and never passed in, so no one else is ever emailed about a post. An anonymous post's email goes to the author's account. Followers get `idea_event` rows instead and never include the author for a status change, so the author gets one email per change.
+- The weekly digest (#212): the daily pass queues one `digest` row per student with news, at priority 3, with `dedupe_key` `digest:<user_id>:<YYYY-MM-DD>`. A student with no new updates gets no row. The payload has no author, supporter, or email field.
 - A worker sends rows first in, first out within each priority, under a daily budget.
 - When a limit is hit, rows wait for the next run. None are dropped.
 

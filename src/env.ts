@@ -77,6 +77,17 @@ const schema = z
     SITE_URL: optional(
       z.url({ error: "SITE_URL must be a URL" }).transform((value) => new URL(value).origin),
     ),
+    // Signs the unsubscribe link in the weekly digest (#212). Changing it breaks every link
+    // already sent, so set it once per environment.
+    EMAIL_LINK_SECRET: optional(
+      z.string().min(32, { error: "EMAIL_LINK_SECRET must be at least 32 characters" }),
+    ),
+  })
+  .refine((env) => env.RESEND_API_KEY === undefined || env.EMAIL_LINK_SECRET !== undefined, {
+    // A digest with no working unsubscribe link must never be sent, so a deploy that can
+    // send email must be able to sign one (#212).
+    message: "EMAIL_LINK_SECRET is required when RESEND_API_KEY is set",
+    path: ["EMAIL_LINK_SECRET"],
   })
   .refine((env) => (env.RESEND_API_KEY === undefined) === (env.EMAIL_FROM === undefined), {
     // Half a sender config would fail at the first send, so refuse at start instead.
