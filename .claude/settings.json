@@ -63,7 +63,7 @@
       "source": {
         "source": "github",
         "repo": "b-at-neu/port",
-        "ref": "v0.4.0"
+        "ref": "v1.5.3"
       },
       "autoUpdate": true
     }
