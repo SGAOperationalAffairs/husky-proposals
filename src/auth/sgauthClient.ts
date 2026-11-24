@@ -2,8 +2,9 @@ import { createHash } from "node:crypto";
 import { systemClock, type Clock } from "@/core/clock";
 import { toSession, type Session } from "./contract";
 
-// The SGAuth session client (#176). Only session.ts may import it (#177 wires
-// it in); nothing else reads the SGAuth cookie or its response.
+// The SGAuth session client (#176). Only sessionFromCookies.ts may import it (#177
+// wired it into session.ts; #235 moved the call so the proxy can share it); nothing
+// else reads the SGAuth cookie or its response.
 //
 // Config is injected instead of read from env() because #177 owns adding
 // SGAUTH_URL and SGAUTH_COOKIE_NAME to src/env.ts.

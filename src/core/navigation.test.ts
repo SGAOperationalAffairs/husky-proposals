@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { navTabsFor } from "./navigation";
+import { LEADER_ROUTES, navTabsFor } from "./navigation";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "./positions";
 
 // Which tabs each viewer gets (#156).
@@ -27,5 +27,10 @@ describe("navTabsFor (#156)", () => {
 
   it("gives the VP every leader page", () => {
     expect(ids(viewer("vp", [VP_CAMPUS_AFFAIRS]))).toEqual(["ideas", "me", "queue", "people", "updates"]);
+  });
+
+  it("links the leader tabs to LEADER_ROUTES, the list the proxy guards (#235)", () => {
+    const hrefs = navTabsFor(viewer("vp", [VP_CAMPUS_AFFAIRS])).map((t) => t.href);
+    expect(hrefs.slice(2)).toEqual([...LEADER_ROUTES]);
   });
 });

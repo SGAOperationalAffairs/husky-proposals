@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { cache } from "react";
 import { env } from "@/env";
-import { toSession, type Session } from "./contract";
-import { createSgauthClient } from "./sgauthClient";
-import { STAND_IN_COOKIE, standInResponse } from "./standIn";
+import type { Session } from "./contract";
+import { sessionFromCookies, type SessionRead } from "./sessionFromCookies";
+import { STAND_IN_COOKIE } from "./standIn";
 
 // The one module the rest of the app calls to learn who is signed in (#45).
 // Swapping in @sgaoperations/sgauth (T2.5) changes this file only. Nothing
@@ -26,43 +26,20 @@ const SGAUTH_RETURN_MAX = 2048;
 // registered (T2.5). Anything else, a *.vercel.app preview included, gets no sign-in.
 const SGAUTH_RETURN_ORIGINS: readonly string[] = ["https://dev.proposals.northeasternsga.com"];
 
-// Built on first use. This is the only importer of sgauthClient.ts (#176).
-let sgauthClient: ReturnType<typeof createSgauthClient> | undefined;
-function client() {
-  sgauthClient ??= createSgauthClient({
-    config: { url: env().SGAUTH_URL!, cookieName: env().SGAUTH_COOKIE_NAME! },
-  });
-  return sgauthClient;
-}
+import type { SessionProblem } from "./sessionFromCookies";
+
+export type { SessionProblem };
 
 // Memoized per request (#156): the tabs and a leader page both ask, and the cookie
 // is read once. Server actions and later requests get a fresh read.
-// The SGAuth failures worth showing on dev and preview (#191). Codes only, never a body.
-export type SessionProblem = "sgauth_unavailable" | "invalid_session_response";
-
-const readSession = cache(async (): Promise<{ session: Session | null; problem: SessionProblem | null }> => {
+const readSession = cache(async (): Promise<SessionRead> => {
   // Next.js rejects a clock read while prerendering, and cookies() alone does not stop
   // it from prerendering the page. Waiting for the request first covers every caller (#206).
   await connection();
-  if (env().AUTH_SGAUTH) {
-    const jar = await cookies();
-    // Every call is live (purpose "leader") for the spike, so no leader check can run
-    // on a cached answer; T2.5 passes a purpose so students use the 60-second cache.
-    // Any failure is signed out, so leader access fails closed. The client logs its
-    // own codes, so nothing is logged here.
-    const result = await client().getSession(jar.get(env().SGAUTH_COOKIE_NAME!)?.value, "leader");
-    if (result.ok) return { session: result.session, problem: null };
-    const code = result.error.code;
-    return { session: null, problem: code === "signed_out" ? null : code };
-  }
-  if (!env().AUTH_STAND_IN) return { session: null, problem: null };
   const jar = await cookies();
-  const result = toSession(standInResponse(jar.get(STAND_IN_COOKIE)?.value, new Date()));
-  if (result.ok) return { session: result.session, problem: null };
-  // standInResponse gives null for no cookie or an unknown one, which is
-  // signed out. Log only the code, never the body.
-  if (jar.get(STAND_IN_COOKIE)) console.error(`getSession: ${result.error.code}`);
-  return { session: null, problem: null };
+  // Every call is live (purpose "leader") for the spike, so no leader check can run
+  // on a cached answer; T2.5 passes a purpose so students use the 60-second cache.
+  return sessionFromCookies((name) => jar.get(name)?.value, "leader");
 });
 
 export async function getSession(): Promise<Session | null> {
