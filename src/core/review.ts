@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { BOARD_CODES } from "./boards";
+import { addDays } from "./days";
 
 // Mirrors the ReviewStatus enum in prisma/schema.prisma, pinned by a test (#50).
 export const REVIEW_STATUSES = ["pending", "approved", "declined", "withdrawn", "taken_down"] as const;
@@ -41,7 +42,7 @@ export const REVIEW_DUE_DAYS = { default: 3, min: 1, max: 14 } as const;
 
 // Whole days in milliseconds, no clock read: the caller passes the board's setting.
 export function reviewDueAt(submittedAt: Date, dueDays: number): Date {
-  return new Date(submittedAt.getTime() + dueDays * 24 * 60 * 60 * 1000);
+  return addDays(submittedAt, dueDays);
 }
 
 const text = (max: number) => z.string().trim().min(1).max(max);

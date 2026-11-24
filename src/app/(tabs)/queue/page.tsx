@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { requireLeader } from "@/auth/gate";
 import { BOARDS, BOARD_CODES, type BoardCode } from "@/core/boards";
+import { addDays } from "@/core/days";
 import { queueFor } from "@/core/queue";
 import { ReviewerTag } from "@/components/Tag";
 import { boardsFor } from "@/core/permissions";
@@ -15,7 +16,6 @@ import { QueueView } from "./QueueView";
 import { QUEUE_SAMPLE } from "./sample";
 
 // "Recently approved" looks back 14 days (#59).
-const DAY = 24 * 60 * 60 * 1000;
 const RECENT_DAYS = 14;
 
 // The SGA queue (#124). Leaders open straight onto the list; no dashboard. A
@@ -46,7 +46,7 @@ async function QueueContent() {
     ? [[], []]
     : await Promise.all([
         reviewQueue(db(), viewer),
-        recentlyApproved(db(), viewer, new Date(now.getTime() - RECENT_DAYS * DAY)),
+        recentlyApproved(db(), viewer, addDays(now, -RECENT_DAYS)),
       ]);
   const review = {
     pending: queue.map((item) => toReviewRow(item, now)),

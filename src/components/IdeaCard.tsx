@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { PAGE } from "@/components/pageTransition";
 import { BOARDS, type BoardCode } from "@/core/boards";
+import { daysAgoText } from "@/core/days";
 import { STATUS_LABELS, takesSupport, type IdeaStatus } from "@/core/statuses";
 import { SupportPair } from "./SupportPair";
 import { FromSgaTag } from "./Tag";
@@ -33,8 +34,6 @@ type Props = IdeaCardData & {
 };
 
 // Dates read as people say them (docs/DESIGN.md, "Copy and tone").
-export const daysAgoText = (days: number) =>
-  days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
 export const updatedText = (days: number) => `updated ${daysAgoText(days)}`;
 
 // The arrival class is added as its own word, so the Tailwind formatter cannot

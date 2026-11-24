@@ -1,11 +1,10 @@
 import { z } from "zod";
+import { addDays } from "./days";
 import { dueText } from "./reviewText";
 
 // Board updates and the update cadence (#130): the templates, the body rules, the input
 // schema, and the words for "due for an update". Plain functions with no clock and no
 // framework. What an update writes and who may post one is src/app/_updates/ (#130).
-
-const DAY = 24 * 60 * 60 * 1000;
 
 // What a leader starts from. The brackets mark what they must fill in (hasPlaceholder).
 export const UPDATE_TEMPLATES = [
@@ -63,7 +62,7 @@ export function cadenceDueAt({
   const times = updates.filter((u) => u.kind !== "system").map((u) => u.createdAt.getTime());
   if (statusChangedAt) times.push(statusChangedAt.getTime());
   if (times.length === 0) return null;
-  return new Date(Math.max(...times) + cadenceDays * DAY);
+  return addDays(new Date(Math.max(...times)), cadenceDays);
 }
 
 // The chip's words. `isStale` is the database view's flag and stays the rule; the date only
@@ -78,6 +77,6 @@ export function cadenceFlag(dueAt: Date | null, isStale: boolean, now: Date): { 
 
 // "Next one due in 30 days." for the toast after a post.
 export function nextDueText(cadenceDays: number, now: Date): string {
-  const { text } = dueText(new Date(now.getTime() + cadenceDays * DAY), now);
+  const { text } = dueText(addDays(now, cadenceDays), now);
   return `Next one ${text.charAt(0).toLowerCase()}${text.slice(1)}.`;
 }

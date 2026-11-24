@@ -2,6 +2,8 @@
 // is built in SGAuth's session shape so it passes through the same contract
 // as a real response. Emails use example.com, a reserved domain, so none can
 // belong to a real student.
+import { DAY_MS } from "@/core/days";
+
 export const STAND_IN_COOKIE = "hp-stand-in-user";
 
 export const STAND_IN_USERS = [
@@ -65,7 +67,6 @@ export function standInResponse(slug: string | undefined, now: Date): unknown {
   const user = STAND_IN_USERS.find((candidate) => candidate.slug === slug);
   if (!user) return null;
   const iso = now.toISOString();
-  const day = 24 * 60 * 60 * 1000;
   return {
     user: {
       id: user.id,
@@ -79,8 +80,8 @@ export function standInResponse(slug: string | undefined, now: Date): unknown {
     positions: [...user.positions].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)),
     session: {
       id: `stand-in-${user.slug}`,
-      expiresAt: new Date(now.getTime() + day).toISOString(),
-      absoluteExpiresAt: new Date(now.getTime() + 30 * day).toISOString(),
+      expiresAt: new Date(now.getTime() + DAY_MS).toISOString(),
+      absoluteExpiresAt: new Date(now.getTime() + 30 * DAY_MS).toISOString(),
       createdAt: iso,
     },
   };

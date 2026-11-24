@@ -10,7 +10,8 @@ import { getIdea, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data"
 import { CopyLink } from "@/components/CopyLink";
 import { IdeaPlaceholder } from "@/components/Placeholder";
 import { ShareDialog } from "@/components/ShareDialog";
-import { daysAgoText, updatedText } from "@/components/IdeaCard";
+import { updatedText } from "@/components/IdeaCard";
+import { daysAgoText } from "@/core/days";
 import { NavTabs } from "@/components/NavTabs";
 import { SiteHeader } from "@/components/SiteHeader";
 import { FromSgaTag } from "@/components/Tag";

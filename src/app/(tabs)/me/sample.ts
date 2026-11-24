@@ -1,9 +1,8 @@
 // Sample rows for the My ideas page, until the student's queries (#97) land.
 // Invented ideas and a made-up student's activity; no real data.
 import { SAMPLE_OWN_POST } from "@/app/_post/sample";
+import { DAY_MS } from "@/core/days";
 import type { MyRow } from "./groups";
-
-const DAY = 24 * 60 * 60 * 1000;
 
 export function sampleMyRows(now: Date): MyRow[] {
   return [
@@ -17,7 +16,7 @@ export function sampleMyRows(now: Date): MyRow[] {
       supported: false,
       participated: false,
       submittedAt: 5,
-      reviewDueAt: new Date(now.getTime() + 2 * DAY).toISOString(),
+      reviewDueAt: new Date(now.getTime() + 2 * DAY_MS).toISOString(),
       description: "The Sunday hours end at 2 p.m. Students who study on weekends want dinner until 8.",
       supportCount: 0,
       willingCount: 0,

@@ -1,5 +1,6 @@
 import type { IdeaCardData } from "@/components/IdeaCard";
 import { BOARDS } from "@/core/boards";
+import { daysAgo } from "@/core/days";
 import {
   COST_LABELS,
   SCALE_LABELS,
@@ -14,14 +15,6 @@ import type { IdeaPageData } from "./data";
 // Turns a public record (src/db/publicIdeas.ts) into what the cards and the idea page
 // draw (#60). Plain functions: `now` comes from the caller, never read here, so "updated
 // N days ago" is worked out per request, outside the cache.
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-// Whole days, floored, never negative. Exported so the leader's update preview counts days
-// the way the idea page does (#130).
-export function daysBetween(then: string, now: Date): number {
-  return Math.max(0, Math.floor((now.getTime() - new Date(then).getTime()) / DAY_MS));
-}
 
 // The latest of the last update, the status change, and the approval.
 function lastActivity({ idea, stats }: PublicIdeaRecord): string {
@@ -42,7 +35,7 @@ export function toCard(record: PublicIdeaRecord, now: Date): IdeaCardData {
     board: idea.boardId,
     status: idea.status,
     ...(idea.fromSga ? { fromSga: true } : {}),
-    updatedDaysAgo: daysBetween(lastActivity(record), now),
+    updatedDaysAgo: daysAgo(new Date(lastActivity(record)), now),
     supportCount: stats.supportCount,
     willingCount: stats.willingCount,
   };
@@ -61,7 +54,7 @@ export function toPage(record: PublicIdeaRecord, now: Date): IdeaPageData {
     .filter(Boolean);
   const page: IdeaPageData = {
     ...toCard(record, now),
-    proposedDaysAgo: daysBetween(idea.submittedAt, now),
+    proposedDaysAgo: daysAgo(new Date(idea.submittedAt), now),
     about: paragraphs.length > 0 ? paragraphs : [idea.description],
     scale: labelled<IdeaScaleValue>(SCALE_LABELS, idea.scale),
     cost: labelled<CostBandValue>(COST_LABELS, idea.costBand),
@@ -69,7 +62,7 @@ export function toPage(record: PublicIdeaRecord, now: Date): IdeaPageData {
     waitingReason: idea.status === "waiting" ? (idea.waitingReason ?? undefined) : undefined,
     closedReason: idea.status === "closed" ? (idea.closedReason ?? undefined) : undefined,
     updates: (record.updates ?? []).map((u) => ({
-      daysAgo: daysBetween(u.createdAt, now),
+      daysAgo: daysAgo(new Date(u.createdAt), now),
       text: u.body,
       kind: u.kind,
     })),
