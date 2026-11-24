@@ -285,9 +285,9 @@ describeWithDatabase("follower email outbox (#101)", () => {
       await tx.emailOutbox.create({
         data: {
           userId: user!.id,
-          type: "digest",
-          priority: 3,
-          dedupeKey: "digest:test",
+          type: "reviewer_reminder",
+          priority: 2,
+          dedupeKey: "reviewer_reminder:test",
           payload: {},
           sendAfter: NOW,
         },
@@ -299,7 +299,7 @@ describeWithDatabase("follower email outbox (#101)", () => {
         deferred: 0,
       });
       expect(mailer.sent).toHaveLength(0);
-      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "reviewer_reminder" } });
       expect(row).toMatchObject({ sentAt: null, lockedUntil: null, attempts: 0, lastError: null });
     });
   });
@@ -776,6 +776,80 @@ describeWithDatabase("eligibility is checked again at send (#257)", () => {
         sentAt: null,
         lastError: "unsubscribed",
       });
+    });
+  });
+});
+
+describeWithDatabase("the drain sends a weekly digest (#212)", () => {
+  const digestRow = (userId: string, dedupeKey = "digest:test") =>
+    buildOutboxRow({
+      userId,
+      type: "digest",
+      dedupeKey,
+      sendAfter: NOW,
+      payload: {
+        unsubscribeToken: "digest.token.sig",
+        totalUpdates: 1,
+        moreIdeas: 0,
+        ideas: [
+          {
+            ideaNumber: 103,
+            ideaTitle: "More vegan options",
+            boardId: "DAB",
+            moreUpdates: 0,
+            updates: [
+              { kind: "board", body: "We met with Dining Services.", postedAt: "2026-11-13T15:00:00.000Z" },
+            ],
+          },
+        ],
+      },
+    });
+
+  it("sends a queued digest to the student with the unsubscribe link", async () => {
+    await withSeed(async (tx) => {
+      await tx.emailOutbox.create({ data: digestRow(users.student.id) });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 0,
+      });
+      const [message] = mailer.sent;
+      expect(message?.to).toBe(users.student.email);
+      expect(message?.subject).toBe("Your weekly digest: 1 update on ideas you follow");
+      expect(message?.text).toContain(`Stop the weekly digest: ${SITE}/unsubscribe?t=`);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
+      expect(row.sentAt).toEqual(NOW);
+    });
+  });
+
+  it("marks a digest 'turned off' and sends nothing when the student opted out after it was queued", async () => {
+    await withSeed(async (tx) => {
+      await tx.emailOutbox.create({ data: digestRow(users.student.id) });
+      await tx.emailOptOut.create({ data: { userId: users.student.id, type: "digest" } });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
+      expect(mailer.sent).toHaveLength(0);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
+      expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "turned off" });
+    });
+  });
+
+  it("a bad digest payload fails with 'invalid payload'", async () => {
+    await withSeed(async (tx) => {
+      await tx.emailOutbox.create({ data: { ...digestRow(users.student.id), payload: { nope: true } } });
+      const mailer = createCapturingMailer();
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "digest" } });
+      expect(row.lastError).toBe("invalid payload");
     });
   });
 });

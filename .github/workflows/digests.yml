@@ -1,0 +1,104 @@
+# The weekly follower digest's daily pass (#212). Once a day this calls a secret-protected
+# route on the site, which queues today's weekday cohort of digests (about a seventh of the
+# followers, so the week's email is never one burst) and answers with its counts. It only
+# queues. The drain in jobs.yml (#210) does the sending, within the next 15 minutes.
+#
+# Why it is a separate workflow from jobs.yml: that one runs every 15 minutes, and the digest
+# should run once a day at a fixed time (the cohort and the window are UTC days).
+#
+# - 13:17 UTC is just after 8 a.m. EST and 9 a.m. EDT, so a digest lands in the morning in
+#   Boston, and the UTC date is the Boston date. The minute is off the top of the hour, when
+#   GitHub's schedules are busiest (docs/scalability.md).
+# - A schedule runs only from the default branch (`dev`), and the `dev-jobs` environment is
+#   limited to the `dev` branch, as in jobs.yml.
+# - The route is safe to run late or twice: a second run on the same UTC day queues nothing.
+#   A run that GitHub skips leaves that day's cohort out for a week; their next digest covers
+#   both weeks. There is no catch-up pass.
+# - Secrets reach each step through `env:`, never inlined in the command.
+# - No `continue-on-error`. A non-2xx reply fails the run, and GitHub emails whoever last
+#   touched the schedule.
+#
+# Uses the same environments and settings as jobs.yml: the secret `JOBS_SECRET`, the variable
+# `SITE_URL`, and, only when Vercel's deployment protection is on, the secret `VERCEL_BYPASS`.
+name: digests
+
+on:
+  schedule:
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A late run waits for the one before it. A running job is never cancelled.
+concurrency:
+  group: digests
+  cancel-in-progress: false
+
+jobs:
+  dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: dev-jobs
+    steps:
+      - name: Check the settings are set
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$JOBS_SECRET" ]; then
+            echo "::error::JOBS_SECRET is not set on the dev-jobs environment"
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::SITE_URL is not set on the dev-jobs environment"
+            exit 1
+          fi
+      - name: Queue today's digests
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          VERCEL_BYPASS: ${{ secrets.VERCEL_BYPASS }}
+        run: |
+          set --
+          if [ -n "$VERCEL_BYPASS" ]; then
+            set -- -H "x-vercel-protection-bypass: $VERCEL_BYPASS"
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 -X POST \
+            -H "Authorization: Bearer $JOBS_SECRET" "$@" \
+            "$SITE_URL/api/jobs/digests"
+
+  # Off until the repository variable PRODUCTION_JOBS is `on`, as in jobs.yml, so nothing
+  # runs against production before the beta.
+  production:
+    if: vars.PRODUCTION_JOBS == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: production-jobs
+    steps:
+      - name: Check the settings are set
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$JOBS_SECRET" ]; then
+            echo "::error::JOBS_SECRET is not set on the production-jobs environment"
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::SITE_URL is not set on the production-jobs environment"
+            exit 1
+          fi
+      - name: Queue today's digests
+        env:
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          VERCEL_BYPASS: ${{ secrets.VERCEL_BYPASS }}
+        run: |
+          set --
+          if [ -n "$VERCEL_BYPASS" ]; then
+            set -- -H "x-vercel-protection-bypass: $VERCEL_BYPASS"
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 -X POST \
+            -H "Authorization: Bearer $JOBS_SECRET" "$@" \
+            "$SITE_URL/api/jobs/digests"

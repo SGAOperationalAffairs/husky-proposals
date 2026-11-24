@@ -1,4 +1,5 @@
 import type { EmailSettingsStore } from "@/app/_email/setEmailSetting";
+import type { UnsubscribeStore } from "@/app/_email/unsubscribe";
 import { SETTABLE_EMAIL_TYPES, type SettableEmailType } from "@/core/emailSettings";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -8,10 +9,20 @@ type Db = Pick<Prisma.TransactionClient, "user" | "emailOptOut">;
 
 export type EmailSettings = { settings: Record<SettableEmailType, boolean>; stopped: boolean };
 
-export function prismaEmailSettingsStore(db: Db): EmailSettingsStore & {
-  read(userId: string): Promise<EmailSettings>;
-} {
+export function prismaEmailSettingsStore(db: Db): EmailSettingsStore &
+  UnsubscribeStore & {
+    read(userId: string): Promise<EmailSettings>;
+  } {
   return {
+    // The signed unsubscribe link (#212) names a user id and no session. A student with no
+    // user row has nothing to stop, and creating a row from a link would write someone's
+    // id on the strength of a signature alone, so this only ever turns off, for a known id.
+    turnOff: async (userId, type) => {
+      const user = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (!user) return;
+      await db.emailOptOut.createMany({ data: [{ userId: user.id, type }], skipDuplicates: true });
+    },
+
     // One query. A student with no user row yet has changed nothing: every type is on.
     read: async (userId) => {
       const user = await db.user.findUnique({

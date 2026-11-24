@@ -1,3 +1,4 @@
+import { digestPayloadSchema, renderDigestEmail } from "@/email/digest";
 import {
   IDEA_EVENT_PRIORITY,
   ideaEventDedupeKey,
@@ -214,6 +215,12 @@ const RENDERERS = {
   post_status: (payload, to, siteUrl) => {
     const parsed = postStatusPayloadSchema.safeParse(payload);
     return parsed.success ? renderPostStatusEmail(parsed.data, to, siteUrl) : null;
+  },
+  // Queued by queueDigests (src/db/digest.ts, #212). The drain's send-time checks cover a
+  // student who turned the digest off after it was queued.
+  digest: (payload, to, siteUrl) => {
+    const parsed = digestPayloadSchema.safeParse(payload);
+    return parsed.success ? renderDigestEmail(parsed.data, to, siteUrl) : null;
   },
 } as const satisfies Partial<Record<EmailType, Renderer>>;
 

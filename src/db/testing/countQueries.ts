@@ -43,6 +43,7 @@ class Rollback extends Error {}
 
 export async function withCountedSeed<T>(
   fn: (tx: Prisma.TransactionClient, queries: QueryCounter) => Promise<T>,
+  { timeout = 15_000 }: { timeout?: number } = {},
 ): Promise<T> {
   let result: { value: T } | undefined;
   try {
@@ -53,7 +54,7 @@ export async function withCountedSeed<T>(
         result = { value: await fn(tx, counter) };
         throw new Rollback();
       },
-      { timeout: 15_000, maxWait: 15_000 },
+      { timeout, maxWait: 15_000 },
     );
   } catch (error) {
     if (!(error instanceof Rollback)) throw error;
