@@ -747,6 +747,11 @@ describeWithDatabase("eligibility is checked again at send (#257)", () => {
         updateId: testUuid(9002),
         body: "We met with Dining Services today.",
       });
+      // An update row's sendAfter is the database clock, which a fixed NOW never reaches (#257).
+      await tx.emailOutbox.updateMany({
+        where: { userId: users.student.id, type: "idea_event" },
+        data: { sendAfter: NOW },
+      });
       await queueDecisionEmail(tx, {
         ideaId: ideas.pending.id,
         reviewId: testUuid(7002),
