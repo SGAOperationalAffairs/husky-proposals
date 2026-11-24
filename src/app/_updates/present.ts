@@ -1,5 +1,5 @@
-import { daysBetween } from "@/app/_ideas/present";
 import type { BoardCode } from "@/core/boards";
+import { daysAgo } from "@/core/days";
 import { cadenceDueAt, cadenceFlag } from "@/core/updates";
 import type { UpdatableIdea } from "@/db/updatesList";
 
@@ -34,7 +34,7 @@ export function toUpdateRow(record: UpdatableIdea, now: Date): UpdateRowData {
   const flag = cadenceFlag(dueAt, record.isStale, now);
   const past = record.updates.map((u) => ({
     id: u.id,
-    daysAgo: daysBetween(u.createdAt, now),
+    daysAgo: daysAgo(new Date(u.createdAt), now),
     text: u.body,
   }));
   const [newest] = past;

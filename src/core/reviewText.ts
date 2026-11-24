@@ -1,18 +1,11 @@
 import { BOARDS, BOARD_CODES, type BoardCode } from "./boards";
+import { daysUntil, untilText } from "./days";
 
 // Words for the review screen (#59). Plain functions: no clock, no framework.
 
-const DAY = 24 * 60 * 60 * 1000;
-const utcDay = (date: Date) => Math.floor(date.getTime() / DAY);
-
-// Whole calendar days on UTC boundaries, to match reviewDueAt's whole-day math. The
-// words carry the meaning, so overdue is never shown by color alone.
+// Whole UTC calendar days, the one rule in days.ts (#273).
 export function dueText(dueAt: Date, now: Date): { text: string; overdue: boolean } {
-  const days = utcDay(dueAt) - utcDay(now);
-  if (days === 0) return { text: "Due today", overdue: false };
-  if (days > 0) return { text: `Due in ${days} ${days === 1 ? "day" : "days"}`, overdue: false };
-  const late = -days;
-  return { text: `${late} ${late === 1 ? "day" : "days"} overdue`, overdue: true };
+  return untilText(daysUntil(dueAt, now), { today: "Due today", ahead: "Due in" });
 }
 
 // What an author reads on their own pending post (#200). It says reviewers aim to decide,
@@ -20,7 +13,7 @@ export function dueText(dueAt: Date, now: Date): { text: string; overdue: boolea
 // as in dueText.
 export function studentWaitText(dueAt: Date | null, now: Date): string {
   if (dueAt === null) return "Reviewers aim to decide within a few days.";
-  const days = utcDay(dueAt) - utcDay(now);
+  const days = daysUntil(dueAt, now);
   if (days < 0) {
     return "This is taking longer than usual. It is still waiting for a reviewer, and you do not need to do anything.";
   }

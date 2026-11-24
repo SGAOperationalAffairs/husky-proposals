@@ -40,12 +40,12 @@ function record(
 }
 
 describe("presenting a public idea (#60)", () => {
-  it("counts whole days since the latest activity, floored", () => {
+  it("counts whole UTC calendar days since the latest activity", () => {
     expect(toCard(record(), NOW).updatedDaysAgo).toBe(2);
     expect(
       toCard(record({}, { stats: { ...record().stats, lastUpdateAt: daysBefore(2, 23) } }), NOW)
         .updatedDaysAgo,
-    ).toBe(2);
+    ).toBe(3);
   });
 
   it("uses the latest of the last update, the status change, and the approval", () => {

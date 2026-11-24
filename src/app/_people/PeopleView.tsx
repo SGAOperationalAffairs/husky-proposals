@@ -22,11 +22,12 @@ import { BoardSelect } from "@/components/BoardSelect";
 import { IdeaSearch } from "@/components/IdeaSearch";
 import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
+import { daysUntil } from "@/core/days";
 import {
   addressList,
   bccMailto,
   contactBy,
-  daysUntil,
+  contactText,
   filterPeople,
   ideaChoicesFor,
   toListStatus,
@@ -64,13 +65,6 @@ const STATUS_LABEL: Record<ListStatus, string> = {
   joined: "Joined",
   not_now: "Not now",
 };
-
-// The contact date in plain words. Overdue sorts to the top and is marked with the accent.
-function contactText(days: number): string {
-  if (days < 0) return `${-days} ${-days === 1 ? "day" : "days"} overdue`;
-  if (days === 0) return "Contact today";
-  return `Contact in ${days} ${days === 1 ? "day" : "days"}`;
-}
 
 const keyOf = (r: PersonRow) => `${r.userId}:${r.ideaId}`;
 
@@ -132,7 +126,7 @@ export function PeopleView({
   };
 
   const scope = { idea, board };
-  const shown = filterPeople(rows, { status, ...scope }, nowDate);
+  const shown = filterPeople(rows, { status, ...scope });
   const shownKeys = shown.map(keyOf);
   const pickedShown = shown.filter((r) => picked.has(keyOf(r)));
 

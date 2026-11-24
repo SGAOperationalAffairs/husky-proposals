@@ -7,7 +7,7 @@ import type { UpdateRowData } from "@/app/_updates/present";
 import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { SelectField, TextArea } from "@/components/Field";
-import { daysAgoText } from "@/components/IdeaCard";
+import { daysAgoText } from "@/core/days";
 import { UpdateList, capitalize } from "@/components/UpdateList";
 import { BOARDS } from "@/core/boards";
 import type { BoardCode } from "@/core/boards";

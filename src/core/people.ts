@@ -1,3 +1,4 @@
+import { addDays, untilText } from "./days";
 import { boardsFor, type Viewer } from "./permissions";
 import type { BoardCode } from "./boards";
 
@@ -7,7 +8,6 @@ import type { BoardCode } from "./boards";
 // A few days after signing up, a volunteer is due a first contact. The playground sample used
 // "a few days"; 3 is our pick until Luis confirms it.
 export const CONTACT_DAYS = 3;
-const DAY = 24 * 60 * 60 * 1000;
 
 export type ContactStatus = "new" | "contacted" | "joined" | "later";
 export type ListStatus = "to_contact" | "contacted" | "joined" | "not_now";
@@ -41,12 +41,12 @@ export function toListStatus(status: ContactStatus): ListStatus {
 }
 
 export function contactBy(signedUpAt: Date): Date {
-  return new Date(signedUpAt.getTime() + CONTACT_DAYS * DAY);
+  return addDays(signedUpAt, CONTACT_DAYS);
 }
 
-// Days until the contact date. Negative means it has passed.
-export function daysUntil(date: Date, now: Date): number {
-  return Math.round((date.getTime() - now.getTime()) / DAY);
+// The People row's words, from days.ts's UTC day count (#273).
+export function contactText(days: number): string {
+  return untilText(days, { today: "Contact today", ahead: "Contact in" }).text;
 }
 
 // Only the boards this viewer may see the People list for. A student, a visitor, or a leader with
@@ -70,11 +70,11 @@ function inScope(row: PersonRow, filter: Pick<PeopleFilter, "idea" | "board">): 
 }
 
 // Overdue first (a contact date already passed), then the nearest contact date.
-export function filterPeople(rows: PersonRow[], filter: PeopleFilter, now: Date): PersonRow[] {
+export function filterPeople(rows: PersonRow[], filter: PeopleFilter): PersonRow[] {
   return rows
     .filter((r) => inScope(r, filter))
     .filter((r) => filter.status === "all" || toListStatus(r.contactStatus) === filter.status)
-    .sort((a, b) => daysUntil(contactBy(a.signedUpAt), now) - daysUntil(contactBy(b.signedUpAt), now));
+    .sort((a, b) => contactBy(a.signedUpAt).getTime() - contactBy(b.signedUpAt).getTime());
 }
 
 // Counts for the filter labels. They follow the idea and board the leader has picked, so the

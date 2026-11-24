@@ -2,9 +2,9 @@
 // ideas and made-up updates; no real data. The shape is what listUpdatableIdeas returns, with
 // every time worked out from `now`, so the due flags are the same on any day.
 import type { BoardCode } from "@/core/boards";
+import { DAY_MS } from "@/core/days";
 import type { UpdatableIdea } from "@/db/updatesList";
 
-const DAY = 24 * 60 * 60 * 1000;
 const CADENCE_DAYS = 30;
 
 type Sample = {
@@ -99,7 +99,7 @@ const SAMPLES: Sample[] = [
 ];
 
 export function sampleUpdateRows(now: Date): UpdatableIdea[] {
-  const ago = (days: number) => new Date(now.getTime() - days * DAY).toISOString();
+  const ago = (days: number) => new Date(now.getTime() - days * DAY_MS).toISOString();
   return SAMPLES.map((s) => {
     const newest = s.updates[0]?.[0] ?? 0;
     return {

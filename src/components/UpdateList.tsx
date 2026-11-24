@@ -1,4 +1,4 @@
-import { daysAgoText } from "./IdeaCard";
+import { daysAgoText } from "@/core/days";
 
 // The "Updates" list students read on an idea's page (#130): the age in words, then what
 // the board wrote. Lifted from the idea page's markup so the leader's preview is the page,

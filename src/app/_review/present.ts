@@ -1,6 +1,6 @@
 import type { PosterData } from "@/components/PosterLine";
-import { daysAgoText } from "@/components/IdeaCard";
 import type { BoardCode } from "@/core/boards";
+import { daysAgo, daysAgoText } from "@/core/days";
 import {
   COST_LABELS,
   SCALE_LABELS,
@@ -18,9 +18,6 @@ import type { ApprovedItemData, ReviewQueueItemData } from "@/db/reviewQueue";
 // Leader rows as plain data for the client (#59): text and ISO-free strings, no Date.
 // A name or email is copied only where the viewer shape carried one, so a hidden
 // author never reaches the browser.
-const DAY = 24 * 60 * 60 * 1000;
-const wholeDaysAgo = (then: Date, now: Date) =>
-  Math.max(0, Math.floor((now.getTime() - then.getTime()) / DAY));
 
 export type ReviewRowData = {
   id: string;
@@ -93,7 +90,7 @@ export function toReviewRow({ idea, dueAt }: ReviewQueueItemData, now: Date): Re
       { term: "Timing", value: label<TimeHorizonValue>(TIME_LABELS, idea.timeHorizon) },
       { term: "Where", value: idea.location?.trim() || NOT_SURE },
     ],
-    sentText: `Sent ${daysAgoText(wholeDaysAgo(idea.submittedAt, now))}`,
+    sentText: `Sent ${daysAgoText(daysAgo(idea.submittedAt, now))}`,
     due: dueText(dueAt, now),
     isAnonymous: idea.isAnonymous,
     poster: posterOf(idea),
@@ -114,7 +111,7 @@ export function toApprovedRow({ idea }: ApprovedItemData, now: Date): ApprovedRo
     title: idea.title,
     boardId: idea.boardId,
     approvedText: idea.approvedAt
-      ? `Approved ${daysAgoText(wholeDaysAgo(idea.approvedAt, now))}`
+      ? `Approved ${daysAgoText(daysAgo(idea.approvedAt, now))}`
       : "Approved recently",
   };
 }

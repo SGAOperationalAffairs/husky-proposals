@@ -5,6 +5,7 @@ import {
   addressList,
   bccMailto,
   contactBy,
+  contactText,
   countByStatus,
   filterPeople,
   ideaChoicesFor,
@@ -58,6 +59,16 @@ describe("contactBy", () => {
   });
 });
 
+describe("contactText", () => {
+  it("reads today, ahead, and overdue", () => {
+    expect(contactText(0)).toBe("Contact today");
+    expect(contactText(1)).toBe("Contact in 1 day");
+    expect(contactText(3)).toBe("Contact in 3 days");
+    expect(contactText(-1)).toBe("1 day overdue");
+    expect(contactText(-4)).toBe("4 days overdue");
+  });
+});
+
 describe("peopleForViewer", () => {
   const rows = [row({ board: "DAB" }), row({ board: "CPAB", userId: "u2" })];
 
@@ -83,15 +94,15 @@ describe("filterPeople and countByStatus", () => {
   ];
 
   it("filters by status, idea, and board", () => {
-    expect(filterPeople(rows, { status: "to_contact", idea: "all", board: "all" }, NOW)).toHaveLength(1);
-    expect(
-      filterPeople(rows, { status: "all", idea: "118", board: "all" }, NOW).map((r) => r.userId),
-    ).toEqual(["b"]);
-    expect(filterPeople(rows, { status: "all", idea: "all", board: "CPAB" }, NOW)).toHaveLength(1);
+    expect(filterPeople(rows, { status: "to_contact", idea: "all", board: "all" })).toHaveLength(1);
+    expect(filterPeople(rows, { status: "all", idea: "118", board: "all" }).map((r) => r.userId)).toEqual([
+      "b",
+    ]);
+    expect(filterPeople(rows, { status: "all", idea: "all", board: "CPAB" })).toHaveLength(1);
   });
 
   it("sorts overdue first, then the nearest contact date", () => {
-    const sorted = filterPeople(rows, { status: "all", idea: "all", board: "all" }, NOW);
+    const sorted = filterPeople(rows, { status: "all", idea: "all", board: "all" });
     expect(sorted[0]).toMatchObject({ userId: "a" });
   });
 
