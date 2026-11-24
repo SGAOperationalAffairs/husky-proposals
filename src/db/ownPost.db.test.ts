@@ -24,6 +24,7 @@ describeWithDatabase("the author's read of their own post (#128)", () => {
       expect(idea?.id).toBe(ideas.declined.id);
       expect(idea?.reviewStatus).toBe("declined");
       expect(idea?.review).toEqual({
+        kind: "review",
         decision: "declined",
         reason: "This repeats an open idea. Support that one instead.",
       });

@@ -3,11 +3,12 @@ import type { DecideError } from "./decidePost";
 // The words for a decision that did not go through (#59). Every code the actions can
 // return is an expected result, so it gets plain copy, not a thrown error.
 export type DecisionCode = DecideError["code"] | "cross_origin" | "signed_out" | "unexpected";
-export type DecisionContext = "decide" | "take_down";
+export type DecisionContext = "decide" | "send_back" | "take_down";
 export type DecisionMessage = { text: string; field?: "reason"; refresh: boolean };
 
 const TRY_AGAIN = "That didn't go through. Try again.";
 const REASON_NEEDED = "Write a reason so the student knows what to change.";
+const TAKE_DOWN_REASON_NEEDED = "Write a reason so the student knows why it came down.";
 
 // A Record, so a new code fails to compile until it has copy.
 const TEXT: Record<DecisionCode, string> = {
@@ -40,10 +41,11 @@ export function decisionMessage(
   fields: string[] | undefined,
 ): DecisionMessage {
   if (code === "reason_required" || (code === "invalid" && fields?.includes("reason"))) {
-    return { text: REASON_NEEDED, field: "reason", refresh: false };
+    const text = context === "take_down" ? TAKE_DOWN_REASON_NEEDED : REASON_NEEDED;
+    return { text, field: "reason", refresh: false };
   }
-  // A take-down on an idea that someone already took down.
-  if (code === "invalid_transition" && context === "take_down") {
+  // A send-back or take-down on an idea that someone already sent back or took down (#286).
+  if (code === "invalid_transition" && (context === "send_back" || context === "take_down")) {
     return { text: "This idea is no longer approved.", refresh: true };
   }
   return { text: TEXT[code], refresh: REFRESH.has(code) };

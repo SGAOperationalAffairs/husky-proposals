@@ -15,6 +15,8 @@ export type EditPostData = {
   number: number | null;
   reviewStatus: ReviewStatus;
   reason: string | null;
+  // A declined post a reviewer sent back, rather than declined at first review (#286).
+  sentBack: boolean;
   values: PostDraft;
 };
 
@@ -43,8 +45,13 @@ export function toEditPost(idea: AuthorIdea): EditPostData {
     number: idea.number,
     reviewStatus: idea.reviewStatus,
     // A resubmitted post still has its old decline as the latest review. Only a post
-    // that is declined now shows a reason.
-    reason: idea.reviewStatus === "declined" && latest?.decision === "declined" ? latest.reason : null,
+    // that is declined or taken down now shows a reason (#286).
+    reason:
+      (idea.reviewStatus === "declined" || idea.reviewStatus === "taken_down") &&
+      latest?.decision === "declined"
+        ? latest.reason
+        : null,
+    sentBack: idea.reviewStatus === "declined" && latest?.kind === "send_back",
     values: {
       title: idea.title,
       summary: idea.description,

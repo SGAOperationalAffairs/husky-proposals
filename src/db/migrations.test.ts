@@ -7,7 +7,7 @@ import { categoryForBoard } from "@/core/postIdea";
 
 // The migrations (#44) are the database's source of truth. Two checks that run
 // without a database: the idea_stats view in the migration matches its source file,
-// and the six check constraints are present. Migrations are never edited once
+// and the check constraints are present. Migrations are never edited once
 // committed, so a view change is a new migration plus an edit to the source file.
 
 const MIGRATIONS = join(process.cwd(), "prisma/migrations");
@@ -91,9 +91,10 @@ describe("check constraints (#44)", () => {
     "reviews_decline_needs_reason",
     "boards_review_due_days_range",
     "ideas_closed_needs_reason",
+    "reviews_send_back_is_decline",
   ];
 
-  it("each of the six constraints is added by a migration", () => {
+  it("each of the seven constraints is added by a migration", () => {
     const all = migrationFiles()
       .map((file) => readFileSync(file, "utf8"))
       .join("\n");

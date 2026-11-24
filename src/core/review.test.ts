@@ -27,6 +27,7 @@ const REVIEWER = "chair-1";
 const EVENTS: Record<ReviewEvent["type"], ReviewEvent> = {
   approve: { type: "approve", actorId: REVIEWER },
   decline: { type: "decline", actorId: REVIEWER, reason: "Out of scope" },
+  send_back: { type: "send_back", actorId: REVIEWER, reason: "Add the cost and the place" },
   take_down: { type: "take_down", actorId: REVIEWER, reason: "Not accurate" },
   withdraw: { type: "withdraw", actorId: AUTHOR },
   resubmit: { type: "resubmit", actorId: AUTHOR, pendingCount: 0 },
@@ -88,10 +89,18 @@ describe("review state machine (#50)", () => {
         clearIdeaStatus: false,
       });
     });
-    it("approved to declined by take-down, clearing the idea status", () => {
-      expect(applyReviewEvent(post("approved"), EVENTS.take_down)).toEqual({
+    it("approved to declined by send-back, clearing the idea status (#286)", () => {
+      expect(applyReviewEvent(post("approved"), EVENTS.send_back)).toEqual({
         ok: true,
         reviewStatus: "declined",
+        review: { kind: "send_back", decision: "declined", reason: "Add the cost and the place" },
+        clearIdeaStatus: true,
+      });
+    });
+    it("approved to taken_down by take-down, clearing the idea status (#286)", () => {
+      expect(applyReviewEvent(post("approved"), EVENTS.take_down)).toEqual({
+        ok: true,
+        reviewStatus: "taken_down",
         review: { kind: "take_down", decision: "declined", reason: "Not accurate" },
         clearIdeaStatus: true,
       });
@@ -105,6 +114,7 @@ describe("review state machine (#50)", () => {
       "pending:withdraw",
       "declined:resubmit",
       "declined:withdraw",
+      "approved:send_back",
       "approved:take_down",
       "approved:resubmit",
     ]);
@@ -131,9 +141,23 @@ describe("review state machine (#50)", () => {
     it("only a declined post is editable", () => {
       for (const status of REVIEW_STATUSES) expect(isEditable(status), status).toBe(status === "declined");
     });
+    it("a taken-down post is final and refuses every event (#286)", () => {
+      for (const event of Object.values(EVENTS)) {
+        expect(applyReviewEvent(post("taken_down"), event), event.type).toEqual({
+          ok: false,
+          error: { code: "invalid_transition", from: "taken_down", event: event.type },
+        });
+      }
+    });
   });
 
   describe("own post", () => {
+    it("the author cannot send back an approved post (#286)", () => {
+      expect(applyReviewEvent(post("approved"), { ...EVENTS.send_back, actorId: AUTHOR })).toEqual({
+        ok: false,
+        error: { code: "own_post" },
+      });
+    });
     it("the author cannot approve, decline, or take down", () => {
       const own = { ...EVENTS.approve, actorId: AUTHOR };
       expect(applyReviewEvent(post("pending"), own)).toEqual({ ok: false, error: { code: "own_post" } });
@@ -180,8 +204,12 @@ describe("review state machine (#50)", () => {
   });
 
   describe("reasons", () => {
-    it("decline and take-down need a non-empty reason", () => {
+    it("decline, send-back, and take-down need a non-empty reason", () => {
       for (const reason of ["", "   "]) {
+        expect(applyReviewEvent(post("approved"), { type: "send_back", actorId: REVIEWER, reason })).toEqual({
+          ok: false,
+          error: { code: "reason_required" },
+        });
         expect(applyReviewEvent(post("pending"), { type: "decline", actorId: REVIEWER, reason })).toEqual({
           ok: false,
           error: { code: "reason_required" },

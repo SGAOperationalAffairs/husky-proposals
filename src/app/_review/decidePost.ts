@@ -15,7 +15,7 @@ import {
 } from "@/core/review";
 import type { IdeaStatus } from "@/core/statuses";
 
-// Deciding a pending post, or taking an approved one down (#58): the rules, with the
+// Deciding a pending post, or sending an approved one back or taking it down (#58, #286): the rules, with the
 // storage behind an interface. The server action (actions.ts) supplies the Prisma
 // store inside one transaction; the tests supply a fake one. Who may review a board
 // is permissions (#52) and what the post allows is the state machine (#50); this
@@ -32,9 +32,9 @@ export type ReviewTarget = {
 };
 
 // The idea columns a decision changes. Approving sets the status the idea starts in;
-// a take-down clears it, as "status is null unless approved" requires.
+// a send-back or take-down clears it, as "status is null unless approved" requires.
 export type IdeaPatch = {
-  reviewStatus: "approved" | "declined";
+  reviewStatus: "approved" | "declined" | "taken_down";
   number?: number;
   approvedAt?: Date;
   status?: IdeaStatus | null;
@@ -68,7 +68,7 @@ export type ReviewStore = {
   record(write: ReviewWrite): Promise<{ reviewId: string } | null>;
 };
 
-export type DecisionType = "approve" | "decline" | "take_down";
+export type DecisionType = "approve" | "decline" | "send_back" | "take_down";
 
 export type DecideError =
   | { code: "invalid"; fields: string[] }
@@ -116,7 +116,7 @@ export async function decidePost(
     type === "approve" ? { type, actorId } : { type, actorId, reason: input.reason },
   );
   if (!result.ok) return fail(result.error);
-  // approve, decline, and take_down always write a review row.
+  // approve, decline, send_back, and take_down always write a review row.
   if (!result.review) throw new Error(`The ${type} event produced no review row`);
 
   let number = target.number;
@@ -128,8 +128,14 @@ export async function decidePost(
     // by when it came back (#58).
     patch = { reviewStatus: "approved", number, approvedAt: now, ...statusOnApproval(now) };
   } else if (result.clearIdeaStatus) {
-    // closedReason goes too, so a closed idea taken down and approved again shows no stale one (#237).
-    patch = { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null };
+    // A send-back returns the idea to declined, a take-down ends it as taken_down (#286).
+    // closedReason goes too, so a closed idea sent back and approved again shows no stale one (#237).
+    patch = {
+      reviewStatus: type === "take_down" ? "taken_down" : "declined",
+      status: null,
+      waitingReason: null,
+      closedReason: null,
+    };
   } else {
     patch = { reviewStatus: "declined" };
   }
@@ -163,9 +169,14 @@ function parseInput(
   type: DecisionType,
   raw: unknown,
 ): { ok: true; ideaId: string; reason: string } | { ok: false; fields: string[] } {
-  // A decline needs a longer reason than a take down, so each has its own rule (#58).
+  // A decline or send-back needs a longer reason than a take down, so each has its own
+  // rule (#58, #286).
   const schema =
-    type === "approve" ? approveInputSchema : type === "decline" ? declineReasonSchema : reasonInputSchema;
+    type === "approve"
+      ? approveInputSchema
+      : type === "decline" || type === "send_back"
+        ? declineReasonSchema
+        : reasonInputSchema;
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
     const fields = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0] ?? "form")))];

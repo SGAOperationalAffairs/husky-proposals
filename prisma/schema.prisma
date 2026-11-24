@@ -30,6 +30,7 @@ enum ReviewStatus {
   approved
   declined
   withdrawn // set by the author; final, never public (#49)
+  taken_down // set by a reviewer's take-down; final, never public (#286)
 }
 
 // Only set once an idea is approved.
@@ -74,11 +75,13 @@ enum ReviewDecision {
   declined
 }
 
-// review is the decision on a submission. take_down returns an approved idea
-// to declined (#49).
+// review is the decision on a submission. send_back returns an approved idea to
+// declined so the author can fix and resubmit it (#286). take_down ends an approved
+// idea for good, as taken_down (#286).
 enum ReviewKind {
   review
   take_down
+  send_back
 }
 
 enum ContactStatus {
@@ -204,11 +207,13 @@ model Board {
 // Rule: only the author can withdraw, and only from pending or declined.
 //   withdrawn is final and writes no Review row. Withdrawn posts never count
 //   toward the 3-pending limit and are never public (#49).
-// Rule: a take-down sets reviewStatus to declined and clears status and
+// Rule: a send-back sets reviewStatus to declined and clears status and
 //   waitingReason and closedReason, as the "status is null unless approved"
 //   constraint needs.
-//   The author can then edit and resubmit, as after any decline (#49).
-// Provisional: an idea that is taken down and approved again keeps its number.
+//   The author can then edit and resubmit, as after any decline (#49, #286).
+// Rule: a take-down sets reviewStatus to taken_down and clears the same fields.
+//   taken_down is final, like withdrawn: no edit, resubmit, or withdraw (#286).
+// Provisional: an idea that is sent back and approved again keeps its number.
 model Idea {
   id String @id @default(uuid(7)) @db.Uuid
 
@@ -286,15 +291,15 @@ model IdeaRevision {
   @@map("idea_revisions")
 }
 
-// One review decision per revision, plus at most one take-down (#49).
-// Rule: a take-down has decision = declined (check constraint).
+// One review decision per revision, plus at most one take-down or send-back (#49, #286).
+// Rule: a take-down and a send-back have decision = declined (check constraints).
 // Rule: reason is required whenever decision = declined, which covers a
-//   decline and a take-down (check constraint). Only the author and leaders
-//   ever see it.
+//   decline, a send-back, and a take-down (check constraint). Only the author and
+//   leaders ever see it.
 // Rule: only a reviewer for the idea's board (its chair or director) or the
-//   VP of Campus Affairs can decide or take down.
-// Rule: a take-down applies only to an idea whose reviewStatus is approved,
-//   and only to the revision that was approved.
+//   VP of Campus Affairs can decide, send back, or take down.
+// Rule: a take-down or send-back applies only to an idea whose reviewStatus is
+//   approved, and only to the revision that was approved.
 model Review {
   id         String         @id @default(uuid(7)) @db.Uuid
   ideaId     String         @map("idea_id") @db.Uuid

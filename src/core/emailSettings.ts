@@ -9,7 +9,7 @@ export type SettableEmailType = (typeof SETTABLE_EMAIL_TYPES)[number];
 export const EMAIL_SETTINGS: Record<SettableEmailType, { label: string; hint: string }> = {
   post_decided: {
     label: "Decisions on my posts",
-    hint: "When a post you wrote is approved, not approved, or taken down.",
+    hint: "When a post you wrote is approved, not approved, sent back, or taken down.",
   },
   post_status: {
     label: "Status changes on my ideas",

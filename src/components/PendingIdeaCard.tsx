@@ -13,8 +13,10 @@ export type PendingIdeaCardData = {
   title: string;
   description: string;
   board: BoardCode;
-  review: "pending" | "declined";
-  // The reviewer's written reason, shown on a declined post (#58).
+  // sent_back is a declined post a reviewer pulled from the list: Edit and Withdraw stay.
+  // taken_down is final, so it shows the reason and no Edit or Withdraw (#286).
+  review: "pending" | "declined" | "sent_back" | "taken_down";
+  // The reviewer's written reason, shown on a declined, sent-back, or taken-down post (#58).
   declineReason?: string;
   // The student's own support and participation, so the buttons show their real state (#193).
   supported?: boolean;
@@ -25,6 +27,14 @@ export type PendingIdeaCardData = {
   // The "when" line Learn more shows on a pending post (#200), from studentWaitText.
   waitText?: string;
 };
+
+// The corner tag and the big word that stands where the support count would be.
+const LABELS = {
+  pending: { corner: "Waiting for review", word: "PENDING" },
+  declined: { corner: "Not approved", word: "DECLINED" },
+  sent_back: { corner: "Sent back", word: "SENT BACK" },
+  taken_down: { corner: "Taken down", word: "TAKEN DOWN" },
+} as const;
 
 const actionLink = "inline-flex border-2 px-3 py-1.5 text-sm font-bold";
 const actionStyle = { color: "var(--grey-ink)", borderColor: "var(--grey-ink)" };
@@ -42,7 +52,9 @@ export function PendingIdeaCard({
   waitText,
 }: PendingIdeaCardData) {
   const b = BOARDS[board];
-  const declined = review === "declined";
+  // The author can still edit and withdraw a declined or sent-back post, but not a taken-down one.
+  const editable = review === "declined" || review === "sent_back";
+  const tag = LABELS[review];
   return (
     // No top padding, and the top row has the same padding as IdeaCard's, so a row's cards are
     // the same height whatever their state (#204).
@@ -64,16 +76,16 @@ export function PendingIdeaCard({
             className="-mt-(--card-pad-y) -mr-(--card-pad) shrink-0 bg-paper-ink px-3 py-1 heading text-lg whitespace-nowrap"
             style={{ color: "color-mix(in srgb, var(--b) 22%, var(--grey))" }}
           >
-            {declined ? "Not approved" : "Waiting for review"}
+            {tag.corner}
           </span>
         </div>
         <h3 className="poster-title poster-title-lines heading text-balance">{title}</h3>
         <p className="poster-desc text-sm">{description}</p>
-        {declined && declineReason && <p className="poster-desc text-sm">{declineReason}</p>}
+        {review !== "pending" && declineReason && <p className="poster-desc text-sm">{declineReason}</p>}
         <div className="card-stack mt-auto flex flex-col pt-1">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <p className="heading text-4xl">{declined ? "DECLINED" : "PENDING"}</p>
-            {declined && editHref && (
+            <p className="heading text-4xl">{tag.word}</p>
+            {editable && editHref && (
               <div className="flex flex-wrap gap-2">
                 <Link href={editHref} className={actionLink} style={actionStyle}>
                   Edit

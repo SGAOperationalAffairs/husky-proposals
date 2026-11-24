@@ -6,13 +6,13 @@ import { BoardChip } from "@/components/BoardChip";
 import { Button } from "@/components/Button";
 import { DecisionSheet } from "@/components/DecisionSheet";
 import { PAGE } from "@/components/pageTransition";
-import { TakeDownDialog } from "@/components/TakeDownDialog";
+import { TakeDownDialog, type PullBackKind } from "@/components/TakeDownDialog";
 import { BOARDS } from "@/core/boards";
 import type { ApprovedRowData, ReviewRowData } from "@/app/_review/present";
 import { useReviewActions } from "@/app/_review/useReviewActions";
 
 // The To review tab (#59): pending posts oldest first, then what was approved in the
-// last 14 days so a leader can take one down. It owns which drawer or dialog is open
+// last 14 days so a leader can send one back or take it down (#286). It owns which drawer or dialog is open
 // and where focus lands afterwards. The lists arrive already filtered by board.
 // show: which list is on screen. The queue's chips pick one (#221); unset shows both.
 type Props = { pending: ReviewRowData[]; approved: ApprovedRowData[]; show?: "review" | "approved" };
@@ -31,16 +31,18 @@ function useLastRow<T>(row: T | null): T | null {
 export function ReviewList({ pending, approved, show }: Props) {
   const actions = useReviewActions();
   const [openId, setOpenId] = useState<string | null>(null);
-  const [takeDownId, setTakeDownId] = useState<string | null>(null);
+  // The approved row being sent back or taken down, and which of the two (#286).
+  const [pullBack, setPullBack] = useState<{ id: string; kind: PullBackKind } | null>(null);
   // What Base UI focuses when a drawer or dialog closes: the opener, or after a
   // decision, the next row (or the tab when nothing is left).
   const returnFocus = useRef<HTMLElement | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
   const open = pending.find((row) => row.id === openId) ?? null;
-  const takeDownRow = approved.find((row) => row.id === takeDownId) ?? null;
+  const pullBackRow = approved.find((row) => row.id === pullBack?.id) ?? null;
   const shownOpen = useLastRow(open);
-  const shownTakeDown = useLastRow(takeDownRow);
+  const shownPullBack = useLastRow(pullBackRow);
+  const shownKind = useLastRow(pullBack?.kind ?? null) ?? "send_back";
 
   // The element after `id` in `ids` that has the given attribute, else the one before.
   function neighbour(attribute: string, ids: string[], id: string): HTMLElement | null {
@@ -112,7 +114,8 @@ export function ReviewList({ pending, approved, show }: Props) {
         <section className="flex flex-col gap-3">
           <h2 className="heading text-3xl">Recently approved</h2>
           <p className="text-sm text-muted">
-            Approved in the last 14 days on your boards. Take one down if it should not be public.
+            Approved in the last 14 days on your boards. Send one back if the student can fix it, or take it
+            down if it should not be public at all.
           </p>
           {approved.length === 0 ? (
             <p className="bordered bg-surface p-card">Nothing approved in the last 14 days.</p>
@@ -138,12 +141,25 @@ export function ReviewList({ pending, approved, show }: Props) {
                     <Button
                       variant="line"
                       size="sm"
+                      data-send-back-row={row.id}
+                      aria-label={`Send back #${row.number}`}
+                      onClick={(e) => {
+                        returnFocus.current = e.currentTarget;
+                        actions.clearError();
+                        setPullBack({ id: row.id, kind: "send_back" });
+                      }}
+                    >
+                      Send back
+                    </Button>
+                    <Button
+                      variant="plain"
+                      size="sm"
                       data-take-down-row={row.id}
                       aria-label={`Take down #${row.number}`}
                       onClick={(e) => {
                         returnFocus.current = e.currentTarget;
                         actions.clearError();
-                        setTakeDownId(row.id);
+                        setPullBack({ id: row.id, kind: "take_down" });
                       }}
                     >
                       Take down
@@ -171,31 +187,33 @@ export function ReviewList({ pending, approved, show }: Props) {
         }}
       />
       <TakeDownDialog
-        number={shownTakeDown?.number ?? 0}
-        board={shownTakeDown?.boardId ?? "DAB"}
-        open={takeDownRow !== null}
-        busy={actions.busy === "take_down"}
+        kind={shownKind}
+        number={shownPullBack?.number ?? 0}
+        board={shownPullBack?.boardId ?? "DAB"}
+        open={pullBackRow !== null}
+        busy={actions.busy === shownKind}
         error={actions.error}
         returnFocus={returnFocus}
         onCancel={() => {
-          setTakeDownId(null);
+          setPullBack(null);
           actions.clearError();
         }}
         onConfirm={async (reason) => {
-          if (!takeDownRow) return;
-          if (
-            await actions.takeDown(
-              { id: takeDownRow.id, boardId: takeDownRow.boardId, number: takeDownRow.number },
-              reason,
-            )
-          ) {
+          if (!pullBackRow || !pullBack) return;
+          const target = { id: pullBackRow.id, boardId: pullBackRow.boardId, number: pullBackRow.number };
+          const done =
+            pullBack.kind === "send_back"
+              ? await actions.sendBack(target, reason)
+              : await actions.takeDown(target, reason);
+          if (done) {
+            // Focus lands on the same button on the next row, so a run of decisions stays on the keyboard.
             returnFocus.current =
               neighbour(
-                "data-take-down-row",
+                pullBack.kind === "send_back" ? "data-send-back-row" : "data-take-down-row",
                 approved.map((row) => row.id),
-                takeDownRow.id,
+                pullBackRow.id,
               ) ?? tab();
-            setTakeDownId(null);
+            setPullBack(null);
           }
         }}
       />

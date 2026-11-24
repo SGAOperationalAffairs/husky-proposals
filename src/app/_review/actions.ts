@@ -37,6 +37,7 @@ async function decide(session: Session, type: DecisionType, raw: unknown) {
 
 const approveAsSession = withSession((session, raw: unknown) => decide(session, "approve", raw));
 const declineAsSession = withSession((session, raw: unknown) => decide(session, "decline", raw));
+const sendBackAsSession = withSession((session, raw: unknown) => decide(session, "send_back", raw));
 const takeDownAsSession = withSession((session, raw: unknown) => decide(session, "take_down", raw));
 // One write, so no transaction. Nothing is cached around the setting.
 const setDueDaysAsSession = withSession((session, raw: unknown) =>
@@ -49,6 +50,9 @@ const approveReporting = reportThrows("approvePost", async (raw: unknown) =>
 );
 const declineReporting = reportThrows("declinePost", async (raw: unknown) =>
   (await isOwnOrigin()) ? declineAsSession(raw) : crossOrigin,
+);
+const sendBackReporting = reportThrows("sendBackPost", async (raw: unknown) =>
+  (await isOwnOrigin()) ? sendBackAsSession(raw) : crossOrigin,
 );
 const takeDownReporting = reportThrows("takeDownPost", async (raw: unknown) =>
   (await isOwnOrigin()) ? takeDownAsSession(raw) : crossOrigin,
@@ -63,6 +67,10 @@ export async function approvePost(raw: unknown) {
 
 export async function declinePost(raw: unknown) {
   return declineReporting(raw);
+}
+
+export async function sendBackPost(raw: unknown) {
+  return sendBackReporting(raw);
 }
 
 export async function takeDownPost(raw: unknown) {

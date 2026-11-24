@@ -30,6 +30,10 @@ const declined: PostDecidedPayload = {
   ideaNumber: null,
   event: { kind: "declined", reason: "This repeats an open idea. Support that one instead." },
 };
+const sentBack: PostDecidedPayload = {
+  ...base,
+  event: { kind: "sent_back", reason: "Add the cost and the place, then send it again." },
+};
 const takenDown: PostDecidedPayload = {
   ...base,
   event: { kind: "taken_down", reason: "It names a person." },
@@ -46,10 +50,11 @@ describe("emails about your own post (#211): decisions", () => {
     expect(decisionKindOf({ kind: "review", decision: "approved" })).toBe("approved");
     expect(decisionKindOf({ kind: "review", decision: "declined" })).toBe("declined");
     expect(decisionKindOf({ kind: "take_down", decision: "declined" })).toBe("taken_down");
+    expect(decisionKindOf({ kind: "send_back", decision: "declined" })).toBe("sent_back");
   });
 
-  it("accepts the three payloads", () => {
-    for (const payload of [approved, declined, takenDown]) {
+  it("accepts the four payloads", () => {
+    for (const payload of [approved, declined, sentBack, takenDown]) {
       expect(postDecidedPayloadSchema.safeParse(payload).success).toBe(true);
     }
   });
@@ -67,7 +72,10 @@ describe("emails about your own post (#211): decisions", () => {
     ).toBe(false);
   });
 
-  it("rejects a decline or take-down with an empty reason", () => {
+  it("rejects a decline, send-back, or take-down with an empty reason", () => {
+    expect(
+      postDecidedPayloadSchema.safeParse({ ...sentBack, event: { kind: "sent_back", reason: "" } }).success,
+    ).toBe(false);
     expect(
       postDecidedPayloadSchema.safeParse({ ...declined, event: { kind: "declined", reason: "" } }).success,
     ).toBe(false);
@@ -76,8 +84,9 @@ describe("emails about your own post (#211): decisions", () => {
     ).toBe(false);
   });
 
-  it("rejects an approval or take-down with no number, but allows a decline with none", () => {
+  it("rejects an approval, send-back, or take-down with no number, but allows a decline with none", () => {
     expect(postDecidedPayloadSchema.safeParse({ ...approved, ideaNumber: null }).success).toBe(false);
+    expect(postDecidedPayloadSchema.safeParse({ ...sentBack, ideaNumber: null }).success).toBe(false);
     expect(postDecidedPayloadSchema.safeParse({ ...takenDown, ideaNumber: null }).success).toBe(false);
     expect(postDecidedPayloadSchema.safeParse(declined).success).toBe(true);
   });
@@ -105,16 +114,33 @@ describe("emails about your own post (#211): decisions", () => {
     expect(message.text).toContain(`${siteUrl}/me/ideas/${ideaId}/edit`);
   });
 
-  it("renders a take-down with the reason and the edit link", () => {
+  it("renders a send-back with the reason, the edit link, and the number it keeps (#286)", () => {
+    const message = renderPostDecidedEmail(sentBack, "a@example.com", siteUrl);
+    expect(message.subject).toBe("Your idea was sent back: Proposal #103");
+    expect(message.text).toContain(
+      "The Dining Advisory Board took #103 off the ideas list for now and sent it back to you. Other students can no longer see it.",
+    );
+    expect(message.text).toContain("What to change:\nAdd the cost and the place, then send it again.");
+    expect(message.text).toContain(
+      "Change what the reviewer asked for, then send it for review again. It keeps #103 if it is approved again.",
+    );
+    expect(message.text).toContain(`${siteUrl}/me/ideas/${ideaId}/edit`);
+  });
+
+  it("renders a take-down with the reason and a new-post link, but no edit link (#286)", () => {
     const message = renderPostDecidedEmail(takenDown, "a@example.com", siteUrl);
     expect(message.subject).toBe("Proposal #103 was taken down");
     expect(message.text).toContain("The Dining Advisory Board took your idea off the ideas list.");
     expect(message.text).toContain("Why it was taken down:\nIt names a person.");
-    expect(message.text).toContain(`${siteUrl}/me/ideas/${ideaId}/edit`);
+    expect(message.text).toContain(
+      "This post can no longer be edited or sent for review again. You can still post a new idea:",
+    );
+    expect(message.text).toContain(`${siteUrl}/post`);
+    expect(message.text).not.toContain("/edit");
   });
 
   it("says why it was sent and links the notification settings, last", () => {
-    for (const payload of [approved, declined, takenDown]) {
+    for (const payload of [approved, declined, sentBack, takenDown]) {
       const text = renderPostDecidedEmail(payload, "a@example.com", siteUrl).text;
       expect(
         text.endsWith(
@@ -136,7 +162,7 @@ describe("emails about your own post (#211): decisions", () => {
   });
 
   it("never says petition or vote, and never uses an em dash", () => {
-    for (const payload of [approved, declined, takenDown]) {
+    for (const payload of [approved, declined, sentBack, takenDown]) {
       const { subject, text } = renderPostDecidedEmail(payload, "a@example.com", siteUrl);
       expect(`${subject}\n${text}`).not.toMatch(/petition|vote|—/i);
     }

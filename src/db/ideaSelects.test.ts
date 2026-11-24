@@ -63,7 +63,7 @@ describe("studentIdeaSelect", () => {
 describe("author and leader selects", () => {
   it("the author select adds only the latest review", () => {
     expect(authorIdeaSelect).toMatchObject({
-      reviews: { select: { decision: true, reason: true }, take: 1 },
+      reviews: { select: { decision: true, kind: true, reason: true }, take: 1 },
     });
     expect(authorIdeaSelect).not.toHaveProperty("supports");
   });
@@ -126,7 +126,7 @@ describe("public stats and update selects (#60)", () => {
 });
 
 describe("isPublic", () => {
-  it("is approved posts only, so pending, declined, and withdrawn never match", () => {
+  it("is approved posts only, so pending, declined, withdrawn, and taken down never match", () => {
     expect(isPublic).toEqual({ reviewStatus: "approved" });
   });
 });
@@ -134,5 +134,9 @@ describe("isPublic", () => {
 describe("onWall (#237)", () => {
   it("is public ideas that are not closed", () => {
     expect(onWall).toEqual({ reviewStatus: "approved", NOT: { status: "closed" } });
+  });
+
+  it("never matches a taken-down idea, since it keeps the approved-only filter (#286)", () => {
+    expect(onWall.reviewStatus).toBe("approved");
   });
 });
