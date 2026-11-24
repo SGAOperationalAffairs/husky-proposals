@@ -19,6 +19,37 @@ export const emailPermissionSelect = {
 
 export type EmailPermission = Prisma.UserGetPayload<{ select: typeof emailPermissionSelect }>;
 
+// The follower email's own rule, on top of acceptsEmail (#257): a follower with no
+// preference row is on, otherwise they must not be unsubscribed, bounced, or have turned
+// the digest off. Queue time filters with followerPreferenceWhere; the drain re-reads the
+// row with emailPreferenceSelect and asks preferenceAllowsFollowerEmail, so one rule decides
+// both and someone who opts out after queueing is not emailed.
+export const followerPreferenceWhere = {
+  OR: [
+    { emailPreference: null },
+    { emailPreference: { unsubscribedAt: null, bouncedAt: null, digestFrequency: { not: "off" } } },
+  ],
+} satisfies Prisma.UserWhereInput;
+
+export const emailPreferenceSelect = {
+  unsubscribedAt: true,
+  bouncedAt: true,
+  digestFrequency: true,
+} as const satisfies Prisma.EmailPreferenceSelect;
+
+export type EmailPreferenceRow = Prisma.EmailPreferenceGetPayload<{ select: typeof emailPreferenceSelect }>;
+
+// The same rule as followerPreferenceWhere, for a preference read with emailPreferenceSelect.
+// Null means no row, which is on.
+export function preferenceAllowsFollowerEmail(preference: EmailPreferenceRow | null): boolean {
+  if (!preference) return true;
+  return (
+    preference.unsubscribedAt === null &&
+    preference.bouncedAt === null &&
+    preference.digestFrequency !== "off"
+  );
+}
+
 // The same rule as acceptsEmail, for a user read with emailPermissionSelect.
 export function userAcceptsEmail(user: EmailPermission, type: EmailType): boolean {
   return user.emailStoppedAt === null && !user.emailOptOuts.some((optOut) => optOut.type === type);

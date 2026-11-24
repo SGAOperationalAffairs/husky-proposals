@@ -640,3 +640,142 @@ describeWithDatabase("emails about your own post (#211)", () => {
     });
   });
 });
+
+// The same transaction, except the first `times` writes that set a row's sent time fail
+// the way a dropped connection would (#257). Everything else passes straight through.
+function failingMarks(tx: Prisma.TransactionClient, times: number): Prisma.TransactionClient {
+  let remaining = times;
+  type UpdateArgs = Parameters<Prisma.TransactionClient["emailOutbox"]["update"]>[0];
+  const outbox = new Proxy(tx.emailOutbox, {
+    get(target, property) {
+      if (property !== "update") return Reflect.get(target, property);
+      return (args: UpdateArgs) => {
+        if (remaining > 0 && args.data.sentAt) {
+          remaining -= 1;
+          return Promise.reject(new Error("write failed"));
+        }
+        return target.update(args);
+      };
+    },
+  });
+  return new Proxy(tx, {
+    get: (target, property) => (property === "emailOutbox" ? outbox : Reflect.get(target, property)),
+  });
+}
+
+describeWithDatabase("a send is never rescheduled because its mark failed (#257)", () => {
+  it("retries the mark once, so a single failed write still records the send", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      const mailer = createCapturingMailer();
+
+      expect(await drainOutbox(failingMarks(tx, 1), mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 0,
+        deferred: 0,
+      });
+      expect(mailer.sent).toHaveLength(1);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { type: "idea_event" } });
+      expect(row.sentAt).toEqual(NOW);
+      expect(row.providerMessageId).toMatch(/^captured-/);
+      expect(row.lastError).toBeNull();
+
+      // A later drain, past the backoff, sends nothing more.
+      await drainOutbox(tx, mailer, new Date(NOW.getTime() + 6 * MINUTE), { siteUrl: SITE });
+      expect(mailer.sent).toHaveLength(1);
+    });
+  });
+
+  it("when the mark keeps failing, the drain throws, writes no backoff, and sends nothing more", async () => {
+    await withSeed(async (tx) => {
+      await addFollowers(tx, 2);
+      await queueFollowerEmails(tx, started);
+      const mailer = createCapturingMailer();
+
+      await expect(
+        drainOutbox(failingMarks(tx, Number.POSITIVE_INFINITY), mailer, NOW, { siteUrl: SITE }),
+      ).rejects.toThrow(/Sent outbox row .* as captured-.* but could not mark it sent/);
+      // The first send reached the provider, and the batch stopped before the second.
+      expect(mailer.sent).toHaveLength(1);
+
+      const rows = await tx.emailOutbox.findMany({ where: { type: "idea_event" } });
+      // The error was never routed through fail(): no error text, no sent time.
+      expect(rows.every((row) => row.sentAt === null && row.lastError === null)).toBe(true);
+
+      // Inside the claim, nothing is claimed again, so the sent email is not repeated.
+      await drainOutbox(tx, mailer, new Date(NOW.getTime() + 6 * MINUTE), { siteUrl: SITE });
+      expect(mailer.sent).toHaveLength(1);
+    });
+  });
+});
+
+describeWithDatabase("eligibility is checked again at send (#257)", () => {
+  const preferences = [
+    ["unsubscribes", { unsubscribedAt: FIXTURE_TIME }],
+    ["bounces", { bouncedAt: FIXTURE_TIME }],
+    ["turns the digest off", { digestFrequency: "off" as const }],
+  ] as const;
+
+  it.each(preferences)("a follower who %s after queueing is not emailed", async (_name, change) => {
+    await withSeed(async (tx) => {
+      const [user] = await addFollowers(tx, 1);
+      await queueFollowerEmails(tx, started);
+      await tx.emailPreference.create({ data: buildEmailPreference({ userId: user!.id, ...change }) });
+      const mailer = createCapturingMailer();
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 0,
+        failed: 1,
+        deferred: 0,
+      });
+      expect(mailer.sent).toHaveLength(0);
+      const row = await tx.emailOutbox.findFirstOrThrow({ where: { userId: user!.id } });
+      expect(row).toMatchObject({ sentAt: null, attempts: MAX_ATTEMPTS, lastError: "unsubscribed" });
+    });
+  });
+
+  it("an author's own post email is not held back by the follower preference", async () => {
+    await withSeed(async (tx) => {
+      await tx.follow.createMany({
+        data: [buildFollow({ userId: users.student.id, ideaId: ideas.foodPantry.id })],
+        skipDuplicates: true,
+      });
+      await queueFollowerEmails(tx, {
+        kind: "update",
+        ideaId: ideas.foodPantry.id,
+        updateId: testUuid(9002),
+        body: "We met with Dining Services today.",
+      });
+      // An update row's sendAfter is the database clock, which a fixed NOW never reaches (#257).
+      await tx.emailOutbox.updateMany({
+        where: { userId: users.student.id, type: "idea_event" },
+        data: { sendAfter: NOW },
+      });
+      await queueDecisionEmail(tx, {
+        ideaId: ideas.pending.id,
+        reviewId: testUuid(7002),
+        decision: "declined",
+        reason: "This repeats an open idea. Support that one instead.",
+        decidedAt: NOW,
+      });
+      // The author opts out of the follower email after both rows are queued.
+      await tx.emailPreference.create({
+        data: buildEmailPreference({ userId: users.student.id, unsubscribedAt: FIXTURE_TIME }),
+      });
+      const mailer = createCapturingMailer();
+
+      expect(await drainOutbox(tx, mailer, NOW, { siteUrl: SITE })).toEqual({
+        sent: 1,
+        failed: 1,
+        deferred: 0,
+      });
+      const rows = await tx.emailOutbox.findMany({ where: { userId: users.student.id } });
+      expect(rows.find((row) => row.type === "post_decided")?.sentAt).toEqual(NOW);
+      expect(rows.find((row) => row.type === "idea_event")).toMatchObject({
+        sentAt: null,
+        lastError: "unsubscribed",
+      });
+    });
+  });
+});

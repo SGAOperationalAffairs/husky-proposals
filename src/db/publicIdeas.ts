@@ -2,7 +2,15 @@ import { BOARD_CODES, type BoardCode } from "@/core/boards";
 import type { IdeaStatus } from "@/core/statuses";
 import { ideaForViewer, type IdeaRow, type StudentIdea } from "@/core/viewerShapes";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { isPublic, onWall, publicStatsSelect, publicUpdateSelect, studentIdeaSelect } from "./ideaSelects";
+import {
+  isPublic,
+  namedPost,
+  onWall,
+  publicAuthorSelect,
+  publicStatsSelect,
+  publicUpdateSelect,
+  studentIdeaSelect,
+} from "./ideaSelects";
 
 // The public reads behind the ideas wall and the idea page (#60). Anyone may see these,
 // so every idea goes through ideaForViewer(null, row), the one viewer-shape function:
@@ -88,6 +96,28 @@ function toRecord(row: IdeaRow & { stats: StatsRow | null }): Omit<PublicIdeaRec
   };
 }
 
+// The display names of the posters of these ideas, for posts that are not anonymous. The
+// main public read selects no author at all; this second read carries `namedPost`, so an
+// anonymous post's name is never read from the database on a public path, even if a caller
+// passes its id (#257). One query, and none when there is nothing to look up.
+export async function publicAuthorNames(
+  db: Pick<PrismaClient, "idea">,
+  ideaIds: string[],
+): Promise<Map<string, string>> {
+  if (ideaIds.length === 0) return new Map();
+  const rows = await db.idea.findMany({
+    relationLoadStrategy: "join",
+    where: { id: { in: ideaIds }, ...namedPost },
+    select: publicAuthorSelect,
+  });
+  return new Map(rows.flatMap((row) => (row.author ? [[row.id, row.author.displayName] as const] : [])));
+}
+
+const authorFor = (names: Map<string, string>, id: string): IdeaRow["author"] => {
+  const name = names.get(id);
+  return name === undefined ? null : { displayName: name };
+};
+
 export function publicIdeaQueries(db: Db) {
   return {
     // Every public idea on the wall, once, for the wall to filter in the browser. One
@@ -98,7 +128,13 @@ export function publicIdeaQueries(db: Db) {
         select: { ...studentIdeaSelect, stats: { select: publicStatsSelect } },
         orderBy: { number: "asc" },
       });
-      return rows.map((row) => toRecord({ ...row, boardId: boardCode(row.boardId) }));
+      const names = await publicAuthorNames(
+        db,
+        rows.filter((row) => !row.isAnonymous).map((row) => row.id),
+      );
+      return rows.map((row) =>
+        toRecord({ ...row, boardId: boardCode(row.boardId), author: authorFor(names, row.id) }),
+      );
     },
 
     // One idea with its updates and rank, or null when no public idea has that number.
@@ -113,7 +149,12 @@ export function publicIdeaQueries(db: Db) {
       });
       if (!row) return null;
       const { updates, ...ideaRow } = row;
-      const record = toRecord({ ...ideaRow, boardId: boardCode(ideaRow.boardId) });
+      const names = await publicAuthorNames(db, ideaRow.isAnonymous ? [] : [ideaRow.id]);
+      const record = toRecord({
+        ...ideaRow,
+        boardId: boardCode(ideaRow.boardId),
+        author: authorFor(names, ideaRow.id),
+      });
       // "Of" is a database count over the same view, not computed here.
       const rankOf =
         record.stats.rankInBoard === null

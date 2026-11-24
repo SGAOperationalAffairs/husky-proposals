@@ -5,9 +5,14 @@ import { rolesFromPositions } from "@/core/positions";
 // The post actions' own checks (#54, #56): the origin is checked before the session or a
 // store is touched. The headers, session, and stores are fakes.
 const IDEA = "00000000-0000-4000-8000-000000000101";
-const store = { countPending: vi.fn(async () => 0), create: vi.fn(async () => ({ id: "idea-1" })) };
+const store = {
+  lockPendingPosts: vi.fn(async () => {}),
+  countPending: vi.fn(async () => 0),
+  create: vi.fn(async () => ({ id: "idea-1" })),
+};
 const ownStore = {
   find: vi.fn(),
+  lockPendingPosts: vi.fn(async () => {}),
   countPending: vi.fn(async () => 0),
   resubmit: vi.fn(async () => true),
   withdraw: vi.fn(async () => true),
@@ -45,22 +50,28 @@ const valid = {
 describe("postIdea action (#54)", () => {
   beforeEach(() => {
     currentSession = session;
+    transaction.mockClear();
+    store.lockPendingPosts.mockClear();
     store.countPending.mockClear();
     store.create.mockClear();
   });
 
-  it("refuses a request from another site before reading the session or writing", async () => {
+  it("refuses a request from another site before reading the session, locking, or writing", async () => {
     headerValues = { origin: "https://evil.example.com", host: "proposals.northeasternsga.com" };
     const { postIdea } = await import("./actions");
     expect(await postIdea(valid)).toEqual({ ok: false, error: { code: "cross_origin" } });
+    expect(transaction).not.toHaveBeenCalled();
+    expect(store.lockPendingPosts).not.toHaveBeenCalled();
     expect(store.countPending).not.toHaveBeenCalled();
     expect(store.create).not.toHaveBeenCalled();
   });
 
-  it("saves a post from our own origin", async () => {
+  it("saves a post from our own origin, inside one transaction (#257)", async () => {
     headerValues = own;
     const { postIdea } = await import("./actions");
     expect(await postIdea(valid)).toEqual({ ok: true, id: "idea-1" });
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(store.lockPendingPosts).toHaveBeenCalledOnce();
     expect(store.create).toHaveBeenCalledOnce();
   });
 });

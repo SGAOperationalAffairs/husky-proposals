@@ -1,20 +1,39 @@
 import { expect, it } from "vitest";
-import { publicIdeaQueries } from "@/db/publicIdeas";
+import { studentIdeaSelect } from "@/db/ideaSelects";
+import { publicAuthorNames, publicIdeaQueries } from "@/db/publicIdeas";
 import { withCountedSeed } from "@/db/testing/countQueries";
 import { describeWithDatabase } from "@/db/testing/database";
 import { buildApprovedIdea, buildUpdate, testUuid } from "@/db/testing/factories";
 import { ideas, users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 
-// byNumber sends 5 queries (#60): Prisma loads each relation separately, so the idea,
-// its author's display name, its stats row, and its updates are four reads, and the
-// "ranked 1 of N" count over idea_stats is the fifth. The constant is per page, so it
-// must not grow with ideas or updates; the tests below check both.
+// byNumber sends 5 queries (#60, #257): Prisma loads each relation separately, so the idea,
+// its stats row, and its updates are three reads. The poster's name is a fourth, a
+// separate joined read for non-anonymous posts only, and the "ranked 1 of N" count over
+// idea_stats is the fifth. The list sends 3: the ideas with their stats, and the names.
+// The constants are per page, so they must not grow with ideas or updates; the tests
+// below check both.
 const BY_NUMBER_QUERIES = 5;
+const LIST_QUERIES = 3;
 
 // The public reads behind the ideas wall and the idea page (#60), over the seeded data,
 // inside transactions that are rolled back.
 describeWithDatabase("public ideas (#60)", () => {
+  it("names are read only for non-anonymous posts: the raw rows carry no author, and an anonymous id returns nothing (#257)", async () => {
+    await withSeed(async (tx) => {
+      const names = await publicAuthorNames(tx, [ideas.lateNightDining.id, ideas.foodPantry.id]);
+      expect([...names.entries()]).toEqual([[ideas.foodPantry.id, "Maya Test"]]);
+      expect(await publicAuthorNames(tx, [])).toEqual(new Map());
+
+      const raw = await tx.idea.findUniqueOrThrow({
+        where: { id: ideas.lateNightDining.id },
+        select: studentIdeaSelect,
+      });
+      expect(raw).not.toHaveProperty("author");
+      expect(JSON.stringify(raw)).not.toContain(users.anonymousAuthor.displayName);
+    });
+  });
+
   it("lists the 6 seeded public ideas and never a pending or declined post", async () => {
     await withSeed(async (tx) => {
       const records = await publicIdeaQueries(tx).list();
@@ -131,7 +150,7 @@ describeWithDatabase("public ideas (#60)", () => {
       const reads = publicIdeaQueries(tx);
       await reads.list();
       const before = queries.count;
-      expect(before).toBeLessThanOrEqual(3);
+      expect(before).toBeLessThanOrEqual(LIST_QUERIES);
 
       const more = [1, 2, 3, 4, 5].map((n) =>
         buildApprovedIdea({

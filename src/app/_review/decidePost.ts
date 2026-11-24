@@ -60,11 +60,25 @@ export type ReviewWrite = {
   reviewer: { id: string; email: string; displayName: string };
 };
 
+// Thrown by a store when the unique backstop fires after the idea was already updated in
+// the same transaction (#257). Returning null there would let the caller commit that
+// half-done write, so the store throws and the transaction rolls back. The action catches
+// it outside the transaction and answers `already_decided`.
+export class AlreadyDecidedError extends Error {
+  constructor(options?: ErrorOptions) {
+    super("This post already has a decision on its latest version", options);
+    this.name = "AlreadyDecidedError";
+  }
+}
+
 export type ReviewStore = {
   find(ideaId: string): Promise<ReviewTarget | null>;
   // The next public number: the highest plus one, under a lock (see lockIdeaNumbers).
   nextNumber(): Promise<number>;
-  // Null when the post is no longer in `from`: someone else decided it first.
+  // Null when the guarded update moved nothing, because the post is no longer in `from`:
+  // someone else decided it first, and nothing was written. Throws AlreadyDecidedError
+  // when the unique backstop fires: writes already happened, so the transaction must roll
+  // back (#257).
   record(write: ReviewWrite): Promise<{ reviewId: string } | null>;
 };
 

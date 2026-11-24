@@ -34,7 +34,9 @@ export type IdeaRow = {
   statusChangedAt: Date | null;
   deliveredAt: Date | null;
   updatedAt: Date;
-  // Read by every select. Only `displayName` is in the student shape.
+  // Only `displayName` is in the student shape. The student select does not read it: the
+  // public reads attach it only for non-anonymous posts (#257), and the leader, queue, and
+  // author selects read it themselves.
   author: { id?: string; displayName: string; email?: string } | null;
   // Leader and author selects only.
   authorId?: string | null;

@@ -1,9 +1,11 @@
 import { expect, it } from "vitest";
 import type { Session } from "@/auth/contract";
 import { resubmitPost, withdrawPost } from "@/app/_post/ownPost";
-import { decidePost } from "@/app/_review/decidePost";
+import { AlreadyDecidedError, decidePost } from "@/app/_review/decidePost";
 import { BOARD_POSITIONS, rolesFromPositions } from "@/core/positions";
+import { withCommittedRows } from "@/db/testing/committed";
 import { describeWithDatabase } from "@/db/testing/database";
+import { buildIdea, buildReview, buildRevision, buildUser, testUuid } from "@/db/testing/factories";
 import { ideas, users } from "@/db/testing/fixtures";
 import { withSeed } from "@/db/testing/seededTransaction";
 import { isPublic } from "./ideaSelects";
@@ -254,6 +256,45 @@ describeWithDatabase("review decisions (#58)", () => {
       );
       expect(result.ok).toBe(true);
       expect(await tx.user.count({ where: { id: newChair.user.id } })).toBe(1);
+    });
+  });
+});
+
+// A duplicate decision is caught by the unique backstop after the idea was updated, so
+// it needs a real transaction that aborts and rolls back (#257), and its rows commit.
+describeWithDatabase("a duplicate decision rolls the whole transaction back (#257)", () => {
+  it("leaves the idea pending, with one review row and no decision email", async () => {
+    const author = buildUser({ id: testUuid(9301), email: "rollback.author@example.com" });
+    const idea = buildIdea({ id: testUuid(9340), authorId: author.id });
+    const revision = buildRevision(idea, { id: testUuid(9341) });
+    await withCommittedRows({ users: [author], ideas: [idea] }, async (client) => {
+      await client.ideaRevision.create({ data: revision });
+      // An earlier decision already sits on this revision, though the idea is still pending.
+      await client.review.create({
+        data: buildReview({
+          id: testUuid(9342),
+          ideaId: idea.id,
+          revisionId: revision.id,
+          decision: "declined",
+          reason: "An earlier decision on the same version.",
+        }),
+      });
+
+      await expect(
+        client.$transaction(
+          (tx) => decidePost(prismaReviewStore(tx), dabChair, "approve", { ideaId: idea.id }, NOW),
+          { timeout: 30_000, maxWait: 30_000 },
+        ),
+      ).rejects.toBeInstanceOf(AlreadyDecidedError);
+
+      expect(await client.idea.findUniqueOrThrow({ where: { id: idea.id } })).toMatchObject({
+        reviewStatus: "pending",
+        number: null,
+        status: null,
+        approvedAt: null,
+      });
+      expect(await client.review.count({ where: { ideaId: idea.id } })).toBe(1);
+      expect(await client.emailOutbox.count({ where: { type: "post_decided" } })).toBe(0);
     });
   });
 });

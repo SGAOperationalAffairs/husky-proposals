@@ -31,6 +31,8 @@ export type WithdrawWrite = { ideaId: string; from: "pending" | "declined" };
 
 export type OwnPostStore = {
   find(ideaId: string): Promise<OwnPostTarget | null>;
+  // The same per-author lock a new post takes, since a resubmit adds a pending post (#257).
+  lockPendingPosts(authorId: string): Promise<void>;
   countPending(authorId: string): Promise<number>;
   // False when the post is no longer in `from`: it changed since the rules read it.
   resubmit(write: ResubmitWrite): Promise<boolean>;
@@ -66,6 +68,7 @@ export async function resubmitPost(
   if (!target) return fail({ code: "not_found" });
 
   const actorId = session.user.id;
+  await store.lockPendingPosts(actorId);
   const result = applyReviewEvent(
     { reviewStatus: target.reviewStatus, authorId: target.authorId },
     { type: "resubmit", actorId, pendingCount: await store.countPending(actorId) },

@@ -26,6 +26,7 @@ function target(overrides: Partial<OwnPostTarget> = {}): OwnPostTarget {
 function fakeStore(found: OwnPostTarget | null, options: { pending?: number; changed?: boolean } = {}) {
   return {
     find: vi.fn(async () => found),
+    lockPendingPosts: vi.fn(async () => {}),
     countPending: vi.fn(async () => options.pending ?? 0),
     resubmit: vi.fn(async () => options.changed ?? true),
     withdraw: vi.fn(async () => options.changed ?? true),
@@ -59,12 +60,22 @@ describe("resubmitPost (#56)", () => {
     });
   });
 
+  it("takes the author's lock before it counts pending posts (#257)", async () => {
+    const store = fakeStore(target());
+    await resubmitPost(store, author, edit, NOW);
+    expect(store.lockPendingPosts).toHaveBeenCalledWith(AUTHOR);
+    expect(store.lockPendingPosts.mock.invocationCallOrder[0]).toBeLessThan(
+      store.countPending.mock.invocationCallOrder[0]!,
+    );
+  });
+
   it("a non-author gets not_found, with no write and no pending count read", async () => {
     const store = fakeStore(target());
     expect(await resubmitPost(store, stranger, edit, NOW)).toEqual({
       ok: false,
       error: { code: "not_found" },
     });
+    expect(store.lockPendingPosts).not.toHaveBeenCalled();
     expect(store.countPending).not.toHaveBeenCalled();
     expect(store.resubmit).not.toHaveBeenCalled();
   });
