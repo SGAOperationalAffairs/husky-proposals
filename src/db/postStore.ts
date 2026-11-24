@@ -1,13 +1,17 @@
 import type { PostStore } from "@/app/_post/submitPost";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
+import { lockPendingPosts } from "./sql/lockPendingPosts";
 
 // The Prisma store for posting an idea (#54). Works with a client or a transaction
 // client, so the database tests can run it inside a rolled-back transaction. The
-// revision is a nested create, which Prisma writes atomically with the idea.
-type Db = Pick<PrismaClient, "user" | "idea">;
+// revision is a nested create, which Prisma writes atomically with the idea. The lock
+// lives as long as a transaction, so posting must be handed a transaction client (#257);
+// a plain client is fine for countPending alone.
+type Db = Pick<Prisma.TransactionClient, "user" | "idea" | "$queryRaw">;
 
 export function prismaPostStore(db: Db): PostStore {
   return {
+    lockPendingPosts: (authorId) => lockPendingPosts(db, authorId),
     countPending: (authorId) => db.idea.count({ where: { authorId, reviewStatus: "pending" } }),
     create: async (author, post) => {
       // The account is copied from SGAuth at posting, so the post has an author row.

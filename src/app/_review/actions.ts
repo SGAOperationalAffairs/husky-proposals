@@ -10,7 +10,7 @@ import { prismaBoardSettingsStore } from "@/db/boardSettingsStore";
 import { prismaReviewStore } from "@/db/reviewStore";
 import { db } from "@/db/runtime";
 import { changeReviewDueDays } from "./changeReviewDueDays";
-import { decidePost, type DecisionType } from "./decidePost";
+import { AlreadyDecidedError, decidePost, type DecideResult, type DecisionType } from "./decidePost";
 
 // The review actions (#58). Each is from our own origin, then a signed-in session
 // (withSession), then the rules. A request from another site is refused before the
@@ -26,11 +26,19 @@ async function isOwnOrigin(): Promise<boolean> {
 const crossOrigin: CrossOrigin = { ok: false, error: { code: "cross_origin" } };
 
 // The idea write and its review row commit together. The public tags are refreshed
-// only after the commit, and never on a refusal.
-async function decide(session: Session, type: DecisionType, raw: unknown) {
-  const result = await db().$transaction((tx) =>
-    decidePost(prismaReviewStore(tx), session, type, raw, new Date()),
-  );
+// only after the commit, and never on a refusal. A duplicate decision caught after the
+// idea was updated throws AlreadyDecidedError, which rolls the transaction back; it is
+// mapped to a result here, outside the transaction (#257).
+async function decide(session: Session, type: DecisionType, raw: unknown): Promise<DecideResult> {
+  let result: DecideResult;
+  try {
+    result = await db().$transaction((tx) =>
+      decidePost(prismaReviewStore(tx), session, type, raw, new Date()),
+    );
+  } catch (error) {
+    if (error instanceof AlreadyDecidedError) return { ok: false, error: { code: "already_decided" } };
+    throw error;
+  }
   if (result.ok) for (const tag of result.refresh) updateTag(tag);
   return result;
 }

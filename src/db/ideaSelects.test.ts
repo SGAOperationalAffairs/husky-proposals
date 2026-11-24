@@ -4,7 +4,9 @@ import {
   awaitingReview,
   isPublic,
   leaderIdeaSelect,
+  namedPost,
   onWall,
+  publicAuthorSelect,
   publicStatsSelect,
   publicUpdateSelect,
   reviewQueueSelect,
@@ -17,14 +19,11 @@ import {
 // creep into the student list.
 
 describe("studentIdeaSelect", () => {
-  it("never reads the author id, a supporter, or a review", () => {
+  it("never reads the author, a supporter, or a review (#257)", () => {
+    expect(studentIdeaSelect).not.toHaveProperty("author");
     expect(studentIdeaSelect).not.toHaveProperty("authorId");
     expect(studentIdeaSelect).not.toHaveProperty("supports");
     expect(studentIdeaSelect).not.toHaveProperty("reviews");
-  });
-
-  it("reads only the author's display name, never their id or email", () => {
-    expect(studentIdeaSelect.author).toEqual({ select: { displayName: true } });
   });
 
   // Pinned (#237): a new field, such as who closed an idea, fails here until someone
@@ -33,7 +32,6 @@ describe("studentIdeaSelect", () => {
     expect(Object.keys(studentIdeaSelect).sort()).toEqual(
       [
         "approvedAt",
-        "author",
         "boardId",
         "category",
         "closedReason",
@@ -61,8 +59,9 @@ describe("studentIdeaSelect", () => {
 });
 
 describe("author and leader selects", () => {
-  it("the author select adds only the latest review", () => {
+  it("the author select adds the viewer's own display name and only the latest review", () => {
     expect(authorIdeaSelect).toMatchObject({
+      author: { select: { displayName: true } },
       reviews: { select: { decision: true, kind: true, reason: true }, take: 1 },
     });
     expect(authorIdeaSelect).not.toHaveProperty("supports");
@@ -122,6 +121,13 @@ describe("public stats and update selects (#60)", () => {
     for (const identity of ["authorId", "author", "followerCount", "userId", "email", "supports"]) {
       expect(names).not.toContain(identity);
     }
+  });
+});
+
+describe("public author names (#257)", () => {
+  it("a name is read only for a non-anonymous post, and only the display name", () => {
+    expect(namedPost).toEqual({ isAnonymous: false });
+    expect(publicAuthorSelect).toEqual({ id: true, author: { select: { displayName: true } } });
   });
 });
 

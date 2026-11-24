@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { acceptsEmail, userAcceptsEmail } from "./emailFilters";
+import {
+  acceptsEmail,
+  followerPreferenceWhere,
+  preferenceAllowsFollowerEmail,
+  userAcceptsEmail,
+} from "./emailFilters";
 
 const stoppedAt = new Date("2026-11-02T14:00:00.000Z");
 
@@ -25,6 +30,31 @@ describe("may we send this type (#211)", () => {
     expect(acceptsEmail("digest")).toEqual({
       emailStoppedAt: null,
       emailOptOuts: { none: { type: "digest" } },
+    });
+  });
+});
+
+describe("may we send a follower email (#257)", () => {
+  const on = { unsubscribedAt: null, bouncedAt: null, digestFrequency: "weekly" as const };
+
+  it("accepts a follower with no preference row or a clean one", () => {
+    expect(preferenceAllowsFollowerEmail(null)).toBe(true);
+    expect(preferenceAllowsFollowerEmail(on)).toBe(true);
+    expect(preferenceAllowsFollowerEmail({ ...on, digestFrequency: "as_it_happens" })).toBe(true);
+  });
+
+  it("refuses an unsubscribed, bounced, or digest-off follower", () => {
+    expect(preferenceAllowsFollowerEmail({ ...on, unsubscribedAt: stoppedAt })).toBe(false);
+    expect(preferenceAllowsFollowerEmail({ ...on, bouncedAt: stoppedAt })).toBe(false);
+    expect(preferenceAllowsFollowerEmail({ ...on, digestFrequency: "off" })).toBe(false);
+  });
+
+  it("builds the same rule as a query filter", () => {
+    expect(followerPreferenceWhere).toEqual({
+      OR: [
+        { emailPreference: null },
+        { emailPreference: { unsubscribedAt: null, bouncedAt: null, digestFrequency: { not: "off" } } },
+      ],
     });
   });
 });

@@ -28,7 +28,9 @@ const postIdeaReporting = reportThrows(
   "postIdea",
   async (raw: unknown): Promise<SubmitResult | CrossOrigin> => {
     if (!(await isOwnOrigin())) return crossOrigin;
-    return submitPost(prismaPostStore(db()), await getSession(), raw, new Date());
+    const session = await getSession();
+    // One transaction, so the author lock covers the count and the insert (#257).
+    return db().$transaction((tx) => submitPost(prismaPostStore(tx), session, raw, new Date()));
   },
 );
 

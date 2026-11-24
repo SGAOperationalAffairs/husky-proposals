@@ -21,7 +21,14 @@ import {
 } from "@/email/postStatus";
 import { sendEmail, throttledFor, type EmailMessage, type Mailer } from "@/email/sendEmail";
 import type { EmailType, Prisma } from "@/generated/prisma/client";
-import { acceptsEmail, emailPermissionSelect, userAcceptsEmail } from "./emailFilters";
+import {
+  acceptsEmail,
+  emailPermissionSelect,
+  emailPreferenceSelect,
+  followerPreferenceWhere,
+  preferenceAllowsFollowerEmail,
+  userAcceptsEmail,
+} from "./emailFilters";
 import { claimOutboxBatch, MAX_ATTEMPTS } from "./sql/claimOutboxBatch";
 
 // The email outbox (#101): rows are written in the caller's transaction, and a drain
@@ -59,13 +66,7 @@ export async function queueFollowerEmails(tx: QueueDb, event: IdeaEvent): Promis
       authorId: true,
       follows: {
         where: {
-          user: {
-            ...acceptsEmail("idea_event"),
-            OR: [
-              { emailPreference: null },
-              { emailPreference: { unsubscribedAt: null, bouncedAt: null, digestFrequency: { not: "off" } } },
-            ],
-          },
+          user: { ...acceptsEmail("idea_event"), ...followerPreferenceWhere },
         },
         select: { userId: true },
       },
@@ -236,7 +237,12 @@ export async function drainOutbox(
 
   const users = await db.user.findMany({
     where: { id: { in: [...new Set(claimed.map((row) => row.userId))] } },
-    select: { id: true, email: true, ...emailPermissionSelect },
+    select: {
+      id: true,
+      email: true,
+      ...emailPermissionSelect,
+      emailPreference: { select: emailPreferenceSelect },
+    },
   });
   const byId = new Map(users.map((user) => [user.id, user]));
 
@@ -272,6 +278,13 @@ export async function drainOutbox(
       await fail("turned off", null, true);
       continue;
     }
+    // A follower who unsubscribed, bounced, or turned the digest off after the row was
+    // queued is not emailed (#257). Only idea_event rows are gated at queue time, so only
+    // they are gated here.
+    if (row.type === "idea_event" && !preferenceAllowsFollowerEmail(user.emailPreference)) {
+      await fail("unsubscribed", null, true);
+      continue;
+    }
     const message = isRenderable(row.type) ? RENDERERS[row.type](row.payload, user.email, siteUrl) : null;
     if (!message) {
       await fail("invalid payload", null, true);
@@ -281,13 +294,12 @@ export async function drainOutbox(
     // Only a send that reaches the provider is paced, so rows that fail early cost no wait.
     if (pace && mailerCalls > 0) await pace();
     mailerCalls += 1;
+    // The try wraps only the send. Writing the sent time is a separate step below, because
+    // a failed write after a successful send must never reach the backoff path: that would
+    // reschedule an email the provider already has (#257).
+    let providerMessageId: string;
     try {
-      const { providerMessageId } = await sendEmail(mailer, message);
-      await db.emailOutbox.update({
-        where: { id: row.id },
-        data: { sentAt: now, providerMessageId, lockedUntil: null, lastError: null },
-      });
-      sent += 1;
+      ({ providerMessageId } = await sendEmail(mailer, message));
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       const throttle = throttledFor(error);
@@ -310,6 +322,32 @@ export async function drainOutbox(
       });
       return { sent, failed, deferred: rest.length };
     }
+    await markSent(db, row.id, providerMessageId, now);
+    sent += 1;
   }
   return { sent, failed, deferred: 0 };
+}
+
+// Writes the sent time of a row the provider accepted, with one retry. If both writes fail
+// the batch stops: the error is thrown, never turned into a retry of the send. The rest of
+// the claimed rows keep their claim and free themselves after CLAIM_MS, as if the worker
+// had crashed, because a database that rejects two writes in a row should not get more
+// sends (#257). The job route reports the throw as a failed run.
+async function markSent(db: DrainDb, rowId: string, providerMessageId: string, now: Date): Promise<void> {
+  const write = () =>
+    db.emailOutbox.update({
+      where: { id: rowId },
+      data: { sentAt: now, providerMessageId, lockedUntil: null, lastError: null },
+    });
+  try {
+    await write();
+    return;
+  } catch {
+    // One retry below; a second failure is the one reported.
+  }
+  try {
+    await write();
+  } catch (cause) {
+    throw new Error(`Sent outbox row ${rowId} as ${providerMessageId} but could not mark it sent`, { cause });
+  }
 }

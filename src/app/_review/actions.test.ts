@@ -33,7 +33,9 @@ vi.mock("next/headers", () => ({
   headers: async () => ({ get: (name: string) => headerValues[name] ?? null }),
 }));
 vi.mock("next/cache", () => ({ updateTag: (tag: string) => updateTag(tag) }));
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+vi.mock("next/navigation", () => ({ redirect: vi.fn(), unstable_rethrow: vi.fn() }));
+// errorsShown() reads the environment, which a throw from a store reaches (#257).
+vi.mock("@/env", () => ({ env: () => ({ APP_ENV: "test" }) }));
 vi.mock("@/auth/session", () => ({ getSession: () => getSession(), signInUrl: vi.fn() }));
 // The transaction runs its callback with a placeholder client the stores ignore.
 vi.mock("@/db/runtime", () => ({
@@ -143,6 +145,31 @@ describe("review actions (#58)", () => {
       ok: false,
       error: { code: "not_allowed" },
     });
+    expect(updateTag).not.toHaveBeenCalled();
+  });
+
+  it("a duplicate decision caught by the store becomes already_decided and refreshes no tag (#257)", async () => {
+    const { AlreadyDecidedError } = await import("./decidePost");
+    reviewStore.record.mockRejectedValueOnce(new AlreadyDecidedError());
+    const actions = await import("./actions");
+    expect(await actions.approvePost({ ideaId: IDEA })).toEqual({
+      ok: false,
+      error: { code: "already_decided" },
+    });
+    expect(updateTag).not.toHaveBeenCalled();
+  });
+
+  it("any other throw from the store still propagates (#257)", async () => {
+    reviewStore.record.mockRejectedValueOnce(new Error("database is down"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const actions = await import("./actions");
+    // Not mapped to already_decided: reportThrows reports it on dev and test, or rethrows in
+    // production, so the message arrives either as a result or as a rejection.
+    const outcome = await actions.approvePost({ ideaId: IDEA }).catch((error: unknown) => error);
+    expect(outcome).not.toEqual({ ok: false, error: { code: "already_decided" } });
+    expect(JSON.stringify(outcome instanceof Error ? outcome.message : outcome)).toContain(
+      "database is down",
+    );
     expect(updateTag).not.toHaveBeenCalled();
   });
 

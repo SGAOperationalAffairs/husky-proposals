@@ -6,8 +6,9 @@ import type { Prisma } from "@/generated/prisma/client";
 // in src/core/viewerShapes.ts pick from these rows field by field, so a field here
 // still reaches a viewer only if the shape names it.
 
-// The student read. Nothing identifying the author beyond the display name, which
-// the shape drops for anonymous posts.
+// The student read. Nothing identifying the author: not even the display name, which a
+// public read fetches separately and only for non-anonymous posts (publicAuthorNames),
+// so an anonymous post's name never leaves the database on a public path (#257).
 export const studentIdeaSelect = {
   id: true,
   number: true,
@@ -31,15 +32,27 @@ export const studentIdeaSelect = {
   statusChangedAt: true,
   deliveredAt: true,
   updatedAt: true,
+} as const satisfies Prisma.IdeaSelect;
+
+// Posts whose poster's name students may see (#257). The one filter every public name
+// read carries, so an anonymous post can never match it.
+export const namedPost = { isAnonymous: false } as const satisfies Prisma.IdeaWhereInput;
+
+// The poster's display name for a non-anonymous post, with the idea id to match it back.
+// Always read with `namedPost` in the where clause (publicAuthorNames).
+export const publicAuthorSelect = {
+  id: true,
   author: { select: { displayName: true } },
 } as const satisfies Prisma.IdeaSelect;
 
 // The author's own post. The author id decides "is this my post"; the latest
 // review carries the reviewer's reason, shown only to the author (data model). Its kind
-// says whether a declined post was sent back (#286). It names no reviewer.
+// says whether a declined post was sent back (#286). It names no reviewer. The author's
+// name is read explicitly: ownPost.ts filters on authorId, so the name is the viewer's own.
 export const authorIdeaSelect = {
   ...studentIdeaSelect,
   authorId: true,
+  author: { select: { displayName: true } },
   reviews: {
     select: { decision: true, kind: true, reason: true },
     orderBy: { decidedAt: "desc" },

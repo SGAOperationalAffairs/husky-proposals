@@ -1,4 +1,4 @@
-import type { ReviewStore } from "@/app/_review/decidePost";
+import { AlreadyDecidedError, type ReviewStore } from "@/app/_review/decidePost";
 import { decisionKindOf } from "@/email/postDecided";
 import { Prisma } from "@/generated/prisma/client";
 import { queueDecisionEmail } from "./outbox";
@@ -62,7 +62,11 @@ export function prismaReviewStore(tx: Tx): ReviewStore {
         row = await tx.review.create({ data: { ideaId, ...review }, select: { id: true } });
       } catch (error) {
         // The backstop: one decision and one take-down per revision (reviews_revision_id_kind_key).
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return null;
+        // The idea was already updated above, so this throws instead of returning null: the
+        // whole transaction rolls back and the idea is unchanged (#257).
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          throw new AlreadyDecidedError({ cause: error });
+        }
         throw error;
       }
       // The author's email, in this transaction, so it commits with the decision and rolls

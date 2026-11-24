@@ -30,19 +30,39 @@ const valid = {
 
 function fakeStore(pendingNow = 0) {
   const created: { author: { id: string }; post: NewPost }[] = [];
+  const calls: string[] = [];
   const store: PostStore = {
-    countPending: async () => pendingNow,
+    lockPendingPosts: async () => {
+      calls.push("lock");
+    },
+    countPending: async () => {
+      calls.push("count");
+      return pendingNow;
+    },
     create: async (author, post) => {
       created.push({ author, post });
       return { id: `idea-${created.length}` };
     },
   };
-  return { store, created };
+  return { store, created, calls };
 }
 
 const NOW = new Date("2026-11-02T15:00:00Z");
 
 describe("submitPost (#54)", () => {
+  it("takes the author's lock before it counts pending posts (#257)", async () => {
+    const { store, calls } = fakeStore();
+    await submitPost(store, STUDENT, valid, NOW);
+    expect(calls).toEqual(["lock", "count"]);
+  });
+
+  it("takes no lock for a signed-out visitor or an invalid post (#257)", async () => {
+    const { store, calls } = fakeStore();
+    await submitPost(store, null, valid, NOW);
+    await submitPost(store, STUDENT, { ...valid, title: "" }, NOW);
+    expect(calls).toEqual([]);
+  });
+
   it("refuses a signed-out visitor and writes nothing", async () => {
     const { store, created } = fakeStore();
     const result = await submitPost(store, null, valid, NOW);

@@ -55,6 +55,9 @@ export type NewPost = PostFields & {
 };
 
 export type PostStore = {
+  // Serializes this author's posts until the transaction ends, so the count below cannot
+  // be read stale by a second post at once (#257).
+  lockPendingPosts(authorId: string): Promise<void>;
   countPending(authorId: string): Promise<number>;
   // Writes the author's account (copied from SGAuth) and the post in one transaction.
   create(author: { id: string; email: string; displayName: string }, post: NewPost): Promise<{ id: string }>;
@@ -80,6 +83,7 @@ export async function submitPost(
   }
   const input = parsed.data;
 
+  await store.lockPendingPosts(session.user.id);
   const limit = checkNewPost(await store.countPending(session.user.id));
   if (!limit.ok) return { ok: false, error: { code: "pending_limit", limit: PENDING_LIMIT } };
 

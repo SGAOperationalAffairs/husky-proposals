@@ -1,9 +1,10 @@
 import type { OwnPostStore } from "@/app/_post/ownPost";
 import { Prisma } from "@/generated/prisma/client";
+import { lockPendingPosts } from "./sql/lockPendingPosts";
 
 // The Prisma store for an author's resubmit and withdraw (#56). Handed a transaction
 // client, so the guarded idea write and the new revision land together or not at all.
-type Tx = Pick<Prisma.TransactionClient, "idea" | "ideaRevision">;
+type Tx = Pick<Prisma.TransactionClient, "idea" | "ideaRevision" | "$queryRaw">;
 
 const targetSelect = {
   id: true,
@@ -26,6 +27,8 @@ export function prismaOwnPostStore(tx: Tx): OwnPostStore {
         latestVersion: revision.version,
       };
     },
+
+    lockPendingPosts: (authorId) => lockPendingPosts(tx, authorId),
 
     countPending: (authorId) => tx.idea.count({ where: { authorId, reviewStatus: "pending" } }),
 
