@@ -4,8 +4,9 @@ import type { EditPostData } from "./present";
 import { PostForm } from "./PostForm";
 
 // The edit page's body (#128). A declined post gets the reviewer's reason, then the
-// form. A taken-down post gets its reason and no form (#286). Any other status (a reload after sending, or an old link) gets a line saying
-// where the post stands, and no form. No white panel: the form sits on the page, like /post.
+// form. A taken-down post gets its reason and no form (#286). Any other status (a reload
+// after sending, or an old link) gets a line saying where the post stands, and no form.
+// No white panel: the form sits on the page, like /post.
 type Props = { data: EditPostData; pendingCount: number };
 
 const STANDING = {
