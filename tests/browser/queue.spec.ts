@@ -4,10 +4,10 @@ import { expect, test } from "@playwright/test";
 // leave out, so the counts and filters are covered by component tests
 // (src/app/queue/QueueView.test.tsx). This file checks only what a visitor sees.
 
-// The page streams its shell first, so the status can be 200 (notFound() runs after
-// the shell is out); assert what the visitor sees instead (#158).
+// The proxy answers a visitor with a real 404 before anything renders (#235).
 test("the queue is not shown to a signed-out visitor (#124)", async ({ page }) => {
-  await page.goto("/queue");
+  const response = await page.goto("/queue");
+  expect(response?.status()).toBe(404);
   await expect(page.getByRole("tablist", { name: "Queue" })).toHaveCount(0);
 });
 

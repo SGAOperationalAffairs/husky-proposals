@@ -35,9 +35,9 @@ test.describe("public, but not searchable (PRD D18)", () => {
       // #211) navigates away mid-test and destroys the execution context. Let the page
       // settle before reading the tags.
       await page.waitForLoadState("networkidle");
-      // A page that calls notFound() inside Suspense (/queue for a visitor) streams a
-      // not-found boundary, and Next adds its own noindex tag beside the layout's.
-      // Duplicates are harmless; every robots tag present must say noindex (#59).
+      // /queue for a visitor is the proxy's not-found page (#235), and Next adds its own
+      // noindex tag beside the layout's. Duplicates are harmless; every robots tag
+      // present must say noindex (#59).
       const contents = await page
         .locator('meta[name="robots"]')
         .evaluateAll((tags) => tags.map((tag) => tag.getAttribute("content") ?? ""));
