@@ -143,14 +143,8 @@ export function changeStatus(
   const reason = waitingReason?.trim() ?? "";
   const closeReason = closedReason?.trim() ?? "";
 
-  if (to === from) {
-    // A board may correct the reason students see. statusChangedAt stays, so the
-    // stale-update clock is not reset by a wording fix.
-    if (to === "waiting" && reason !== "" && reason !== idea.waitingReason) {
-      return { ok: true, value: { patch: { waitingReason: reason }, update: null } };
-    }
-    return { ok: false, error: { code: "same_status", status: from } };
-  }
+  // A held idea is not held again, and changing its reason is not something the app offers (#258).
+  if (to === from) return { ok: false, error: { code: "same_status", status: from } };
   if (!rowFor(from).includes(to)) {
     return { ok: false, error: { code: "invalid_transition", from, to } };
   }
