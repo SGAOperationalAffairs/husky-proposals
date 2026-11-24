@@ -140,41 +140,46 @@ function Logo({ className = "self-start" }: { className?: string }) {
 type ListProps = { logoInline: boolean; list: ListId; onList: (id: ListId) => void };
 
 // A row of tabs in the shared tab look (tabLook). Tabs (src/components/Tabs.tsx)
-// has no layout prop, so the spread and centered rows set their own.
+// has no layout prop, so the spread and centered rows set their own. It mirrors
+// Tabs' scroller and row: the border sits on the inner row (#231).
 function TabRow({
   label,
   selected,
   onSelect,
   className = "",
+  rowClass = "",
   tabClass = "",
 }: {
   label: string;
   selected: ListId;
   onSelect: (id: ListId) => void;
   className?: string;
+  rowClass?: string;
   tabClass?: string;
 }) {
   return (
-    <div
-      role="tablist"
-      aria-label={label}
-      className={`flex gap-0.5 overflow-x-auto border-b border-line ${className}`}
-    >
-      {LISTS.map((item) => {
-        const active = item.id === selected;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onSelect(item.id)}
-            className={`${tabLook(active)} ${tabClass}`}
-          >
-            {item.label}
-          </button>
-        );
-      })}
+    <div className={`min-w-0 overflow-x-auto overflow-y-hidden ${className}`}>
+      <div
+        role="tablist"
+        aria-label={label}
+        className={`flex w-max min-w-full gap-0.5 border-b border-line ${rowClass}`}
+      >
+        {LISTS.map((item) => {
+          const active = item.id === selected;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSelect(item.id)}
+              className={`${tabLook(active)} ${tabClass}`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -370,14 +375,14 @@ function CenteredBar({ logoInline, list, onList }: ListProps) {
     return (
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         <Logo className="self-center" />
-        <TabRow label="Lists" selected={list} onSelect={onList} className="justify-center" />
+        <TabRow label="Lists" selected={list} onSelect={onList} rowClass="justify-center" />
       </div>
     );
   }
   return (
     <div className="flex flex-col items-center gap-3">
       <Logo className="self-center" />
-      <TabRow label="Lists" selected={list} onSelect={onList} className="w-full justify-center" />
+      <TabRow label="Lists" selected={list} onSelect={onList} className="w-full" rowClass="justify-center" />
     </div>
   );
 }
