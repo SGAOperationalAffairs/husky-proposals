@@ -105,12 +105,6 @@ export async function changeIdeaStatus(
     return fail({ code: "not_allowed" });
   }
 
-  // changeStatus lets a held idea take a new reason, which is not a hold. Hold from
-  // waiting is refused here.
-  if (type === "hold" && target.status === "waiting") {
-    return fail({ code: "same_status", status: "waiting" });
-  }
-
   // The table lets a delivered idea go back to in progress, but that is Reopen's move,
   // with its own update copy. Start does not take it.
   if (type === "start" && target.status === "delivered") {

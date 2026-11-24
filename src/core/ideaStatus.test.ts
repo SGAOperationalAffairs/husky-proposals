@@ -145,9 +145,9 @@ describe("idea status rules (#51)", () => {
       });
     });
 
-    it("changes only the reason on waiting to waiting with a new reason", () => {
+    it("refuses waiting to waiting, even with a new reason (#258)", () => {
       const result = changeStatus(idea("waiting", "Old"), "waiting", { waitingReason: " New ", now });
-      expect(result).toEqual({ ok: true, value: { patch: { waitingReason: "New" }, update: null } });
+      expect(result).toEqual({ ok: false, error: { code: "same_status", status: "waiting" } });
     });
 
     it("rejects waiting to waiting with the same reason", () => {
