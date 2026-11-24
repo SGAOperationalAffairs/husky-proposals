@@ -14,16 +14,31 @@ import { isLeaderRoute, leaderMayEnter } from "@/core/leaderAccess";
 // One entry per leader route, written out because matcher values must be static literals.
 // src/proxy.test.ts fails if this list drifts from LEADER_ROUTES. Prefetches skip the
 // proxy, so a leader's visible tabs do not add an SGAuth call each per page view.
-const notAPrefetch = [
-  { type: "header", key: "next-router-prefetch" },
-  { type: "header", key: "purpose", value: "prefetch" },
-] as const;
-
+// The config must be one static literal: Next's build analysis rejects a spread or a
+// shared constant inside it as an invalid segment configuration.
 export const config = {
   matcher: [
-    { source: "/queue", missing: [...notAPrefetch] },
-    { source: "/people", missing: [...notAPrefetch] },
-    { source: "/updates", missing: [...notAPrefetch] },
+    {
+      source: "/queue",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+    {
+      source: "/people",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+    {
+      source: "/updates",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };
 
