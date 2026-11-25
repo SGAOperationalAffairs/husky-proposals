@@ -35,7 +35,7 @@ export default function Queue() {
 
 async function QueueContent() {
   await connection();
-  const session = await requireLeader();
+  const session = await requireLeader("review");
   const viewer = { user: { id: session.user.id }, roles: session.roles };
   const items = queueFor(viewer, QUEUE_SAMPLE);
 

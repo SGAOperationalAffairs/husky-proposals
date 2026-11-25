@@ -18,7 +18,7 @@ export function PlaceholderPage({ title, access }: { title: string; access: "stu
 
 async function Gate({ title, access }: { title: string; access: "student" | "leader" }) {
   await connection();
-  if (access === "leader") await requireLeader();
+  if (access === "leader") await requireLeader("review");
   else if (!(await getSession())) notFound();
   return (
     <>

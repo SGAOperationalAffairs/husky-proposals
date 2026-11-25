@@ -9,6 +9,7 @@ import {
   boardsFor,
   can,
   canSeeWhoPosted,
+  columnsFor,
   isAuthor,
   otherLeaderMay,
   type Action,
@@ -203,14 +204,94 @@ describe("permissions (#52)", () => {
     });
   });
 
-  describe("other leaders (D16, Open)", () => {
-    it("answers no for every action through one function", () => {
-      for (const action of ALL_ACTIONS) expect(otherLeaderMay(action), action).toBe(false);
+  describe("the Executive Board (D16 option A, #100)", () => {
+    const execBoard = [
+      "student-body-president",
+      "executive-vice-president",
+      "speaker-of-the-senate",
+      "vice-president-of-academic-affairs",
+      "vice-president-of-diversity-equity-and-inclusion",
+      "vice-president-of-external-affairs",
+      "vice-president-of-operational-affairs",
+      "vice-president-of-student-involvement",
+      "vice-president-of-student-success",
+    ].map((key) => viewer(`exec-${key}`, [key]));
+
+    it("sees names on every board and nothing else", () => {
+      for (const v of execBoard) {
+        expect(boardsFor(v, "see_names")).toEqual(BOARD_CODES);
+        for (const action of BOARD_ACTIONS.filter((a) => a !== "see_names")) {
+          expect(boardsFor(v, action), action).toEqual([]);
+        }
+        expect(can(v, "promote")).toBe(false);
+      }
     });
 
-    it("pins the Open cells in the matrix", () => {
-      for (const action of ["review", "see_names", "see_people"] as const) {
-        expect(PERMISSIONS[action].otherLeader, action).toBe("open");
+    it("sees who posted a named idea but not an anonymous one", () => {
+      for (const v of execBoard) {
+        for (const board of BOARD_CODES) {
+          expect(canSeeWhoPosted(v, { boardId: board, isAnonymous: false })).toBe(true);
+          expect(canSeeWhoPosted(v, { boardId: board, isAnonymous: true })).toBe(false);
+        }
+      }
+    });
+
+    it("keeps the People list open until #291", () => {
+      expect(PERMISSIONS.see_people.otherLeader).toBe("open");
+      for (const action of ALL_ACTIONS) expect(otherLeaderMay(action), action).toBe(false);
+    });
+  });
+
+  describe("a person who holds two roles gets the union (#100)", () => {
+    const dual = viewer("dual", ["speaker-of-the-senate", BOARD_POSITIONS.DAB.lead]);
+    const execOnly = viewer("exec", ["speaker-of-the-senate"]);
+
+    it("answers the OR of the two single-role viewers, on every action and board", () => {
+      for (const action of GLOBAL_ACTIONS) {
+        expect(can(dual, action), action).toBe(can(execOnly, action) || can(dabChair, action));
+      }
+      for (const action of BOARD_ACTIONS) {
+        for (const board of BOARD_CODES) {
+          expect(can(dual, action, board), `${board} ${action}`).toBe(
+            can(execOnly, action, board) || can(dabChair, action, board),
+          );
+        }
+      }
+    });
+
+    it("acts on DAB only, except names, which it sees everywhere", () => {
+      for (const action of ["review", "manage_status", "see_anonymous_author", "change_cadence"] as const) {
+        expect(boardsFor(dual, action), action).toEqual(["DAB"]);
+      }
+      expect(boardsFor(dual, "see_names")).toEqual(BOARD_CODES);
+      expect(can(dual, "change_board", "DAB")).toBe(false);
+      expect(can(dual, "promote")).toBe(false);
+    });
+
+    it("shows an anonymous DAB author but not an anonymous CSC one", () => {
+      expect(canSeeWhoPosted(dual, { boardId: "DAB", isAnonymous: true })).toBe(true);
+      expect(canSeeWhoPosted(dual, { boardId: "CSC", isAnonymous: true })).toBe(false);
+      expect(canSeeWhoPosted(dual, { boardId: "CSC", isAnonymous: false })).toBe(true);
+    });
+  });
+
+  describe("single-role viewers are unchanged by the union (#100)", () => {
+    it("holds the same columns as before for each", () => {
+      expect(columnsFor(visitor)).toEqual(["visitor"]);
+      expect(columnsFor(student)).toEqual(["student"]);
+      expect(columnsFor(dabMember)).toEqual(["student"]);
+      expect(columnsFor(unmapped)).toEqual(["student"]);
+      expect(columnsFor(dabChair)).toEqual(["student", "boardLead"]);
+      expect(columnsFor(vp)).toEqual(["student", "vp", "otherLeader"]);
+    });
+
+    it("gives a plain chair names on their own board only, not through isSgaLeader", () => {
+      expect(boardsFor(dabChair, "see_names")).toEqual(["DAB"]);
+    });
+
+    it("gives the VP who also chairs DAB everything the VP gets", () => {
+      for (const action of BOARD_ACTIONS) {
+        expect(boardsFor(vpWhoChairsDab, action), action).toEqual(boardsFor(vp, action));
       }
     });
   });

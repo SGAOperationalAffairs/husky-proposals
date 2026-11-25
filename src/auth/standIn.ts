@@ -55,6 +55,25 @@ export const STAND_IN_USERS = [
     description: "An SGA position this app does not use",
     positions: [{ key: "vice-president-of-finance", name: "Vice President of Finance" }],
   },
+  {
+    slug: "exec-board",
+    id: "00000000-0000-4000-8000-000000000007",
+    name: "Morgan Ellis",
+    email: "morgan.ellis@example.com",
+    description: "Executive Vice President (Executive Board)",
+    positions: [{ key: "executive-vice-president", name: "Executive Vice President" }],
+  },
+  {
+    slug: "exec-dab-chair",
+    id: "00000000-0000-4000-8000-000000000008",
+    name: "Jamie Ortiz",
+    email: "jamie.ortiz@example.com",
+    description: "Speaker of the Senate and Chair of the Dining Advisory Board (two roles)",
+    positions: [
+      { key: "speaker-of-the-senate", name: "Speaker of the Senate" },
+      { key: "chair-of-dining-advisory-board", name: "Chair of the Dining Advisory Board" },
+    ],
+  },
 ] as const;
 
 export type StandInSlug = (typeof STAND_IN_USERS)[number]["slug"];

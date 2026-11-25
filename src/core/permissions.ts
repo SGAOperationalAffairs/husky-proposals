@@ -1,5 +1,5 @@
 import { BOARD_CODES, type BoardCode } from "./boards";
-import { isSgaLeader, type Roles } from "./positions";
+import type { Roles } from "./positions";
 
 // Who may do what (#52). One function, `can()`, answers whether a viewer may take
 // an action, built from the Permissions table in docs/data-model.md (a test pins
@@ -54,10 +54,11 @@ export const PERMISSIONS: Record<Action, Record<Column, Cell>> = {
   post: row("no", "yes", "yes", "yes", "yes"),
   support: row("no", "yes", "yes", "yes", "yes"),
   promote: row("no", "no", "no", "yes", "no"),
-  review: row("no", "no", "own", "yes", "open"),
+  // CLAUDE.md names the reviewers: the board's chair or director and the VP (#100).
+  review: row("no", "no", "own", "yes", "no"),
   // D16 option A (chosen Nov 2, 2026): a chair or director sees names only for their
-  // own board. This narrows the earlier "every board" decision from #52 (#59).
-  see_names: row("no", "no", "own", "yes", "open"),
+  // own board (#59), and the Executive Board sees them on every board (#100).
+  see_names: row("no", "no", "own", "yes", "yes"),
   see_anonymous_author: row("no", "no", "own", "yes", "no"),
   manage_status: row("no", "no", "own", "yes", "no"),
   change_board: row("no", "no", "no", "yes", "no"),
@@ -66,32 +67,30 @@ export const PERMISSIONS: Record<Action, Record<Column, Cell>> = {
   see_people: row("no", "no", "own", "yes", "open"),
 };
 
-// First match wins.
-function columnFor(viewer: Viewer): Column {
-  if (viewer === null) return "visitor";
-  // A VP who also chairs a board is still the VP.
-  if (viewer.roles.vpCampusAffairs) return "vp";
-  if (viewer.roles.leads.length > 0) return "boardLead";
-  // isSgaLeader is the one D16 function (#45). Unreachable today, since every
-  // leader is the VP or a lead; D16's new leaders land here with no change below.
-  if (isSgaLeader(viewer.roles)) return "otherLeader";
-  // Board members and unmapped positions are students (data-model gap 8).
-  return "student";
+// Every column the viewer holds. Roles combine (#100): someone on the Executive Board
+// who also chairs DAB gets what each column allows. Union only grants, since no cell
+// says "deny" and the student column is a subset of every leader column.
+// Board members and unmapped positions are students (data-model gap 8).
+//
+// "otherLeader" reads executiveBoard, never isSgaLeader: isSgaLeader includes leads,
+// and that would give every chair see_names on all five boards.
+export function columnsFor(viewer: Viewer): Column[] {
+  if (viewer === null) return ["visitor"];
+  const columns: Column[] = ["student"];
+  if (viewer.roles.leads.length > 0) columns.push("boardLead");
+  if (viewer.roles.vpCampusAffairs) columns.push("vp");
+  if (viewer.roles.executiveBoard) columns.push("otherLeader");
+  return columns;
 }
 
-// The one place that decides what an "Open" cell grants (PRD D16, #52). Deciding
-// D16 changes this function only.
+// The one place that decides what an "Open" cell grants (PRD D16, #52). The People
+// list for the Executive Board stays open until #291, so this still answers no.
 export function otherLeaderMay(action: Action): boolean {
   void action;
   return false;
 }
 
-// Returns a boolean, not a result: nothing to write. Callers turn false into their
-// own error code. Never throws.
-export function can(viewer: Viewer, action: GlobalAction): boolean;
-export function can(viewer: Viewer, action: BoardAction, board: BoardCode): boolean;
-export function can(viewer: Viewer, action: Action, board?: BoardCode): boolean {
-  const cell = PERMISSIONS[action][columnFor(viewer)];
+function cellAllows(cell: Cell, viewer: Viewer, action: Action, board: BoardCode | undefined): boolean {
   switch (cell) {
     case "yes":
       return true;
@@ -102,6 +101,14 @@ export function can(viewer: Viewer, action: Action, board?: BoardCode): boolean 
     case "open":
       return otherLeaderMay(action);
   }
+}
+
+// Returns a boolean, not a result: nothing to write. Callers turn false into their
+// own error code. Never throws.
+export function can(viewer: Viewer, action: GlobalAction): boolean;
+export function can(viewer: Viewer, action: BoardAction, board: BoardCode): boolean;
+export function can(viewer: Viewer, action: Action, board?: BoardCode): boolean {
+  return columnsFor(viewer).some((column) => cellAllows(PERMISSIONS[action][column], viewer, action, board));
 }
 
 // For the queue's board filter and "which boards can I review". Use this, not

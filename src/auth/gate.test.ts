@@ -61,19 +61,29 @@ describe("sign-in gate (#93)", () => {
     });
   });
 
-  describe("requireLeader, the leader page (#156)", () => {
-    it("gives not-found to a signed-out visitor", async () => {
-      await expect(requireLeader()).rejects.toBeInstanceOf(NotFoundError);
+  describe("requireLeader, the leader page (#156, #100)", () => {
+    const ACTIONS = ["review", "see_people", "manage_status"] as const;
+
+    it.each(ACTIONS)("gives not-found to a signed-out visitor for %s", async (action) => {
+      await expect(requireLeader(action)).rejects.toBeInstanceOf(NotFoundError);
     });
 
-    it.each(["student", "dab-member", "other-position"])("gives not-found to %s", async (slug) => {
+    it.each(
+      ["student", "dab-member", "other-position", "exec-board"].flatMap((slug) =>
+        ACTIONS.map((action) => [slug, action] as const),
+      ),
+    )("gives not-found to %s for %s", async (slug, action) => {
       current = sessionFor(slug);
-      await expect(requireLeader()).rejects.toBeInstanceOf(NotFoundError);
+      await expect(requireLeader(action)).rejects.toBeInstanceOf(NotFoundError);
     });
 
-    it.each(["dab-chair", "csc-director", "vp"])("returns the session for %s", async (slug) => {
+    it.each(
+      ["dab-chair", "csc-director", "vp", "exec-dab-chair"].flatMap((slug) =>
+        ACTIONS.map((action) => [slug, action] as const),
+      ),
+    )("returns the session for %s on %s", async (slug, action) => {
       current = sessionFor(slug);
-      await expect(requireLeader()).resolves.toBe(current);
+      await expect(requireLeader(action)).resolves.toBe(current);
     });
   });
 

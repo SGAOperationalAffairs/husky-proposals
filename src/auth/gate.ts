@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { safeNextPath } from "@/core/nextPath";
-import { isSgaLeader } from "@/core/positions";
+import { boardsFor, type BoardAction } from "@/core/permissions";
 import type { Session } from "./contract";
 import { getSession, signInUrl } from "./session";
 
@@ -19,13 +19,14 @@ export async function requireSignedIn(path: string): Promise<Session> {
   redirect(`/sign-in?next=${encodeURIComponent(safeNextPath(path) ?? "/")}`);
 }
 
-// For an SGA leader page (#156), inside <Suspense>. A student, a board member who
-// is not a lead, and a signed-out visitor all get not-found, never a sign-in
-// prompt, so the page does not show that it exists. Call it before the page
-// renders anything of its own.
-export async function requireLeader(): Promise<Session> {
+// For an SGA leader page (#156), inside <Suspense>. The page names the action it
+// shows (#100): a viewer who may take it on no board, such as a student, a board
+// member who is not a lead, an Executive Board member on the Queue, or a signed-out
+// visitor, gets not-found, never a sign-in prompt, so the page does not show that it
+// exists. Call it before the page renders anything of its own.
+export async function requireLeader(action: BoardAction): Promise<Session> {
   const session = await getSession();
-  if (session && isSgaLeader(session.roles)) return session;
+  if (session && boardsFor(session, action).length > 0) return session;
   notFound();
 }
 

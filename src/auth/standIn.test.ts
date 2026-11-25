@@ -4,13 +4,15 @@ import { STAND_IN_SLUGS, STAND_IN_USERS, standInResponse } from "./standIn";
 
 const now = new Date("2026-10-31T12:00:00.000Z");
 
-const EXPECTED: Record<string, { vp: boolean; leads: string[]; memberOf: string[] }> = {
-  student: { vp: false, leads: [], memberOf: [] },
-  "dab-member": { vp: false, leads: [], memberOf: ["DAB"] },
-  "dab-chair": { vp: false, leads: ["DAB"], memberOf: [] },
-  "csc-director": { vp: false, leads: ["CSC"], memberOf: [] },
-  vp: { vp: true, leads: [], memberOf: [] },
-  "other-position": { vp: false, leads: [], memberOf: [] },
+const EXPECTED: Record<string, { vp: boolean; exec: boolean; leads: string[]; memberOf: string[] }> = {
+  student: { vp: false, exec: false, leads: [], memberOf: [] },
+  "dab-member": { vp: false, exec: false, leads: [], memberOf: ["DAB"] },
+  "dab-chair": { vp: false, exec: false, leads: ["DAB"], memberOf: [] },
+  "csc-director": { vp: false, exec: false, leads: ["CSC"], memberOf: [] },
+  vp: { vp: true, exec: true, leads: [], memberOf: [] },
+  "other-position": { vp: false, exec: false, leads: [], memberOf: [] },
+  "exec-board": { vp: false, exec: true, leads: [], memberOf: [] },
+  "exec-dab-chair": { vp: false, exec: true, leads: ["DAB"], memberOf: [] },
 };
 
 describe("sign-in stand-in (#45)", () => {
@@ -26,6 +28,7 @@ describe("sign-in stand-in (#45)", () => {
       const want = EXPECTED[slug]!;
       expect(result.session.roles, slug).toEqual({
         vpCampusAffairs: want.vp,
+        executiveBoard: want.exec,
         leads: want.leads,
         memberOf: want.memberOf,
       });

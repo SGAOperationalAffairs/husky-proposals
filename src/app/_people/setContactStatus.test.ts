@@ -22,9 +22,9 @@ function fakeStore(boardId: "DAB" | "CPAB" | null) {
 
 const chairOf = (board: "DAB" | "CPAB"): Viewer => ({
   user: { id: "chair" },
-  roles: { vpCampusAffairs: false, leads: [board], memberOf: [] },
+  roles: { vpCampusAffairs: false, executiveBoard: false, leads: [board], memberOf: [] },
 });
-const student: Viewer = { user: { id: "s" }, roles: { vpCampusAffairs: false, leads: [], memberOf: [] } };
+const student: Viewer = { user: { id: "s" }, roles: { vpCampusAffairs: false, executiveBoard: false, leads: [], memberOf: [] } };
 
 describe("setContactStatus", () => {
   it("a chair marks a volunteer on their board joined", async () => {

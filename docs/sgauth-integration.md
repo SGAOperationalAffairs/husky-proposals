@@ -26,6 +26,9 @@ SGAuth only says which positions a user holds. Husky Proposals decides what each
 | CSC | `director-of-campus-services` | `campus-services-committee-member` |
 | GIB | `director-of-green-initiatives` | `green-initiatives-board-member` |
 | SC | `director-of-sustainability` | `sustainability-committee-member` |
+| Executive Board (sees who posted and who supported on every board) | `student-body-president`, `executive-vice-president`, `speaker-of-the-senate`, `vice-president-of-academic-affairs`, `vice-president-of-diversity-equity-and-inclusion`, `vice-president-of-external-affairs`, `vice-president-of-operational-affairs`, `vice-president-of-student-involvement`, `vice-president-of-student-success` | |
+
+The VP of Campus Affairs is on the Executive Board too. A person's roles combine: someone who holds an Executive Board key and a chair key gets everything each allows (#100).
 
 - Keep this mapping in one module, with one function deciding who counts as an SGA leader for seeing names (PRD D16).
 - DAB and CPAB chairs serve six-month terms, so these positions change at least twice a year (see `reference/governance-notes.md` (local only)).

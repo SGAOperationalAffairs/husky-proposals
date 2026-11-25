@@ -18,7 +18,7 @@ export default function People({ searchParams }: { searchParams: Promise<{ idea?
 }
 
 async function PeopleContent({ searchParams }: { searchParams: Promise<{ idea?: string | string[] }> }) {
-  const session = await requireLeader();
+  const session = await requireLeader("see_people");
   const viewer = { user: { id: session.user.id }, roles: session.roles };
 
   // The boards this leader may see: all five for the VP, the board's own for a chair.

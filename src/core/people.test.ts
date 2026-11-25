@@ -23,10 +23,10 @@ const NOW = new Date("2026-11-20T12:00:00Z");
 
 const chair = (board: "DAB" | "CPAB"): Viewer => ({
   user: { id: "chair" },
-  roles: { vpCampusAffairs: false, leads: [board], memberOf: [] },
+  roles: { vpCampusAffairs: false, executiveBoard: false, leads: [board], memberOf: [] },
 });
-const vp: Viewer = { user: { id: "vp" }, roles: { vpCampusAffairs: true, leads: [], memberOf: [] } };
-const student: Viewer = { user: { id: "s" }, roles: { vpCampusAffairs: false, leads: [], memberOf: [] } };
+const vp: Viewer = { user: { id: "vp" }, roles: { vpCampusAffairs: true, executiveBoard: true, leads: [], memberOf: [] } };
+const student: Viewer = { user: { id: "s" }, roles: { vpCampusAffairs: false, executiveBoard: false, leads: [], memberOf: [] } };
 
 function row(over: Partial<PersonRow> & Pick<PersonRow, "board">): PersonRow {
   return {
