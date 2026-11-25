@@ -59,8 +59,7 @@ export type EditError =
   | { code: "reason_required" };
 
 export type EditResult =
-  | { ok: true; next: EditState; review: EditRecord | null }
-  | { ok: false; error: EditError };
+  { ok: true; next: EditState; review: EditRecord | null } | { ok: false; error: EditError };
 
 const fail = (error: EditError): EditResult => ({ ok: false, error });
 

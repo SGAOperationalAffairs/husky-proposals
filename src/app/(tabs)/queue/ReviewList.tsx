@@ -84,7 +84,7 @@ export function ReviewList({ pending, approved, show }: Props) {
                   <button
                     type="button"
                     data-review-row={row.id}
-                    aria-label={`Review: ${row.title}`}
+                    aria-label={row.edit ? `Review changes: ${row.title}` : `Review: ${row.title}`}
                     onClick={(e) => {
                       returnFocus.current = e.currentTarget;
                       actions.clearError();
@@ -94,6 +94,9 @@ export function ReviewList({ pending, approved, show }: Props) {
                   >
                     {row.title}
                   </button>
+                  {row.edit && (
+                    <span className="bordered px-1.5 text-xs font-bold">Changes to #{row.edit.number}</span>
+                  )}
                   <BoardChip board={row.boardId} />
                   <span className="text-sm text-muted">{row.sentText}</span>
                   <span
@@ -179,11 +182,20 @@ export function ReviewList({ pending, approved, show }: Props) {
         error={actions.error}
         returnFocus={returnFocus}
         onClose={close}
+        // An edit row runs the edit decisions on its own idea (#295).
         onApprove={async () => {
-          if (open && (await actions.approve(open))) decided(open.id);
+          if (!open) return;
+          const done = open.edit
+            ? await actions.approveEdit({ ...open, number: open.edit.number })
+            : await actions.approve(open);
+          if (done) decided(open.id);
         }}
         onDecline={async (reason) => {
-          if (open && (await actions.decline(open, reason))) decided(open.id);
+          if (!open) return;
+          const done = open.edit
+            ? await actions.declineEdit({ ...open, number: open.edit.number }, reason)
+            : await actions.decline(open, reason);
+          if (done) decided(open.id);
         }}
       />
       <TakeDownDialog

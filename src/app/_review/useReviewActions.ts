@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/components/Toast";
 import type { BoardCode } from "@/core/boards";
-import { approvePost, declinePost, sendBackPost, takeDownPost } from "./actions";
+import { approveEdit, approvePost, declineEdit, declinePost, sendBackPost, takeDownPost } from "./actions";
 import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import { decisionMessage, TRY_AGAIN_TEXT, type DecisionCode, type DecisionContext } from "./messages";
 
@@ -88,6 +88,31 @@ export function useReviewActions() {
             title: "Declined",
             description:
               "The student sees your reason and can edit it and send it again. Any email to them can take a while to arrive.",
+            board: target.boardId,
+          }),
+      ),
+    // Decisions on an author's edit to an approved post (#295).
+    approveEdit: (target: Target & { number: number }) =>
+      run(
+        "approve",
+        "edit",
+        () => approveEdit({ ideaId: target.id }),
+        () =>
+          toast({
+            title: "Changes approved",
+            description: `#${target.number} shows the new version now. Its page notes that it was edited.`,
+            board: target.boardId,
+          }),
+      ),
+    declineEdit: (target: Target & { number: number }, reason: string) =>
+      run(
+        "decline",
+        "edit",
+        () => declineEdit({ ideaId: target.id, reason }),
+        () =>
+          toast({
+            title: "Changes declined",
+            description: `#${target.number} stays as it was. The student sees your reason and can edit it again.`,
             board: target.boardId,
           }),
       ),

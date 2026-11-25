@@ -6,6 +6,8 @@ const approvePost = vi.fn();
 const declinePost = vi.fn();
 const sendBackPost = vi.fn();
 const takeDownPost = vi.fn();
+const approveEdit = vi.fn();
+const declineEdit = vi.fn();
 const toast = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/components/Toast", () => ({ useToast: () => toast }));
@@ -14,6 +16,8 @@ vi.mock("./actions", () => ({
   declinePost: (arg: unknown) => declinePost(arg),
   sendBackPost: (arg: unknown) => sendBackPost(arg),
   takeDownPost: (arg: unknown) => takeDownPost(arg),
+  approveEdit: (arg: unknown) => approveEdit(arg),
+  declineEdit: (arg: unknown) => declineEdit(arg),
 }));
 
 import { useReviewActions } from "./useReviewActions";
@@ -25,6 +29,8 @@ beforeEach(() => {
   declinePost.mockReset();
   sendBackPost.mockReset();
   takeDownPost.mockReset();
+  approveEdit.mockReset();
+  declineEdit.mockReset();
   toast.mockReset();
 });
 afterEach(() => {
@@ -155,5 +161,71 @@ describe("decision toasts (#211)", () => {
       description: "#103 is no longer public. Any email to the student can take a while to arrive.",
       board: "DAB",
     });
+  });
+});
+
+function EditHarness() {
+  const { approveEdit: approve, declineEdit: decline, error } = useReviewActions();
+  const target = { id: "i1", boardId: "DAB" as const, number: 103 };
+  return (
+    <>
+      <button type="button" onClick={() => void approve(target)}>
+        Approve changes
+      </button>
+      <button type="button" onClick={() => void decline(target, "Say where it would go.")}>
+        Decline changes
+      </button>
+      {error && <p>{error.text}</p>}
+    </>
+  );
+}
+
+async function decideEdit(name: string) {
+  render(<EditHarness />);
+  await act(async () => {
+    screen.getByRole("button", { name }).click();
+  });
+}
+
+describe("edit decision toasts and errors (#295)", () => {
+  it("approving runs approveEdit with the idea and says the idea shows the new version", async () => {
+    approveEdit.mockResolvedValue({ ok: true, number: 103 });
+    await decideEdit("Approve changes");
+    expect(approveEdit).toHaveBeenCalledWith({ ideaId: "i1" });
+    expect(approvePost).not.toHaveBeenCalled();
+    expect(toast).toHaveBeenCalledWith({
+      title: "Changes approved",
+      description: "#103 shows the new version now. Its page notes that it was edited.",
+      board: "DAB",
+    });
+  });
+
+  it("declining runs declineEdit with the reason and says the idea stays as it was", async () => {
+    declineEdit.mockResolvedValue({ ok: true, number: 103 });
+    await decideEdit("Decline changes");
+    expect(declineEdit).toHaveBeenCalledWith({ ideaId: "i1", reason: "Say where it would go." });
+    expect(declinePost).not.toHaveBeenCalled();
+    expect(toast).toHaveBeenCalledWith({
+      title: "Changes declined",
+      description: "#103 stays as it was. The student sees your reason and can edit it again.",
+      board: "DAB",
+    });
+  });
+
+  it("a race says someone already decided the changes", async () => {
+    approveEdit.mockResolvedValue({ ok: false, error: { code: "already_decided" } });
+    await decideEdit("Approve changes");
+    expect(screen.getByText("Someone already decided these changes.")).toBeTruthy();
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("a board move for a chair says only the VP can approve it", async () => {
+    approveEdit.mockResolvedValue({ ok: false, error: { code: "move_needs_vp" } });
+    await decideEdit("Approve changes");
+    expect(
+      screen.getByText(
+        "Only the VP of Campus Affairs can approve a change of board. You can decline it with a reason.",
+      ),
+    ).toBeTruthy();
   });
 });

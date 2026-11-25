@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Reveal } from "@/components/Reveal";
 import { LocalSupportPair } from "@/app/_ideas/LocalSupportPair";
+import { AuthorIdeaSection } from "@/app/_post/AuthorIdeaSection";
 import { LeaderIdeaSection } from "@/app/_review/LeaderIdeaSection";
 import { getIdea, parseIdeasNumber, type IdeaPageData } from "@/app/_ideas/data";
 import { CopyLink } from "@/components/CopyLink";
@@ -104,6 +105,10 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           {/* Leader extras (#59): nothing for anyone else, and outside the cached read above. */}
           <Suspense fallback={null}>
             <LeaderIdeaSection params={params} />
+          </Suspense>
+          {/* The author's own panel (#295): nothing for anyone else, and outside the cached read. */}
+          <Suspense fallback={null}>
+            <AuthorIdeaSection params={params} />
           </Suspense>
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Where it stands</h2>

@@ -10,12 +10,7 @@ import type { EmailMessage } from "./sendEmail";
 // the payload: the outbox reads it from the idea's author.
 
 export type PostDecision =
-  | "approved"
-  | "declined"
-  | "sent_back"
-  | "taken_down"
-  | "edit_approved"
-  | "edit_declined";
+  "approved" | "declined" | "sent_back" | "taken_down" | "edit_approved" | "edit_declined";
 
 // A send-back and a take-down are stored as declined reviews of kind send_back and
 // take_down, so the kind decides (#286). A decision on an edit has kind edit (#295).

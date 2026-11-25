@@ -4,22 +4,29 @@ import { parsePostIdea } from "@/core/postIdea";
 import { PENDING_LIMIT_REASON, RESUBMIT_LIMIT_REASON, pendingPostsText } from "@/core/review";
 import { loadDraft, saveDraft } from "./draft";
 import { PostForm } from "./PostForm";
-import { postIdea, resubmitIdea, withdrawIdea } from "./actions";
+import { editIdea, postIdea, resubmitIdea, withdrawIdea } from "./actions";
 
 // The post form (#55): a board is picked first, then the rest of the form opens.
 // Covers the anonymous notice, the pending limit, the check on submit, and what a
 // valid submit shows for each result of the post action (#181).
 
-vi.mock("./actions", () => ({ postIdea: vi.fn(), resubmitIdea: vi.fn(), withdrawIdea: vi.fn() }));
+vi.mock("./actions", () => ({
+  postIdea: vi.fn(),
+  resubmitIdea: vi.fn(),
+  withdrawIdea: vi.fn(),
+  editIdea: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const post = vi.mocked(postIdea);
 const resubmit = vi.mocked(resubmitIdea);
 const withdraw = vi.mocked(withdrawIdea);
+const editApproved = vi.mocked(editIdea);
 
 beforeEach(() => {
   post.mockReset();
   resubmit.mockReset();
   withdraw.mockReset();
+  editApproved.mockReset();
   sessionStorage.clear();
   window.location.hash = "";
 });
@@ -543,5 +550,88 @@ describe("PostForm, edit mode (#128)", () => {
   it("says nothing that promises action", () => {
     render(<PostForm pendingCount={0} edit={edit} />);
     expect(document.body.textContent).not.toMatch(/petition|will be approved|will be built|we will/i);
+  });
+});
+
+// Edit mode for an approved post (#295): sent through editIdea, never blocked by the
+// pending limit, with no withdraw and no pending count.
+describe("PostForm, editing an approved post (#295)", () => {
+  const approvedEdit = { ...edit, mode: "edit" as const, number: 142 };
+  const sendChanges = () => screen.getByRole("button", { name: "Send changes for review" });
+
+  it("sends through editIdea with the id, and never posts or resubmits", async () => {
+    editApproved.mockResolvedValue({ ok: true, id: IDEA_ID, version: 2 });
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    fireEvent.change(screen.getByLabelText(/^Title/), { target: { value: "Later dining hours, every day" } });
+    fireEvent.click(sendChanges());
+    await waitFor(() => expect(editApproved).toHaveBeenCalledTimes(1));
+    expect(editApproved).toHaveBeenCalledWith(
+      expect.objectContaining({ ideaId: IDEA_ID, title: "Later dining hours, every day" }),
+    );
+    expect(post).not.toHaveBeenCalled();
+    expect(resubmit).not.toHaveBeenCalled();
+  });
+
+  it("confirms with its own words, and links back to my ideas and to the idea", async () => {
+    editApproved.mockResolvedValue({ ok: true, id: IDEA_ID, version: 2 });
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    fireEvent.click(sendChanges());
+    expect(await screen.findByRole("heading", { name: "Changes sent for review" })).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Students still see the approved version. A reviewer usually checks changes within 2 to 3 days.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Back to my ideas" }).getAttribute("href")).toBe("/me");
+    expect(screen.getByRole("link", { name: "See the idea" }).getAttribute("href")).toBe("/ideas/142");
+  });
+
+  it("has no withdraw section, no pending count, and is not blocked at the limit", () => {
+    render(<PostForm pendingCount={3} edit={approvedEdit} />);
+    expect(screen.queryByRole("button", { name: "Withdraw post" })).toBeNull();
+    expect(screen.queryByText(/pending post/)).toBeNull();
+    expect(screen.queryByText(RESUBMIT_LIMIT_REASON)).toBeNull();
+    expect(sendChanges().getAttribute("aria-disabled")).toBeNull();
+  });
+
+  it("notes that every change is reviewed", () => {
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    expect(screen.getByText(/Every change is reviewed before it shows\./)).toBeTruthy();
+  });
+
+  it("says a category change moves the board, and that only the VP can approve a move", () => {
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    fireEvent.click(screen.getByRole("button", { name: "Change board" }));
+    pickBoard(/^Campus Services/);
+    expect(
+      screen.getByText(
+        "This moves your idea to another board: Campus Services. Only the VP of Campus Affairs can approve a move.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it.each([
+    ["edit_pending", /You already sent changes to this post/],
+    ["no_changes", /You have not changed anything yet\./],
+    ["not_approved", /This post changed while you were editing/],
+  ] as const)("shows the line for %s and keeps the input", async (code, line) => {
+    editApproved.mockResolvedValue({ ok: false, error: { code } } as Awaited<ReturnType<typeof editIdea>>);
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    fireEvent.click(sendChanges());
+    expect((await screen.findByRole("alert")).textContent).toMatch(line);
+    expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("Later dining hours");
+  });
+
+  it("signed out: keeps a draft for the idea and links back to the edit page", async () => {
+    editApproved.mockResolvedValue({ ok: false, error: { code: "signed_out" } } as Awaited<
+      ReturnType<typeof editIdea>
+    >);
+    render(<PostForm pendingCount={0} edit={approvedEdit} />);
+    fireEvent.click(sendChanges());
+    const link = await screen.findByRole("link", { name: "Sign in" });
+    expect(link.getAttribute("href")).toBe(
+      `/sign-in?next=${encodeURIComponent(`/me/ideas/${IDEA_ID}/edit`)}`,
+    );
+    expect(loadDraft(IDEA_ID)).not.toBeNull();
   });
 });

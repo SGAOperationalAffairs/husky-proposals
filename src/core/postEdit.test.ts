@@ -25,7 +25,11 @@ const SUBMIT: EditEvent = { type: "submit_edit", actorId: AUTHOR };
 const APPROVE: EditEvent = { type: "approve_edit", actorId: REVIEWER };
 const DECLINE: EditEvent = { type: "decline_edit", actorId: REVIEWER, reason: "Say where it would go" };
 
-const post = (editPending: boolean, reviewStatus: ReviewStatus = "approved", authorId = AUTHOR): EditPost => ({
+const post = (
+  editPending: boolean,
+  reviewStatus: ReviewStatus = "approved",
+  authorId = AUTHOR,
+): EditPost => ({
   reviewStatus,
   authorId,
   editPending,

@@ -19,7 +19,8 @@ import { COST_LABELS, SCALE_LABELS, TIME_LABELS } from "@/core/ideaFacts";
 import { PENDING_LIMIT, PENDING_LIMIT_REASON, RESUBMIT_LIMIT_REASON } from "@/core/review";
 import { BOARD_FOR_CATEGORY, CATEGORIES, parsePostIdea } from "@/core/postIdea";
 import { clearDraft, loadDraft, saveDraft, type PostDraft } from "./draft";
-import { FIELD_MESSAGES, postMessage, RESUBMIT_SIGNED_OUT } from "./messages";
+import { boardMoveNote, FORM_COPY, type FormMode } from "./formCopy";
+import { FIELD_MESSAGES } from "./messages";
 import { PendingCount } from "./PendingCount";
 import type { SimilarIdeaData } from "./present";
 import { SimilarIdeas } from "./SimilarIdeas";
@@ -81,8 +82,10 @@ type Props = {
   // How many of this student's posts are waiting for review (PENDING_LIMIT caps them).
   // Null for a visitor: there is no count to show (#96).
   pendingCount: number | null;
-  // The declined post being edited, and its values to start from (#128).
-  edit?: { ideaId: string; values: PostDraft };
+  // The post being edited, and its values to start from (#128). `mode` is "resubmit" for a
+  // declined post (the default) and "edit" for an approved one (#295); `number` is the
+  // approved post's public number, for the link back to it.
+  edit?: { ideaId: string; values: PostDraft; mode?: "resubmit" | "edit"; number?: number | null };
   // grid: the boards in two columns. line: all five in one row on a wide panel (#55 playground).
   boardTiles?: "grid" | "line";
   // above: the icon sits over the name. inline: the icon sits on the same line as the name (#55 playground).
@@ -101,7 +104,11 @@ export function PostForm({
   const [values, setValues] = useState<Values>(edit?.values ?? EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const ids = useId();
-  const blocked = pendingCount !== null && pendingCount >= PENDING_LIMIT;
+  const mode: FormMode = !edit ? "post" : (edit.mode ?? "resubmit");
+  const copy = FORM_COPY[mode];
+  // An edit to an approved post is not a pending post, so the limit and its count never apply (#295).
+  const shownCount = mode === "edit" ? null : pendingCount;
+  const blocked = shownCount !== null && shownCount >= PENDING_LIMIT;
   const formRef = useRef<HTMLFormElement>(null);
   const limitRef = useRef<HTMLParagraphElement>(null);
   const focusFirstError = useRef(false);
@@ -117,7 +124,7 @@ export function PostForm({
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const ideaId = edit?.ideaId;
   const editing = !!edit;
-  const { phase, message, submit: postIt, withdraw, reset } = usePostIdea(ideaId);
+  const { phase, message, submit: postIt, withdraw, reset } = usePostIdea(ideaId, edit?.mode);
   const posting = phase === "posting";
   const saved = phase === "saved";
   const withdrawn = phase === "withdrawn";
@@ -232,7 +239,7 @@ export function PostForm({
   const editPath = ideaId ? `/me/ideas/${ideaId}/edit` : undefined;
   // Only ids that render: no count line for a visitor, no limit line below the limit.
   const describedBy =
-    [pendingCount !== null && `${ids}-pending`, blocked && `${ids}-limit`].filter(Boolean).join(" ") ||
+    [shownCount !== null && `${ids}-pending`, blocked && `${ids}-limit`].filter(Boolean).join(" ") ||
     undefined;
 
   return (
@@ -306,25 +313,21 @@ export function PostForm({
           {saved && (
             <div role="status" className="flex flex-col gap-4 p-card">
               <h2 ref={confirmationRef} tabIndex={-1} className="heading text-4xl">
-                {editing ? "Sent for review again" : "Sent for review"}
+                {copy.savedTitle}
               </h2>
-              {editing ? (
-                <p>
-                  Your post is not public yet. The board&apos;s chair or director, or the VP of Campus
-                  Affairs, usually reviews it within 2 to 3 days.
-                </p>
-              ) : (
-                <p>
-                  Your idea is not public yet. The board&apos;s chair or director, or the VP of Campus
-                  Affairs, usually reviews it within 2 to 3 days. If it is declined, you will see why, and you
-                  can edit it and send it again.
-                </p>
-              )}
+              <p>{copy.savedText}</p>
               <div className="flex flex-wrap items-center gap-4">
                 {editing ? (
-                  <Button variant="primary" href="/me" transitionTypes={PAGE}>
-                    Back to my ideas
-                  </Button>
+                  <>
+                    <Button variant="primary" href="/me" transitionTypes={PAGE}>
+                      Back to my ideas
+                    </Button>
+                    {mode === "edit" && typeof edit?.number === "number" && (
+                      <Button variant="text" href={`/ideas/${edit.number}`} transitionTypes={PAGE}>
+                        See the idea
+                      </Button>
+                    )}
+                  </>
                 ) : (
                   <>
                     <Button variant="primary" href="/" transitionTypes={PAGE}>
@@ -359,7 +362,11 @@ export function PostForm({
           {board && !done && (
             <div key="fields" className="poster-arrive flex flex-col gap-6 p-card">
               {boardDiffers && board && (
-                <p className="text-muted">A different board will review it: {board.category}.</p>
+                <p className="text-muted">
+                  {mode === "edit"
+                    ? boardMoveNote(board.category)
+                    : `A different board will review it: ${board.category}.`}
+                </p>
               )}
               {blocked && (
                 <p
@@ -485,18 +492,14 @@ export function PostForm({
                   </span>
                 </label>
 
-                <p className="text-muted">
-                  Every post is reviewed before it shows. The board&apos;s chair or director, or the VP of
-                  Campus Affairs, reviews it, usually within 2 to 3 days. If it is declined, you will see why,
-                  and you can edit it and send it again.
-                </p>
+                <p className="text-muted">{copy.reviewNote}</p>
               </fieldset>
 
               {/* Outside the fieldset so the button stays focusable at the limit and a keyboard
                   user can hear why it does nothing (#132). */}
               {phase === "signed_out" && (
                 <div role="status" className="flex flex-col items-start gap-3 bordered p-card">
-                  <p>{editing ? RESUBMIT_SIGNED_OUT : postMessage("signed_out")}</p>
+                  <p>{copy.signedOut}</p>
                   {/* No prefetch: on dev /sign-in redirects off site (#177). */}
                   <Button
                     variant="primary"
@@ -514,7 +517,7 @@ export function PostForm({
                     {message}
                   </p>
                 )}
-                <PendingCount id={`${ids}-pending`} count={pendingCount} />
+                <PendingCount id={`${ids}-pending`} count={shownCount} />
                 <Button
                   variant="primary"
                   type="submit"
@@ -524,20 +527,15 @@ export function PostForm({
                   aria-disabled={blocked || posting || undefined}
                   aria-describedby={describedBy}
                 >
-                  {editing
-                    ? posting
-                      ? "Sending"
-                      : "Send for review again"
-                    : posting
-                      ? "Posting"
-                      : "Post idea"}
+                  {posting ? copy.submitting : copy.submit}
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Edit mode only, and outside the fieldset so it works at the pending limit. */}
-          {editing && !done && (
+          {/* A declined post only (an approved post has nothing to withdraw, #295), and outside
+              the fieldset so it works at the pending limit. */}
+          {mode === "resubmit" && !done && (
             <div
               id="withdraw"
               ref={withdrawRef}

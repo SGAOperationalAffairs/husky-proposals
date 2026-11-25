@@ -10,6 +10,8 @@ vi.mock("@/app/_review/actions", () => ({
   declinePost: vi.fn(),
   sendBackPost: vi.fn(),
   takeDownPost: vi.fn(),
+  approveEdit: vi.fn(),
+  declineEdit: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 
@@ -129,6 +131,50 @@ describe("the queue's lists and filters (#59)", () => {
     expect(screen.queryByLabelText("Status")).toBeNull();
     expect(screen.queryByLabelText("Sort by")).toBeNull();
     expect(screen.queryByRole("group", { name: "View" })).toBeNull();
+  });
+
+  describe("an edit to an approved post (#295)", () => {
+    const editRow: ReviewRowData = {
+      ...pendingRow("e", "A study space, open late", "CPAB"),
+      isAnonymous: true,
+      edit: {
+        number: 120,
+        changes: [{ label: "Title", before: "A study space", after: "A study space, open late" }],
+        unchanged: ["Scale"],
+        sentText: "Changes sent 3 days ago",
+        mayApprove: true,
+        boardAfter: "CPAB",
+        movesTo: null,
+      },
+    };
+
+    it("sits in the same list as new posts, tagged with the idea it changes", () => {
+      view({ pending: [pendingRow("a", "A study space", "CPAB"), editRow], approved });
+      expect(screen.getByRole("button", { name: "Review: A study space" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Review changes: A study space, open late" })).toBeTruthy();
+      expect(screen.getByText("Changes to #120")).toBeTruthy();
+      expect(screen.getAllByText("Anonymous to students")).toHaveLength(1);
+    });
+
+    it("opens the edit drawer, with the diff and Approve changes", async () => {
+      view({ pending: [editRow], approved });
+      fireEvent.click(screen.getByRole("button", { name: "Review changes: A study space, open late" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(
+        within(dialog).getByText("Changes to #120. The approved version stays public until you decide."),
+      ).toBeTruthy();
+      expect(within(dialog).getByRole("heading", { name: "What changed" })).toBeTruthy();
+      expect(within(dialog).getByRole("button", { name: "Approve changes" })).toBeTruthy();
+      expect(within(dialog).getByRole("button", { name: "Decline changes" })).toBeTruthy();
+    });
+
+    it("a new post's drawer is unchanged", async () => {
+      view({ pending: [pendingRow("a", "A study space", "CPAB")], approved });
+      fireEvent.click(screen.getByRole("button", { name: "Review: A study space" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).queryByRole("heading", { name: "What changed" })).toBeNull();
+      expect(within(dialog).getByRole("button", { name: "Approve and post" })).toBeTruthy();
+    });
   });
 
   it("says what to do when nothing is pending or approved", () => {

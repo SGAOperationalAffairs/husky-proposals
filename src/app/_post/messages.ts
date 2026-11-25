@@ -39,8 +39,7 @@ const TEXT: Record<PostCode, string> = {
   invalid_transition: CHANGED,
   already_changed: CHANGED,
   // Editing an approved post (#295).
-  edit_pending:
-    "You already sent changes to this post. You can edit it again after a reviewer decides.",
+  edit_pending: "You already sent changes to this post. You can edit it again after a reviewer decides.",
   no_changes: "You have not changed anything yet.",
   not_approved: CHANGED,
   // A decision with nothing waiting is a reviewer's error, never an author's.

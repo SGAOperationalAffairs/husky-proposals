@@ -181,7 +181,12 @@ describe("decidePost (#58)", () => {
 
     it("records on the approved version, not on a pending edit (#295)", async () => {
       const store = fakeStore(
-        target({ reviewStatus: "approved", number: 131, latestRevisionId: "rev-edit", approvedRevisionId: REVISION }),
+        target({
+          reviewStatus: "approved",
+          number: 131,
+          latestRevisionId: "rev-edit",
+          approvedRevisionId: REVISION,
+        }),
       );
       await decidePost(store, dabChair, "send_back", { ideaId: IDEA, reason: REASON }, NOW);
       expect(store.record).toHaveBeenCalledWith(
@@ -258,9 +263,20 @@ describe("decidePost (#58)", () => {
 
     it("with an edit waiting, the take-down is on the approved version and drops the edit (#295)", async () => {
       const store = fakeStore(
-        target({ reviewStatus: "approved", number: 131, latestRevisionId: "rev-edit", approvedRevisionId: REVISION }),
+        target({
+          reviewStatus: "approved",
+          number: 131,
+          latestRevisionId: "rev-edit",
+          approvedRevisionId: REVISION,
+        }),
       );
-      await decidePost(store, dabChair, "take_down", { ideaId: IDEA, reason: "The details were not accurate" }, NOW);
+      await decidePost(
+        store,
+        dabChair,
+        "take_down",
+        { ideaId: IDEA, reason: "The details were not accurate" },
+        NOW,
+      );
       expect(store.record).toHaveBeenCalledWith(
         expect.objectContaining({
           patch: expect.objectContaining({ editSubmittedAt: null }),

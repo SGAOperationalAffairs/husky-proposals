@@ -151,3 +151,82 @@ describe("decision drawer (#59)", () => {
     expect(props.onApprove).not.toHaveBeenCalled();
   });
 });
+
+// An author's edit to an approved post (#295): the same drawer, with the diff first.
+describe("decision drawer, an edit (#295)", () => {
+  const edit = {
+    number: 103,
+    changes: [
+      { label: "Title", before: "An older title", after: "A quiet study room" },
+      { label: "Scale", before: "Small", after: "Large" },
+    ],
+    unchanged: ["Rough cost", "Timing"],
+    sentText: "Changes sent 2 days ago",
+    mayApprove: true,
+    boardAfter: "DAB" as const,
+    movesTo: null,
+  };
+  const editRow: ReviewRowData = { ...row, edit };
+
+  it("shows the board, when the changes were sent, and what stays public until a decision", () => {
+    setup({ row: editRow });
+    expect(screen.getByText("Dining Advisory Board")).toBeTruthy();
+    expect(screen.getByText("Changes sent 2 days ago")).toBeTruthy();
+    expect(screen.getByText("1 day overdue")).toBeTruthy();
+    expect(
+      screen.getByText("Changes to #103. The approved version stays public until you decide."),
+    ).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "A quiet study room" })).toBeTruthy();
+  });
+
+  it("lists each changed field with Before and After, then what did not change", () => {
+    setup({ row: editRow });
+    expect(screen.getByRole("heading", { name: "What changed" })).toBeTruthy();
+    expect(screen.getByText("An older title")).toBeTruthy();
+    expect(screen.getAllByText("Before")).toHaveLength(2);
+    expect(screen.getAllByText("After")).toHaveLength(2);
+    expect(screen.getByText("Large")).toBeTruthy();
+    expect(screen.getByText("Not changed: Rough cost, Timing.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "The new version" })).toBeTruthy();
+    expect(screen.getByText("Second paragraph.")).toBeTruthy();
+  });
+
+  it("approves with Approve changes", () => {
+    const props = setup({ row: editRow });
+    expect(screen.queryByRole("button", { name: "Approve and post" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Approve changes" }));
+    expect(props.onApprove).toHaveBeenCalledTimes(1);
+  });
+
+  it("says Approving while busy", () => {
+    setup({ row: editRow, busy: "approve" });
+    expect(screen.getByRole("button", { name: "Approving…" }).getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("declines with Decline changes, a hint that the approved version stays public, and Send decline", () => {
+    const props = setup({ row: editRow });
+    fireEvent.click(screen.getByRole("button", { name: "Decline changes" }));
+    expect(
+      screen.getByText(/Say what to change\. The approved version stays public\. At least 40 characters\./),
+    ).toBeTruthy();
+    const reason = "Please say which hall the study room would go in, so the student can add it.";
+    fireEvent.change(screen.getByLabelText(/^Reason the student will see/), { target: { value: reason } });
+    fireEvent.click(screen.getByRole("button", { name: "Send decline" }));
+    expect(props.onDecline).toHaveBeenCalledWith(reason);
+  });
+
+  it("a board move this viewer cannot approve: no Approve button, a note, and Decline stays", () => {
+    const props = setup({
+      row: { ...editRow, edit: { ...edit, mayApprove: false, boardAfter: "CSC", movesTo: "CSC" } },
+    });
+    expect(screen.queryByRole("button", { name: "Approve changes" })).toBeNull();
+    expect(
+      screen.getByText(
+        "This moves the idea to the Campus Services Committee. Only the VP of Campus Affairs can approve a move. You can decline it with a reason.",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Decline changes" }));
+    expect(screen.getByLabelText(/^Reason the student will see/)).toBeTruthy();
+    expect(props.onApprove).not.toHaveBeenCalled();
+  });
+});

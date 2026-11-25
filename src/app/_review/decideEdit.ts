@@ -40,8 +40,7 @@ export type EditTarget = {
 // What an approval writes onto the idea: the edit's words, the board it lands on, and the
 // cleared marker. A decline writes only the cleared marker.
 export type EditIdeaPatch =
-  | ({ editSubmittedAt: null; boardId: BoardCode } & EditFields)
-  | { editSubmittedAt: null };
+  ({ editSubmittedAt: null; boardId: BoardCode } & EditFields) | { editSubmittedAt: null };
 
 export type EditDecisionWrite = {
   ideaId: string;

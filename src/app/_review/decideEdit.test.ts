@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Session } from "@/auth/contract";
 import { BOARD_POSITIONS, VP_CAMPUS_AFFAIRS, rolesFromPositions } from "@/core/positions";
 import type { EditFields } from "@/core/postEdit";
-import { decideEdit, type EditReviewStore, type EditTarget } from "./decideEdit";
+import { decideEdit, type EditDecisionWrite, type EditReviewStore, type EditTarget } from "./decideEdit";
 
 // The edit decisions' rules (#295), against a fake store, checking what it received.
 const NOW = new Date("2026-11-21T15:00:00.000Z");
@@ -55,7 +55,10 @@ function target(overrides: Partial<EditTarget> = {}): EditTarget {
 function fakeStore(found: EditTarget | null, recorded: { reviewId: string } | null = { reviewId: "r-1" }) {
   return {
     find: vi.fn(async () => found),
-    record: vi.fn(async () => recorded),
+    record: vi.fn(async (write: EditDecisionWrite) => {
+      void write;
+      return recorded;
+    }),
   } satisfies EditReviewStore;
 }
 
@@ -146,7 +149,9 @@ describe("decideEdit (#295)", () => {
     it("a chair may decline a board move even though they may not approve it", async () => {
       const moving = target({ edit: { id: EDIT_REVISION, ...EDIT_FIELDS, category: "campus_services" } });
       const store = fakeStore(moving);
-      expect((await decideEdit(store, dabChair, "decline", { ideaId: IDEA, reason: REASON }, NOW)).ok).toBe(true);
+      expect((await decideEdit(store, dabChair, "decline", { ideaId: IDEA, reason: REASON }, NOW)).ok).toBe(
+        true,
+      );
     });
 
     it("a reason under 40 characters is invalid and nothing is read or written", async () => {

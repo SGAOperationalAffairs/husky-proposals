@@ -5,7 +5,12 @@ import { SAMPLE_OWN_POST } from "./sample";
 
 // The edit page's body (#128): the reviewer's reason before the form for a declined
 // post, and a status block with no form for any other status.
-vi.mock("./actions", () => ({ postIdea: vi.fn(), resubmitIdea: vi.fn(), withdrawIdea: vi.fn() }));
+vi.mock("./actions", () => ({
+  postIdea: vi.fn(),
+  resubmitIdea: vi.fn(),
+  withdrawIdea: vi.fn(),
+  editIdea: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 afterEach(cleanup);
@@ -51,17 +56,74 @@ describe("EditPostView (#128)", () => {
     expect(screen.getByRole("link", { name: "Back to my ideas" }).getAttribute("href")).toBe("/me");
   });
 
-  it("approved: says it is public and links to the idea, with no form", () => {
-    render(
-      <EditPostView
-        data={{ ...SAMPLE_OWN_POST, reviewStatus: "approved", number: 142, reason: null }}
-        pendingCount={0}
-      />,
-    );
-    expect(screen.getByRole("heading", { level: 1, name: "Approved" })).toBeTruthy();
-    expect(screen.getByText("This idea is public now, so it can no longer be edited.")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "See the idea" }).getAttribute("href")).toBe("/ideas/142");
-    expect(screen.queryByRole("form")).toBeNull();
+  describe("approved post (#295)", () => {
+    const approved = { ...SAMPLE_OWN_POST, reviewStatus: "approved" as const, number: 142, reason: null };
+
+    it("no edit waiting: the edit form, with the intro and no withdraw or pending count", () => {
+      render(<EditPostView data={approved} pendingCount={3} />);
+      expect(screen.getByRole("heading", { level: 1, name: "Edit your post" })).toBeTruthy();
+      expect(
+        screen.getByText(
+          "Students see your post as it is now until a reviewer approves your changes. Support and follows stay with it.",
+        ),
+      ).toBeTruthy();
+      expect(screen.getByRole("form", { name: "Edit your post" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Send changes for review" })).toBeTruthy();
+      expect(screen.queryByText("Withdraw this post")).toBeNull();
+      expect(screen.queryByText(/pending post/)).toBeNull();
+      expect(screen.queryByText("Why your changes were not approved")).toBeNull();
+    });
+
+    it("an edit at the pending limit is never blocked", () => {
+      render(<EditPostView data={approved} pendingCount={3} />);
+      expect(
+        (screen.getByRole("button", { name: "Send changes for review" }) as HTMLButtonElement).getAttribute(
+          "aria-disabled",
+        ),
+      ).toBeNull();
+    });
+
+    it("an edit waiting: says so, links back and to the idea, and shows no form", () => {
+      render(
+        <EditPostView data={{ ...approved, edit: { state: "pending", reason: null } }} pendingCount={0} />,
+      );
+      expect(screen.getByRole("heading", { level: 1, name: "Changes waiting for review" })).toBeTruthy();
+      expect(
+        screen.getByText(
+          "Students still see the approved version. You can edit it again after a reviewer decides.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByRole("form")).toBeNull();
+      expect(screen.getByRole("link", { name: "Back to my ideas" }).getAttribute("href")).toBe("/me");
+      expect(screen.getByRole("link", { name: "See the idea" }).getAttribute("href")).toBe("/ideas/142");
+    });
+
+    it("a declined edit: the reason first, then the form holding the declined words", () => {
+      render(
+        <EditPostView
+          data={{
+            ...approved,
+            edit: { state: "declined", reason: "Say where the racks would go." },
+            values: { ...SAMPLE_OWN_POST.values, title: "My declined title" },
+          }}
+          pendingCount={0}
+        />,
+      );
+      const label = screen.getByText("Why your changes were not approved");
+      const reason = screen.getByText("Say where the racks would go.");
+      const form = screen.getByRole("form", { name: "Edit your post" });
+      expect(label.compareDocumentPosition(reason) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(reason.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getByText(/The approved version is still public\./)).toBeTruthy();
+      expect((screen.getByLabelText(/^Title/) as HTMLInputElement).value).toBe("My declined title");
+    });
+
+    it("a declined edit with no reason says so", () => {
+      render(
+        <EditPostView data={{ ...approved, edit: { state: "declined", reason: null } }} pendingCount={0} />,
+      );
+      expect(screen.getByText("The reviewer did not leave a reason.")).toBeTruthy();
+    });
   });
 
   it("withdrawn: says it was withdrawn, with no form", () => {

@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { decisionMessage, DECISION_CODES } from "./messages";
 
 // The words for every way a decision can fail (#59).
-const CONTEXTS = ["decide", "send_back", "take_down"] as const;
+const CONTEXTS = ["decide", "send_back", "take_down", "edit"] as const;
 
 describe("decision messages (#59)", () => {
-  it("has copy for every code in both contexts", () => {
+  it("has copy for every code in every context", () => {
     for (const code of DECISION_CODES) {
       for (const context of CONTEXTS) {
         expect(decisionMessage(code, context, undefined).text.length, `${code} ${context}`).toBeGreaterThan(
@@ -58,6 +58,29 @@ describe("decision messages (#59)", () => {
     expect(decisionMessage("own_post", "decide", undefined).text).toBe(
       "You posted this, so another reviewer has to decide it.",
     );
+  });
+
+  it("words the races and the board-move refusal for a decision on an edit (#295)", () => {
+    expect(decisionMessage("already_decided", "edit", undefined)).toEqual({
+      text: "Someone already decided these changes.",
+      refresh: true,
+    });
+    expect(decisionMessage("no_pending_edit", "edit", undefined)).toEqual({
+      text: "Someone already decided these changes.",
+      refresh: true,
+    });
+    expect(decisionMessage("not_approved", "edit", undefined)).toEqual({
+      text: "This idea is no longer approved.",
+      refresh: true,
+    });
+    expect(decisionMessage("move_needs_vp", "edit", undefined)).toEqual({
+      text: "Only the VP of Campus Affairs can approve a change of board. You can decline it with a reason.",
+      refresh: false,
+    });
+    expect(decisionMessage("own_post", "edit", undefined).text).toBe(
+      "You posted this, so another reviewer has to decide it.",
+    );
+    expect(decisionMessage("reason_required", "edit", undefined)).toMatchObject({ field: "reason" });
   });
 
   it("never promises anything or uses the banned words", () => {

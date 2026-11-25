@@ -11,11 +11,7 @@ import { prismaEditReviewStore } from "@/db/editReviewStore";
 import { prismaReviewStore } from "@/db/reviewStore";
 import { db } from "@/db/runtime";
 import { changeReviewDueDays } from "./changeReviewDueDays";
-import {
-  decideEdit,
-  type DecideEditResult,
-  type EditDecisionType,
-} from "./decideEdit";
+import { decideEdit, type DecideEditResult, type EditDecisionType } from "./decideEdit";
 import { AlreadyDecidedError, decidePost, type DecideResult, type DecisionType } from "./decidePost";
 
 // The review actions (#58). Each is from our own origin, then a signed-in session

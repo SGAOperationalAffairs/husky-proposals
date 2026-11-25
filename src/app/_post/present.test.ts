@@ -171,7 +171,11 @@ describe("toEditPost (#128)", () => {
         idea({ ...approved, edit: { state: "pending", reason: null, values: editValues } }),
       );
       expect(data.edit).toEqual({ state: "pending", reason: null });
-      expect(data.values).toMatchObject({ title: "Bike repair stand and pump", scale: "medium", anonymous: false });
+      expect(data.values).toMatchObject({
+        title: "Bike repair stand and pump",
+        scale: "medium",
+        anonymous: false,
+      });
     });
 
     it("a declined edit carries the reason, and the form holds the declined words", () => {

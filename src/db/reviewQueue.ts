@@ -4,7 +4,13 @@ import { boardAfterEdit, editFieldsOf, mayApproveEdit, type EditFields } from "@
 import { reviewDueAt } from "@/core/review";
 import { ideaForViewer, type LeaderIdea } from "@/core/viewerShapes";
 import type { Prisma } from "@/generated/prisma/client";
-import { awaitingEditReview, awaitingReview, editQueueSelect, isPublic, reviewQueueSelect } from "./ideaSelects";
+import {
+  awaitingEditReview,
+  awaitingReview,
+  editQueueSelect,
+  isPublic,
+  reviewQueueSelect,
+} from "./ideaSelects";
 
 // The review queue (#58): pending posts, and edits to approved posts (#295), on the
 // boards the viewer may review, oldest first. The scope comes from permissions, never

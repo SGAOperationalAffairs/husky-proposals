@@ -85,6 +85,8 @@ function DecisionBody({
       : undefined;
   const generalError = error && error.field !== "reason" ? error.text : undefined;
   const isBusy = busy !== null;
+  // An author's edit to an approved post (#295): the same drawer, with the diff first.
+  const edit = row.edit;
 
   const send = () => {
     if (isBusy) return;
@@ -100,17 +102,46 @@ function DecisionBody({
       <div className="flex items-start justify-between gap-3">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold">
           <span>{BOARDS[row.boardId].name}</span>
-          <span className="font-normal text-muted">{row.sentText}</span>
+          <span className="font-normal text-muted">{edit ? edit.sentText : row.sentText}</span>
           <span className={row.due.overdue ? "text-accent-text" : "font-normal text-muted"}>
             {row.due.text}
           </span>
         </p>
         <Dialog.Close render={<Button size="sm" icon={<X className="size-4" />} />}>Close</Dialog.Close>
       </div>
+      {edit && (
+        <p className="text-sm text-muted">
+          Changes to #{edit.number}. The approved version stays public until you decide.
+        </p>
+      )}
       <Dialog.Title className="heading text-4xl text-balance">{row.title}</Dialog.Title>
       <div className="flex flex-col gap-1 text-sm">
         <PosterLine poster={row.poster} />
       </div>
+      {edit && (
+        <section aria-label="What changed" className="flex flex-col gap-3 border-t border-line pt-4">
+          <h3 className="text-sm font-bold">What changed</h3>
+          {edit.changes.map((change) => (
+            <div key={change.label} className="flex flex-col gap-1 text-sm">
+              <p className="font-semibold">{change.label}</p>
+              <dl className="flex flex-col gap-1">
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-muted">Before</dt>
+                  <dd className="max-w-prose whitespace-pre-line">{change.before}</dd>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-muted">After</dt>
+                  <dd className="max-w-prose font-semibold whitespace-pre-line">{change.after}</dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+          {edit.unchanged.length > 0 && (
+            <p className="text-sm text-muted">Not changed: {edit.unchanged.join(", ")}.</p>
+          )}
+          <h3 className="pt-2 text-sm font-bold">The new version</h3>
+        </section>
+      )}
       <p className="max-w-prose font-semibold">{row.description}</p>
       {row.paragraphs.map((p) => (
         <p key={p} className="max-w-prose">
@@ -131,7 +162,11 @@ function DecisionBody({
           <TextArea
             label="Reason the student will see"
             required
-            hint={`Say what to change, so they can edit it and send it again. At least ${DECLINE_REASON_MIN} characters.`}
+            hint={
+              edit
+                ? `Say what to change. The approved version stays public. At least ${DECLINE_REASON_MIN} characters.`
+                : `Say what to change, so they can edit it and send it again. At least ${DECLINE_REASON_MIN} characters.`
+            }
             min={DECLINE_REASON_MIN}
             max={1000}
             value={reason}
@@ -168,11 +203,19 @@ function DecisionBody({
           </>
         ) : (
           <>
-            <Button variant="primary" aria-disabled={isBusy} onClick={() => !isBusy && onApprove()}>
-              {busy === "approve" ? "Approving…" : "Approve and post"}
-            </Button>
+            {/* A board move needs the VP, so a chair is told so instead of getting a button that fails (#295). */}
+            {edit && !edit.mayApprove ? (
+              <p className="w-full text-sm font-semibold">
+                This moves the idea to the {BOARDS[edit.boardAfter].name}. Only the VP of Campus Affairs can
+                approve a move. You can decline it with a reason.
+              </p>
+            ) : (
+              <Button variant="primary" aria-disabled={isBusy} onClick={() => !isBusy && onApprove()}>
+                {busy === "approve" ? "Approving…" : edit ? "Approve changes" : "Approve and post"}
+              </Button>
+            )}
             <Button variant="line" aria-disabled={isBusy} onClick={() => !isBusy && setDeclining(true)}>
-              Decline
+              {edit ? "Decline changes" : "Decline"}
             </Button>
           </>
         )}

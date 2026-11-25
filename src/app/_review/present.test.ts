@@ -80,10 +80,7 @@ describe("toReviewRow (#59)", () => {
   });
 
   it("never carries a name or email for a hidden anonymous author", () => {
-    const row = toReviewRow(
-      queued(leaderIdea({ isAnonymous: true, author: null, authorHidden: true })),
-      NOW,
-    );
+    const row = toReviewRow(queued(leaderIdea({ isAnonymous: true, author: null, authorHidden: true })), NOW);
     expect(row.poster).toEqual({ kind: "anonymous_hidden" });
     expect(Object.keys(row.poster)).toEqual(["kind"]);
     expect(JSON.stringify(row)).not.toContain("example.com");
@@ -118,7 +115,9 @@ describe("toReviewRow (#59)", () => {
     };
     // The queue read puts the pending words on the idea; the sent time is the edit's.
     const pendingIdea = leaderIdea({ number: 120, reviewStatus: "approved", title: "A quiet study room" });
-    const item = (overrides: Partial<NonNullable<ReviewQueueItemData["edit"]>> = {}): ReviewQueueItemData => ({
+    const item = (
+      overrides: Partial<NonNullable<ReviewQueueItemData["edit"]>> = {},
+    ): ReviewQueueItemData => ({
       idea: pendingIdea,
       dueAt,
       sentAt: new Date(NOW.getTime() - 4 * DAY),
