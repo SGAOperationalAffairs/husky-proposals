@@ -12,7 +12,7 @@ export const REVIEW_STATUSES = ["pending", "approved", "declined", "withdrawn", 
 export type ReviewStatus = (typeof REVIEW_STATUSES)[number];
 
 // Mirror the ReviewKind and ReviewDecision enums, pinned by tests (#50).
-export const REVIEW_KINDS = ["review", "take_down", "send_back"] as const;
+export const REVIEW_KINDS = ["review", "take_down", "send_back", "edit"] as const;
 export type ReviewKind = (typeof REVIEW_KINDS)[number];
 
 export const REVIEW_DECISIONS = ["approved", "declined"] as const;
@@ -110,7 +110,7 @@ const fail = (error: ReviewError): ReviewResult => ({ ok: false, error });
 export function applyReviewEvent(post: ReviewPost, event: ReviewEvent): ReviewResult {
   const next = TRANSITIONS[post.reviewStatus][event.type];
   if (next === undefined) {
-    // Approved posts are never edited (data-model gap 5).
+    // An approved post is edited through postEdit.ts (#295), not by resubmitting.
     if (post.reviewStatus === "approved" && event.type === "resubmit") return fail({ code: "not_editable" });
     return fail({ code: "invalid_transition", from: post.reviewStatus, event: event.type });
   }

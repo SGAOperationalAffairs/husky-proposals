@@ -205,6 +205,77 @@ describe("author shape", () => {
   });
 });
 
+// An edit to an approved post (#295). The edit's words are only ever on the author shape.
+describe("pending edits (#295)", () => {
+  const edit = {
+    id: "00000000-0000-7000-8000-0000000000e2",
+    title: "PENDING TITLE",
+    description: "Pending summary.",
+    fullText: "Pending details.",
+    category: "dining" as const,
+    location: null,
+    scale: "large" as const,
+    costBand: null,
+    timeHorizon: null,
+    isAnonymous: false,
+  };
+  const { id: editId, ...editValues } = edit;
+  const waiting = () =>
+    idea({ editSubmittedAt: new Date("2026-11-01T12:00:00Z"), revisions: [edit] });
+
+  it("gives the author the pending edit's words, while the idea fields stay approved", () => {
+    const result = ideaForViewer(author, waiting());
+    expect(result?.shape).toBe("author");
+    expect(result?.idea).toMatchObject({
+      title: "Compost bins in every dining hall",
+      edit: { state: "pending", reason: null, values: editValues },
+    });
+  });
+
+  it("gives the author a declined edit with its reason, until another edit is sent", () => {
+    const declined = idea({
+      editSubmittedAt: null,
+      revisions: [edit],
+      reviews: [{ decision: "declined", kind: "edit", reason: "Say who it helps.", revisionId: editId }],
+    });
+    expect(ideaForViewer(author, declined)?.idea).toMatchObject({
+      edit: { state: "declined", reason: "Say who it helps.", values: editValues },
+    });
+    // A newer revision than the one the review is on: nothing to show.
+    const newer = idea({
+      ...declined,
+      revisions: [{ ...edit, id: "00000000-0000-7000-8000-0000000000e3" }],
+    });
+    expect(ideaForViewer(author, newer)?.idea).toMatchObject({ edit: null });
+  });
+
+  it("shows no edit after an approved edit, or on a post that is not approved", () => {
+    const approvedEdit = idea({
+      revisions: [edit],
+      reviews: [{ decision: "approved", kind: "edit", reason: null, revisionId: editId }],
+    });
+    expect(ideaForViewer(author, approvedEdit)?.idea).toMatchObject({ edit: null });
+    const sentBack = idea({
+      reviewStatus: "declined",
+      revisions: [edit],
+      reviews: [{ decision: "declined", kind: "edit", reason: "No.", revisionId: editId }],
+    });
+    expect(ideaForViewer(author, sentBack)?.idea).toMatchObject({ edit: null });
+  });
+
+  it("never puts an edit, its marker, or its words on the student or leader shapes", () => {
+    for (const who of [visitor, student, dabChair, vp]) {
+      const result = ideaForViewer(who, waiting());
+      expect(result?.shape).not.toBe("author");
+      expect(result?.idea).not.toHaveProperty("edit");
+      expect(result?.idea).not.toHaveProperty("editSubmittedAt");
+      expect(result?.idea).not.toHaveProperty("revisions");
+      expect(everyKeyAndValue(result)).not.toContain("PENDING TITLE");
+      expect(everyKeyAndValue(result)).not.toContain("Pending details.");
+    }
+  });
+});
+
 describe("leader shape", () => {
   it("is not given to a student, even on an approved idea", () => {
     expect(ideaForViewer(student, idea())?.shape).toBe("student");

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   authorIdeaSelect,
+  awaitingEditReview,
   awaitingReview,
+  editQueueSelect,
   isPublic,
   leaderIdeaSelect,
   namedPost,
@@ -24,6 +26,15 @@ describe("studentIdeaSelect", () => {
     expect(studentIdeaSelect).not.toHaveProperty("authorId");
     expect(studentIdeaSelect).not.toHaveProperty("supports");
     expect(studentIdeaSelect).not.toHaveProperty("reviews");
+  });
+
+  // A pending edit is never public (#295): the student list reads neither the marker nor
+  // the revisions the edit lives in.
+  it("never reads a pending edit (#295)", () => {
+    expect(studentIdeaSelect).not.toHaveProperty("editSubmittedAt");
+    expect(studentIdeaSelect).not.toHaveProperty("revisions");
+    expect(leaderIdeaSelect).not.toHaveProperty("editSubmittedAt");
+    expect(leaderIdeaSelect).not.toHaveProperty("revisions");
   });
 
   // Pinned (#237): a new field, such as who closed an idea, fails here until someone
@@ -62,9 +73,16 @@ describe("author and leader selects", () => {
   it("the author select adds the viewer's own display name and only the latest review", () => {
     expect(authorIdeaSelect).toMatchObject({
       author: { select: { displayName: true } },
-      reviews: { select: { decision: true, kind: true, reason: true }, take: 1 },
+      reviews: { select: { decision: true, kind: true, reason: true, revisionId: true }, take: 1 },
     });
     expect(authorIdeaSelect).not.toHaveProperty("supports");
+  });
+
+  it("the author select adds the edit marker and the latest revision (#295)", () => {
+    expect(authorIdeaSelect).toMatchObject({
+      editSubmittedAt: true,
+      revisions: { orderBy: { version: "desc" }, take: 1 },
+    });
   });
 
   it("the leader select adds the author's identity and the supporters", () => {
@@ -101,6 +119,25 @@ describe("review queue select and filter (#58)", () => {
     expect(awaitingReview(["DAB", "SC"])).toEqual({
       reviewStatus: "pending",
       boardId: { in: ["DAB", "SC"] },
+    });
+  });
+});
+
+describe("edit queue select and filter (#295)", () => {
+  it("adds the sent time and the latest revision to the queue select, and still reads no supporters", () => {
+    expect(editQueueSelect).toMatchObject({
+      editSubmittedAt: true,
+      revisions: { orderBy: { version: "desc" }, take: 1 },
+      board: { select: { reviewDueDays: true } },
+    });
+    expect(editQueueSelect).not.toHaveProperty("supports");
+  });
+
+  it("awaitingEditReview is approved posts with an edit waiting on the given boards", () => {
+    expect(awaitingEditReview(["DAB"])).toEqual({
+      reviewStatus: "approved",
+      boardId: { in: ["DAB"] },
+      editSubmittedAt: { not: null },
     });
   });
 });

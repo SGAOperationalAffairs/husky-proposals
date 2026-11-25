@@ -1,5 +1,6 @@
 import type { BoardCode } from "./boards";
 import { can, canSeeWhoPosted, isAuthor, type Viewer } from "./permissions";
+import type { EditFields } from "./postEdit";
 import type { IdeaStatus } from "./statuses";
 import type { ReviewDecision, ReviewKind, ReviewStatus } from "./review";
 
@@ -41,7 +42,11 @@ export type IdeaRow = {
   // Leader and author selects only.
   authorId?: string | null;
   supports?: { user: { id: string; displayName: string; email: string } }[];
-  reviews?: { decision: ReviewDecision; kind: ReviewKind; reason: string | null }[];
+  reviews?: { decision: ReviewDecision; kind: ReviewKind; reason: string | null; revisionId?: string }[];
+  // Author select only (#295). editSubmittedAt is set while an edit waits; the edit is the
+  // latest revision. Neither is read by the student or leader selects.
+  editSubmittedAt?: Date | null;
+  revisions?: (EditFields & { id: string })[];
 };
 
 // The fields every viewer gets. Nothing identifying the author or supporters.
@@ -77,6 +82,9 @@ export type AuthorIdea = StudentIdea & {
   reviewStatus: ReviewStatus;
   isAnonymous: boolean;
   review: { decision: ReviewDecision; kind: ReviewKind; reason: string | null } | null;
+  // The author's edit to an approved post (#295), only ever on this shape. `values` is the
+  // edit itself, so the author sees their own words while students still see the approved ones.
+  edit: { state: "pending" | "declined"; reason: string | null; values: EditFields } | null;
 };
 
 export type Identity = { id: string; displayName: string; email: string };
@@ -152,7 +160,28 @@ function authorShape(row: IdeaRow): AuthorIdea {
     reviewStatus: row.reviewStatus,
     isAnonymous: row.isAnonymous,
     review: latest ? { decision: latest.decision, kind: latest.kind, reason: latest.reason } : null,
+    edit: editOf(row),
   };
+}
+
+// Pending while an edit waits. Declined when nothing waits, the post is approved, and the
+// newest review is a declined edit on the newest revision: an older declined edit, or one
+// already followed by another edit, shows nothing (#295).
+function editOf(row: IdeaRow): AuthorIdea["edit"] {
+  const latestRevision = row.revisions?.[0];
+  if (!latestRevision) return null;
+  const { id, ...values } = latestRevision;
+  if (row.editSubmittedAt) return { state: "pending", reason: null, values };
+  const latest = row.reviews?.[0];
+  if (
+    row.reviewStatus === "approved" &&
+    latest?.kind === "edit" &&
+    latest.decision === "declined" &&
+    latest.revisionId === id
+  ) {
+    return { state: "declined", reason: latest.reason, values };
+  }
+  return null;
 }
 
 function leaderShape(viewer: Viewer, row: IdeaRow): LeaderIdea {
