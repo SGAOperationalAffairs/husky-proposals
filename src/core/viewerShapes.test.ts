@@ -205,6 +205,101 @@ describe("author shape", () => {
   });
 });
 
+// An edit to an approved post (#295). The row carries the pending edit's words and the
+// marker; only the author's shape may carry them out.
+describe("pending edits (#295)", () => {
+  const EDIT_TITLE = "Compost bins in every dining hall and every library";
+  const editValues = {
+    title: EDIT_TITLE,
+    description: "Put compost bins next to every trash can, in the libraries too.",
+    fullText: "Full text of the edit.",
+    category: "dining" as const,
+    location: null,
+    scale: "large" as const,
+    costBand: null,
+    timeHorizon: null,
+    isAnonymous: false,
+  };
+  const withPendingEdit = idea({
+    editSubmittedAt: new Date("2026-11-20T12:00:00Z"),
+    revisions: [{ id: "rev-2", ...editValues }],
+    reviews: [{ decision: "approved", kind: "review", reason: null, revisionId: "rev-1" }],
+  });
+  const EDIT_KEYS = ["edit", "editSubmittedAt", "revisions", EDIT_TITLE];
+
+  it("gives the student shape no edit field, key, or word, to a visitor, a student, or another board's chair", () => {
+    for (const who of [visitor, student, cscChair]) {
+      const result = ideaForViewer(who, withPendingEdit);
+      expect(result?.shape).toBe("student");
+      const seen = everyKeyAndValue(result);
+      for (const forbidden of EDIT_KEYS) expect(seen).not.toContain(forbidden);
+    }
+  });
+
+  it("gives the leader shape no edit field either: the queue reads the edit separately", () => {
+    for (const who of [dabChair, vp]) {
+      const result = ideaForViewer(who, withPendingEdit);
+      expect(result?.shape).toBe("leader");
+      const seen = everyKeyAndValue(result);
+      for (const forbidden of EDIT_KEYS) expect(seen).not.toContain(forbidden);
+    }
+  });
+
+  it("gives the author the waiting edit and its words", () => {
+    const result = ideaForViewer(author, withPendingEdit);
+    expect(result?.shape).toBe("author");
+    expect(result?.idea).toMatchObject({
+      title: "Compost bins in every dining hall",
+      edit: { state: "pending", reason: null, values: { title: EDIT_TITLE, scale: "large" } },
+    });
+    expect(result?.idea).not.toHaveProperty("edit.values.id");
+  });
+
+  it("gives the author no edit when nothing was ever edited", () => {
+    const result = ideaForViewer(author, idea());
+    expect(result?.idea).toMatchObject({ edit: null });
+  });
+
+  it("gives the author a declined edit with its reason, while it is the latest version", () => {
+    const declined = idea({
+      editSubmittedAt: null,
+      revisions: [{ id: "rev-2", ...editValues }],
+      reviews: [{ decision: "declined", kind: "edit", reason: "Say where.", revisionId: "rev-2" }],
+    });
+    expect(ideaForViewer(author, declined)?.idea).toMatchObject({
+      edit: { state: "declined", reason: "Say where.", values: { title: EDIT_TITLE } },
+    });
+  });
+
+  it("gives the author no declined edit once a newer version exists", () => {
+    const replaced = idea({
+      editSubmittedAt: null,
+      revisions: [{ id: "rev-3", ...editValues }],
+      reviews: [{ decision: "declined", kind: "edit", reason: "Say where.", revisionId: "rev-2" }],
+    });
+    expect(ideaForViewer(author, replaced)?.idea).toMatchObject({ edit: null });
+  });
+
+  it("gives the author no edit after an approved edit", () => {
+    const approved = idea({
+      editSubmittedAt: null,
+      revisions: [{ id: "rev-2", ...editValues }],
+      reviews: [{ decision: "approved", kind: "edit", reason: null, revisionId: "rev-2" }],
+    });
+    expect(ideaForViewer(author, approved)?.idea).toMatchObject({ edit: null });
+  });
+
+  it("gives the author no edit on a post that is not approved", () => {
+    const takenDown = idea({
+      reviewStatus: "taken_down",
+      status: null,
+      editSubmittedAt: new Date("2026-11-20T12:00:00Z"),
+      revisions: [{ id: "rev-2", ...editValues }],
+    });
+    expect(ideaForViewer(author, takenDown)?.idea).toMatchObject({ edit: null });
+  });
+});
+
 describe("leader shape", () => {
   it("is not given to a student, even on an approved idea", () => {
     expect(ideaForViewer(student, idea())?.shape).toBe("student");

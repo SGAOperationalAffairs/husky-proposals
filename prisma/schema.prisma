@@ -77,11 +77,13 @@ enum ReviewDecision {
 
 // review is the decision on a submission. send_back returns an approved idea to
 // declined so the author can fix and resubmit it (#286). take_down ends an approved
-// idea for good, as taken_down (#286).
+// idea for good, as taken_down (#286). edit is a decision on an edit to an approved
+// post (#295).
 enum ReviewKind {
   review
   take_down
   send_back
+  edit // a decision on an edit to an approved post (#295)
 }
 
 enum ContactStatus {
@@ -213,6 +215,11 @@ model Board {
 //   The author can then edit and resubmit, as after any decline (#49, #286).
 // Rule: a take-down sets reviewStatus to taken_down and clears the same fields.
 //   taken_down is final, like withdrawn: no edit, resubmit, or withdraw (#286).
+// Rule: the idea row is always the approved version. An author's edit to an approved
+//   post is a new IdeaRevision, and editSubmittedAt marks that it waits for review.
+//   Approving it copies the revision onto the idea; declining only clears the marker.
+//   One edit waits at a time, and editSubmittedAt is null unless reviewStatus is
+//   approved (check constraint), so a pull-back or take-down drops a pending edit (#295).
 // Provisional: an idea that is sent back and approved again keeps its number.
 model Idea {
   id String @id @default(uuid(7)) @db.Uuid
@@ -243,8 +250,10 @@ model Idea {
   status        IdeaStatus?
   waitingReason String?      @map("waiting_reason") // students see this
   closedReason  String?      @map("closed_reason") // students see this
+  // Set while an edit waits for review; the edit is the latest revision (#295). Never public.
+  editSubmittedAt DateTime? @map("edit_submitted_at")
 
-  createdAt       DateTime  @default(now()) @map("created_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
   submittedAt     DateTime  @default(now()) @map("submitted_at") // latest submission; review is due the board's reviewDueDays after
   approvedAt      DateTime? @map("approved_at")
   statusChangedAt DateTime? @map("status_changed_at")
@@ -268,7 +277,8 @@ model Idea {
   @@map("ideas")
 }
 
-// One row per submission: the first post and each resubmit after a decline.
+// One row per submission: the first post, each resubmit after a decline, and each edit
+// to an approved post (#295).
 model IdeaRevision {
   id          String       @id @default(uuid(7)) @db.Uuid
   ideaId      String       @map("idea_id") @db.Uuid
@@ -300,6 +310,9 @@ model IdeaRevision {
 //   VP of Campus Affairs can decide, send back, or take down.
 // Rule: a take-down or send-back applies only to an idea whose reviewStatus is
 //   approved, and only to the revision that was approved.
+// Rule: a decision on an edit (kind edit) is on the edit's own revision. Declining it
+//   needs a reason like any decline, and only a reviewer who may review the idea's
+//   current board decides it. Moving the board through an edit needs the VP (#295).
 model Review {
   id         String         @id @default(uuid(7)) @db.Uuid
   ideaId     String         @map("idea_id") @db.Uuid

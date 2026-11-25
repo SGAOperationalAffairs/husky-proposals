@@ -1,5 +1,6 @@
 import type { BoardCode } from "./boards";
 import { can, canSeeWhoPosted, isAuthor, type Viewer } from "./permissions";
+import type { EditFields } from "./postEdit";
 import type { IdeaStatus } from "./statuses";
 import type { ReviewDecision, ReviewKind, ReviewStatus } from "./review";
 
@@ -41,7 +42,11 @@ export type IdeaRow = {
   // Leader and author selects only.
   authorId?: string | null;
   supports?: { user: { id: string; displayName: string; email: string } }[];
-  reviews?: { decision: ReviewDecision; kind: ReviewKind; reason: string | null }[];
+  // `revisionId` says which version a review decided (#295).
+  reviews?: { decision: ReviewDecision; kind: ReviewKind; reason: string | null; revisionId?: string }[];
+  // Author select only (#295): when an edit waits, and the latest version, which is the edit.
+  editSubmittedAt?: Date | null;
+  revisions?: (EditFields & { id: string })[];
 };
 
 // The fields every viewer gets. Nothing identifying the author or supporters.
@@ -73,10 +78,13 @@ export type StudentIdea = {
 
 // The author's own post: the student fields, plus its review state and reason. The kind
 // is the author's own decision type (sent back or taken down) and names no reviewer (#286).
+// `edit` is an edit to an approved post that waits, or was declined and not yet replaced,
+// with its words, so the author can see and fix them (#295).
 export type AuthorIdea = StudentIdea & {
   reviewStatus: ReviewStatus;
   isAnonymous: boolean;
   review: { decision: ReviewDecision; kind: ReviewKind; reason: string | null } | null;
+  edit: { state: "pending" | "declined"; reason: string | null; values: EditFields } | null;
 };
 
 export type Identity = { id: string; displayName: string; email: string };
@@ -152,7 +160,22 @@ function authorShape(row: IdeaRow): AuthorIdea {
     reviewStatus: row.reviewStatus,
     isAnonymous: row.isAnonymous,
     review: latest ? { decision: latest.decision, kind: latest.kind, reason: latest.reason } : null,
+    edit: authorEdit(row),
   };
+}
+
+// Only the author's shape carries an edit. The latest revision is the edit, so a
+// declined one counts only while it is still the latest version and nothing newer waits.
+function authorEdit(row: IdeaRow): AuthorIdea["edit"] {
+  const latestRevision = row.revisions?.[0];
+  if (row.reviewStatus !== "approved" || !latestRevision) return null;
+  const { id, ...values } = latestRevision;
+  if (row.editSubmittedAt) return { state: "pending", reason: null, values };
+  const latest = row.reviews?.[0];
+  if (latest?.kind === "edit" && latest.decision === "declined" && latest.revisionId === id) {
+    return { state: "declined", reason: latest.reason, values };
+  }
+  return null;
 }
 
 function leaderShape(viewer: Viewer, row: IdeaRow): LeaderIdea {

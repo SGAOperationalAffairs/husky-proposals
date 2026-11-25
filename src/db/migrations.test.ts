@@ -92,9 +92,10 @@ describe("check constraints (#44)", () => {
     "boards_review_due_days_range",
     "ideas_closed_needs_reason",
     "reviews_send_back_is_decline",
+    "ideas_edit_only_when_approved",
   ];
 
-  it("each of the seven constraints is added by a migration", () => {
+  it("each of the eight constraints is added by a migration", () => {
     const all = migrationFiles()
       .map((file) => readFileSync(file, "utf8"))
       .join("\n");
