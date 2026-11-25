@@ -71,6 +71,42 @@ describe("leader panel on the idea page (#59)", () => {
   });
 });
 
+describe("leader panel supporters (#100)", () => {
+  it("lists the supporters below the poster line", () => {
+    render(
+      <LeaderIdeaPanel
+        poster={named}
+        reviewerLabel={null}
+        mayManageStatus={false}
+        mayTakeDown={false}
+        supporters={[{ name: "Priya Test", email: "priya.test@example.com" }]}
+      />,
+    );
+    const poster = screen.getByText("Posted by Maya Test, maya.test@example.com");
+    const heading = screen.getByRole("heading", { name: "Who supported" });
+    expect(poster.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Priya Test, priya.test@example.com")).toBeTruthy();
+  });
+
+  it("renders nothing about supporters when the list is null or absent", () => {
+    const { rerender } = render(
+      <LeaderIdeaPanel
+        poster={named}
+        reviewerLabel={null}
+        mayManageStatus={false}
+        mayTakeDown={false}
+        supporters={null}
+      />,
+    );
+    expect(screen.queryByRole("heading", { name: "Who supported" })).toBeNull();
+    expect(screen.queryByText(/No one has supported/)).toBeNull();
+    rerender(
+      <LeaderIdeaPanel poster={named} reviewerLabel={null} mayManageStatus={false} mayTakeDown={false} />,
+    );
+    expect(screen.queryByRole("heading", { name: "Who supported" })).toBeNull();
+  });
+});
+
 describe("leader panel status slot (#98)", () => {
   it("shows the status actions only when the viewer may manage status", () => {
     const { rerender } = render(

@@ -182,6 +182,39 @@ describe("toLeaderPanel (#59)", () => {
     });
   });
 
+  describe("supporters (#100)", () => {
+    const panelFor = (supporters: LeaderIdea["supporters"]) =>
+      toLeaderPanel(
+        {
+          idea: leaderIdea({ number: 157, status: "in_progress", supporters }),
+          mayTakeDown: false,
+          mayManageStatus: false,
+          cadenceDays: 30,
+        },
+        [],
+      );
+
+    it("maps each supporter to a name and an email, with no id anywhere", () => {
+      const panel = panelFor([
+        { id: "u2", displayName: "Priya Test", email: "priya.test@example.com" },
+        { id: "u3", displayName: "Chris Test", email: "chris.test@example.com" },
+      ]);
+      expect(panel.supporters).toEqual([
+        { name: "Priya Test", email: "priya.test@example.com" },
+        { name: "Chris Test", email: "chris.test@example.com" },
+      ]);
+      expect(JSON.stringify(panel.supporters)).not.toContain("u2");
+    });
+
+    it("is null when the shape's list is null", () => {
+      expect(panelFor(null).supporters).toBeNull();
+    });
+
+    it("is an empty list when there are no supporters", () => {
+      expect(panelFor([]).supporters).toEqual([]);
+    });
+  });
+
   it("treats an approved idea with no status as a bad row", () => {
     const idea = leaderIdea({ number: 157, status: null });
     expect(() =>

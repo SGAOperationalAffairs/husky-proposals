@@ -100,7 +100,8 @@ describe("position-to-role mapping (#45)", () => {
 
 describe("who counts as an SGA leader, the one D16 function (#45)", () => {
   it("is true for every Executive Board key (D16 option A, #100)", () => {
-    for (const key of EXECUTIVE_BOARD_POSITIONS) expect(isSgaLeader(rolesFromPositions([key])), key).toBe(true);
+    for (const key of EXECUTIVE_BOARD_POSITIONS)
+      expect(isSgaLeader(rolesFromPositions([key])), key).toBe(true);
   });
 
   it("is true for the VP and for a board lead", () => {

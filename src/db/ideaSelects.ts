@@ -80,6 +80,14 @@ export const reviewQueueSelect = {
   board: { select: { reviewDueDays: true } },
 } as const satisfies Prisma.IdeaSelect;
 
+// The leader's idea page (#100): the queue's fields plus the supporters, oldest first.
+// One query per page, never one per supporter. viewerShapes still decides whether the
+// list reaches the viewer.
+export const leaderPageSelect = {
+  ...reviewQueueSelect,
+  supports: { select: leaderIdeaSelect.supports.select, orderBy: { createdAt: "asc" } },
+} as const satisfies Prisma.IdeaSelect;
+
 // Posts waiting for a decision on these boards. Pair it with boardsFor(viewer, "review").
 export function awaitingReview(boards: BoardCode[]) {
   return { reviewStatus: "pending", boardId: { in: boards } } satisfies Prisma.IdeaWhereInput;

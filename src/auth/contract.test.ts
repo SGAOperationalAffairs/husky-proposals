@@ -65,6 +65,11 @@ describe("SGAuth session contract (#45)", () => {
       user: { ...body.user, isAdmin: true, isPrimaryAdmin: true },
       positions: [],
     });
-    expect(result.ok && result.session.roles).toEqual({ vpCampusAffairs: false, executiveBoard: false, leads: [], memberOf: [] });
+    expect(result.ok && result.session.roles).toEqual({
+      vpCampusAffairs: false,
+      executiveBoard: false,
+      leads: [],
+      memberOf: [],
+    });
   });
 });

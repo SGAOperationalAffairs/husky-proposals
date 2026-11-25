@@ -23,6 +23,7 @@ export function navTabsFor(viewer: Viewer): NavTab[] {
   const [queue, people, updates] = LEADER_ROUTES;
   if (boardsFor(viewer, "review").length > 0) tabs.push({ id: "queue", label: "Queue", href: queue });
   if (boardsFor(viewer, "see_people").length > 0) tabs.push({ id: "people", label: "People", href: people });
-  if (boardsFor(viewer, "manage_status").length > 0) tabs.push({ id: "updates", label: "Updates", href: updates });
+  if (boardsFor(viewer, "manage_status").length > 0)
+    tabs.push({ id: "updates", label: "Updates", href: updates });
   return tabs;
 }

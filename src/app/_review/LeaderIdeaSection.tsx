@@ -33,6 +33,7 @@ export async function LeaderIdeaSection({ params }: { params: PageProps<"/ideas/
       reviewerLabel={panel.reviewerLabel}
       mayManageStatus={panel.mayManageStatus}
       mayTakeDown={panel.mayTakeDown}
+      supporters={panel.supporters}
       status={
         <IdeaStatusControls
           ideaId={panel.ideaId}

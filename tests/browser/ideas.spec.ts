@@ -64,6 +64,19 @@ test.describe("idea page (#62)", () => {
     await expect(page.getByRole("button", { name: "Take down" })).toHaveCount(0);
   });
 
+  test("a visitor sees who can see supporters, and no emails (#100)", async ({ page }) => {
+    await page.goto("/ideas/103");
+    await expect(
+      page.getByText(
+        "Your support counts toward this number. Only SGA's Executive Board and the Dining Advisory Board's chair or director see who supported.",
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Who supported" })).toHaveCount(0);
+    const text = await page.locator("body").innerText();
+    expect(text).not.toContain("@example.com");
+    expect(text).not.toContain("@northeastern.edu");
+  });
+
   test("updates are their own card, newest first, with status changes labeled (#131)", async ({ page }) => {
     await page.goto("/ideas/103");
     await expect(page.getByRole("heading", { name: "Updates", level: 2 })).toBeVisible();

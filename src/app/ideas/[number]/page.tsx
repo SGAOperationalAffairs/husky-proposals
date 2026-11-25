@@ -135,6 +135,10 @@ async function Idea({ params }: { params: PageProps<"/ideas/[number]">["params"]
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">{idea.supportCount} supporters</h2>
             <SupportSquares count={idea.supportCount} board={idea.board} rank={idea.rank} />
+            {/* Static, so the cached page stays the same for everyone (#100). */}
+            <p className="text-sm text-muted">
+              {`Your support counts toward this number. Only SGA's Executive Board and the ${board.name}'s chair or director see who supported.`}
+            </p>
           </section>
           <section className="flex flex-col gap-3 bg-surface p-card surface-float">
             <h2 className="heading text-3xl">Share this idea</h2>

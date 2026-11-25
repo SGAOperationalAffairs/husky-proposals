@@ -53,6 +53,9 @@ export type LeaderPanelData = {
   cadenceDays: number;
   reviewerLabel: string | null;
   poster: PosterData;
+  // Null when the viewer may not see supporters (#100). No ids: the browser does not
+  // need user ids.
+  supporters: { name: string; email: string }[] | null;
 };
 
 const NOT_SURE = "Not sure";
@@ -136,5 +139,6 @@ export function toLeaderPanel(
     cadenceDays,
     reviewerLabel: mayTakeDown ? reviewerLabel(reviewBoards) : null,
     poster: posterOf(idea),
+    supporters: idea.supporters?.map(({ displayName, email }) => ({ name: displayName, email })) ?? null,
   };
 }
