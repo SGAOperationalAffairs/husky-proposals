@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PosterLine, type PosterData } from "./PosterLine";
+import { SupporterList } from "./SupporterList";
 import { ReviewerTag } from "./Tag";
 
 // The extra panel a leader sees on an idea's public page (#59): who posted, the
@@ -19,6 +20,9 @@ type Props = {
   checkIn?: ReactNode;
   // The Send back and Take down controls (#286). The slot and `mayTakeDown` keep their names.
   takeDown?: ReactNode;
+  // Null or absent when the viewer may not see supporters: nothing renders, and nothing
+  // hints that names exist (#100).
+  supporters?: { name: string; email: string }[] | null;
 };
 
 export function LeaderIdeaPanel({
@@ -29,6 +33,7 @@ export function LeaderIdeaPanel({
   status,
   checkIn,
   takeDown,
+  supporters,
 }: Props) {
   return (
     <section className="flex flex-col gap-3 bg-surface p-card surface-float">
@@ -39,6 +44,7 @@ export function LeaderIdeaPanel({
       <div className="flex flex-col gap-1 text-sm">
         <PosterLine poster={poster} />
       </div>
+      {supporters && <SupporterList supporters={supporters} />}
       {mayManageStatus && status}
       {mayManageStatus && checkIn}
       {mayTakeDown && takeDown}

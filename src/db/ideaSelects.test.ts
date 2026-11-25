@@ -4,6 +4,7 @@ import {
   awaitingReview,
   isPublic,
   leaderIdeaSelect,
+  leaderPageSelect,
   namedPost,
   onWall,
   publicAuthorSelect,
@@ -95,6 +96,18 @@ describe("review queue select and filter (#58)", () => {
 
   it("still includes the student fields", () => {
     for (const key of Object.keys(studentIdeaSelect)) expect(reviewQueueSelect).toHaveProperty(key);
+  });
+
+  it("the leader page select is the queue select plus supporters, oldest first (#100)", () => {
+    for (const key of Object.keys(reviewQueueSelect)) {
+      if (key === "supports") continue;
+      expect(leaderPageSelect, key).toHaveProperty(key);
+    }
+    expect(leaderPageSelect.supports).toEqual({
+      select: leaderIdeaSelect.supports.select,
+      orderBy: { createdAt: "asc" },
+    });
+    expect(reviewQueueSelect).not.toHaveProperty("supports");
   });
 
   it("awaitingReview is pending posts on the given boards", () => {

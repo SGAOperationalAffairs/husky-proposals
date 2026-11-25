@@ -16,7 +16,7 @@ Updated October 22, 2026: users come from SGAuth, roles come from SGAuth positio
 **Roles come from SGAuth positions, not from our tables.**
 - Each session lists the user's position keys.
 - One module maps keys to boards and abilities. See `sgauth-integration.md` for the table.
-- Who counts as an "SGA leader" for seeing names is open (PRD D16). Model it as one function that can change.
+- Who counts as an "SGA leader" for seeing names is decided (PRD D16 option A, November 2, 2026): the Executive Board plus the chair or director of the idea's own board. It is one function that can change.
 
 **board**
 `id`, `code` (DAB, CPAB, CSC, GIB, SC), `name`, `category_tag`, `chair_position_key`, `member_position_key`.
@@ -131,8 +131,8 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
   - Pending, declined, and taken-down posts are never shown to them.
 - **The author:** sees their own post and its review status, with the reviewer's reason if declined, sent back, or taken down. A sent-back post can be edited and resubmitted. A taken-down post cannot.
 - **Anonymous authors:** only the reviewer for the idea's board and the VP of Campus Affairs can see who posted an anonymous idea, so someone can follow up if it moves forward. No other leader sees it.
-- **SGA leaders:** see the author of a non-anonymous post, and supporters, with names and northeastern.edu emails (names alone are often too generic to identify someone). How to define "leader" is open (D16). So is whether to log views.
-- **VPs** see the boards in their own division only, for compartmentalization. In version 1 that is the VP of Campus Affairs and the five Campus Affairs boards.
+- **SGA leaders:** see the author of a non-anonymous post, and supporters, with names and northeastern.edu emails (names alone are often too generic to identify someone). Who counts is decided (D16 option A, November 2, 2026): the Executive Board, plus the chair or director of the idea's own board. Whether to log views is still open.
+- **The VP of Campus Affairs** runs and reviews all five boards. Every Executive Board member, including the VPs of other divisions, sees who posted a named idea and who supported on all five boards (D16 option A). Only the board's reviewer and the VP of Campus Affairs see an anonymous poster.
 - **Separate response shapes:** return different shapes for students and leaders, so private fields cannot leak by accident. Test this.
 - **Confidential records:** who posted and who supported must be designated confidential records in SGA's data policy (D14, Bylaws XVII).
 
@@ -143,8 +143,8 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | Browse approved ideas | Yes | Yes | Yes | Yes | Yes |
 | Post an idea (anonymous optional) | No | Yes | Yes | Yes | Yes |
 | Support, follow, offer to help | No (the tap is remembered until they sign in) | Yes | Yes | Yes | Yes |
-| See pending posts and decide them | No | No | Own board | All boards | Open |
-| See who posted and who supported | No | No | Own board | All boards | Open (D16) |
+| See pending posts and decide them | No | No | Own board | All boards | No |
+| See who posted and who supported | No | No | Own board | All boards | All boards (Executive Board, D16 option A) |
 | See who posted an anonymous idea | No | No | Own board (as reviewer) | All boards | No |
 | Move an idea through statuses, post updates | No | No | Own board | All boards | No |
 | Change an idea's board | No | No | No | Yes | No |
@@ -154,6 +154,8 @@ Counts, rank, and the stale flag come from the `idea_stats` database view (`pris
 | Turn promotion on (admin switch, off by default; later) | No | No | No | Yes | No |
 
 "Open" means not decided yet. In the chair or director column, "Own board" means only the board they lead. A chair or director sees who posted and who supported, and the People list, only for their own board (D16 option A, #59).
+
+"Other SGA leader" means the Executive Board members other than the VP of Campus Affairs (D16 option A, #100). A person who holds more than one role gets everything each of their roles allows. For example, an Executive Board member who chairs DAB reviews DAB and sees names on all five boards.
 
 ## Screens (from the prototype)
 

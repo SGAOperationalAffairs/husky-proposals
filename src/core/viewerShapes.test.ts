@@ -108,6 +108,29 @@ describe("student shape", () => {
       expect(ideaForViewer(student, idea({ reviewStatus }))).toBeNull();
     }
   });
+
+  // The acceptance's shape test (#100): no names in any student or visitor response,
+  // whoever asks, on a named and an anonymous post.
+  it("holds no identity for a visitor, a student, a board member, an unmapped position, or another board's chair", () => {
+    const viewers: [string, Viewer][] = [
+      ["visitor", visitor],
+      ["student", student],
+      ["DAB member", viewer("dab-member", [BOARD_POSITIONS.DAB.member])],
+      ["unmapped position", viewer("unmapped", ["vice-president-of-finance"])],
+      ["CSC chair", cscChair],
+    ];
+    for (const [label, who] of viewers) {
+      for (const isAnonymous of [false, true]) {
+        const result = ideaForViewer(who, idea({ isAnonymous }));
+        expect(result?.shape, label).toBe("student");
+        const seen = everyKeyAndValue(result);
+        for (const forbidden of FORBIDDEN_IN_STUDENT_SHAPE) {
+          expect(seen, `${label}, anonymous ${isAnonymous}`).not.toContain(forbidden);
+        }
+        expect(seen, label).not.toContain("Sam Supporter");
+      }
+    }
+  });
 });
 
 // A closed idea (#237). The reason is public, like the hold reason. No column says who
@@ -260,6 +283,63 @@ describe("leader shape", () => {
   it("shows the anonymous author to the VP", () => {
     const result = ideaForViewer(vp, idea({ isAnonymous: true }));
     expect(result?.idea).toMatchObject({ author: { id: AUTHOR_ID }, authorHidden: false });
+  });
+
+  describe("the Executive Board (#100)", () => {
+    const execBoard = viewer("exec", ["executive-vice-president"]);
+
+    it("gets the leader shape on every board, with the named author and the supporters", () => {
+      for (const boardId of ["DAB", "CPAB", "CSC", "GIB", "SC"] as const) {
+        const result = ideaForViewer(execBoard, idea({ boardId }));
+        expect(result?.shape, boardId).toBe("leader");
+        expect(result?.idea, boardId).toMatchObject({
+          author: { id: AUTHOR_ID, displayName: "Ada Lovelace" },
+          supporters: [{ id: SUPPORTER_ID, displayName: "Sam Supporter" }],
+        });
+      }
+    });
+
+    it("gets no author on an anonymous post, but still sees the supporters", () => {
+      const result = ideaForViewer(execBoard, idea({ isAnonymous: true }));
+      expect(result?.idea).toMatchObject({ author: null, authorHidden: true });
+      expect(result?.idea).toMatchObject({ supporters: [{ id: SUPPORTER_ID }] });
+      expect(everyKeyAndValue(result)).not.toContain("ada@northeastern.edu");
+    });
+
+    it("gets nothing for a pending, declined, withdrawn, or taken-down post", () => {
+      for (const reviewStatus of ["pending", "declined", "withdrawn", "taken_down"] as const) {
+        expect(ideaForViewer(execBoard, idea({ reviewStatus, status: null })), reviewStatus).toBeNull();
+      }
+    });
+  });
+
+  describe("a person on the Executive Board who chairs DAB (#100)", () => {
+    const dual = viewer("dual", ["speaker-of-the-senate", BOARD_POSITIONS.DAB.lead]);
+
+    it("sees an anonymous author on a DAB post, and not on a CSC post", () => {
+      expect(ideaForViewer(dual, idea({ isAnonymous: true }))?.idea).toMatchObject({
+        author: { id: AUTHOR_ID },
+        authorHidden: false,
+      });
+      expect(ideaForViewer(dual, idea({ isAnonymous: true, boardId: "CSC" }))?.idea).toMatchObject({
+        author: null,
+        authorHidden: true,
+      });
+    });
+
+    it("sees supporters on both boards", () => {
+      for (const boardId of ["DAB", "CSC"] as const) {
+        expect(ideaForViewer(dual, idea({ boardId }))?.idea, boardId).toMatchObject({
+          supporters: [{ id: SUPPORTER_ID }],
+        });
+      }
+    });
+
+    it("gets the same pending-post shape as a plain DAB chair", () => {
+      const pending = idea({ reviewStatus: "pending", supports: undefined });
+      expect(ideaForViewer(dual, pending)).toEqual(ideaForViewer(dabChair, pending));
+      expect(ideaForViewer(dual, idea({ reviewStatus: "pending", boardId: "CSC" }))).toBeNull();
+    });
   });
 
   it("shows no supporter list at all when one supporter's identity is incomplete", () => {

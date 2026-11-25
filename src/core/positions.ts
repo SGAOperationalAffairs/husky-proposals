@@ -20,8 +20,25 @@ export const BOARD_POSITIONS: Record<BoardCode, { lead: string; member: string }
   SC: { lead: "director-of-sustainability", member: "sustainability-committee-member" },
 };
 
+// The ten officers in Constitution Article IV (#100). The VP of Campus Affairs is
+// on it too; that key also sets vpCampusAffairs, and the VP column is a superset.
+export const EXECUTIVE_BOARD_POSITIONS: readonly string[] = [
+  "student-body-president",
+  "executive-vice-president",
+  "speaker-of-the-senate",
+  "vice-president-of-academic-affairs",
+  VP_CAMPUS_AFFAIRS,
+  "vice-president-of-diversity-equity-and-inclusion",
+  "vice-president-of-external-affairs",
+  "vice-president-of-operational-affairs",
+  "vice-president-of-student-involvement",
+  "vice-president-of-student-success",
+];
+
 export type Roles = {
   vpCampusAffairs: boolean;
+  // On the Executive Board (D16 option A). Independent of leads and vpCampusAffairs.
+  executiveBoard: boolean;
   // Boards this person reviews posts for and runs (chair or director).
   leads: BoardCode[];
   memberOf: BoardCode[];
@@ -33,6 +50,7 @@ export function rolesFromPositions(keys: readonly string[]): Roles {
   const held = new Set(keys);
   return {
     vpCampusAffairs: held.has(VP_CAMPUS_AFFAIRS),
+    executiveBoard: EXECUTIVE_BOARD_POSITIONS.some((key) => held.has(key)),
     leads: BOARD_CODES.filter((board) => held.has(BOARD_POSITIONS[board].lead)),
     memberOf: BOARD_CODES.filter((board) => held.has(BOARD_POSITIONS[board].member)),
   };
@@ -44,10 +62,10 @@ export function boardsRun(roles: Roles): BoardCode[] {
   return roles.vpCampusAffairs ? [...BOARD_CODES] : roles.leads;
 }
 
-// The one place that decides who counts as an SGA leader, who may see who
-// posted and who supported (PRD D16, still open). For now: the VP or anyone
-// who leads a board. Board members and unmapped SGA positions are not leaders.
-// If D16 widens this, only this function changes. Callers never re-derive it.
+// The one place that decides who counts as an SGA leader (PRD D16 option A, decided
+// Nov 2, 2026): the VP of Campus Affairs, anyone who leads a board, or anyone on the
+// Executive Board. Board members and unmapped SGA positions are not leaders. This
+// says who is a leader, not what they may do: pages and tabs ask can() (#100).
 export function isSgaLeader(roles: Roles): boolean {
-  return roles.vpCampusAffairs || roles.leads.length > 0;
+  return roles.vpCampusAffairs || roles.executiveBoard || roles.leads.length > 0;
 }

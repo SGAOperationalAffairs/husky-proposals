@@ -29,6 +29,20 @@ describe("navTabsFor (#156)", () => {
     expect(ids(viewer("vp", [VP_CAMPUS_AFFAIRS]))).toEqual(["ideas", "me", "queue", "people", "updates"]);
   });
 
+  it("gives an Executive Board member only Ideas and My ideas (#100)", () => {
+    expect(ids(viewer("exec", ["executive-vice-president"]))).toEqual(["ideas", "me"]);
+  });
+
+  it("gives an Executive Board member who chairs DAB the chair's tabs (#100)", () => {
+    expect(ids(viewer("dual", ["speaker-of-the-senate", BOARD_POSITIONS.DAB.lead]))).toEqual([
+      "ideas",
+      "me",
+      "queue",
+      "people",
+      "updates",
+    ]);
+  });
+
   it("links the leader tabs to LEADER_ROUTES, the list the proxy guards (#235)", () => {
     const hrefs = navTabsFor(viewer("vp", [VP_CAMPUS_AFFAIRS])).map((t) => t.href);
     expect(hrefs.slice(2)).toEqual([...LEADER_ROUTES]);

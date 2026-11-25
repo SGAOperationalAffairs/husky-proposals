@@ -14,6 +14,14 @@ const viewerFor = (id: string, positions: string[]): Viewer => ({
 const dabChair = viewerFor(users.dabChair.id, [BOARD_POSITIONS.DAB.lead]);
 const vp = viewerFor(users.vp.id, [VP_CAMPUS_AFFAIRS]);
 const student = viewerFor(users.secondStudent.id, []);
+// Neither is the author of any fixture idea, so only roles decide what they see (#100).
+const execBoard = viewerFor(users.dabChair.id, ["executive-vice-president"]);
+const execDabChair = viewerFor(users.dabChair.id, ["speaker-of-the-senate", BOARD_POSITIONS.DAB.lead]);
+
+// Sorted, since the fixture's supports share one timestamp. The select's order is
+// pinned in ideaSelects.test.ts.
+const supporterIds = (result: Awaited<ReturnType<typeof leaderIdeaByNumber>>) =>
+  result?.idea.supporters?.map((s) => s.id).sort();
 
 describeWithDatabase("the leader read for an idea page (#59)", () => {
   it("gives the DAB chair the poster and a take-down on a DAB idea", async () => {
@@ -21,8 +29,57 @@ describeWithDatabase("the leader read for an idea page (#59)", () => {
       const result = await leaderIdeaByNumber(tx, dabChair, ideas.foodPantry.number!);
       expect(result?.mayTakeDown).toBe(true);
       expect(result?.idea.author?.id).toBe(users.student.id);
-      // Supporter names stay with #100 and #129.
-      expect(result?.idea.supporters).toBeNull();
+      expect(supporterIds(result)).toEqual([users.secondStudent.id, users.anonymousAuthor.id].sort());
+    });
+  });
+
+  it("gives the VP the one supporter of a CPAB idea (#100)", async () => {
+    await withSeed(async (tx) => {
+      const result = await leaderIdeaByNumber(tx, vp, ideas.walkSignal.number!);
+      expect(supporterIds(result)).toEqual([users.student.id]);
+    });
+  });
+
+  it("gives an Executive Board viewer the names, with no actions (#100)", async () => {
+    await withSeed(async (tx) => {
+      const result = await leaderIdeaByNumber(tx, execBoard, ideas.foodPantry.number!);
+      expect(result?.idea.author?.id).toBe(users.student.id);
+      expect(supporterIds(result)).toEqual([users.secondStudent.id, users.anonymousAuthor.id].sort());
+      expect(result?.mayTakeDown).toBe(false);
+      expect(result?.mayManageStatus).toBe(false);
+    });
+  });
+
+  it("hides an anonymous author from the Executive Board and gives an empty supporter list (#100)", async () => {
+    await withSeed(async (tx) => {
+      const result = await leaderIdeaByNumber(tx, execBoard, ideas.lateNightDining.number!);
+      expect(result?.idea.authorHidden).toBe(true);
+      expect(result?.idea.author).toBeNull();
+      expect(result?.idea.supporters).toEqual([]);
+    });
+  });
+
+  it("gives an Executive Board member who chairs DAB the union (#100)", async () => {
+    await withSeed(async (tx) => {
+      // Not DAB: names only, where a plain DAB chair gets nothing.
+      const cpab = await leaderIdeaByNumber(tx, execDabChair, ideas.walkSignal.number!);
+      expect(supporterIds(cpab)).toEqual([users.student.id]);
+      expect(cpab?.mayTakeDown).toBe(false);
+      expect(cpab?.mayManageStatus).toBe(false);
+
+      const dab = await leaderIdeaByNumber(tx, execDabChair, ideas.foodPantry.number!);
+      expect(supporterIds(dab)).toEqual([users.secondStudent.id, users.anonymousAuthor.id].sort());
+      expect(dab?.mayTakeDown).toBe(true);
+      expect(dab?.mayManageStatus).toBe(true);
+
+      const anonymous = await leaderIdeaByNumber(tx, execDabChair, ideas.lateNightDining.number!);
+      expect(anonymous?.idea.author?.id).toBe(users.anonymousAuthor.id);
+    });
+  });
+
+  it("gives a student no supporters (#100)", async () => {
+    await withSeed(async (tx) => {
+      expect(await leaderIdeaByNumber(tx, student, ideas.foodPantry.number!)).toBeNull();
     });
   });
 

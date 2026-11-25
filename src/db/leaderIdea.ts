@@ -2,7 +2,7 @@ import type { BoardCode } from "@/core/boards";
 import { boardsFor, can, type Viewer } from "@/core/permissions";
 import { ideaForViewer, type LeaderIdea } from "@/core/viewerShapes";
 import type { Prisma } from "@/generated/prisma/client";
-import { isPublic, reviewQueueSelect } from "./ideaSelects";
+import { isPublic, leaderPageSelect } from "./ideaSelects";
 
 // What a leader sees on top of the public idea page (#59): who posted, and whether
 // they may take the idea down or change its status. Approved ideas only, so it can never reveal a pending
@@ -18,10 +18,10 @@ export type LeaderIdeaData = {
   cadenceDays: number;
 };
 
-// The review queue's read, with the board's update schedule added to its board join.
+// The leader page's read, with the board's update schedule added to its board join.
 const leaderIdeaPageSelect = {
-  ...reviewQueueSelect,
-  board: { select: { ...reviewQueueSelect.board.select, updateCadenceDays: true } },
+  ...leaderPageSelect,
+  board: { select: { ...leaderPageSelect.board.select, updateCadenceDays: true } },
 } as const satisfies Prisma.IdeaSelect;
 
 export async function leaderIdeaByNumber(

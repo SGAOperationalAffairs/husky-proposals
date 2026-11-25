@@ -24,7 +24,7 @@ export default function Updates() {
 
 async function UpdatesContent() {
   await connection();
-  const session = await requireLeader();
+  const session = await requireLeader("manage_status");
   const viewer = { user: { id: session.user.id }, roles: session.roles };
   // The boards this leader may post updates on, the same row as start, hold, and deliver:
   // all five for the VP, the board's own for a chair or director.
