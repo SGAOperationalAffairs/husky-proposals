@@ -1,6 +1,6 @@
 import type { BoardCode } from "./boards";
 import { can, canSeeWhoPosted, isAuthor, type Viewer } from "./permissions";
-import type { EditFields } from "./postEdit";
+import { editFieldsOf, type EditFields } from "./postEdit";
 import type { IdeaStatus } from "./statuses";
 import type { ReviewDecision, ReviewKind, ReviewStatus } from "./review";
 
@@ -169,10 +169,10 @@ function authorShape(row: IdeaRow): AuthorIdea {
 function authorEdit(row: IdeaRow): AuthorIdea["edit"] {
   const latestRevision = row.revisions?.[0];
   if (row.reviewStatus !== "approved" || !latestRevision) return null;
-  const { id, ...values } = latestRevision;
+  const values = editFieldsOf(latestRevision);
   if (row.editSubmittedAt) return { state: "pending", reason: null, values };
   const latest = row.reviews?.[0];
-  if (latest?.kind === "edit" && latest.decision === "declined" && latest.revisionId === id) {
+  if (latest?.kind === "edit" && latest.decision === "declined" && latest.revisionId === latestRevision.id) {
     return { state: "declined", reason: latest.reason, values };
   }
   return null;

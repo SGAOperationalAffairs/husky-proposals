@@ -49,15 +49,32 @@ export const publicAuthorSelect = {
 // review carries the reviewer's reason, shown only to the author (data model). Its kind
 // says whether a declined post was sent back (#286). It names no reviewer. The author's
 // name is read explicitly: ownPost.ts filters on authorId, so the name is the viewer's own.
+// An edit to an approved post is the latest revision, and editSubmittedAt says it waits
+// (#295). Both are read only here: the student and leader selects never carry them.
+export const editRevisionSelect = {
+  id: true,
+  title: true,
+  description: true,
+  fullText: true,
+  category: true,
+  location: true,
+  scale: true,
+  costBand: true,
+  timeHorizon: true,
+  isAnonymous: true,
+} as const satisfies Prisma.IdeaRevisionSelect;
+
 export const authorIdeaSelect = {
   ...studentIdeaSelect,
   authorId: true,
   author: { select: { displayName: true } },
+  editSubmittedAt: true,
   reviews: {
-    select: { decision: true, kind: true, reason: true },
+    select: { decision: true, kind: true, reason: true, revisionId: true },
     orderBy: { decidedAt: "desc" },
     take: 1,
   },
+  revisions: { select: editRevisionSelect, orderBy: { version: "desc" }, take: 1 },
 } as const satisfies Prisma.IdeaSelect;
 
 // Leaders. The author's identity and the supporters, read only for a viewer whose
@@ -83,6 +100,24 @@ export const reviewQueueSelect = {
 // Posts waiting for a decision on these boards. Pair it with boardsFor(viewer, "review").
 export function awaitingReview(boards: BoardCode[]) {
   return { reviewStatus: "pending", boardId: { in: boards } } satisfies Prisma.IdeaWhereInput;
+}
+
+// The queue's edit rows (#295): the review queue's fields, the marker for "Sent N days
+// ago", and the latest revision, which is the edit. The idea fields are the approved
+// version; the row shows the revision's words.
+export const editQueueSelect = {
+  ...reviewQueueSelect,
+  editSubmittedAt: true,
+  revisions: { select: editRevisionSelect, orderBy: { version: "desc" }, take: 1 },
+} as const satisfies Prisma.IdeaSelect;
+
+// Approved posts with an edit waiting on these boards. Pair it with boardsFor(viewer, "review").
+export function awaitingEditReview(boards: BoardCode[]) {
+  return {
+    ...isPublic,
+    boardId: { in: boards },
+    editSubmittedAt: { not: null },
+  } satisfies Prisma.IdeaWhereInput;
 }
 
 // The public numbers and updates on an approved idea (#60). Counts only: never the

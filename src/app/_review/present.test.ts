@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { EditFields } from "@/core/postEdit";
 import type { LeaderIdea } from "@/core/viewerShapes";
+import type { ReviewQueueItemData } from "@/db/reviewQueue";
 import { toApprovedRow, toLeaderPanel, toReviewRow } from "./present";
 
 // Mapping leader rows to plain client data (#59). Fixed clock, invented people.
@@ -38,9 +40,14 @@ function leaderIdea(overrides: Partial<LeaderIdea> = {}): LeaderIdea {
 }
 const dueAt = new Date(NOW.getTime() + 2 * DAY);
 
+// A queue item for a pending post: sent when it was submitted, no edit.
+function queued(idea: LeaderIdea, edit: ReviewQueueItemData["edit"] = null): ReviewQueueItemData {
+  return { idea, dueAt, sentAt: idea.submittedAt, edit };
+}
+
 describe("toReviewRow (#59)", () => {
   it("maps text, facts, dates, and a named poster", () => {
-    const row = toReviewRow({ idea: leaderIdea(), dueAt }, NOW);
+    const row = toReviewRow(queued(leaderIdea()), NOW);
     expect(row).toMatchObject({
       title: "A quiet study room",
       paragraphs: ["First paragraph.", "Second paragraph."],
@@ -59,10 +66,7 @@ describe("toReviewRow (#59)", () => {
 
   it("falls back to Not sure for empty facts and to no paragraphs without a full text", () => {
     const row = toReviewRow(
-      {
-        idea: leaderIdea({ scale: null, costBand: null, timeHorizon: null, location: null, fullText: null }),
-        dueAt,
-      },
+      queued(leaderIdea({ scale: null, costBand: null, timeHorizon: null, location: null, fullText: null })),
       NOW,
     );
     expect(row.facts.map((f) => f.value)).toEqual(["Not sure", "Not sure", "Not sure", "Not sure"]);
@@ -70,14 +74,14 @@ describe("toReviewRow (#59)", () => {
   });
 
   it("shows an anonymous poster to a viewer who may see the name", () => {
-    const row = toReviewRow({ idea: leaderIdea({ isAnonymous: true }), dueAt }, NOW);
+    const row = toReviewRow(queued(leaderIdea({ isAnonymous: true })), NOW);
     expect(row.isAnonymous).toBe(true);
     expect(row.poster.kind).toBe("anonymous_visible");
   });
 
   it("never carries a name or email for a hidden anonymous author", () => {
     const row = toReviewRow(
-      { idea: leaderIdea({ isAnonymous: true, author: null, authorHidden: true }), dueAt },
+      queued(leaderIdea({ isAnonymous: true, author: null, authorHidden: true })),
       NOW,
     );
     expect(row.poster).toEqual({ kind: "anonymous_hidden" });
@@ -87,13 +91,68 @@ describe("toReviewRow (#59)", () => {
   });
 
   it("maps a deleted account", () => {
-    const row = toReviewRow({ idea: leaderIdea({ author: null }), dueAt }, NOW);
+    const row = toReviewRow(queued(leaderIdea({ author: null })), NOW);
     expect(row.poster).toEqual({ kind: "deleted" });
   });
 
   it("says a post sent today was sent today", () => {
-    const row = toReviewRow({ idea: leaderIdea({ submittedAt: NOW }), dueAt }, NOW);
+    const row = toReviewRow(queued(leaderIdea({ submittedAt: NOW })), NOW);
     expect(row.sentText).toBe("Sent today");
+  });
+
+  it("has no edit for a pending post", () => {
+    expect(toReviewRow(queued(leaderIdea()), NOW).edit).toBeNull();
+  });
+
+  describe("an edit to an approved post (#295)", () => {
+    const approved: EditFields = {
+      title: "An older title",
+      description: "Set aside one corner.",
+      fullText: "First paragraph.\n\nSecond paragraph.",
+      category: "dining",
+      location: "Stetson East",
+      scale: "small",
+      costBand: "under_1k",
+      timeHorizon: "this_semester",
+      isAnonymous: false,
+    };
+    // The queue read puts the pending words on the idea; the sent time is the edit's.
+    const pendingIdea = leaderIdea({ number: 120, reviewStatus: "approved", title: "A quiet study room" });
+    const item = (overrides: Partial<NonNullable<ReviewQueueItemData["edit"]>> = {}): ReviewQueueItemData => ({
+      idea: pendingIdea,
+      dueAt,
+      sentAt: new Date(NOW.getTime() - 4 * DAY),
+      edit: { revisionId: "rev-2", approved, boardAfter: "DAB", mayApprove: true, ...overrides },
+    });
+
+    it("shows the pending version, when the edit was sent, and the diff", () => {
+      const row = toReviewRow(item(), NOW);
+      expect(row.title).toBe("A quiet study room");
+      expect(row.sentText).toBe("Sent 4 days ago");
+      expect(row.edit).toEqual({
+        number: 120,
+        changes: [{ label: "Title", before: "An older title", after: "A quiet study room" }],
+        unchanged: [
+          "Short description",
+          "Detailed description",
+          "Board",
+          "Where",
+          "Scale",
+          "Rough cost",
+          "Timing",
+          "Anonymous to students",
+        ],
+        sentText: "Changes sent 4 days ago",
+        mayApprove: true,
+        boardAfter: "DAB",
+        movesTo: null,
+      });
+    });
+
+    it("names the board a move lands on, and carries whether this viewer may approve it", () => {
+      const row = toReviewRow(item({ boardAfter: "CSC", mayApprove: false }), NOW);
+      expect(row.edit).toMatchObject({ movesTo: "CSC", boardAfter: "CSC", mayApprove: false });
+    });
   });
 });
 

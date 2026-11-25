@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Session } from "@/auth/contract";
 import { rolesFromPositions } from "@/core/positions";
-import { resubmitPost, withdrawPost, type OwnPostStore, type OwnPostTarget } from "./ownPost";
+import type { EditFields } from "@/core/postEdit";
+import { resubmitPost, submitEdit, withdrawPost, type OwnPostStore, type OwnPostTarget } from "./ownPost";
 
 // The author's resubmit and withdraw rules (#56), against a fake store.
 const NOW = new Date("2026-11-04T15:00:00.000Z");
@@ -19,8 +20,29 @@ function sessionFor(id: string): Session {
 const author = sessionFor(AUTHOR);
 const stranger = sessionFor(STRANGER);
 
+const APPROVED_WORDS: EditFields = {
+  title: "Later dining hours",
+  description: "The dining hall closes early on Sundays.",
+  fullText:
+    "The dining hall closes early on Sundays, so students who finish class late have no hot meal on campus.",
+  category: "green_initiatives",
+  location: null,
+  scale: null,
+  costBand: null,
+  timeHorizon: null,
+  isAnonymous: false,
+};
+
 function target(overrides: Partial<OwnPostTarget> = {}): OwnPostTarget {
-  return { id: IDEA, authorId: AUTHOR, reviewStatus: "declined", latestVersion: 1, ...overrides };
+  return {
+    id: IDEA,
+    authorId: AUTHOR,
+    reviewStatus: "declined",
+    latestVersion: 1,
+    editPending: false,
+    approved: APPROVED_WORDS,
+    ...overrides,
+  };
 }
 
 function fakeStore(found: OwnPostTarget | null, options: { pending?: number; changed?: boolean } = {}) {
@@ -30,6 +52,7 @@ function fakeStore(found: OwnPostTarget | null, options: { pending?: number; cha
     countPending: vi.fn(async () => options.pending ?? 0),
     resubmit: vi.fn(async () => options.changed ?? true),
     withdraw: vi.fn(async () => options.changed ?? true),
+    submitEdit: vi.fn(async () => options.changed ?? true),
   } satisfies OwnPostStore;
 }
 
@@ -169,6 +192,105 @@ describe("withdrawPost (#56)", () => {
     });
     const store = fakeStore(target(), { changed: false });
     expect(await withdrawPost(store, author, { ideaId: IDEA })).toEqual({
+      ok: false,
+      error: { code: "already_changed" },
+    });
+  });
+});
+
+describe("submitEdit (#295)", () => {
+  const approved = () => target({ reviewStatus: "approved", latestVersion: 2 });
+  const changed = { ...edit, title: "Later dining hours on Sundays" };
+
+  it("the author sends an edit: the next version, and the post is not touched", async () => {
+    const store = fakeStore(approved());
+    expect(await submitEdit(store, author, changed, NOW)).toEqual({ ok: true, id: IDEA, version: 3 });
+    expect(store.submitEdit).toHaveBeenCalledWith({
+      ideaId: IDEA,
+      submittedAt: NOW,
+      revision: expect.objectContaining({
+        version: 3,
+        title: "Later dining hours on Sundays",
+        category: "green_initiatives",
+        submittedAt: NOW,
+      }),
+    });
+    expect(store.resubmit).not.toHaveBeenCalled();
+  });
+
+  it("does not take the pending-posts lock or count: an edit is not a pending post", async () => {
+    const store = fakeStore(approved(), { pending: 3 });
+    expect((await submitEdit(store, author, changed, NOW)).ok).toBe(true);
+    expect(store.lockPendingPosts).not.toHaveBeenCalled();
+    expect(store.countPending).not.toHaveBeenCalled();
+  });
+
+  it("a non-author, a missing post, and a deleted author all get not_found", async () => {
+    expect(await submitEdit(fakeStore(approved()), stranger, changed, NOW)).toEqual({
+      ok: false,
+      error: { code: "not_found" },
+    });
+    expect(await submitEdit(fakeStore(null), author, changed, NOW)).toEqual({
+      ok: false,
+      error: { code: "not_found" },
+    });
+    const orphan = fakeStore(target({ reviewStatus: "approved", authorId: null }));
+    expect(await submitEdit(orphan, author, changed, NOW)).toEqual({
+      ok: false,
+      error: { code: "not_found" },
+    });
+  });
+
+  it.each(["pending", "declined", "withdrawn", "taken_down"] as const)(
+    "a %s post is not_approved",
+    async (reviewStatus) => {
+      const store = fakeStore(target({ reviewStatus }));
+      expect(await submitEdit(store, author, changed, NOW)).toEqual({
+        ok: false,
+        error: { code: "not_approved", from: reviewStatus },
+      });
+      expect(store.submitEdit).not.toHaveBeenCalled();
+    },
+  );
+
+  it("a second edit while one waits is edit_pending", async () => {
+    const store = fakeStore(target({ reviewStatus: "approved", editPending: true }));
+    expect(await submitEdit(store, author, changed, NOW)).toEqual({
+      ok: false,
+      error: { code: "edit_pending" },
+    });
+    expect(store.submitEdit).not.toHaveBeenCalled();
+  });
+
+  it("an edit that changes nothing is no_changes", async () => {
+    const store = fakeStore(approved());
+    expect(await submitEdit(store, author, edit, NOW)).toEqual({
+      ok: false,
+      error: { code: "no_changes" },
+    });
+    expect(store.submitEdit).not.toHaveBeenCalled();
+  });
+
+  it("changing the category is a change, and the board is left for the reviewer", async () => {
+    const store = fakeStore(approved());
+    expect((await submitEdit(store, author, { ...edit, category: "dining" }, NOW)).ok).toBe(true);
+    expect(store.submitEdit).toHaveBeenCalledWith(
+      expect.objectContaining({ revision: expect.objectContaining({ category: "dining" }) }),
+    );
+  });
+
+  it("uses the post form's validation: a short detailed description is invalid", async () => {
+    const store = fakeStore(approved());
+    expect(await submitEdit(store, author, { ...changed, details: "too short" }, NOW)).toEqual({
+      ok: false,
+      error: { code: "invalid", fields: ["details"] },
+    });
+    expect(store.find).not.toHaveBeenCalled();
+  });
+
+  it("a guard miss is already_changed", async () => {
+    const store = fakeStore(approved(), { changed: false });
+    expect(await submitEdit(store, author, changed, NOW)).toEqual({
       ok: false,
       error: { code: "already_changed" },
     });

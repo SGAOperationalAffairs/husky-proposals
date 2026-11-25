@@ -9,7 +9,7 @@ import { isSameOrigin } from "@/core/sameOrigin";
 import { prismaOwnPostStore } from "@/db/ownPostStore";
 import { prismaPostStore } from "@/db/postStore";
 import { db } from "@/db/runtime";
-import { resubmitPost, withdrawPost } from "./ownPost";
+import { resubmitPost, submitEdit, withdrawPost } from "./ownPost";
 import { submitPost, type SubmitResult } from "./submitPost";
 
 // The post actions (#54, #56): from our own origin, then the rules. A request from
@@ -47,6 +47,16 @@ const withdrawAsSession = withSession((session: Session, raw: unknown) =>
   db().$transaction((tx) => withdrawPost(prismaOwnPostStore(tx), session, raw)),
 );
 
+// An edit to an approved post (#295). Nothing public changes until a reviewer approves
+// it, so no cache tag is refreshed here.
+const editAsSession = withSession((session: Session, raw: unknown) =>
+  db().$transaction((tx) => submitEdit(prismaOwnPostStore(tx), session, raw, new Date())),
+);
+
+const editReporting = reportThrows("editIdea", async (raw: unknown) =>
+  (await isOwnOrigin()) ? editAsSession(raw) : crossOrigin,
+);
+
 const resubmitReporting = reportThrows("resubmitIdea", async (raw: unknown) =>
   (await isOwnOrigin()) ? resubmitAsSession(raw) : crossOrigin,
 );
@@ -60,4 +70,8 @@ export async function resubmitIdea(raw: unknown) {
 
 export async function withdrawIdea(raw: unknown) {
   return withdrawReporting(raw);
+}
+
+export async function editIdea(raw: unknown) {
+  return editReporting(raw);
 }

@@ -425,7 +425,7 @@ describe("PostForm, edit mode (#128)", () => {
       { code: "invalid_transition", from: "pending", event: "resubmit" },
       /This post changed while you were editing/,
     ],
-    ["not_editable", { code: "not_editable" }, /This idea was approved, so it can no longer be edited/],
+    ["not_editable", { code: "not_editable" }, /This post changed while you were editing/],
     ["not_found", { code: "not_found" }, /We could not find this post/],
     ["pending_limit", { code: "pending_limit", limit: 3 }, /You have 3 posts waiting for review/],
     ["cross_origin", { code: "cross_origin" }, /That didn't go through\. Try again\./],

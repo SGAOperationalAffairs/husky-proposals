@@ -9,10 +9,16 @@ import type { EmailMessage } from "./sendEmail";
 // the event, builds its dedupe key, and renders the text. The recipient is never part of
 // the payload: the outbox reads it from the idea's author.
 
-export type PostDecision = "approved" | "declined" | "sent_back" | "taken_down";
+export type PostDecision =
+  | "approved"
+  | "declined"
+  | "sent_back"
+  | "taken_down"
+  | "edit_approved"
+  | "edit_declined";
 
 // A send-back and a take-down are stored as declined reviews of kind send_back and
-// take_down, so the kind decides (#286).
+// take_down, so the kind decides (#286). A decision on an edit has kind edit (#295).
 export function decisionKindOf({
   kind,
   decision,
@@ -22,6 +28,7 @@ export function decisionKindOf({
 }): PostDecision {
   if (kind === "take_down") return "taken_down";
   if (kind === "send_back") return "sent_back";
+  if (kind === "edit") return decision === "approved" ? "edit_approved" : "edit_declined";
   return decision;
 }
 
@@ -58,12 +65,14 @@ export const postDecidedPayloadSchema = z
       z.strictObject({ kind: z.literal("declined"), reason: z.string().min(1) }),
       z.strictObject({ kind: z.literal("sent_back"), reason: z.string().min(1) }),
       z.strictObject({ kind: z.literal("taken_down"), reason: z.string().min(1) }),
+      z.strictObject({ kind: z.literal("edit_approved") }),
+      z.strictObject({ kind: z.literal("edit_declined"), reason: z.string().min(1) }),
     ]),
   })
-  // A post is public under its number, so an approval, a send-back, and a take-down
-  // always have one. A first decline never had one.
+  // A post is public under its number, so an approval, a send-back, a take-down, and a
+  // decision on an edit always have one. A first decline never had one.
   .refine((payload) => payload.event.kind === "declined" || payload.ideaNumber !== null, {
-    message: "An approval, send-back, or take-down needs the idea's number",
+    message: "An approval, send-back, take-down, or edit decision needs the idea's number",
     path: ["ideaNumber"],
   });
 
@@ -110,6 +119,40 @@ export function renderPostDecidedEmail(
         event.reason,
         "",
         "Change what the reviewer asked for, then send it for review again:",
+        editLink,
+        ...footer,
+      ].join("\n"),
+    };
+  }
+
+  if (event.kind === "edit_approved") {
+    return {
+      to,
+      subject: `Your changes are approved: Proposal #${ideaNumber}`,
+      text: [
+        payload.ideaTitle,
+        "",
+        `The ${board} approved your changes to #${ideaNumber}. The ideas list shows the new version now. Its support and followers stay with it.`,
+        "",
+        `See your idea: ${siteUrl}/ideas/${ideaNumber}`,
+        ...footer,
+      ].join("\n"),
+    };
+  }
+
+  if (event.kind === "edit_declined") {
+    return {
+      to,
+      subject: `Your changes were not approved: Proposal #${ideaNumber}`,
+      text: [
+        payload.ideaTitle,
+        "",
+        `The ${board} reviewed your changes to #${ideaNumber} and did not approve them. Your post stays on the ideas list as it was.`,
+        "",
+        "Why they were not approved:",
+        event.reason,
+        "",
+        "Change what the reviewer asked for, then send your changes again:",
         editLink,
         ...footer,
       ].join("\n"),

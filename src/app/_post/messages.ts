@@ -1,13 +1,16 @@
 import { PENDING_LIMIT } from "@/core/review";
-import type { postIdea, resubmitIdea, withdrawIdea } from "./actions";
+import type { editIdea, postIdea, resubmitIdea, withdrawIdea } from "./actions";
 
-// The words for a post that did not go through (#181, #128). Every code the post,
-// resubmit, and withdraw actions can return is an expected result, so it gets plain
-// copy, not a thrown error.
+// The words for a post that did not go through (#181, #128, #295). Every code the post,
+// resubmit, withdraw, and edit actions can return is an expected result, so it gets
+// plain copy, not a thrown error.
 type ErrorCode<A extends (raw: unknown) => Promise<unknown>> =
   Exclude<Awaited<ReturnType<A>>, { ok: true }> extends { error: { code: infer C } } ? C : never;
 export type PostCode =
-  ErrorCode<typeof postIdea> | ErrorCode<typeof resubmitIdea> | ErrorCode<typeof withdrawIdea>;
+  | ErrorCode<typeof postIdea>
+  | ErrorCode<typeof resubmitIdea>
+  | ErrorCode<typeof withdrawIdea>
+  | ErrorCode<typeof editIdea>;
 
 export const TRY_AGAIN = "That didn't go through. Try again.";
 const CHANGED = "This post changed while you were editing. Reload the page to see where it stands.";
@@ -32,9 +35,16 @@ const TEXT: Record<PostCode, string> = {
   unexpected: TRY_AGAIN,
   // The edit page and the withdraw dialog (#128).
   not_found: "We could not find this post. It may have been withdrawn.",
-  not_editable: "This idea was approved, so it can no longer be edited.",
+  not_editable: CHANGED,
   invalid_transition: CHANGED,
   already_changed: CHANGED,
+  // Editing an approved post (#295).
+  edit_pending:
+    "You already sent changes to this post. You can edit it again after a reviewer decides.",
+  no_changes: "You have not changed anything yet.",
+  not_approved: CHANGED,
+  // A decision with nothing waiting is a reviewer's error, never an author's.
+  no_pending_edit: TRY_AGAIN,
   // Unreachable for an author: they own the post, and a reason is a reviewer's field.
   own_post: TRY_AGAIN,
   not_author: TRY_AGAIN,

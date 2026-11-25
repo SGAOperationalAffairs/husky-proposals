@@ -31,6 +31,7 @@ function target(overrides: Partial<ReviewTarget> = {}): ReviewTarget {
     reviewStatus: "pending",
     number: null,
     latestRevisionId: REVISION,
+    approvedRevisionId: REVISION,
     ...overrides,
   };
 }
@@ -166,9 +167,25 @@ describe("decidePost (#58)", () => {
       expect(store.record).toHaveBeenCalledWith(
         expect.objectContaining({
           from: "approved",
-          patch: { reviewStatus: "declined", status: null, waitingReason: null, closedReason: null },
+          patch: {
+            reviewStatus: "declined",
+            status: null,
+            waitingReason: null,
+            closedReason: null,
+            editSubmittedAt: null,
+          },
           review: expect.objectContaining({ kind: "send_back", decision: "declined", reason: REASON }),
         }),
+      );
+    });
+
+    it("records on the approved version, not on a pending edit (#295)", async () => {
+      const store = fakeStore(
+        target({ reviewStatus: "approved", number: 131, latestRevisionId: "rev-edit", approvedRevisionId: REVISION }),
+      );
+      await decidePost(store, dabChair, "send_back", { ideaId: IDEA, reason: REASON }, NOW);
+      expect(store.record).toHaveBeenCalledWith(
+        expect.objectContaining({ review: expect.objectContaining({ revisionId: REVISION }) }),
       );
     });
 
@@ -223,12 +240,31 @@ describe("decidePost (#58)", () => {
       expect(store.record).toHaveBeenCalledWith(
         expect.objectContaining({
           from: "approved",
-          patch: { reviewStatus: "taken_down", status: null, waitingReason: null, closedReason: null },
+          patch: {
+            reviewStatus: "taken_down",
+            status: null,
+            waitingReason: null,
+            closedReason: null,
+            editSubmittedAt: null,
+          },
           review: expect.objectContaining({
             kind: "take_down",
             decision: "declined",
             reason: "The details were not accurate",
           }),
+        }),
+      );
+    });
+
+    it("with an edit waiting, the take-down is on the approved version and drops the edit (#295)", async () => {
+      const store = fakeStore(
+        target({ reviewStatus: "approved", number: 131, latestRevisionId: "rev-edit", approvedRevisionId: REVISION }),
+      );
+      await decidePost(store, dabChair, "take_down", { ideaId: IDEA, reason: "The details were not accurate" }, NOW);
+      expect(store.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          patch: expect.objectContaining({ editSubmittedAt: null }),
+          review: expect.objectContaining({ kind: "take_down", revisionId: REVISION }),
         }),
       );
     });

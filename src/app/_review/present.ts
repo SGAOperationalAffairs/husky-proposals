@@ -9,6 +9,7 @@ import {
   type IdeaScaleValue,
   type TimeHorizonValue,
 } from "@/core/ideaFacts";
+import { editDiff, unchangedLabels, type EditFields } from "@/core/postEdit";
 import { dueText, reviewerLabel } from "@/core/reviewText";
 import type { IdeaStatus } from "@/core/statuses";
 import type { LeaderIdea } from "@/core/viewerShapes";
@@ -30,6 +31,20 @@ export type ReviewRowData = {
   due: { text: string; overdue: boolean };
   isAnonymous: boolean;
   poster: PosterData;
+  // Set for an author's edit to an approved post (#295). The row's title, text, and facts
+  // are then the pending version, and `changes` is the diff from the approved one.
+  edit: {
+    number: number;
+    changes: { label: string; before: string; after: string }[];
+    // "Title, Short description", the fields the edit left alone.
+    unchanged: string[];
+    sentText: string;
+    // False when the edit moves the board and the viewer is not the VP.
+    mayApprove: boolean;
+    boardAfter: BoardCode;
+    // Set only when the board changes, for the "only the VP" note.
+    movesTo: BoardCode | null;
+  } | null;
 };
 
 export type ApprovedRowData = {
@@ -77,7 +92,34 @@ function paragraphsOf(fullText: string | null): string[] {
     .filter((p) => p.length > 0);
 }
 
-export function toReviewRow({ idea, dueAt }: ReviewQueueItemData, now: Date): ReviewRowData {
+// For an edit row the queue read puts the pending version's words on the idea, so the
+// pending fields come from it, and the approved ones from `edit.approved` (#295).
+function editOf({ idea, edit, sentAt }: ReviewQueueItemData, now: Date): ReviewRowData["edit"] {
+  if (!edit) return null;
+  const pending: EditFields = {
+    title: idea.title,
+    description: idea.description,
+    fullText: idea.fullText,
+    category: idea.category as EditFields["category"],
+    location: idea.location,
+    scale: idea.scale as EditFields["scale"],
+    costBand: idea.costBand as EditFields["costBand"],
+    timeHorizon: idea.timeHorizon as EditFields["timeHorizon"],
+    isAnonymous: idea.isAnonymous,
+  };
+  return {
+    number: publicNumber(idea),
+    changes: editDiff(edit.approved, pending).map(({ label, before, after }) => ({ label, before, after })),
+    unchanged: unchangedLabels(edit.approved, pending),
+    sentText: `Changes sent ${daysAgoText(daysAgo(sentAt, now))}`,
+    mayApprove: edit.mayApprove,
+    boardAfter: edit.boardAfter,
+    movesTo: edit.boardAfter === idea.boardId ? null : edit.boardAfter,
+  };
+}
+
+export function toReviewRow(item: ReviewQueueItemData, now: Date): ReviewRowData {
+  const { idea, dueAt, sentAt } = item;
   return {
     id: idea.id,
     title: idea.title,
@@ -90,10 +132,11 @@ export function toReviewRow({ idea, dueAt }: ReviewQueueItemData, now: Date): Re
       { term: "Timing", value: label<TimeHorizonValue>(TIME_LABELS, idea.timeHorizon) },
       { term: "Where", value: idea.location?.trim() || NOT_SURE },
     ],
-    sentText: `Sent ${daysAgoText(daysAgo(idea.submittedAt, now))}`,
+    sentText: `Sent ${daysAgoText(daysAgo(sentAt, now))}`,
     due: dueText(dueAt, now),
     isAnonymous: idea.isAnonymous,
     poster: posterOf(idea),
+    edit: editOf(item, now),
   };
 }
 

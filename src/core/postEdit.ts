@@ -104,6 +104,22 @@ const FIELD_KEYS = [
   "isAnonymous",
 ] as const satisfies readonly (keyof EditFields)[];
 
+// The stored words of a row that may carry more (an idea, or a revision with its id),
+// so a patch or a shape never spreads a whole row.
+export function editFieldsOf(row: EditFields): EditFields {
+  return {
+    title: row.title,
+    description: row.description,
+    fullText: row.fullText,
+    category: row.category,
+    location: row.location,
+    scale: row.scale,
+    costBand: row.costBand,
+    timeHorizon: row.timeHorizon,
+    isAnonymous: row.isAnonymous,
+  };
+}
+
 // True when the edit differs from the approved version in any field. The schema trims
 // text, so a whitespace-only change is not a change.
 export function hasChanges(approved: EditFields, edit: EditFields): boolean {

@@ -19,6 +19,13 @@ const targetSelect = {
   reviewStatus: true,
   number: true,
   revisions: { select: { id: true }, orderBy: { version: "desc" }, take: 1 },
+  // The version that was approved, which differs from the latest while an edit waits (#295).
+  reviews: {
+    where: { decision: "approved" },
+    orderBy: { decidedAt: "desc" },
+    take: 1,
+    select: { revisionId: true },
+  },
 } as const satisfies Prisma.IdeaSelect;
 
 export function prismaReviewStore(tx: Tx): ReviewStore {
@@ -35,6 +42,8 @@ export function prismaReviewStore(tx: Tx): ReviewStore {
         reviewStatus: idea.reviewStatus,
         number: idea.number,
         latestRevisionId: revision.id,
+        // A seed row can be approved with no review row: its latest version is the approved one.
+        approvedRevisionId: idea.reviews[0]?.revisionId ?? revision.id,
       };
     },
 

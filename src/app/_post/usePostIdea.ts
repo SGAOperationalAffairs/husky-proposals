@@ -4,16 +4,18 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { reportActionOutcome, reportError } from "@/app/_errors/reports";
 import type { PostIdeaInput } from "@/core/postIdea";
-import { postIdea, resubmitIdea, withdrawIdea } from "./actions";
+import { editIdea, postIdea, resubmitIdea, withdrawIdea } from "./actions";
 import { clearDraft } from "./draft";
 import { fieldErrors, postMessage, TRY_AGAIN, WITHDRAW_SIGNED_OUT } from "./messages";
 
 // The one hook for the post form (#181): runs the post action once, and maps each
 // result to what the form shows. It never retries. With an `ideaId` (#128) it is the
-// edit form's hook: submit resubmits that declined post, and withdraw withdraws it.
+// edit form's hook: submit resubmits that declined post, and withdraw withdraws it. In
+// "edit" mode (#295) submit sends an edit to an approved post instead, which has no withdraw.
 export type PostPhase = "idle" | "posting" | "saved" | "signed_out" | "withdrawing" | "withdrawn";
+export type PostMode = "resubmit" | "edit";
 
-export function usePostIdea(ideaId?: string) {
+export function usePostIdea(ideaId?: string, mode: PostMode = "resubmit") {
   const router = useRouter();
   const [phase, setPhase] = useState<PostPhase>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -33,7 +35,11 @@ export function usePostIdea(ideaId?: string) {
     setPhase("posting");
     setMessage(null);
     try {
-      const result = ideaId ? await resubmitIdea({ ...input, ideaId }) : await postIdea(input);
+      const result = !ideaId
+        ? await postIdea(input)
+        : mode === "edit"
+          ? await editIdea({ ...input, ideaId })
+          : await resubmitIdea({ ...input, ideaId });
       if (result.ok) {
         clearDraft(ideaId);
         setPhase("saved");
@@ -43,9 +49,9 @@ export function usePostIdea(ideaId?: string) {
       }
       reportActionOutcome(result);
       const { error } = result;
-      if (error.code === "pending_limit") {
-        // The server knows of more pending posts than the page showed, for example from
-        // another tab. Refresh so the count and the blocked state catch up (#96).
+      if (error.code === "pending_limit" || error.code === "edit_pending") {
+        // The server knows of more than the page showed, for example from another tab: more
+        // pending posts (#96), or an edit already waiting (#295). Refresh so the page catches up.
         router.refresh();
       }
       if (error.code === "signed_out") {

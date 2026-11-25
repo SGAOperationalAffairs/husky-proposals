@@ -29,6 +29,7 @@ function pendingRow(id: string, title: string, boardId: ReviewRowData["boardId"]
     due: { text: "Due in 1 day", overdue: false },
     isAnonymous: false,
     poster: { kind: "named", name: "Maya Test", email: "maya.test@example.com" },
+    edit: null,
   };
 }
 const pending = [pendingRow("a", "A study space", "CPAB"), pendingRow("b", "A bike stand", "GIB")];

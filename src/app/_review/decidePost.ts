@@ -29,6 +29,9 @@ export type ReviewTarget = {
   number: number | null;
   // The review points at exactly the words the reviewer saw (#49).
   latestRevisionId: string;
+  // The version that was approved. It differs from the latest while an author's edit waits
+  // (#295). A send-back or take-down is a decision on this one, never on the pending edit.
+  approvedRevisionId: string;
 };
 
 // The idea columns a decision changes. Approving sets the status the idea starts in;
@@ -41,6 +44,8 @@ export type IdeaPatch = {
   waitingReason?: null;
   closedReason?: null;
   statusChangedAt?: Date;
+  // A pull-back drops a waiting edit, so a post that is not approved never holds one (#295).
+  editSubmittedAt?: null;
 };
 
 export type ReviewWrite = {
@@ -149,6 +154,7 @@ export async function decidePost(
       status: null,
       waitingReason: null,
       closedReason: null,
+      editSubmittedAt: null,
     };
   } else {
     patch = { reviewStatus: "declined" };
@@ -160,7 +166,8 @@ export async function decidePost(
     patch,
     review: {
       ...result.review,
-      revisionId: target.latestRevisionId,
+      // A pull-back decides the approved version; the others decide the latest (#295).
+      revisionId: result.clearIdeaStatus ? target.approvedRevisionId : target.latestRevisionId,
       reviewerId: actorId,
       decidedAt: now,
     },

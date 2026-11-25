@@ -10,8 +10,12 @@ describe("post messages (#181)", () => {
     expect([...POST_CODES].sort()).toEqual([
       "already_changed",
       "cross_origin",
+      "edit_pending",
       "invalid",
       "invalid_transition",
+      "no_changes",
+      "no_pending_edit",
+      "not_approved",
       "not_author",
       "not_editable",
       "not_found",
@@ -30,9 +34,20 @@ describe("post messages (#181)", () => {
   });
 
   it("says plainly what happened for the edit refusals (#128)", () => {
-    expect(postMessage("not_editable")).toBe("This idea was approved, so it can no longer be edited.");
     expect(postMessage("not_found")).toBe("We could not find this post. It may have been withdrawn.");
     expect(postMessage("already_changed")).toBe(postMessage("invalid_transition"));
+  });
+
+  it("says plainly what happened for the refusals of an edit to an approved post (#295)", () => {
+    expect(postMessage("edit_pending")).toBe(
+      "You already sent changes to this post. You can edit it again after a reviewer decides.",
+    );
+    expect(postMessage("no_changes")).toBe("You have not changed anything yet.");
+    for (const code of ["not_editable", "not_approved", "invalid_transition", "already_changed"] as const) {
+      expect(postMessage(code)).toBe(
+        "This post changed while you were editing. Reload the page to see where it stands.",
+      );
+    }
   });
 
   it("maps fields to their copy and reports a form-level error apart", () => {

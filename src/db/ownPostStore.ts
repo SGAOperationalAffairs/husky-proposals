@@ -10,6 +10,17 @@ const targetSelect = {
   id: true,
   authorId: true,
   reviewStatus: true,
+  editSubmittedAt: true,
+  // The words the idea row holds now, to refuse an edit that changes nothing (#295).
+  title: true,
+  description: true,
+  fullText: true,
+  category: true,
+  location: true,
+  scale: true,
+  costBand: true,
+  timeHorizon: true,
+  isAnonymous: true,
   revisions: { select: { version: true }, orderBy: { version: "desc" }, take: 1 },
 } as const satisfies Prisma.IdeaSelect;
 
@@ -25,6 +36,18 @@ export function prismaOwnPostStore(tx: Tx): OwnPostStore {
         authorId: idea.authorId,
         reviewStatus: idea.reviewStatus,
         latestVersion: revision.version,
+        editPending: idea.editSubmittedAt !== null,
+        approved: {
+          title: idea.title,
+          description: idea.description,
+          fullText: idea.fullText,
+          category: idea.category,
+          location: idea.location,
+          scale: idea.scale,
+          costBand: idea.costBand,
+          timeHorizon: idea.timeHorizon,
+          isAnonymous: idea.isAnonymous,
+        },
       };
     },
 
@@ -38,6 +61,19 @@ export function prismaOwnPostStore(tx: Tx): OwnPostStore {
       if (moved.count === 0) return false;
       // A duplicate version (idea_revisions_idea_id_version_key) is left to throw: the
       // guarded update above already ran, so the whole transaction must roll back (#56).
+      await tx.ideaRevision.create({ data: { ideaId, ...revision }, select: { id: true } });
+      return true;
+    },
+
+    submitEdit: async ({ ideaId, submittedAt, revision }) => {
+      // Guarded on "approved with no edit waiting", so a double send, or a take-down that
+      // landed first, writes nothing (#295). The idea's own words are not touched.
+      const marked = await tx.idea.updateMany({
+        where: { id: ideaId, reviewStatus: "approved", editSubmittedAt: null },
+        data: { editSubmittedAt: submittedAt },
+      });
+      if (marked.count === 0) return false;
+      // As in resubmit, a duplicate version throws and rolls the whole transaction back.
       await tx.ideaRevision.create({ data: { ideaId, ...revision }, select: { id: true } });
       return true;
     },

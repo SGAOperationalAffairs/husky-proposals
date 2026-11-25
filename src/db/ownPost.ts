@@ -3,7 +3,7 @@ import type { BoardCode } from "@/core/boards";
 import type { Viewer } from "@/core/permissions";
 import { ideaForViewer, type AuthorIdea } from "@/core/viewerShapes";
 import type { Prisma } from "@/generated/prisma/client";
-import { authorIdeaSelect } from "./ideaSelects";
+import { authorIdeaSelect, isPublic } from "./ideaSelects";
 
 // The author's read of their own post for the edit page (#128): the post, its review
 // state, and the latest review's reason. Never the reviewer. Never cached: it depends
@@ -26,6 +26,21 @@ export async function ownPostById(db: Db, viewer: Viewer, id: string): Promise<A
   const row = await db.idea.findFirst({
     relationLoadStrategy: "join",
     where: { id, authorId: viewer.user.id },
+    select: authorIdeaSelect,
+  });
+  if (!row) return null;
+  const view = ideaForViewer(viewer, { ...row, boardId: row.boardId as BoardCode });
+  return view?.shape === "author" ? view.idea : null;
+}
+
+// The author's read of their own approved post by its public number, for the idea page's
+// "Your post" panel (#295). Never cached. A visitor runs no query, and anyone but the
+// author gets null, a VP or a chair included.
+export async function ownPostByNumber(db: Db, viewer: Viewer, number: number): Promise<AuthorIdea | null> {
+  if (!viewer) return null;
+  const row = await db.idea.findFirst({
+    relationLoadStrategy: "join",
+    where: { ...isPublic, number, authorId: viewer.user.id },
     select: authorIdeaSelect,
   });
   if (!row) return null;

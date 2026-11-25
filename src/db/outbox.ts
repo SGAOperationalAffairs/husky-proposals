@@ -148,8 +148,8 @@ export async function queueDecisionEmail(tx: QueueDb, event: PostDecidedEvent): 
     boardId: idea.boardId,
     isAnonymous: idea.isAnonymous,
     event:
-      event.decision === "approved"
-        ? { kind: "approved" }
+      event.decision === "approved" || event.decision === "edit_approved"
+        ? { kind: event.decision }
         : { kind: event.decision, reason: event.reason ?? "" },
   });
   const result = await tx.emailOutbox.createMany({

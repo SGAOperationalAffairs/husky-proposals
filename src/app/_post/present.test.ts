@@ -62,6 +62,7 @@ function idea(overrides: Partial<AuthorIdea> = {}): AuthorIdea {
     reviewStatus: "declined",
     isAnonymous: true,
     review: { decision: "declined", kind: "review", reason: "This repeats an open idea." },
+    edit: null,
     ...overrides,
   };
 }
@@ -76,6 +77,7 @@ describe("toEditPost (#128)", () => {
       reviewStatus: "declined",
       reason: "This repeats an open idea.",
       sentBack: false,
+      edit: null,
       values: {
         title: "Bike repair stand by the garage",
         summary: "A stand with a pump and basic tools.",
@@ -145,8 +147,46 @@ describe("toEditPost (#128)", () => {
   it("is plain data with no reviewer field and no dates", () => {
     const data = toEditPost(idea());
     expect(Object.keys(data).sort()).toEqual(
-      ["board", "ideaId", "number", "reason", "reviewStatus", "sentBack", "values"].sort(),
+      ["board", "edit", "ideaId", "number", "reason", "reviewStatus", "sentBack", "values"].sort(),
     );
     expect(JSON.parse(JSON.stringify(data))).toEqual(data);
+  });
+
+  describe("an edit to an approved post (#295)", () => {
+    const editValues = {
+      title: "Bike repair stand and pump",
+      description: "A stand, a pump, and tools.",
+      fullText: "Flat tires end rides. A stand with a pump and tools by the garage fixes that for everyone.",
+      category: "green_initiatives" as const,
+      location: null,
+      scale: "medium" as const,
+      costBand: null,
+      timeHorizon: null,
+      isAnonymous: false,
+    };
+    const approved = { reviewStatus: "approved" as const, number: 120, review: null };
+
+    it("a waiting edit carries its state, and the form values are the edit's", () => {
+      const data = toEditPost(
+        idea({ ...approved, edit: { state: "pending", reason: null, values: editValues } }),
+      );
+      expect(data.edit).toEqual({ state: "pending", reason: null });
+      expect(data.values).toMatchObject({ title: "Bike repair stand and pump", scale: "medium", anonymous: false });
+    });
+
+    it("a declined edit carries the reason, and the form holds the declined words", () => {
+      const data = toEditPost(
+        idea({ ...approved, edit: { state: "declined", reason: "Say where.", values: editValues } }),
+      );
+      expect(data.edit).toEqual({ state: "declined", reason: "Say where." });
+      expect(data.values.title).toBe("Bike repair stand and pump");
+      expect(data.reason).toBeNull();
+    });
+
+    it("with no edit, the form starts from the approved version", () => {
+      const data = toEditPost(idea(approved));
+      expect(data.edit).toBeNull();
+      expect(data.values.title).toBe("Bike repair stand by the garage");
+    });
   });
 });

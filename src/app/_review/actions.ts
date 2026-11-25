@@ -7,9 +7,15 @@ import type { Session } from "@/auth/contract";
 import { withSession } from "@/auth/gate";
 import { isSameOrigin } from "@/core/sameOrigin";
 import { prismaBoardSettingsStore } from "@/db/boardSettingsStore";
+import { prismaEditReviewStore } from "@/db/editReviewStore";
 import { prismaReviewStore } from "@/db/reviewStore";
 import { db } from "@/db/runtime";
 import { changeReviewDueDays } from "./changeReviewDueDays";
+import {
+  decideEdit,
+  type DecideEditResult,
+  type EditDecisionType,
+} from "./decideEdit";
 import { AlreadyDecidedError, decidePost, type DecideResult, type DecisionType } from "./decidePost";
 
 // The review actions (#58). Each is from our own origin, then a signed-in session
@@ -43,6 +49,29 @@ async function decide(session: Session, type: DecisionType, raw: unknown): Promi
   return result;
 }
 
+// The same shape for a decision on an author's edit to an approved post (#295). Only an
+// approval refreshes the public tags; a decline leaves the approved version as it was.
+async function decideEditAs(
+  session: Session,
+  type: EditDecisionType,
+  raw: unknown,
+): Promise<DecideEditResult> {
+  let result: DecideEditResult;
+  try {
+    result = await db().$transaction((tx) =>
+      decideEdit(prismaEditReviewStore(tx), session, type, raw, new Date()),
+    );
+  } catch (error) {
+    if (error instanceof AlreadyDecidedError) return { ok: false, error: { code: "already_decided" } };
+    throw error;
+  }
+  if (result.ok) for (const tag of result.refresh) updateTag(tag);
+  return result;
+}
+
+const approveEditAsSession = withSession((session, raw: unknown) => decideEditAs(session, "approve", raw));
+const declineEditAsSession = withSession((session, raw: unknown) => decideEditAs(session, "decline", raw));
+
 const approveAsSession = withSession((session, raw: unknown) => decide(session, "approve", raw));
 const declineAsSession = withSession((session, raw: unknown) => decide(session, "decline", raw));
 const sendBackAsSession = withSession((session, raw: unknown) => decide(session, "send_back", raw));
@@ -65,6 +94,12 @@ const sendBackReporting = reportThrows("sendBackPost", async (raw: unknown) =>
 const takeDownReporting = reportThrows("takeDownPost", async (raw: unknown) =>
   (await isOwnOrigin()) ? takeDownAsSession(raw) : crossOrigin,
 );
+const approveEditReporting = reportThrows("approveEdit", async (raw: unknown) =>
+  (await isOwnOrigin()) ? approveEditAsSession(raw) : crossOrigin,
+);
+const declineEditReporting = reportThrows("declineEdit", async (raw: unknown) =>
+  (await isOwnOrigin()) ? declineEditAsSession(raw) : crossOrigin,
+);
 const setDueDaysReporting = reportThrows("setReviewDueDays", async (raw: unknown) =>
   (await isOwnOrigin()) ? setDueDaysAsSession(raw) : crossOrigin,
 );
@@ -83,6 +118,14 @@ export async function sendBackPost(raw: unknown) {
 
 export async function takeDownPost(raw: unknown) {
   return takeDownReporting(raw);
+}
+
+export async function approveEdit(raw: unknown) {
+  return approveEditReporting(raw);
+}
+
+export async function declineEdit(raw: unknown) {
+  return declineEditReporting(raw);
 }
 
 export async function setReviewDueDays(raw: unknown) {

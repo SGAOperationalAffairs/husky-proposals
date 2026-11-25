@@ -21,6 +21,7 @@ const row: ReviewRowData = {
   due: { text: "1 day overdue", overdue: true },
   isAnonymous: false,
   poster: { kind: "named", name: "Maya Test", email: "maya.test@example.com" },
+  edit: null,
 };
 
 function setup(overrides: Partial<Parameters<typeof DecisionSheet>[0]> = {}) {
